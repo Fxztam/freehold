@@ -1,0 +1,84 @@
+name: Freehold CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Freehold tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip lark
+
+      - name: CLI smoke test
+        run: python -m freehold --version
+
+      - name: Full regression suite
+        run: python -m freehold test --no-console --json-summary ci_summary.json
+
+      - name: Language modules 01..19
+        shell: pwsh
+        run: |
+          $modules = Get-ChildItem -Path .\tests\language_modules -Directory |
+            Sort-Object Name |
+            Where-Object { $_.Name -match '^(0[1-9]|1[0-9])_' }
+
+          $failures = @()
+          foreach ($module in $modules) {
+            Write-Output "=== MODULE $($module.Name) ==="
+            python -m freehold test-language --module $module.Name
+            if ($LASTEXITCODE -ne 0) {
+              $failures += $module.Name
+            }
+          }
+
+          if ($failures.Count -gt 0) {
+            Write-Output "FAILED_MODULES:"
+            $failures | ForEach-Object { Write-Output $_ }
+            exit 1
+          }
+
+          Write-Output "ALL_LANGUAGE_MODULES_PASSED $($modules.Count)"
+
+      - name: Verify and run examples
+        shell: pwsh
+        run: |
+          $examples = Get-ChildItem -Path .\examples -Filter *.vf | Sort-Object Name
+          $failures = @()
+
+          foreach ($example in $examples) {
+            Write-Output "=== VERIFY $($example.Name) ==="
+            python -m freehold verify $example.FullName
+            if ($LASTEXITCODE -ne 0) {
+              $failures += "verify:$($example.Name)"
+              continue
+            }
+
+            Write-Output "=== RUN $($example.Name) ==="
+            python -m freehold run $example.FullName
+            if ($LASTEXITCODE -ne 0) {
+              $failures += "run:$($example.Name)"
+            }
+          }
+
+          if ($failures.Count -gt 0) {
+            Write-Output "FAILED_EXAMPLES:"
+            $failures | ForEach-Object { Write-Output $_ }
+            exit 1
+          }
+
+          Write-Output "ALL_EXAMPLES_VERIFY_AND_RUN_PASSED $($examples.Count)"
+
+      - name: Step runner smoke
+        run: python tools/test_steps.py --no-regression
