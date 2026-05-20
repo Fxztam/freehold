@@ -56,5 +56,5 @@ fixtures/
 Run this module with:
 
 ```powershell
-vftest 03_import_resolution
+fhtest 03_import_resolution
 ```

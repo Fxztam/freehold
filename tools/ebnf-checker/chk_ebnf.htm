@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>VeraFlow EBNF Check</title>
+	<title>Freehold EBNF Check</title>
 	<script src="bnfchk.js"></script>
 	<style>
 		:root {
@@ -76,13 +76,13 @@
 			const report = document.getElementById("report_div");
 
 			try {
-				const response = await fetch("../../veraflow/grammar/veraflow.ebnf", { cache: "no-store" });
+				const response = await fetch("../../freehold/grammar/freehold.ebnf", { cache: "no-store" });
 				if (!response.ok) {
 					throw new Error(`${response.status} ${response.statusText}`);
 				}
 
 				src.value = await response.text();
-				report.innerHTML = "<p><b>Loaded:</b> ../../veraflow/grammar/veraflow.ebnf</p>";
+				report.innerHTML = "<p><b>Loaded:</b> ../../freehold/grammar/freehold.ebnf</p>";
 			} catch (error) {
 				report.innerHTML = "<p><b>Load failed:</b> Open this page through the local server URL, then try again.</p><pre>" + htmlescape(String(error)) + "</pre>";
 			}
@@ -139,10 +139,10 @@
 </head>
 <body>
 	<main>
-		<h1>VeraFlow EBNF Check</h1>
+		<h1>Freehold EBNF Check</h1>
 		<textarea id="src" rows="18" cols="100" spellcheck="false"></textarea>
 		<div class="toolbar">
-			<button type="button" onclick="loadLocalGrammar();">Load repo veraflow.ebnf</button>
+			<button type="button" onclick="loadLocalGrammar();">Load repo freehold.ebnf</button>
 			<button type="button" onclick="parse_button_click();">Parse</button>
 			<label><input id="sort_checkbox" type="checkbox" value="1">sort rules alphabetically</label>
 			<label><input id="html_checkbox" type="checkbox" value="1">HTML</label>

@@ -1,4 +1,4 @@
-# VeraFlow v11f Native Strings
+# Freehold v11f Native Strings
 
 Goal: **formal verification system for AI**.
 
@@ -7,7 +7,7 @@ v10.5 restructures the compiler so future language features can be added as cont
 ## Structure
 
 ```text
-veraflow/
+freehold/
   core/
     ast.py
     parser.py
@@ -18,8 +18,8 @@ veraflow/
     registry.py
     feature.py
   grammar/
-    veraflow.ebnf
-    veraflow.lark
+    freehold.ebnf
+    freehold.lark
   features/
     core/
     control/
@@ -61,49 +61,49 @@ v10.5 now includes a generator:
 
 ```bash
 python tools/lark_to_ebnf.py
-python -m veraflow ebnf --dialects
+python -m freehold ebnf --dialects
 ```
 
 It reads:
 
 ```text
-veraflow/grammar/veraflow.lark
+freehold/grammar/freehold.lark
 ```
 
 and writes:
 
 ```text
-veraflow/grammar/veraflow.generated.ebnf
+freehold/grammar/freehold.generated.ebnf
 ```
 
 With `--dialects`, it also writes:
 
 ```text
-veraflow/grammar/veraflow.generated.forge.ebnf
-veraflow/grammar/veraflow.generated.forge.ir.json
-veraflow/grammar/veraflow.generated.rr.ebnf
-veraflow/grammar/veraflow.generated.vscode.ebnf
-veraflow/grammar/veraflow.generated.pyebnf.ebnf
-veraflow/grammar/veraflow.generated.parseebnf.ebnf
+freehold/grammar/freehold.generated.forge.ebnf
+freehold/grammar/freehold.generated.forge.ir.json
+freehold/grammar/freehold.generated.rr.ebnf
+freehold/grammar/freehold.generated.vscode.ebnf
+freehold/grammar/freehold.generated.pyebnf.ebnf
+freehold/grammar/freehold.generated.parseebnf.ebnf
 ```
 
 Recommended policy:
 
 ```text
-veraflow.lark            executable parser grammar / source of truth
-veraflow.generated.ebnf  generated review/documentation grammar
-veraflow.generated.forge.ebnf  generated EBNF Forge validator dialect
-veraflow.generated.forge.ir.json generated EBNF Forge JSON IR
-veraflow.generated.rr.ebnf     generated railroad/W3C-style dialect
-veraflow.generated.vscode.ebnf generated VS Code EBNF plugin dialect
-veraflow.generated.pyebnf.ebnf generated pyebnf Python checker dialect
-veraflow.generated.parseebnf.ebnf generated parse-ebnf PyPI test dialect
-veraflow.ebnf            curated human language specification
+freehold.lark            executable parser grammar / source of truth
+freehold.generated.ebnf  generated review/documentation grammar
+freehold.generated.forge.ebnf  generated EBNF Forge validator dialect
+freehold.generated.forge.ir.json generated EBNF Forge JSON IR
+freehold.generated.rr.ebnf     generated railroad/W3C-style dialect
+freehold.generated.vscode.ebnf generated VS Code EBNF plugin dialect
+freehold.generated.pyebnf.ebnf generated pyebnf Python checker dialect
+freehold.generated.parseebnf.ebnf generated parse-ebnf PyPI test dialect
+freehold.ebnf            curated human language specification
 ```
 
-Use `veraflow.generated.vscode.ebnf` for the VS Code EBNF plugin. The RR file is intended for railroad/W3C-style tools and may use syntax the VS Code plugin does not accept.
-Use `veraflow.generated.parseebnf.ebnf` for the `parse-ebnf` PyPI parser, which requires alphanumeric rule identifiers.
-Use `veraflow.generated.forge.ebnf` for the EBNF Forge `ebnff` validator. Use `tools/ebnff.exe` to regenerate `veraflow.generated.forge.ir.json`. Use `veraflow.generated.pyebnf.ebnf` for the Python `pyebnf` checker.
+Use `freehold.generated.vscode.ebnf` for the VS Code EBNF plugin. The RR file is intended for railroad/W3C-style tools and may use syntax the VS Code plugin does not accept.
+Use `freehold.generated.parseebnf.ebnf` for the `parse-ebnf` PyPI parser, which requires alphanumeric rule identifiers.
+Use `freehold.generated.forge.ebnf` for the EBNF Forge `ebnff` validator. Use `tools/ebnff.exe` to regenerate `freehold.generated.forge.ir.json`. Use `freehold.generated.pyebnf.ebnf` for the Python `pyebnf` checker.
 
 TODO:
 
@@ -123,7 +123,7 @@ x = y                 Equality expression only
 
 ## v11b import rule
 
-```veraflow
+```freehold
 module App.Main
 
 import Banking.Proofs
@@ -145,7 +145,7 @@ qualified calls remain a design goal
 
 ## v11c qualified end rule
 
-```veraflow
+```freehold
 module App.Main
 procedure main()
 is
@@ -172,7 +172,7 @@ wrong names  -> parser/verifier error
 
 ## v11d case rule
 
-```veraflow
+```freehold
 case expr is
     when value =>
         ...
@@ -186,7 +186,7 @@ Rules: mandatory default, no fallthrough, type-compatible branch values, duplica
 
 ## v11e comments
 
-```veraflow
+```freehold
 -- line comment
 
 /*
@@ -211,7 +211,7 @@ no automatic semantic change from comments
 ## Numeric base types
 
 ```text
-Double is VeraFlow's IEEE-754 64-bit floating point type.
+Double is Freehold's IEEE-754 64-bit floating point type.
 Its intended role is equivalent to Go float64.
 No separate Float64 alias is currently defined.
 BigInteger and BigFloat are arbitrary-precision types exposed by module Big.
@@ -219,11 +219,11 @@ BigInteger and BigFloat are arbitrary-precision types exposed by module Big.
 
 ## v11f native strings
 
-```veraflow
+```freehold
 let s: String = "hello"
 let t: String = String.concat(s, " world")
 let p: String = String.substr(t, 0, 5)
-let r: String = String.replace(t, "world", "VeraFlow")
+let r: String = String.replace(t, "world", "Freehold")
 let i: Integer = String.instr(t, "Flow")
 ```
 

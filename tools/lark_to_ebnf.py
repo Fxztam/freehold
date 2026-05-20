@@ -203,16 +203,16 @@ def convert_rhs(rhs: str) -> str:
 def convert_rule_name(name: str) -> str:
     return TERMINAL_MAP.get(name, name)
 
-def generate_ebnf(lark_text: str, source_name: str = "veraflow.lark") -> str:
+def generate_ebnf(lark_text: str, source_name: str = "freehold.lark") -> str:
     rules = split_rules(lark_text)
     lines: list[str] = []
     lines.append("(*")
-    lines.append("  VeraFlow generated ISO EBNF grammar.")
+    lines.append("  Freehold generated ISO EBNF grammar.")
     lines.append(f"  Source: {source_name}")
     lines.append("")
     lines.append("  Generated from the executable Lark grammar.")
     lines.append("  This file is intended for review/documentation.")
-    lines.append("  The parser source of truth remains veraflow.lark.")
+    lines.append("  The parser source of truth remains freehold.lark.")
     lines.append("*)")
     lines.append("")
 
@@ -257,9 +257,9 @@ def synthetic_lexical_rules(lark_text: str, generated_text: str) -> list[str]:
     return lines
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Generate VeraFlow EBNF from Lark grammar")
-    p.add_argument("--input", default="veraflow/grammar/veraflow.lark")
-    p.add_argument("--output", default="veraflow/grammar/veraflow.generated.ebnf")
+    p = argparse.ArgumentParser(description="Generate Freehold EBNF from Lark grammar")
+    p.add_argument("--input", default="freehold/grammar/freehold.lark")
+    p.add_argument("--output", default="freehold/grammar/freehold.generated.ebnf")
     args = p.parse_args()
 
     inp = Path(args.input)

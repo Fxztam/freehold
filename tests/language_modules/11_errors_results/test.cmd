@@ -1,6 +1,6 @@
 @echo off
 pushd "%~dp0..\..\.." >nul
-python -m veraflow test-language --module 11_errors_results %*
+python -m freehold test-language --module 11_errors_results %*
 set EXITCODE=%ERRORLEVEL%
 popd >nul
 exit /b %EXITCODE%

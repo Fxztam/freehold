@@ -1,6 +1,6 @@
-# VeraFlow EBNF Checker
+# Freehold EBNF Checker
 
-Local browser checker for VeraFlow EBNF files.
+Local browser checker for Freehold EBNF files.
 
 Run it from the repository root through a local HTTP server so the page can load the grammar with `fetch`:
 
@@ -14,7 +14,7 @@ Then open the checker:
 http://localhost:8000/tools/ebnf-checker/chk_ebnf.htm
 ```
 
-Use **Load repo veraflow.ebnf** to load `veraflow/grammar/veraflow.ebnf`, then **Parse**.
+Use **Load repo freehold.ebnf** to load `freehold/grammar/freehold.ebnf`, then **Parse**.
 
 The generated railroad diagram page is available next to it:
 

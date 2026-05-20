@@ -19,7 +19,7 @@ def run_step(number: int, title: str, command: list[str]) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Run VeraFlow tests step by step from the source directory")
+    parser = argparse.ArgumentParser(description="Run Freehold tests step by step from the source directory")
     parser.add_argument("target", nargs="?", help="Optional language module name, for example 01_core")
     parser.add_argument("--quick", action="store_true", help="Run only CLI, core language tests, and the hello demo")
     parser.add_argument("--no-regression", action="store_true", help="Skip the full regression suite")
@@ -39,42 +39,44 @@ def main(argv: list[str] | None = None) -> int:
                 if path.is_dir():
                     print(f"  {path.name}", file=sys.stderr)
             return 2
-        run_step(step, f"Language module tests: {args.target}", [py, "-m", "veraflow", "test-language", "--module", args.target])
+        run_step(step, f"Language module tests: {args.target}", [py, "-m", "freehold", "test-language", "--module", args.target])
         print("")
-        print("All requested VeraFlow test steps passed.")
+        print("All requested Freehold test steps passed.")
         return 0
 
-    run_step(step, "CLI smoke test", [py, "-m", "veraflow", "--version"])
+    run_step(step, "CLI smoke test", [py, "-m", "freehold", "--version"])
     step += 1
 
-    run_step(step, "Core language module tests", [py, "-m", "veraflow", "test-language", "--module", "01_core"])
+    run_step(step, "Core language module tests", [py, "-m", "freehold", "test-language", "--module", "01_core"])
     step += 1
 
     if not args.quick and not args.no_regression:
-        run_step(step, "Full regression suite", [py, "-m", "veraflow", "test"])
+        run_step(step, "Full regression suite", [py, "-m", "freehold", "test"])
         step += 1
 
     if not args.no_demos:
-        run_step(step, "Demo verify: hello_cli", [py, "-m", "veraflow", "verify", "examples/hello_cli.vf"])
+        run_step(step, "Demo verify: hello_cli", [py, "-m", "freehold", "verify", "examples/hello_cli.vf"])
         step += 1
-        run_step(step, "Demo run: hello_cli", [py, "-m", "veraflow", "run", "examples/hello_cli.vf"])
+        run_step(step, "Demo run: hello_cli", [py, "-m", "freehold", "run", "examples/hello_cli.vf"])
         step += 1
 
         if not args.quick:
             demo_files = [
                 "examples/retail_cli_demo_v11f.vf",
                 "examples/banking_records.vf",
+                "examples/BigNumbers.vf",
                 "examples/epsilon_demo.vf",
+                "examples/GaussLegendrePi.vf",
                 "examples/std_io_console_demo.vf",
                 "examples/ChudnovskyPi.vf",
                 "examples/ChudnovskyFeynmanPoint.vf",
             ]
             for demo_file in demo_files:
-                run_step(step, f"Demo verify: {Path(demo_file).name}", [py, "-m", "veraflow", "verify", demo_file])
+                run_step(step, f"Demo verify: {Path(demo_file).name}", [py, "-m", "freehold", "verify", demo_file])
                 step += 1
 
     print("")
-    print("All requested VeraFlow test steps passed.")
+    print("All requested Freehold test steps passed.")
     return 0
 
 
