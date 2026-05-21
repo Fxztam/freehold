@@ -99,7 +99,7 @@ Example:
 MODULE_NOT_FOUND_HINT = """The imported module must exist under the module search root.
 
 Example path:
-    Banking.Proofs -> Banking/Proofs.vf
+    Banking.Proofs -> Banking/Proofs.fh
 """
 
 IMPORTED_MODULE_NAME_HINT = """The imported file must declare the module name used by the import.
@@ -113,7 +113,7 @@ The imported file should start with:
 
 IMPORTED_MODULE_SYNTAX_HINT = """The imported module must parse before it can be used.
 
-Open the imported `.vf` file and fix the syntax error there first.
+Open the imported `.fh` file and fix the syntax error there first.
 """
 
 EXPOSED_SYMBOL_HINT = """Every symbol listed in an exposing clause must be declared by the imported module.

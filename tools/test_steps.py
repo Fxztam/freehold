@@ -55,21 +55,21 @@ def main(argv: list[str] | None = None) -> int:
         step += 1
 
     if not args.no_demos:
-        run_step(step, "Demo verify: hello_cli", [py, "-m", "freehold", "verify", "examples/hello_cli.vf"])
+        run_step(step, "Demo verify: hello_cli", [py, "-m", "freehold", "verify", "examples/hello_cli.fh"])
         step += 1
-        run_step(step, "Demo run: hello_cli", [py, "-m", "freehold", "run", "examples/hello_cli.vf"])
+        run_step(step, "Demo run: hello_cli", [py, "-m", "freehold", "run", "examples/hello_cli.fh"])
         step += 1
 
         if not args.quick:
             demo_files = [
-                "examples/retail_cli_demo_v11f.vf",
-                "examples/banking_records.vf",
-                "examples/BigNumbers.vf",
-                "examples/epsilon_demo.vf",
-                "examples/GaussLegendrePi.vf",
-                "examples/std_io_console_demo.vf",
-                "examples/ChudnovskyPi.vf",
-                "examples/ChudnovskyFeynmanPoint.vf",
+                "examples/retail_cli_demo_v11f.fh",
+                "examples/banking_records.fh",
+                "examples/BigNumbers.fh",
+                "examples/epsilon_demo.fh",
+                "examples/GaussLegendrePi.fh",
+                "examples/std_io_console_demo.fh",
+                "examples/ChudnovskyPi.fh",
+                "examples/ChudnovskyFeynmanPoint.fh",
             ]
             for demo_file in demo_files:
                 run_step(step, f"Demo verify: {Path(demo_file).name}", [py, "-m", "freehold", "verify", demo_file])

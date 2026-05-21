@@ -26,7 +26,7 @@ class ModuleResolver:
     def module_path(self, module_name: str) -> Path:
         if self.root is None:
             raise TypeCheckError("module resolver root is not set")
-        return self.root.joinpath(*module_name.split(".")).with_suffix(".vf")
+        return self.root.joinpath(*module_name.split(".")).with_suffix(".fh")
 
     def resolve_entry(self, entry_file: str | Path) -> dict[str, ResolvedModule]:
         entry_path = Path(entry_file)

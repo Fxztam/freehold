@@ -5,9 +5,9 @@ This adds a small command-line frontend without changing the Freehold language s
 ## Commands
 
 ```bash
-python -m freehold run examples/hello_cli.vf
-python -m freehold verify examples/hello_cli.vf
-python -m freehold ast examples/hello_cli.vf
+python -m freehold run examples/hello_cli.fh
+python -m freehold verify examples/hello_cli.fh
+python -m freehold ast examples/hello_cli.fh
 python -m freehold test --log cli_test.log --json-summary cli_summary.json
 python -m freehold ebnf
 ```
@@ -35,9 +35,9 @@ Short developer commands:
 
 ```powershell
 .\fhenv.ps1
-fhrun .\tests\language_modules\01_core\valid\minimal_module.vf
-fhverify .\tests\language_modules\01_core\valid\minimal_module.vf
-fhfast .\tests\language_modules\01_core\valid\minimal_module.vf
+fhrun .\tests\language_modules\01_core\valid\minimal_module.fh
+fhverify .\tests\language_modules\01_core\valid\minimal_module.fh
+fhfast .\tests\language_modules\01_core\valid\minimal_module.fh
 fhtest 01_core
 ```
 
@@ -45,15 +45,15 @@ From the project root, use:
 
 ```powershell
 .\fhenv.ps1
-fhrun .\tests\language_modules\01_core\valid\minimal_module.vf
+fhrun .\tests\language_modules\01_core\valid\minimal_module.fh
 fhtest 01_core
 ```
 
 After `fhenv.ps1`, the same short commands also work from subfolders, for example inside `tests\language_modules\01_core\valid`:
 
 ```powershell
-fhrun .\minimal_module.vf
-fhverify .\minimal_module.vf
+fhrun .\minimal_module.fh
+fhverify .\minimal_module.fh
 ```
 
 The core language module can also be tested directly from its folders:
@@ -69,11 +69,11 @@ cd invalid_syntax
 Optional Windows wrappers:
 
 ```cmd
-freehold.cmd run examples/hello_cli.vf
+freehold.cmd run examples/hello_cli.fh
 ```
 
 PowerShell:
 
 ```powershell
-.\freehold.ps1 run examples/hello_cli.vf
+.\freehold.ps1 run examples/hello_cli.fh
 ```

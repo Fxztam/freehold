@@ -9,11 +9,11 @@ Modules in one import graph must live under one common module root. The root is
 derived from the entry module path and its declared module name:
 
 ```text
-fixtures/valid/import_existing_module/App/Main.vf
+fixtures/valid/import_existing_module/App/Main.fh
 module App.Main
 
 root = fixtures/valid/import_existing_module
-import Banking.Proofs -> fixtures/valid/import_existing_module/Banking/Proofs.vf
+import Banking.Proofs -> fixtures/valid/import_existing_module/Banking/Proofs.fh
 ```
 
 That means sibling top-level module folders, such as `App/` and `Banking/`, must
