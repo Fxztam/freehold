@@ -14,6 +14,14 @@ Date: 2026-05-21
 
 ## Current Harness Baseline
 
+Full parser conformance verify from the repository root:
+
+```powershell
+.\verify-parser-conformance.cmd
+```
+
+This command runs the complete chain: Go-AST regeneration, DHParser-AST regeneration, parse-status comparison, parse-error diagnostic comparison, AST-shape comparison, semantic AST comparison, and `go test ./...`.
+
 Command:
 
 ```powershell

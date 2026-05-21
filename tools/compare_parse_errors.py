@@ -57,7 +57,7 @@ def main() -> int:
             "freehold": go_diag.get("freehold") or classify_failure(key, go_diag["message"], dhparser_diag["message"]),
             "go": go_diag,
             "dhparser": dhparser_diag,
-            "same_location": go_diag.get("location") == dhparser_diag.get("location"),
+            "same_location": same_location(go_diag.get("location"), dhparser_diag.get("location")),
         }
         rows.append(row)
         if row["same_location"]:
@@ -167,6 +167,12 @@ def code_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
 
 def single_line(text: str) -> str:
     return " ".join((text or "").split())
+
+
+def same_location(left: dict[str, int] | None, right: dict[str, int] | None) -> bool:
+    if not left or not right:
+        return left == right
+    return left.get("line") == right.get("line") and left.get("column") == right.get("column")
 
 
 def write_json(path: Path, value: Any) -> None:

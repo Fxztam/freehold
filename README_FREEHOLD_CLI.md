@@ -90,6 +90,14 @@ PowerShell:
 
 ## Parser artifact paths
 
+Run the full parser conformance chain with one command:
+
+```powershell
+.\verify-parser-conformance.cmd
+```
+
+The verify command regenerates Go AST artifacts, regenerates DHParser AST artifacts, runs all parser comparison gates, and finishes with `go test ./...`.
+
 The Go parser frontend writes parse results and reports to:
 
 ```powershell
