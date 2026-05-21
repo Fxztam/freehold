@@ -77,3 +77,40 @@ PowerShell:
 ```powershell
 .\freehold.ps1 run examples/hello_cli.fh
 ```
+
+## Parser artifact paths
+
+The Go parser frontend writes parse results and reports to:
+
+```powershell
+cd go-frontend
+.\go-parse-tests-language-modules.cmd
+```
+
+```text
+artifacts/go-ast
+```
+
+The DHParser path writes the matching corpus layout to:
+
+```powershell
+.\dhparser-parse-tests-language-modules.cmd
+```
+
+```text
+artifacts/dhparser-ast
+```
+
+Both artifact roots contain `_summary.json`, `_errors.txt`, and one JSON file per parsed `.fh` source.
+
+Compare Go and DHParser parse status artifacts with:
+
+```powershell
+.\compare-parser-status.cmd
+```
+
+```text
+artifacts/compare-parse-status
+```
+
+The first comparator stage checks `parse_ok` parity and records mismatch reports. AST-shape comparison comes after the parse-status baseline is aligned.

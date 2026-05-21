@@ -1,0 +1,69 @@
+Total: 238
+OK:    210
+FAIL:  28
+
+Failures
+--------
+01_core invalid_syntax empty_file.fh => Error (1040): Parser start = ~ module_decl {import_decl} {declaration} module_end EOF did not match empty document.
+01_core invalid_syntax missing_module_end.fh => 7:1: Error (1040): Parser record_type_decl->`type` did not match: »«
+01_core invalid_syntax missing_module_name.fh => 2:1: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »«
+01_core invalid_syntax unknown_top_level_token.fh => 1:1: Error (1040): Parser module_decl->`module` did not match: »let x: Integer = 1
+«
+01_core invalid_semantics keyword_module_name.fh => 1:8: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »module
+
+end module«
+02_import invalid_syntax missing_exposing_list.fh => 5:1: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »procedure main()
+is
+ ...«
+02_import invalid_syntax missing_import_name.fh => 5:1: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »procedure main()
+is
+ ...«
+02_import invalid_semantics keyword_exposing_symbol.fh => 3:32: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »module
+
+end App.Main«
+02_import invalid_semantics keyword_import_module_name.fh => 3:8: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »module
+
+end App.Main«
+04_types invalid_semantics keyword_local_name.fh => 5:9: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »module: Integer = 0
+ ...«
+04_types invalid_semantics keyword_parameter_name.fh => 3:18: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »module: Integer)
+is
+ ...«
+04_types invalid_semantics keyword_record_field_name.fh => 4:5: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »module: Integer
+end  ...«
+04_types invalid_semantics keyword_type_name.fh => 3:6: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »module is Integer
+
+e ...«
+04_types invalid_semantics unknown_let_type.fh => 5:9: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »value: MissingType = ...«
+04_types invalid_semantics unknown_parameter_type.fh => 3:18: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »value: MissingType)
+ ...«
+05_records invalid_semantics keyword_record_field.fh => 4:5: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »module: Integer
+end  ...«
+05_records invalid_semantics keyword_record_name.fh => 3:6: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »record is record
+    ...«
+08_routines invalid_semantics keyword_function_name.fh => 3:10: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »value() returns Inte ...«
+08_routines invalid_semantics keyword_parameter_name.fh => 3:15: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »value: Integer) retu ...«
+08_routines invalid_semantics keyword_procedure_name.fh => 3:11: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »return()
+is
+    chec ...«
+09_statements invalid_syntax let_uses_assignment_operator.fh => 5:17: Error (1040): Parser array_type->`Array` did not match: »= 1
+    check true
+e ...«
+11_errors_results invalid_semantics keyword_error_name.fh => 3:7: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »value
+
+end KeywordEr ...«
+12_type_conflicts invalid_semantics parameter_alias_mismatch.fh => 5:18: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »value: Count)
+is
+    ...«
+13_contract_blocks invalid_syntax ensures_before_requires.fh => 5:1: Error (1040): Parser postfix->`(` did not match: »requires true
+is
+    ...«
+14_comments_whitespace invalid_syntax nested_block_comment.fh => 3:22: Error (1040): Parser qualified_name->`.` did not match: »outer */
+procedure m ...«
+14_comments_whitespace invalid_syntax unterminated_block_comment.fh => 3:1: Error (1040): Parser qualified_name->`.` did not match: »/* this block commen ...«
+16_control_flow_edges invalid_syntax case_without_default.fh => 9:5: Error (1040): Parser postfix->`(` did not match: »end case
+end main
+
+e ...«
+16_control_flow_edges invalid_syntax while_without_invariant.fh => 7:5: Error (1040): Parser postfix->`(` did not match: »do
+        amount := ...«

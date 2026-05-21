@@ -151,7 +151,7 @@ func (p *Parser) parseQualifiedName() string {
 
 func (p *Parser) parseName() string {
 	tok := p.peek()
-	if tok.Kind == token.Ident || isKeywordName(tok.Kind) {
+	if tok.Kind == token.Ident {
 		p.pos++
 		return tok.Lexeme
 	}
@@ -163,45 +163,6 @@ func (p *Parser) parseName() string {
 		tok.Pos.Line,
 		tok.Pos.Column,
 	))
-}
-
-func isKeywordName(kind token.Kind) bool {
-	switch kind {
-	case token.Module,
-		token.Procedure,
-		token.Function,
-		token.Type,
-		token.Error,
-		token.Returns,
-		token.Is,
-		token.Return,
-		token.Check,
-		token.Call,
-		token.Let,
-		token.Import,
-		token.Exposing,
-		token.Range,
-		token.Record,
-		token.If,
-		token.Then,
-		token.Else,
-		token.While,
-		token.Invariant,
-		token.Variant,
-		token.Do,
-		token.Case,
-		token.When,
-		token.Default,
-		token.And,
-		token.Or,
-		token.Not,
-		token.Ok,
-		token.Requires,
-		token.Ensures:
-		return true
-	default:
-		return false
-	}
 }
 
 func (p *Parser) parseFunction() ast.FunctionDecl {
@@ -706,6 +667,15 @@ func (p *Parser) parseAtom() ast.Expr {
 			Kind: "ErrorExpr",
 			Name: p.parseName(),
 		}
+	}
+
+	if p.at(token.True) || p.at(token.False) || p.at(token.Success) || p.at(token.Failure) || p.at(token.Value) {
+		tok := p.peek()
+		p.pos++
+		return p.finishPostfix(ast.IdentifierExpr{
+			Kind: "IdentifierExpr",
+			Name: tok.Lexeme,
+		})
 	}
 
 	tok := p.parseName()

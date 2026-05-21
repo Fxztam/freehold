@@ -429,6 +429,16 @@ func (l *Lexer) lexIdentifier(pos token.Position) token.Token {
 		kind = token.Requires
 	case "ensures":
 		kind = token.Ensures
+	case "true":
+		kind = token.True
+	case "false":
+		kind = token.False
+	case "success":
+		kind = token.Success
+	case "failure":
+		kind = token.Failure
+	case "value":
+		kind = token.Value
 	case "end":
 		kind = token.End
 	}

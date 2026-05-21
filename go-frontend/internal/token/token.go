@@ -43,6 +43,11 @@ const (
 	Ok        Kind = "ok"
 	Requires  Kind = "requires"
 	Ensures   Kind = "ensures"
+	True      Kind = "true"
+	False     Kind = "false"
+	Success   Kind = "success"
+	Failure   Kind = "failure"
+	Value     Kind = "value"
 
 	Plus         Kind = "+"
 	Minus        Kind = "-"

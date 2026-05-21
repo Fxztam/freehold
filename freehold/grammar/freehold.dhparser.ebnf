@@ -1,0 +1,101 @@
+@ whitespace = /\s*/
+@ comment    = /--[^\n]*(?:\n|$)|\/\*(?:.|\n)*?\*\//
+@ literalws = right
+
+start = ~ module_decl { import_decl } { declaration } module_end EOF
+EOF = /$/
+
+module_decl = ~ "module" ~ qualified_name
+module_end  = ~ "end" ~ qualified_name
+qualified_name = IDENT { ~ "." ~ IDENT }
+
+import_decl = ~ "import" qualified_name [ exposing_clause ]
+exposing_clause = "exposing" exposing_list
+exposing_list = IDENT { "," IDENT }
+
+declaration = record_type_decl | type_decl | error_decl | function_decl | procedure_decl
+
+record_type_decl = ~ "type" IDENT "is" "record" record_field { record_field } "end" "record"
+record_field = IDENT ":" type_ref
+
+type_decl = ~ "type" IDENT "is" base_type [ range_decl ]
+range_decl = "range" NUMBER_LITERAL ".." NUMBER_LITERAL
+error_decl = ~ "error" IDENT
+
+base_type = BASE_TYPE
+type_ref = array_type | result_type | BASE_TYPE | IDENT
+return_type = array_type | result_type | type_ref
+
+result_type = "Result" "<" type_ref "," type_ref ">"
+array_type = "Array" "<" type_ref "," INTEGER_LITERAL ">"
+
+function_decl = ~ "function" IDENT "(" [ param_list ] ")" "returns" return_type [ contract_block ] "is" { stmt } "end" IDENT
+procedure_decl = ~ "procedure" IDENT "(" [ param_list ] ")" [ contract_block ] "is" { stmt } "end" IDENT
+
+param_list = param { "," param }
+param = IDENT ":" type_ref
+
+contract_block = { requires_clause } { ensures_clause }
+requires_clause = "requires" expr
+ensures_clause = "ensures" expr
+
+stmt = let_stmt | return_stmt | if_stmt | while_stmt | case_stmt | check_stmt | call_stmt | field_assign_stmt | assign_stmt
+let_stmt = ~ "let" IDENT ":" return_type "=" expr
+field_assign_stmt = ~ FIELD_PATH ":=" expr
+assign_stmt = ~ IDENT ":=" expr
+return_stmt = ~ "return" return_value
+return_value = "ok" expr | "error" IDENT | expr
+check_stmt = ~ "check" expr
+call_stmt = ~ "call" qualified_name "(" [ arg_list ] ")"
+
+if_stmt = ~ "if" expr "then" then_block [ "else" else_block ] "end" "if"
+then_block = { stmt }
+else_block = { stmt }
+
+while_stmt = ~ "while" expr invariant_clause { invariant_clause } [ variant_clause ] "do" loop_block "end" "while"
+loop_block = { stmt }
+invariant_clause = ~ "invariant" expr
+variant_clause = ~ "variant" expr
+
+case_stmt = ~ "case" expr "is" case_branch { case_branch } default_branch "end" "case"
+case_branch = ~ "when" expr "=>" case_block
+default_branch = ~ "default" "=>" case_block
+case_block = { stmt }
+
+arg_list = expr { "," expr }
+named_arg_list = named_arg { "," named_arg }
+named_arg = IDENT ":" expr
+
+expr = ~ logic_or
+logic_or = logic_and { "or" logic_and }
+logic_and = equality { "and" equality }
+equality = comparison { ( "!=" | "=" ) comparison }
+comparison = sum { ( "<=" | ">=" | "<" | ">" ) sum }
+sum = product { ( "+" | "-" ) product }
+product = unary { ( "*" | "/" ) unary }
+unary = "-" unary | "not" unary | postfix_expr
+
+postfix_expr = primary { postfix }
+postfix = "(" [ arg_list ] ")" | "[" expr "]" | "." IDENT
+
+primary = STRING_LITERAL
+     | DOUBLE_LITERAL
+     | INTEGER_LITERAL
+     | array_literal
+     | IDENT "{" named_arg_list "}"
+     | IDENT
+     | "(" expr ")"
+     | "true" | "false" | "success" | "failure" | "value" | "error"
+
+atom = postfix_expr
+
+field_path = FIELD_PATH
+array_literal = "[" [ arg_list ] "]"
+
+BASE_TYPE = "Integer" | "Boolean" | "Double" | "String" | "BigInteger" | "BigFloat"
+DOUBLE_LITERAL = /-?(?:[0-9]+\.[0-9]+)/~
+NUMBER_LITERAL = DOUBLE_LITERAL | INTEGER_LITERAL
+INTEGER_LITERAL = /-?[0-9]+/~
+IDENT = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|returns\b|requires\b|ensures\b|let\b|return\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*/~
+FIELD_PATH = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|returns\b|requires\b|ensures\b|let\b|return\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+/~
+STRING_LITERAL = /"[^"\\]*(?:\\.[^"\\]*)*"/~
