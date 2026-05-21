@@ -1,0 +1,86 @@
+{
+  "source_file": "..\\tests\\language_modules\\13_contract_blocks\\valid\\multiple_requires_ensures.fh",
+  "module_name": "13_contract_blocks",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "MultipleRequiresEnsures",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "clamp",
+        "params": [
+          {
+            "name": "amount",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Integer",
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": "\u003e=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "amount"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "0"
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "\u003c=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "amount"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "10"
+            }
+          }
+        ],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "\u003e=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "0"
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "\u003c=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "10"
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "amount"
+            }
+          }
+        ],
+        "end_name": "clamp"
+      }
+    ],
+    "end_name": "MultipleRequiresEnsures"
+  }
+}

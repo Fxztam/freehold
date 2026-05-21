@@ -1,0 +1,73 @@
+{
+  "source_file": "..\\tests\\language_modules\\15_qualified_names_calls\\valid\\current_module_qualified_procedure_call.fh",
+  "module_name": "15_qualified_names_calls",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Qualified.ProcedureCalls",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "ensure_positive",
+        "params": [
+          {
+            "name": "amount",
+            "type": "Integer"
+          }
+        ],
+        "body": [
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "\u003e",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            }
+          }
+        ],
+        "end_name": "ensure_positive"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "CallStmt",
+            "call": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "FieldAccessExpr",
+                  "object": {
+                    "kind": "IdentifierExpr",
+                    "name": "Qualified"
+                  },
+                  "field": "ProcedureCalls"
+                },
+                "field": "ensure_positive"
+              },
+              "arguments": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "Qualified.ProcedureCalls"
+  }
+}

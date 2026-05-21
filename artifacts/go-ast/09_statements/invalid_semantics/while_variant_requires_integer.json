@@ -1,0 +1,84 @@
+{
+  "source_file": "..\\tests\\language_modules\\09_statements\\invalid_semantics\\while_variant_requires_integer.fh",
+  "module_name": "09_statements",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "WhileVariantRequiresInteger",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "amount",
+            "type": "Integer",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "1"
+            }
+          },
+          {
+            "kind": "WhileStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "\u003e",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            },
+            "invariants": [
+              {
+                "kind": "BinaryExpr",
+                "op": "\u003e=",
+                "left": {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": "0"
+                }
+              }
+            ],
+            "variant": {
+              "kind": "IdentifierExpr",
+              "name": "true"
+            },
+            "body": [
+              {
+                "kind": "AssignmentStmt",
+                "target": {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "-",
+                  "left": {
+                    "kind": "IdentifierExpr",
+                    "name": "amount"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "WhileVariantRequiresInteger"
+  }
+}

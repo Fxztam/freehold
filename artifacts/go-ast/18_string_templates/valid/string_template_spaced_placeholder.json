@@ -1,0 +1,71 @@
+{
+  "source_file": "..\\tests\\language_modules\\18_string_templates\\valid\\string_template_spaced_placeholder.fh",
+  "module_name": "18_string_templates",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "StringTemplateSpacedPlaceholder",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "name",
+            "type": "String",
+            "value": {
+              "kind": "StringExpr",
+              "value": "Ada"
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "message",
+            "type": "String",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "String"
+                },
+                "field": "template"
+              },
+              "arguments": [
+                {
+                  "kind": "StringExpr",
+                  "value": "hello ${ }"
+                },
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "name"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "message"
+              },
+              "right": {
+                "kind": "StringExpr",
+                "value": "hello Ada"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "StringTemplateSpacedPlaceholder"
+  }
+}

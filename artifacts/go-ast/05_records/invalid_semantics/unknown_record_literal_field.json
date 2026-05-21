@@ -1,0 +1,64 @@
+{
+  "source_file": "..\\tests\\language_modules\\05_records\\invalid_semantics\\unknown_record_literal_field.fh",
+  "module_name": "05_records",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "UnknownRecordLiteralField",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Account",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ]
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "account",
+            "type": "Account",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Account",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                },
+                {
+                  "name": "active",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "true"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "IdentifierExpr",
+              "name": "true"
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "UnknownRecordLiteralField"
+  }
+}

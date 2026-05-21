@@ -1,0 +1,64 @@
+{
+  "source_file": "..\\tests\\language_modules\\12_type_conflicts\\valid\\result_assignment_from_function.fh",
+  "module_name": "12_type_conflicts",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "ResultAssignmentFromFunction",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "load",
+        "params": null,
+        "return_type": "Result\u003cInteger, NotFound\u003e",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "OkExpr",
+              "value": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "load"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "outcome",
+            "type": "Result\u003cInteger, NotFound\u003e",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "load"
+              },
+              "arguments": null
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "IdentifierExpr",
+              "name": "true"
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "ResultAssignmentFromFunction"
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "source_file": "..\\tests\\language_modules\\16_control_flow_edges\\invalid_semantics\\while_body_local_not_visible_after.fh",
+  "module_name": "16_control_flow_edges",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Control.WhileScope",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "amount",
+            "type": "Integer",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "0"
+            }
+          },
+          {
+            "kind": "WhileStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "\u003c",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            },
+            "invariants": [
+              {
+                "kind": "BinaryExpr",
+                "op": "\u003e=",
+                "left": {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": "0"
+                }
+              }
+            ],
+            "variant": {
+              "kind": "BinaryExpr",
+              "op": "-",
+              "left": {
+                "kind": "NumberExpr",
+                "value": "1"
+              },
+              "right": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              }
+            },
+            "body": [
+              {
+                "kind": "LetStmt",
+                "name": "loop_total",
+                "type": "Integer",
+                "value": {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                }
+              },
+              {
+                "kind": "AssignmentStmt",
+                "target": {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "+",
+                  "left": {
+                    "kind": "IdentifierExpr",
+                    "name": "amount"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "loop_total"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "Control.WhileScope"
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "source_file": "..\\tests\\language_modules\\10_expressions\\valid\\record_field_expression.fh",
+  "module_name": "10_expressions",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "RecordFieldExpression",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Account",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "active",
+            "type": "Boolean"
+          }
+        ]
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "account",
+            "type": "Account",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Account",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                },
+                {
+                  "name": "active",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "true"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "and",
+              "left": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "object": {
+                    "kind": "IdentifierExpr",
+                    "name": "account"
+                  },
+                  "field": "id"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                }
+              },
+              "right": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "account"
+                },
+                "field": "active"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "RecordFieldExpression"
+  }
+}

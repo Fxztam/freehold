@@ -1,0 +1,87 @@
+{
+  "source_file": "..\\tests\\language_modules\\09_statements\\valid\\field_assignment_statement.fh",
+  "module_name": "09_statements",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "FieldAssignmentStatement",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Account",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "active",
+            "type": "Boolean"
+          }
+        ]
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "account",
+            "type": "Account",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Account",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                },
+                {
+                  "name": "active",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "false"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "AssignmentStmt",
+            "target": {
+              "kind": "FieldAccessExpr",
+              "object": {
+                "kind": "IdentifierExpr",
+                "name": "account"
+              },
+              "field": "active"
+            },
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "true"
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "FieldAccessExpr",
+              "object": {
+                "kind": "IdentifierExpr",
+                "name": "account"
+              },
+              "field": "active"
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "FieldAssignmentStatement"
+  }
+}

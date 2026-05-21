@@ -1,0 +1,78 @@
+{
+  "source_file": "..\\tests\\language_modules\\08_routines\\invalid_semantics\\wrong_argument_count.fh",
+  "module_name": "08_routines",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "WrongArgumentCount",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "add",
+        "params": [
+          {
+            "name": "left",
+            "type": "Integer"
+          },
+          {
+            "name": "right",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "left"
+              },
+              "right": {
+                "kind": "IdentifierExpr",
+                "name": "right"
+              }
+            }
+          }
+        ],
+        "end_name": "add"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "CallExpr",
+                "callee": {
+                  "kind": "IdentifierExpr",
+                  "name": "add"
+                },
+                "arguments": [
+                  {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "WrongArgumentCount"
+  }
+}

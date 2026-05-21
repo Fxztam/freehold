@@ -1,0 +1,91 @@
+{
+  "source_file": "..\\tests\\language_modules\\15_qualified_names_calls\\invalid_semantics\\qualified_call_argument_type.fh",
+  "module_name": "15_qualified_names_calls",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Qualified.ArgumentType",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "increment",
+        "params": [
+          {
+            "name": "amount",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "increment"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": "Integer",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "FieldAccessExpr",
+                  "object": {
+                    "kind": "IdentifierExpr",
+                    "name": "Qualified"
+                  },
+                  "field": "ArgumentType"
+                },
+                "field": "increment"
+              },
+              "arguments": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "true"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "total"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "2"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "Qualified.ArgumentType"
+  }
+}

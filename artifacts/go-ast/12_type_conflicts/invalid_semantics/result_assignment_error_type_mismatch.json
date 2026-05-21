@@ -1,0 +1,61 @@
+{
+  "source_file": "..\\tests\\language_modules\\12_type_conflicts\\invalid_semantics\\result_assignment_error_type_mismatch.fh",
+  "module_name": "12_type_conflicts",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "ResultAssignmentErrorTypeMismatch",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "ErrorDecl",
+        "name": "PermissionDenied"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "load",
+        "params": null,
+        "return_type": "Result\u003cInteger, NotFound\u003e",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "OkExpr",
+              "value": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "load"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "outcome",
+            "type": "Result\u003cInteger, PermissionDenied\u003e",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "load"
+              },
+              "arguments": null
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "ResultAssignmentErrorTypeMismatch"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "source_file": "..\\tests\\language_modules\\14_comments_whitespace\\valid\\comment_markers_inside_strings.fh",
+  "module_name": "14_comments_whitespace",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "CommentMarkersInsideStrings",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "text",
+        "params": null,
+        "return_type": "String",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "StringExpr",
+              "value": "not -- a comment and not /* a block */"
+            }
+          }
+        ],
+        "end_name": "text"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "text_value",
+            "type": "String",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "text"
+              },
+              "arguments": null
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "text_value"
+              },
+              "right": {
+                "kind": "StringExpr",
+                "value": "not -- a comment and not /* a block */"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "CommentMarkersInsideStrings"
+  }
+}

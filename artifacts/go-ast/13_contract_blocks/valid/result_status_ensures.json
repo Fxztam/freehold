@@ -1,0 +1,69 @@
+{
+  "source_file": "..\\tests\\language_modules\\13_contract_blocks\\valid\\result_status_ensures.fh",
+  "module_name": "13_contract_blocks",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "ResultStatusEnsures",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "load",
+        "params": [
+          {
+            "name": "found",
+            "type": "Boolean"
+          }
+        ],
+        "return_type": "Result\u003cInteger, NotFound\u003e",
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "found"
+            },
+            "right": {
+              "kind": "IdentifierExpr",
+              "name": "true"
+            }
+          }
+        ],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "or",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "success"
+            },
+            "right": {
+              "kind": "IdentifierExpr",
+              "name": "failure"
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "OkExpr",
+              "value": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "load"
+      }
+    ],
+    "end_name": "ResultStatusEnsures"
+  }
+}

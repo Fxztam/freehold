@@ -1,0 +1,62 @@
+{
+  "source_file": "..\\tests\\language_modules\\18_string_templates\\invalid_semantics\\string_template_count_mismatch.fh",
+  "module_name": "18_string_templates",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "StringTemplateCountMismatch",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "message",
+            "type": "String",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "String"
+                },
+                "field": "template"
+              },
+              "arguments": [
+                {
+                  "kind": "StringExpr",
+                  "value": "id=${}, active=${}"
+                },
+                {
+                  "kind": "NumberExpr",
+                  "value": "7"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "message"
+              },
+              "right": {
+                "kind": "StringExpr",
+                "value": "id=7, active=true"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "StringTemplateCountMismatch"
+  }
+}

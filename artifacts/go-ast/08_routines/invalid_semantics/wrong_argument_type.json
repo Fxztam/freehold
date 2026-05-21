@@ -1,0 +1,62 @@
+{
+  "source_file": "..\\tests\\language_modules\\08_routines\\invalid_semantics\\wrong_argument_type.fh",
+  "module_name": "08_routines",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "WrongArgumentType",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "negate",
+        "params": [
+          {
+            "name": "flag",
+            "type": "Boolean"
+          }
+        ],
+        "return_type": "Boolean",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "UnaryExpr",
+              "op": "not",
+              "value": {
+                "kind": "IdentifierExpr",
+                "name": "flag"
+              }
+            }
+          }
+        ],
+        "end_name": "negate"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "negate"
+              },
+              "arguments": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "WrongArgumentType"
+  }
+}

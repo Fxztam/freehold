@@ -1,0 +1,97 @@
+{
+  "source_file": "..\\tests\\language_modules\\12_type_conflicts\\valid\\record_assignment.fh",
+  "module_name": "12_type_conflicts",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "RecordAssignment",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Account",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "active",
+            "type": "Boolean"
+          }
+        ]
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "first",
+            "type": "Account",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Account",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                },
+                {
+                  "name": "active",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "true"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "second",
+            "type": "Account",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Account",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "2"
+                  }
+                },
+                {
+                  "name": "active",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "false"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "AssignmentStmt",
+            "target": {
+              "kind": "IdentifierExpr",
+              "name": "second"
+            },
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "first"
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "RecordAssignment"
+  }
+}
