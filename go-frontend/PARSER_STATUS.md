@@ -1,3 +1,13 @@
+
+## Structured parser diagnostics
+
+The Go parser emits structured diagnostics for all parse errors.
+
+- **Catalog:** `internal/diagnostic/catalog.go`
+- **Examples:** `../../artifacts/go-ast/*/*.json`
+
+Every new error class gets a stable code and catalog entry.
+
 # Freehold Go Parser Status
 
 Date: 2026-05-21
@@ -88,6 +98,27 @@ Missing DHParser:   0
 Go:                 OK 210 / FAIL 28
 DHParser:           OK 210 / FAIL 28
 ```
+
+The parse error diagnostic comparison is:
+
+```powershell
+.\compare-parse-errors.cmd
+```
+
+It compares the 28 shared failures and records whether Go and DHParser report the same source location. The diagnostic comparison is intentionally reported separately from parse-status parity, because DHParser error wording exposes grammar internals. Go parser artifacts now include a structured `diagnostic` object with code, message, location, expected tokens, found token, and hint.
+
+The diagnostic report now carries provisional Freehold diagnostic codes. Syntax/parser diagnostics use `FH-SYN-0001..0999`; future semantic, type, contract, and bootstrap/tooling diagnostics should use `FH-SEM-1000..1999`, `FH-TYP-2000..2999`, `FH-CON-3000..3999`, and `FH-BLD-9000..9999`.
+
+Current parse-error diagnostic comparison:
+
+```text
+Shared failures:               28
+Matching failure locations:    26
+Mismatching failure locations: 2
+Status mismatches:             0
+```
+
+The two current location differences are expected diagnostic boundary cases: empty input without a DHParser source location and a one-column token-boundary difference for `:=`.
 
 The first AST-shape comparison stage is:
 

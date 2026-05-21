@@ -2,24 +2,27 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"freehold-go-frontend/internal/diagnostic"
 	"freehold-go-frontend/internal/lexer"
 	"freehold-go-frontend/internal/parser"
 	"freehold-go-frontend/internal/token"
 )
 
 type ParseResult struct {
-	SourceFile string      `json:"source_file"`
-	ModuleName string      `json:"module_name"`
-	CaseKind   string      `json:"case_kind"`
-	ParseOK    bool        `json:"parse_ok"`
-	AST        interface{} `json:"ast,omitempty"`
-	Error      string      `json:"error,omitempty"`
+	SourceFile string                 `json:"source_file"`
+	ModuleName string                 `json:"module_name"`
+	CaseKind   string                 `json:"case_kind"`
+	ParseOK    bool                   `json:"parse_ok"`
+	AST        interface{}            `json:"ast,omitempty"`
+	Error      string                 `json:"error,omitempty"`
+	Diagnostic *diagnostic.Diagnostic `json:"diagnostic,omitempty"`
 }
 
 type RunSummary struct {
@@ -30,11 +33,12 @@ type RunSummary struct {
 }
 
 type ParseFailure struct {
-	SourceFile string `json:"source_file"`
-	ModuleName string `json:"module_name"`
-	CaseKind   string `json:"case_kind"`
-	FileName   string `json:"file_name"`
-	Error      string `json:"error"`
+	SourceFile string                 `json:"source_file"`
+	ModuleName string                 `json:"module_name"`
+	CaseKind   string                 `json:"case_kind"`
+	FileName   string                 `json:"file_name"`
+	Error      string                 `json:"error"`
+	Diagnostic *diagnostic.Diagnostic `json:"diagnostic,omitempty"`
 }
 
 func main() {
@@ -116,6 +120,7 @@ func main() {
 						CaseKind:   result.CaseKind,
 						FileName:   filepath.Base(file),
 						Error:      result.Error,
+						Diagnostic: result.Diagnostic,
 					})
 					fmt.Println("FAIL ", moduleName, caseKind, filepath.Base(file), "=>", result.Error)
 				}
@@ -155,6 +160,11 @@ func parseFile(file string, moduleName string, caseKind string) (result ParseRes
 	defer func() {
 		if r := recover(); r != nil {
 			result.ParseOK = false
+			if diag, ok := r.(*diagnostic.Diagnostic); ok {
+				result.Diagnostic = diag
+				result.Error = diag.Error()
+				return
+			}
 			result.Error = fmt.Sprint(r)
 		}
 	}()
@@ -185,6 +195,10 @@ func parseFile(file string, moduleName string, caseKind string) (result ParseRes
 	mod, err := p.ParseModule()
 	if err != nil {
 		result.ParseOK = false
+		var diag *diagnostic.Diagnostic
+		if errors.As(err, &diag) {
+			result.Diagnostic = diag
+		}
 		result.Error = err.Error()
 		return result
 	}

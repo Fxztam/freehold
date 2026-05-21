@@ -53,7 +53,7 @@ func (l *Lexer) advance() rune {
 	return r
 }
 
-func (l *Lexer) skipIgnored() {
+func (l *Lexer) skipIgnored() *token.Token {
 	for !l.eof() {
 		if unicode.IsSpace(l.peek()) {
 			l.advance()
@@ -68,6 +68,7 @@ func (l *Lexer) skipIgnored() {
 		}
 
 		if l.peek() == '/' && l.peekNext() == '*' {
+			start := token.Position{Line: l.line, Column: l.column, Offset: l.pos}
 			l.advance()
 			l.advance()
 
@@ -75,19 +76,32 @@ func (l *Lexer) skipIgnored() {
 				if l.peek() == '*' && l.peekNext() == '/' {
 					l.advance()
 					l.advance()
+					start = token.Position{}
 					break
 				}
 				l.advance()
 			}
+
+			if start.Line != 0 {
+				return &token.Token{
+					Kind:   token.Illegal,
+					Lexeme: "unterminated block comment",
+					Pos:    start,
+				}
+			}
 			continue
 		}
 
-		return
+		return nil
 	}
+
+	return nil
 }
 
 func (l *Lexer) Next() token.Token {
-	l.skipIgnored()
+	if tok := l.skipIgnored(); tok != nil {
+		return *tok
+	}
 
 	start := token.Position{
 		Line:   l.line,

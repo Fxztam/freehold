@@ -1,3 +1,13 @@
+
+## Structured parser diagnostics
+
+The Go parser emits structured diagnostics for all parse errors.
+
+- **Catalog:** `go-frontend/internal/diagnostic/catalog.go`
+- **Examples:** `artifacts/go-ast/*/*.json`
+
+Every new error class gets a stable code and catalog entry.
+
 # Freehold CLI Toolchain
 
 This adds a small command-line frontend without changing the Freehold language syntax.
@@ -114,6 +124,37 @@ artifacts/compare-parse-status
 ```
 
 The first comparator stage checks `parse_ok` parity and records mismatch reports. AST-shape comparison comes after the parse-status baseline is aligned.
+
+Compare parse error diagnostics for the cases that both parsers reject with:
+
+```powershell
+.\compare-parse-errors.cmd
+```
+
+```text
+artifacts/compare-parse-errors
+```
+
+This diagnostic report keeps failure locations visible without making the parser conformance gates depend on identical third-party error wording. Go parser artifacts now include a structured `diagnostic` object with code, message, location, expected tokens, found token, and hint.
+
+The report also assigns provisional Freehold diagnostic codes. Current ranges are reserved as:
+
+```text
+FH-SYN-0001..0999  syntax and parsing diagnostics
+FH-SEM-1000..1999  semantic diagnostics
+FH-TYP-2000..2999  type diagnostics
+FH-CON-3000..3999  contract diagnostics
+FH-BLD-9000..9999  bootstrap/tooling diagnostics
+```
+
+Current parse-error diagnostic baseline:
+
+```text
+Shared failures:               28
+Matching failure locations:    26
+Mismatching failure locations: 2
+Status mismatches:             0
+```
 
 Compare normalized AST shape for the files that both parsers accept with:
 

@@ -1,9 +1,8 @@
 package parser
 
 import (
-	"fmt"
-
 	"freehold-go-frontend/internal/ast"
+	"freehold-go-frontend/internal/diagnostic"
 	"freehold-go-frontend/internal/token"
 )
 
@@ -37,13 +36,7 @@ func (p *Parser) ParseModule() (*ast.Module, error) {
 			proc := p.parseProcedure()
 			decls = append(decls, proc)
 		} else {
-			return nil, fmt.Errorf(
-				"expected declaration, got %s %q at line %d col %d",
-				p.peek().Kind,
-				p.peek().Lexeme,
-				p.peek().Pos.Line,
-				p.peek().Pos.Column,
-			)
+			return nil, diagnostic.ExpectedDeclaration(p.peek())
 		}
 	}
 
@@ -156,13 +149,7 @@ func (p *Parser) parseName() string {
 		return tok.Lexeme
 	}
 
-	panic(fmt.Sprintf(
-		"expected Ident, got %s %q at line %d col %d",
-		tok.Kind,
-		tok.Lexeme,
-		tok.Pos.Line,
-		tok.Pos.Column,
-	))
+	panic(diagnostic.ExpectedIdentifier(tok))
 }
 
 func (p *Parser) parseFunction() ast.FunctionDecl {
@@ -281,13 +268,7 @@ func (p *Parser) parseStatement() ast.Stmt {
 	}
 
 	tok := p.peek()
-	panic(fmt.Sprintf(
-		"expected statement, got %s %q at line %d col %d",
-		tok.Kind,
-		tok.Lexeme,
-		tok.Pos.Line,
-		tok.Pos.Column,
-	))
+	panic(diagnostic.ExpectedStatement(tok))
 }
 
 func (p *Parser) parseParams() []ast.Param {
@@ -381,13 +362,7 @@ func (p *Parser) parseIdentStatement() ast.Stmt {
 	}
 
 	tok := p.peek()
-	panic(fmt.Sprintf(
-		"expected assignment or call statement, got %s %q at line %d col %d",
-		tok.Kind,
-		tok.Lexeme,
-		tok.Pos.Line,
-		tok.Pos.Column,
-	))
+	panic(diagnostic.ExpectedAssignmentOrCall(tok))
 }
 
 func (p *Parser) parseIf() ast.IfStmt {
@@ -425,13 +400,7 @@ func (p *Parser) parseWhile() ast.WhileStmt {
 	}
 	if len(invariants) == 0 {
 		tok := p.peek()
-		panic(fmt.Sprintf(
-			"expected invariant, got %s %q at line %d col %d",
-			tok.Kind,
-			tok.Lexeme,
-			tok.Pos.Line,
-			tok.Pos.Column,
-		))
+		panic(diagnostic.MissingWhileInvariant(tok))
 	}
 
 	var variant ast.Expr
@@ -477,13 +446,7 @@ func (p *Parser) parseCase() ast.CaseStmt {
 		defaultBody = p.parseStatements(func() bool { return p.at(token.End) || p.at(token.EOF) })
 	} else {
 		tok := p.peek()
-		panic(fmt.Sprintf(
-			"expected default, got %s %q at line %d col %d",
-			tok.Kind,
-			tok.Lexeme,
-			tok.Pos.Line,
-			tok.Pos.Column,
-		))
+		panic(diagnostic.MissingCaseDefault(tok))
 	}
 
 	p.expect(token.End)
@@ -845,13 +808,7 @@ func (p *Parser) parseSignedNumberLiteral() string {
 	}
 
 	tok := p.peek()
-	panic(fmt.Sprintf(
-		"expected number, got %s %q at line %d col %d",
-		tok.Kind,
-		tok.Lexeme,
-		tok.Pos.Line,
-		tok.Pos.Column,
-	))
+	panic(diagnostic.ExpectedNumber(tok))
 }
 
 func (p *Parser) parseTypeName() string {
@@ -892,14 +849,7 @@ func (p *Parser) expect(kind token.Kind) token.Token {
 	tok := p.peek()
 
 	if tok.Kind != kind {
-		panic(fmt.Sprintf(
-			"expected %s, got %s %q at line %d col %d",
-			kind,
-			tok.Kind,
-			tok.Lexeme,
-			tok.Pos.Line,
-			tok.Pos.Column,
-		))
+		panic(diagnostic.ExpectedToken(kind, tok))
 	}
 
 	p.pos++
