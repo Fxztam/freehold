@@ -105,6 +105,22 @@ Matching shape:            210
 Mismatching shape:         0
 ```
 
+The semantic AST comparison stage is:
+
+```powershell
+.\compare-ast-semantic.cmd
+```
+
+It compares the same 210 accepted files after normalizing expressions into typed semantic nodes rather than canonical expression text.
+
+Current semantic AST comparison:
+
+```text
+Comparable parse-ok cases:    210
+Matching semantic AST:        210
+Mismatching semantic AST:     0
+```
+
 ## Current Failure Set
 
 The expected parser failures at this checkpoint are:

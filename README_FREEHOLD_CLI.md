@@ -134,3 +134,23 @@ Comparable parse-ok cases: 210
 Matching shape:            210
 Mismatching shape:         0
 ```
+
+Compare normalized semantic ASTs for the files that both parsers accept with:
+
+```powershell
+.\compare-ast-semantic.cmd
+```
+
+```text
+artifacts/compare-ast-semantic
+```
+
+This third stage normalizes expressions into typed nodes such as `BinaryExpr`, `CallExpr`, `IndexExpr`, `StringExpr`, `OkExpr`, and `ErrorExpr` before comparing the complete accepted program ASTs.
+
+Current normalized semantic AST baseline:
+
+```text
+Comparable parse-ok cases:    210
+Matching semantic AST:        210
+Mismatching semantic AST:     0
+```
