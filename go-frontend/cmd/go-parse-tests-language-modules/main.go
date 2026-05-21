@@ -22,6 +22,21 @@ type ParseResult struct {
 	Error      string      `json:"error,omitempty"`
 }
 
+type RunSummary struct {
+	Total    int            `json:"total"`
+	OK       int            `json:"ok"`
+	Fail     int            `json:"fail"`
+	Failures []ParseFailure `json:"failures"`
+}
+
+type ParseFailure struct {
+	SourceFile string `json:"source_file"`
+	ModuleName string `json:"module_name"`
+	CaseKind   string `json:"case_kind"`
+	FileName   string `json:"file_name"`
+	Error      string `json:"error"`
+}
+
 func main() {
 	stopAfterFirst := flag.Bool("stop-after-first", false, "stop after the first parsed test case")
 	outRoot := flag.String("out", "", "write JSON results under this directory instead of next to the language module tests")
@@ -42,6 +57,7 @@ func main() {
 	total := 0
 	okCount := 0
 	failCount := 0
+	var failures []ParseFailure
 
 	for _, entry := range moduleDirs {
 		if !entry.IsDir() {
@@ -94,6 +110,13 @@ func main() {
 					fmt.Println("OK   ", moduleName, caseKind, filepath.Base(file))
 				} else {
 					failCount++
+					failures = append(failures, ParseFailure{
+						SourceFile: result.SourceFile,
+						ModuleName: result.ModuleName,
+						CaseKind:   result.CaseKind,
+						FileName:   filepath.Base(file),
+						Error:      result.Error,
+					})
 					fmt.Println("FAIL ", moduleName, caseKind, filepath.Base(file), "=>", result.Error)
 				}
 
@@ -102,6 +125,7 @@ func main() {
 				if *stopAfterFirst {
 					fmt.Println()
 					fmt.Println("--stop-after-first: Testlauf nach erstem Parsing beendet.")
+					writeRunReports(*outRoot, RunSummary{Total: total, OK: okCount, Fail: failCount, Failures: failures})
 					printSummary(total, okCount, failCount)
 					return
 				}
@@ -109,6 +133,7 @@ func main() {
 		}
 	}
 
+	writeRunReports(*outRoot, RunSummary{Total: total, OK: okCount, Fail: failCount, Failures: failures})
 	printSummary(total, okCount, failCount)
 }
 
@@ -177,6 +202,42 @@ func writeJSON(path string, value interface{}) {
 	}
 
 	if err := os.WriteFile(path, data, 0644); err != nil {
+		panic(err)
+	}
+}
+
+func writeRunReports(outRoot string, summary RunSummary) {
+	if outRoot == "" {
+		return
+	}
+
+	if err := os.MkdirAll(outRoot, 0755); err != nil {
+		panic(err)
+	}
+
+	writeJSON(filepath.Join(outRoot, "_summary.json"), summary)
+
+	var text strings.Builder
+	fmt.Fprintf(&text, "Total: %d\n", summary.Total)
+	fmt.Fprintf(&text, "OK:    %d\n", summary.OK)
+	fmt.Fprintf(&text, "FAIL:  %d\n", summary.Fail)
+
+	if len(summary.Failures) > 0 {
+		text.WriteString("\nFailures\n")
+		text.WriteString("--------\n")
+		for _, failure := range summary.Failures {
+			fmt.Fprintf(
+				&text,
+				"%s %s %s => %s\n",
+				failure.ModuleName,
+				failure.CaseKind,
+				failure.FileName,
+				failure.Error,
+			)
+		}
+	}
+
+	if err := os.WriteFile(filepath.Join(outRoot, "_errors.txt"), []byte(text.String()), 0644); err != nil {
 		panic(err)
 	}
 }
