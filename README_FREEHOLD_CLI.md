@@ -114,3 +114,23 @@ artifacts/compare-parse-status
 ```
 
 The first comparator stage checks `parse_ok` parity and records mismatch reports. AST-shape comparison comes after the parse-status baseline is aligned.
+
+Compare normalized AST shape for the files that both parsers accept with:
+
+```powershell
+.\compare-ast-shape.cmd
+```
+
+```text
+artifacts/compare-ast-shape
+```
+
+This second stage compares a normalized outline of modules, declarations, statement trees, and canonical expression text. It is intentionally separate from raw JSON equality because DHParser artifacts are CST-shaped while Go artifacts are already semantic AST-shaped.
+
+Current normalized AST-shape baseline:
+
+```text
+Comparable parse-ok cases: 210
+Matching shape:            210
+Mismatching shape:         0
+```

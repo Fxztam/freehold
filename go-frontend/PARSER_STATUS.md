@@ -89,6 +89,22 @@ Go:                 OK 210 / FAIL 28
 DHParser:           OK 210 / FAIL 28
 ```
 
+The first AST-shape comparison stage is:
+
+```powershell
+.\compare-ast-shape.cmd
+```
+
+It compares the 210 files that both parsers accept after normalizing DHParser CST nodes and Go AST nodes into module/declaration/statement/expression outlines.
+
+Current AST-shape comparison:
+
+```text
+Comparable parse-ok cases: 210
+Matching shape:            210
+Mismatching shape:         0
+```
+
 ## Current Failure Set
 
 The expected parser failures at this checkpoint are:
