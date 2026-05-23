@@ -57,6 +57,7 @@ class Interpreter:
         elif isinstance(s, FieldAssignStmt):
             self.assign_field_path(s.path, self.eval(s.expr, env), env, s.pos)
         elif isinstance(s, ReturnStmt): raise ReturnSignal(self.retval(s.value,env))
+        elif isinstance(s, AbortStmt): raise AbortSignal(s.error_name)
         elif isinstance(s, CheckStmt):
             if self.eval(s.expr,env) is not True: raise VerificationError(f"{s.pos.text()}: check failed")
         elif isinstance(s, IfStmt):

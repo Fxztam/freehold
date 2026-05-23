@@ -34,24 +34,31 @@ type ErrorDecl struct {
 }
 
 type FunctionDecl struct {
-	Kind       string  `json:"kind"`
-	Name       string  `json:"name"`
-	Params     []Param `json:"params"`
-	ReturnType string  `json:"return_type"`
-	Requires   []Expr  `json:"requires,omitempty"`
-	Ensures    []Expr  `json:"ensures,omitempty"`
-	Body       []Stmt  `json:"body"`
-	EndName    string  `json:"end_name"`
+	Kind       string        `json:"kind"`
+	Name       string        `json:"name"`
+	Params     []Param       `json:"params"`
+	ReturnType string        `json:"return_type"`
+	Requires   []Expr        `json:"requires,omitempty"`
+	Aborts     []AbortClause `json:"aborts,omitempty"`
+	Ensures    []Expr        `json:"ensures,omitempty"`
+	Body       []Stmt        `json:"body"`
+	EndName    string        `json:"end_name"`
 }
 
 type ProcedureDecl struct {
-	Kind     string  `json:"kind"`
-	Name     string  `json:"name"`
-	Params   []Param `json:"params"`
-	Requires []Expr  `json:"requires,omitempty"`
-	Ensures  []Expr  `json:"ensures,omitempty"`
-	Body     []Stmt  `json:"body"`
-	EndName  string  `json:"end_name"`
+	Kind     string        `json:"kind"`
+	Name     string        `json:"name"`
+	Params   []Param       `json:"params"`
+	Requires []Expr        `json:"requires,omitempty"`
+	Aborts   []AbortClause `json:"aborts,omitempty"`
+	Ensures  []Expr        `json:"ensures,omitempty"`
+	Body     []Stmt        `json:"body"`
+	EndName  string        `json:"end_name"`
+}
+
+type AbortClause struct {
+	Error     string `json:"error"`
+	Condition Expr   `json:"condition,omitempty"`
 }
 
 type Param struct {
@@ -64,6 +71,11 @@ type Stmt interface{}
 type ReturnStmt struct {
 	Kind  string `json:"kind"`
 	Value Expr   `json:"value"`
+}
+
+type AbortStmt struct {
+	Kind  string `json:"kind"`
+	Error string `json:"error"`
 }
 
 type CheckStmt struct {

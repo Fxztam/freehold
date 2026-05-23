@@ -478,6 +478,21 @@ CONTRACT_RESULT_CONTEXT_HINT = """Result contract expressions are only available
 Use `success`, `failure`, `value`, or `error` only when the function returns `Result<T, E>`.
 """
 
+ABORT_UNKNOWN_HINT = """An abort path must name an error declared in the module.
+
+Declare the error before using it in an `aborts` clause or `abort` statement.
+"""
+
+ABORT_NOT_DECLARED_HINT = """An `abort ErrorName` statement must be declared by the enclosing routine.
+
+Add a matching `aborts ErrorName` clause to the routine contract.
+"""
+
+ABORT_DUPLICATE_HINT = """Each routine may declare a given abort error at most once.
+
+Use one `aborts ErrorName` clause per controlled abort path.
+"""
+
 EXPRESSION_UNKNOWN_VARIABLE_HINT = """An expression may only reference variables that are in scope.
 
 Declare the variable with `let` or as a routine parameter before using it.
@@ -997,6 +1012,21 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         expression_name = contract_result_context_match.group(1)
         return Diagnostic("VF-CT002", "Result contract expression outside Result ensures", line, column, expression_name, "Result ensures context", CONTRACT_RESULT_CONTEXT_HINT, phase="semantic")
+    unknown_abort_match = re.search(r"unknown abort error: ([A-Za-z_][A-Za-z0-9_]*)", message)
+    if unknown_abort_match:
+        line, column = _source_position_from_message(message)
+        error_name = unknown_abort_match.group(1)
+        return Diagnostic("VF-ABT001", "unknown abort error", line, column, error_name, "declared error", ABORT_UNKNOWN_HINT, phase="semantic")
+    abort_not_declared_match = re.search(r"abort not declared by routine: ([A-Za-z_][A-Za-z0-9_]*)", message)
+    if abort_not_declared_match:
+        line, column = _source_position_from_message(message)
+        error_name = abort_not_declared_match.group(1)
+        return Diagnostic("VF-ABT002", "abort not declared by routine", line, column, f"abort {error_name}", f"aborts {error_name}", ABORT_NOT_DECLARED_HINT, phase="semantic")
+    duplicate_abort_match = re.search(r"duplicate abort declaration: ([A-Za-z_][A-Za-z0-9_]*)", message)
+    if duplicate_abort_match:
+        line, column = _source_position_from_message(message)
+        error_name = duplicate_abort_match.group(1)
+        return Diagnostic("VF-ABT003", "duplicate abort declaration", line, column, error_name, "unique abort declaration", ABORT_DUPLICATE_HINT, phase="semantic")
     unknown_variable_match = re.search(r"unknown variable: ([A-Za-z_][A-Za-z0-9_]*)", message)
     if unknown_variable_match:
         line, column = _source_position_from_message(message)

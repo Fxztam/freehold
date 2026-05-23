@@ -101,7 +101,11 @@ class Program:
 @dataclass
 class RoutineDecl:
     kind: str; name: str; params: list[Param]; return_type: TypeRef | None
-    requires: list[Any]; ensures: list[Any]; body: list[Any]; pos: SourcePos
+    requires: list[Any]; aborts: list[Any]; ensures: list[Any]; body: list[Any]; pos: SourcePos
+
+@dataclass
+class AbortClause:
+    error_name: str; condition: Any | None; pos: SourcePos
 
 @dataclass
 class LetStmt:
@@ -118,6 +122,10 @@ class FieldAssignStmt:
 @dataclass
 class ReturnStmt:
     value: Any; pos: SourcePos
+
+@dataclass
+class AbortStmt:
+    error_name: str; pos: SourcePos
 
 @dataclass
 class ReturnPlain:
@@ -206,6 +214,10 @@ class VerificationError(FreeholdError): pass
 class ReturnSignal(Exception):
     def __init__(self, value: Any):
         self.value = value
+
+class AbortSignal(Exception):
+    def __init__(self, error_name: str):
+        self.error_name = error_name
 
 def type_to_string(t: TypeRef | None) -> str:
     if t is None: return "Void"

@@ -11,7 +11,7 @@ RESERVED_NAMES = {
     "and", "call", "case", "default", "do", "else", "end", "ensures",
     "error", "exposing", "failure", "false", "function", "if", "import",
     "invariant", "is", "let", "module", "not", "ok", "or", "procedure",
-    "record", "requires", "return", "returns", "success", "then", "true",
+    "record", "requires", "aborts", "return", "abort", "returns", "success", "then", "true",
     "type", "value", "variant", "when", "while",
 }
 
@@ -185,6 +185,15 @@ class Verifier:
             ctx.require_type_or_record(p.type_name, p.pos); env[p.name] = TypeName(p.type_name)
         if r.return_type: ctx.require_return_type(r.return_type, r.pos)
         for e in r.requires: self.contract_bool("requires", e, env, ctx, False, None)
+        declared_aborts = set()
+        for clause in r.aborts:
+            if clause.error_name not in ctx.errors:
+                raise TypeCheckError(f"{clause.pos.text()}: unknown abort error: {clause.error_name}")
+            if clause.error_name in declared_aborts:
+                raise TypeCheckError(f"{clause.pos.text()}: duplicate abort declaration: {clause.error_name}")
+            declared_aborts.add(clause.error_name)
+            if clause.condition is not None:
+                self.contract_bool("aborts", clause.condition, env, ctx, False, None)
         for e in r.ensures: self.contract_bool("ensures", e, env, ctx, True, r.return_type)
         ret = self.block(r.body, r, env, ctx)
         if r.kind == "function" and not ret: raise TypeCheckError(f"{r.pos.text()}: function {r.name} has no guaranteed return")
@@ -205,6 +214,12 @@ class Verifier:
                 self.assign(self.infer(s.expr, env, ctx, False, None), target_type, ctx, s.pos)
             elif isinstance(s, ReturnStmt):
                 self.ret(s.value, r.return_type, env, ctx); saw = True
+            elif isinstance(s, AbortStmt):
+                if s.error_name not in ctx.errors:
+                    raise TypeCheckError(f"{s.pos.text()}: unknown abort error: {s.error_name}")
+                if s.error_name not in {clause.error_name for clause in r.aborts}:
+                    raise TypeCheckError(f"{s.pos.text()}: abort not declared by routine: {s.error_name}")
+                saw = True
             elif isinstance(s, CheckStmt):
                 self.statement_bool("check", s.expr, env, ctx, False, None)
             elif isinstance(s, IfStmt):

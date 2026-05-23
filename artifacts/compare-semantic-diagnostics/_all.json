@@ -1750,6 +1750,41 @@
     }
   },
   {
+    "case": "13_contract_blocks/invalid_semantics/comma_requires_unknown_second_item.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1401",
+      "number": 1401,
+      "name": "unknown_variable",
+      "message": "unknown variable",
+      "location": {
+        "line": 4,
+        "column": 23
+      },
+      "expected": "variable in scope",
+      "found": "missing",
+      "hint": "An expression may only reference variables that are in scope.\n\nDeclare the variable with `let` or as a routine parameter before using it.\n",
+      "legacy_code": "VF-E001"
+    },
+    "expected": {
+      "code": "FH-SEM-1401",
+      "name": "unknown_variable",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-E001",
+      "message": "unknown variable",
+      "location": {
+        "line": 4,
+        "column": 23
+      },
+      "expected": "variable in scope",
+      "found": "missing"
+    }
+  },
+  {
     "case": "13_contract_blocks/invalid_semantics/non_result_ensures_cannot_use_success.json",
     "status": "match",
     "actual": {
@@ -2167,6 +2202,111 @@
       },
       "expected": "record argument 1 for Json.stringify",
       "found": "String"
+    }
+  },
+  {
+    "case": "21_abort_handling/invalid_semantics/abort_not_declared_by_routine.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "abort",
+      "code": "FH-ABT-3002",
+      "number": 3002,
+      "name": "abort_not_declared_by_routine",
+      "message": "abort not declared by routine",
+      "location": {
+        "line": 8,
+        "column": 9
+      },
+      "expected": "aborts NotFound",
+      "found": "abort NotFound",
+      "hint": "An `abort ErrorName` statement must be declared by the enclosing routine.\n\nAdd a matching `aborts ErrorName` clause to the routine contract.\n",
+      "legacy_code": "VF-ABT002"
+    },
+    "expected": {
+      "code": "FH-ABT-3002",
+      "name": "abort_not_declared_by_routine",
+      "phase": "semantic",
+      "category": "abort",
+      "legacy_code": "VF-ABT002",
+      "message": "abort not declared by routine",
+      "location": {
+        "line": 8,
+        "column": 9
+      },
+      "expected": "aborts NotFound",
+      "found": "abort NotFound"
+    }
+  },
+  {
+    "case": "21_abort_handling/invalid_semantics/duplicate_abort_declaration.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "abort",
+      "code": "FH-ABT-3003",
+      "number": 3003,
+      "name": "duplicate_abort_declaration",
+      "message": "duplicate abort declaration",
+      "location": {
+        "line": 7,
+        "column": 1
+      },
+      "expected": "unique abort declaration",
+      "found": "NotFound",
+      "hint": "Each routine may declare a given abort error at most once.\n\nUse one `aborts ErrorName` clause per controlled abort path.\n",
+      "legacy_code": "VF-ABT003"
+    },
+    "expected": {
+      "code": "FH-ABT-3003",
+      "name": "duplicate_abort_declaration",
+      "phase": "semantic",
+      "category": "abort",
+      "legacy_code": "VF-ABT003",
+      "message": "duplicate abort declaration",
+      "location": {
+        "line": 7,
+        "column": 1
+      },
+      "expected": "unique abort declaration",
+      "found": "NotFound"
+    }
+  },
+  {
+    "case": "21_abort_handling/invalid_semantics/unknown_abort_error.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "abort",
+      "code": "FH-ABT-3001",
+      "number": 3001,
+      "name": "unknown_abort_error",
+      "message": "unknown abort error",
+      "location": {
+        "line": 4,
+        "column": 1
+      },
+      "expected": "declared error",
+      "found": "MissingError",
+      "hint": "An abort path must name an error declared in the module.\n\nDeclare the error before using it in an `aborts` clause or `abort` statement.\n",
+      "legacy_code": "VF-ABT001"
+    },
+    "expected": {
+      "code": "FH-ABT-3001",
+      "name": "unknown_abort_error",
+      "phase": "semantic",
+      "category": "abort",
+      "legacy_code": "VF-ABT001",
+      "message": "unknown abort error",
+      "location": {
+        "line": 4,
+        "column": 1
+      },
+      "expected": "declared error",
+      "found": "MissingError"
     }
   }
 ]

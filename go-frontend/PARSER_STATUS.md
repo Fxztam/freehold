@@ -34,13 +34,13 @@ The wrapper writes repository-local artifacts to:
 artifacts/go-ast/<module>/<case>/<source>.json
 ```
 
-Latest artifact generation produced 270 JSON files across the 20 numbered language-module directories currently present in `tests/language_modules` (`01` through `20`).
+Latest artifact generation produced 276 JSON files across the 21 numbered language-module directories currently present in `tests/language_modules` (`01` through `21`).
 
 Baseline:
 
 ```text
-Total: 270
-OK:    227
+Total: 276
+OK:    233
 FAIL:  43
 ```
 
@@ -73,8 +73,8 @@ artifacts/dhparser-ast/_errors.txt
 Initial DHParser bootstrap baseline:
 
 ```text
-Total: 270
-OK:    227
+Total: 276
+OK:    233
 FAIL:  43
 ```
 
@@ -97,13 +97,13 @@ artifacts/compare-parse-status/_mismatches.txt
 Current parse-status comparison:
 
 ```text
-Total cases:        270
-Matching status:    270
+Total cases:        276
+Matching status:    276
 Mismatching status: 0
 Missing Go:         0
 Missing DHParser:   0
-Go:                 OK 227 / FAIL 43
-DHParser:           OK 227 / FAIL 43
+Go:                 OK 233 / FAIL 43
+DHParser:           OK 233 / FAIL 43
 ```
 
 The parse error diagnostic comparison is:
@@ -114,7 +114,7 @@ The parse error diagnostic comparison is:
 
 It compares the 43 shared failures and records whether Go and DHParser report the same source location. The diagnostic comparison is intentionally reported separately from parse-status parity, because DHParser error wording exposes grammar internals. Go parser artifacts now include a structured `diagnostic` object with code, message, location, expected tokens, found token, and hint.
 
-The diagnostic report now carries provisional Freehold diagnostic codes. Syntax/parser diagnostics use `FH-SYN-0001..0999`; future semantic, type, contract, and bootstrap/tooling diagnostics should use `FH-SEM-1000..1999`, `FH-TYP-2000..2999`, `FH-CON-3000..3999`, and `FH-BLD-9000..9999`.
+The diagnostic report now carries provisional Freehold diagnostic codes. Syntax/parser diagnostics use `FH-SYN-0001..0999`; semantic, type, abort, contract, and bootstrap/tooling diagnostics use `FH-SEM-1000..1999`, `FH-TYP-2000..2999`, `FH-ABT-3000..3999`, `FH-CON-3000..3999`, and `FH-BLD-9000..9999`.
 
 Current parse-error diagnostic comparison:
 
@@ -146,8 +146,8 @@ The semantic/type diagnostic manifest reserves stable Freehold codes in the `FH-
 Current semantic/type diagnostic comparison:
 
 ```text
-Expected semantic diagnostics:    61
-Matching semantic diagnostics:    61
+Expected semantic diagnostics:    66
+Matching semantic diagnostics:    66
 Mismatching semantic diagnostics: 0
 ```
 
@@ -162,11 +162,11 @@ It verifies that `spec/freehold.rules`, `spec/freehold.diag`, the expected synta
 Current spec diagnostic verification:
 
 ```text
-Diagnostic specs:        87
-Rule emits:              87
+Diagnostic specs:        90
+Rule emits:              90
 Expected syntax codes:   19
-Expected semantic codes: 60
-CODE_MAP entries:        64
+Expected semantic codes: 63
+CODE_MAP entries:        67
 Failures:                0
 ```
 
@@ -176,7 +176,7 @@ Positive feature-matrix coverage is tracked in:
 tests/language_modules/positive_feature_matrix.json
 ```
 
-The first matrix wave adds valid interaction cases for multiple while invariants with a variant, case branches returning record values, record-field contracts, qualified calls inside contracts, positional and named string templates, string templates inside `Std.IO.logf`, string templates inside record literals, Big number calls inside expressions, `Json.stringify` on record values, and `Result<Array<...>, E>` ok payloads. `value.field` in Result ensures remains recorded as a known grammar gap rather than a green positive case.
+The first matrix wave adds valid interaction cases for multiple while invariants with a variant, case branches returning record values, record-field contracts, qualified calls inside contracts, comma-separated `requires`/`ensures`, declared abort paths, positional and named string templates, string templates inside `Std.IO.logf`, string templates inside record literals, Big number calls inside expressions, `Json.stringify` on record values, and `Result<Array<...>, E>` ok payloads. `value.field` in Result ensures remains recorded as a known grammar gap rather than a green positive case.
 
 The first AST-shape comparison stage is:
 
@@ -184,13 +184,13 @@ The first AST-shape comparison stage is:
 .\compare-ast-shape.cmd
 ```
 
-It compares the 227 files that both parsers accept after normalizing DHParser CST nodes and Go AST nodes into module/declaration/statement/expression outlines.
+It compares the 233 files that both parsers accept after normalizing DHParser CST nodes and Go AST nodes into module/declaration/statement/expression outlines.
 
 Current AST-shape comparison:
 
 ```text
-Comparable parse-ok cases: 227
-Matching shape:            227
+Comparable parse-ok cases: 233
+Matching shape:            233
 Mismatching shape:         0
 ```
 
@@ -200,13 +200,13 @@ The semantic AST comparison stage is:
 .\compare-ast-semantic.cmd
 ```
 
-It compares the same 227 accepted files after normalizing expressions into typed semantic nodes rather than canonical expression text.
+It compares the same 233 accepted files after normalizing expressions into typed semantic nodes rather than canonical expression text.
 
 Current semantic AST comparison:
 
 ```text
-Comparable parse-ok cases:    227
-Matching semantic AST:        227
+Comparable parse-ok cases:    233
+Matching semantic AST:        233
 Mismatching semantic AST:     0
 ```
 

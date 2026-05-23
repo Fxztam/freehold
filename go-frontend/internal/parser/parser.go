@@ -206,12 +206,12 @@ func (p *Parser) parseFunction() ast.FunctionDecl {
 	p.expect(token.RParen)
 
 	p.expect(token.Returns)
-	if p.at(token.Is) || p.at(token.Requires) || p.at(token.Ensures) || p.at(token.EOF) {
+	if p.at(token.Is) || p.at(token.Requires) || p.at(token.Aborts) || p.at(token.Ensures) || p.at(token.EOF) {
 		panic(diagnostic.MissingReturnType(p.peek()))
 	}
 	returnType := p.parseTypeName()
 
-	requires, ensures := p.parseContracts()
+	requires, aborts, ensures := p.parseContracts()
 
 	p.expect(token.Is)
 
@@ -229,6 +229,7 @@ func (p *Parser) parseFunction() ast.FunctionDecl {
 		Params:     params,
 		ReturnType: returnType,
 		Requires:   requires,
+		Aborts:     aborts,
 		Ensures:    ensures,
 		Body:       body,
 		EndName:    endName,
@@ -244,7 +245,7 @@ func (p *Parser) parseProcedure() ast.ProcedureDecl {
 	params := p.parseParams()
 	p.expect(token.RParen)
 
-	requires, ensures := p.parseContracts()
+	requires, aborts, ensures := p.parseContracts()
 
 	p.expect(token.Is)
 
@@ -261,27 +262,54 @@ func (p *Parser) parseProcedure() ast.ProcedureDecl {
 		Name:     name,
 		Params:   params,
 		Requires: requires,
+		Aborts:   aborts,
 		Ensures:  ensures,
 		Body:     body,
 		EndName:  endName,
 	}
 }
 
-func (p *Parser) parseContracts() ([]ast.Expr, []ast.Expr) {
+func (p *Parser) parseContracts() ([]ast.Expr, []ast.AbortClause, []ast.Expr) {
 	var requires []ast.Expr
+	var aborts []ast.AbortClause
 	var ensures []ast.Expr
 
 	for p.at(token.Requires) {
 		p.expect(token.Requires)
-		requires = append(requires, p.parseExpr())
+		requires = append(requires, p.parseContractExprList()...)
+	}
+
+	for p.at(token.Aborts) {
+		p.expect(token.Aborts)
+		aborts = append(aborts, p.parseAbortClause())
 	}
 
 	for p.at(token.Ensures) {
 		p.expect(token.Ensures)
-		ensures = append(ensures, p.parseExpr())
+		ensures = append(ensures, p.parseContractExprList()...)
 	}
 
-	return requires, ensures
+	return requires, aborts, ensures
+}
+
+func (p *Parser) parseAbortClause() ast.AbortClause {
+	clause := ast.AbortClause{Error: p.parseName()}
+	if p.at(token.When) {
+		p.expect(token.When)
+		clause.Condition = p.parseExpr()
+	}
+	return clause
+}
+
+func (p *Parser) parseContractExprList() []ast.Expr {
+	exprs := []ast.Expr{p.parseExpr()}
+
+	for p.at(token.Comma) {
+		p.expect(token.Comma)
+		exprs = append(exprs, p.parseExpr())
+	}
+
+	return exprs
 }
 
 func (p *Parser) parseStatements(stop func() bool) []ast.Stmt {
@@ -315,6 +343,9 @@ func (p *Parser) parseStatement() ast.Stmt {
 	if p.at(token.Return) {
 		return p.parseReturn()
 	}
+	if p.at(token.Abort) {
+		return p.parseAbort()
+	}
 	if p.at(token.Check) {
 		return p.parseCheck()
 	}
@@ -339,6 +370,15 @@ func (p *Parser) parseStatement() ast.Stmt {
 
 	tok := p.peek()
 	panic(diagnostic.ExpectedStatement(tok))
+}
+
+func (p *Parser) parseAbort() ast.AbortStmt {
+	p.expect(token.Abort)
+
+	return ast.AbortStmt{
+		Kind:  "AbortStmt",
+		Error: p.parseName(),
+	}
 }
 
 func (p *Parser) parseParams() []ast.Param {

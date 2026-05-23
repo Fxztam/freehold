@@ -122,6 +122,7 @@ def normalize_go_decl(decl: dict[str, Any]) -> dict[str, Any]:
             "name": decl.get("name", ""),
             "params": [normalize_go_param(param) for param in decl.get("params") or []],
             "requires": [normalize_go_expr(expr) for expr in decl.get("requires") or []],
+            "aborts": [normalize_go_abort_clause(clause) for clause in decl.get("aborts") or []],
             "ensures": [normalize_go_expr(expr) for expr in decl.get("ensures") or []],
             "body": [normalize_go_stmt(stmt) for stmt in decl.get("body") or []],
             "end_name": decl.get("end_name", ""),
@@ -136,12 +137,18 @@ def normalize_go_param(param: dict[str, Any]) -> dict[str, str]:
     return {"name": param.get("name", ""), "type": compact_type(param.get("type", ""))}
 
 
+def normalize_go_abort_clause(clause: dict[str, Any]) -> dict[str, str]:
+    return {"error": clause.get("error", ""), "condition": normalize_go_expr(clause.get("condition")) if clause.get("condition") else ""}
+
+
 def normalize_go_stmt(stmt: dict[str, Any]) -> dict[str, Any]:
     kind = stmt.get("kind")
     if kind == "LetStmt":
         return {"kind": kind, "name": stmt.get("name", ""), "type": compact_type(stmt.get("type", "")), "value": normalize_go_expr(stmt.get("value"))}
     if kind == "ReturnStmt":
         return {"kind": kind, "value": normalize_go_expr(stmt.get("value"))}
+    if kind == "AbortStmt":
+        return {"kind": kind, "error": stmt.get("error", "")}
     if kind == "CheckStmt":
         return {"kind": kind, "condition": normalize_go_expr(stmt.get("condition"))}
     if kind == "AssignmentStmt":
@@ -295,8 +302,9 @@ def normalize_dhparser_decl(node: dict[str, Any]) -> dict[str, Any]:
             "kind": kind,
             "name": nth_ident(node, 0),
             "params": [normalize_dhparser_param(param) for param in children(first_child(node, "param_list"), "param")],
-            "requires": [canonical_expr_text(text_of(first_child(req, "expr"))) for req in children(first_child(node, "contract_block"), "requires_clause")],
-            "ensures": [canonical_expr_text(text_of(first_child(req, "expr"))) for req in children(first_child(node, "contract_block"), "ensures_clause")],
+            "requires": [canonical_expr_text(text_of(expr)) for req in children(first_child(node, "contract_block"), "requires_clause") for expr in children(first_child(req, "expr_list"), "expr")],
+            "aborts": [normalize_dhparser_abort_clause(clause) for clause in children(first_child(node, "contract_block"), "aborts_clause")],
+            "ensures": [canonical_expr_text(text_of(expr)) for req in children(first_child(node, "contract_block"), "ensures_clause") for expr in children(first_child(req, "expr_list"), "expr")],
             "body": [normalize_dhparser_stmt(stmt) for stmt in children(node, "stmt")],
             "end_name": nth_ident(node, -1),
         }
@@ -312,6 +320,11 @@ def normalize_dhparser_param(node: dict[str, Any] | None) -> dict[str, str]:
     return {"name": nth_ident(node, 0), "type": compact_type(type_text(first_child(node, "type_ref")))}
 
 
+def normalize_dhparser_abort_clause(node: dict[str, Any]) -> dict[str, str]:
+    condition = first_child(node, "expr")
+    return {"error": nth_ident(node, 0), "condition": expr_text(condition) if condition else ""}
+
+
 def normalize_dhparser_stmt(stmt: dict[str, Any]) -> dict[str, Any]:
     node = first_named(stmt) or stmt
     name = node_name(node)
@@ -319,6 +332,8 @@ def normalize_dhparser_stmt(stmt: dict[str, Any]) -> dict[str, Any]:
         return {"kind": "LetStmt", "name": nth_ident(node, 0), "type": compact_type(type_text(first_child(node, "return_type"))), "value": expr_text(first_child(node, "expr"))}
     if name == "return_stmt":
         return {"kind": "ReturnStmt", "value": canonical_expr_text(text_of(first_child(node, "return_value")))}
+    if name == "abort_stmt":
+        return {"kind": "AbortStmt", "error": nth_ident(node, 0)}
     if name == "check_stmt":
         return {"kind": "CheckStmt", "condition": expr_text(first_child(node, "expr"))}
     if name in {"assign_stmt", "field_assign_stmt"}:

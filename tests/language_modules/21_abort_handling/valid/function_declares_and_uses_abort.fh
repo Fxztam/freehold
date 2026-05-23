@@ -1,0 +1,17 @@
+module AbortDeclared
+
+error NotFound
+
+function read(id: Integer) returns Integer
+requires id >= 0
+aborts NotFound when id = 0
+ensures result >= 0
+is
+    if id = 0 then
+        abort NotFound
+    end if
+
+    return id
+end read
+
+end AbortDeclared

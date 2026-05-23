@@ -2,6 +2,22 @@
 
 This document captures the proposed notation rule for `requires` and `ensures` clauses.
 
+## Status
+
+Accepted and implemented as V1 on 2026-05-23.
+
+Validation baseline:
+
+```text
+13_contract_blocks module:      16/16
+Semantic diagnostics:           63/63
+Spec diagnostics:               87/87 emits, 60 semantic codes, 64 CODE_MAP entries
+Parser status parity:           272/272
+AST shape parity:               229/229
+Semantic AST parity:            229/229
+freehold.rules:                 no new diagnostic emit; existing ContractClause rules apply per normalized comma item
+```
+
 ## Core Rule
 
 In `requires` and `ensures`, comma-separated conditions are AND conditions at the contract-clause level.

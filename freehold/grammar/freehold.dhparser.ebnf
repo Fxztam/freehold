@@ -36,15 +36,17 @@ procedure_decl = ~ "procedure" IDENT "(" [ param_list ] ")" [ contract_block ] "
 param_list = param { "," param }
 param = IDENT ":" type_ref
 
-contract_block = { requires_clause } { ensures_clause }
-requires_clause = "requires" expr
-ensures_clause = "ensures" expr
+contract_block = { requires_clause } { aborts_clause } { ensures_clause }
+requires_clause = "requires" expr_list
+aborts_clause = "aborts" IDENT [ "when" expr ]
+ensures_clause = "ensures" expr_list
 
-stmt = let_stmt | return_stmt | if_stmt | while_stmt | case_stmt | check_stmt | call_stmt | field_assign_stmt | assign_stmt
+stmt = let_stmt | return_stmt | abort_stmt | if_stmt | while_stmt | case_stmt | check_stmt | call_stmt | field_assign_stmt | assign_stmt
 let_stmt = ~ "let" IDENT ":" return_type "=" expr
 field_assign_stmt = ~ FIELD_PATH ":=" expr
 assign_stmt = ~ IDENT ":=" expr
 return_stmt = ~ "return" return_value
+abort_stmt = ~ "abort" IDENT
 return_value = "ok" expr | "error" IDENT | expr
 check_stmt = ~ "check" expr
 call_stmt = ~ "call" qualified_name "(" [ arg_list ] ")"
@@ -65,6 +67,7 @@ case_block = { stmt }
 
 arg_list = call_arg { "," call_arg }
 call_arg = named_arg | expr
+expr_list = expr { "," expr }
 named_arg_list = named_arg { "," named_arg }
 named_arg = IDENT ":" expr
 
@@ -98,6 +101,6 @@ BASE_TYPE = "Integer" | "Boolean" | "Double" | "String" | "BigInteger" | "BigFlo
 DOUBLE_LITERAL = /-?(?:[0-9]+\.[0-9]+)/~
 NUMBER_LITERAL = DOUBLE_LITERAL | INTEGER_LITERAL
 INTEGER_LITERAL = /-?[0-9]+/~
-IDENT = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|returns\b|requires\b|ensures\b|let\b|return\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*/~
-FIELD_PATH = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|returns\b|requires\b|ensures\b|let\b|return\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+/~
+IDENT = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*/~
+FIELD_PATH = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+/~
 STRING_LITERAL = /"[^"\\]*(?:\\.[^"\\]*)*"/~

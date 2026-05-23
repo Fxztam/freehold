@@ -625,6 +625,10 @@ end
 
 section contracts
 
+# A single `requires` or `ensures` clause may contain comma-separated
+# expressions. The parser normalizes each expression into an independent
+# ContractClause before semantic diagnostics are evaluated.
+
 rule contract_clause_requires_boolean
 when ContractClause expression_type is not Boolean
 emit FH-TYP-2601
@@ -637,4 +641,27 @@ when ResultContractAtom appears outside ResultReturningEnsures
 emit FH-SEM-1601
     found atom
     expected "Result-returning ensures clause"
+end
+
+section aborts
+
+rule unknown_abort_error
+when AbortClause or AbortStmt names error not declared in module
+emit FH-ABT-3001
+    found error_name
+    expected "declared error"
+end
+
+rule abort_not_declared_by_routine
+when AbortStmt error_name not in enclosing RoutineDecl aborts
+emit FH-ABT-3002
+    found abort_statement
+    expected "matching aborts clause"
+end
+
+rule duplicate_abort_declaration
+when RoutineDecl aborts contains duplicate error_name
+emit FH-ABT-3003
+    found error_name
+    expected "unique abort declaration"
 end

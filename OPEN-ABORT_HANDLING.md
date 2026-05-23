@@ -2,6 +2,59 @@
 
 This document captures the proposed Freehold abort model. It separates regular `Result<T, E>` values from controlled abnormal control flow and defines how `requires`, `aborts`, `ensures`, and `main` interact.
 
+## V1 Completion
+
+Accepted and implemented as V1 on 2026-05-23.
+
+Implemented scope:
+
+```text
+aborts ErrorName
+aborts ErrorName when condition
+abort ErrorName
+```
+
+V1 verifies declared errors, duplicate abort declarations, abort statements declared by the enclosing routine, and Boolean abort conditions. Call-chain propagation, path-condition coverage, reachability, and proof obligations remain future slices.
+
+Validation baseline:
+
+```text
+21_abort_handling module:       4/4
+Semantic diagnostics:           66/66
+Spec diagnostics:               90/90 emits, 63 semantic codes, 67 CODE_MAP entries
+Parser status parity:           276/276
+AST shape parity:               233/233
+Semantic AST parity:            233/233
+```
+
+V1 is intentionally a clean, green anchor. Parser/AST support, basic verifier rules, stable diagnostics, positive and negative language tests, Go/DHParser artifacts, comparison artifacts, rules, and diagnostic specs are complete for this slice.
+
+The heavier control-flow work is explicitly not part of V1. It should be implemented as follow-up slices after the V1 commit, so parser/AST/diagnostic hardening stays separate from cross-routine abort reasoning and proof-oriented control-flow analysis.
+
+## Post-V1 Roadmap
+
+Recommended order after committing Abort V1:
+
+1. Abort V2: Call Propagation
+
+If routine `A` calls routine `B`, and `B` declares `aborts NotFound`, then `A` must either declare `aborts NotFound` as well or, in a later language version, handle `NotFound` explicitly.
+
+This is the most useful next step because it makes aborts semantically visible across routine boundaries while remaining clearly testable.
+
+2. Abort V3: Main Rules
+
+`main` must not silently lose open aborts. Depending on whether handler syntax exists by then, `main` should either reject open aborts or allow only explicitly declared top-level program aborts.
+
+3. Abort V4: Reachability And Simple Path Checks
+
+Reject obviously unreachable abort statements and simple inconsistent control-flow shapes. Initial examples include `abort` after a guaranteed `return`, `return` after an unconditional `abort`, and abort conditions that are plainly incompatible with routine preconditions.
+
+4. Abort V5: Path Coverage And Proof Obligations
+
+This is the heaviest slice. It should check whether each `aborts X when condition` is covered by actual abort paths and whether every `abort X` site is compatible with the declared abort condition.
+
+This step should wait until call propagation is stable, because path coverage and proof obligations build on the routine-level abort surface.
+
 ## Design Goal
 
 Freehold should support controlled abort paths without turning them into hidden exceptions. An abort is a declared, typed, source-located control-flow exit that can be checked by diagnostics and later by proof obligations.
@@ -675,18 +728,24 @@ normal postconditions:
 
 ## Implementation Phases
 
-Recommended first implementation phases:
+Completed in V1:
 
-1. Parse `aborts ErrorName` and `abort ErrorName` without `when`.
+1. Parse `aborts ErrorName`, `aborts ErrorName when expr`, and `abort ErrorName`.
 2. Verify declared errors and declared aborts.
-3. Emit abort sites with source positions in artifacts.
-4. Add stable `FH-ABT-*` diagnostics and expected diagnostics cases.
-5. Add `aborts ErrorName when expr`.
-6. Check `requires AND abort_condition` reachability for simple expressions.
-7. Derive normal-return conditions for `ensures` checking.
-8. Add caller propagation checks.
-9. Consider `return` without value for early normal procedure exit.
-10. Consider `Program.Args` and optional `main` abort handling.
+3. Reject duplicate abort declarations.
+4. Reject abort statements that are not declared by the enclosing routine.
+5. Check abort conditions as Boolean contract expressions.
+6. Emit abort clauses and abort statements in AST artifacts.
+7. Add stable `FH-ABT-3001..3003` diagnostics, rules, specs, CODE_MAP entries, and expected diagnostic cases.
+
+Planned after V1:
+
+1. Add caller propagation checks.
+2. Add `main`-specific abort rules.
+3. Add reachability and simple path-condition checks.
+4. Add abort path coverage and proof obligations.
+5. Consider `return` without value for early normal procedure exit.
+6. Consider `Program.Args` and optional explicit abort handling syntax.
 
 ## Summary Rules
 

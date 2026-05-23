@@ -220,8 +220,8 @@ artifacts/compare-semantic-diagnostics
 Current semantic/type diagnostic baseline:
 
 ```text
-Expected semantic diagnostics:    62
-Matching semantic diagnostics:    62
+Expected semantic diagnostics:    66
+Matching semantic diagnostics:    66
 Mismatching semantic diagnostics: 0
 ```
 
@@ -231,7 +231,7 @@ Positive feature-matrix coverage is tracked in:
 tests/language_modules/positive_feature_matrix.json
 ```
 
-The current matrix includes valid interaction cases for while invariants plus variants, case branches with record values, record-field contracts, qualified calls in contracts, positional and named string templates, string templates inside `Std.IO.logf`, string templates inside record literals, Big number calls inside expressions, `Json.stringify` on record values, and `Result<Array<...>, E>` ok payloads. `value.field` in Result ensures remains an explicit known gap until field access from the special `value` contract expression is supported.
+The current matrix includes valid interaction cases for while invariants plus variants, case branches with record values, record-field contracts, qualified calls in contracts, comma-separated `requires`/`ensures`, declared abort paths, positional and named string templates, string templates inside `Std.IO.logf`, string templates inside record literals, Big number calls inside expressions, `Json.stringify` on record values, and `Result<Array<...>, E>` ok payloads. `value.field` in Result ensures remains an explicit known gap until field access from the special `value` contract expression is supported.
 
 Compare normalized AST shape for the files that both parsers accept with:
 
@@ -248,8 +248,8 @@ This second stage compares a normalized outline of modules, declarations, statem
 Current normalized AST-shape baseline:
 
 ```text
-Comparable parse-ok cases: 227
-Matching shape:            227
+Comparable parse-ok cases: 233
+Matching shape:            233
 Mismatching shape:         0
 ```
 
@@ -268,7 +268,7 @@ This third stage normalizes expressions into typed nodes such as `BinaryExpr`, `
 Current normalized semantic AST baseline:
 
 ```text
-Comparable parse-ok cases:    227
-Matching semantic AST:        227
+Comparable parse-ok cases:    233
+Matching semantic AST:        233
 Mismatching semantic AST:     0
 ```

@@ -457,8 +457,12 @@ func (l *Lexer) lexIdentifier(pos token.Position) token.Token {
 		kind = token.Ok
 	case "requires":
 		kind = token.Requires
+	case "aborts":
+		kind = token.Aborts
 	case "ensures":
 		kind = token.Ensures
+	case "abort":
+		kind = token.Abort
 	case "true":
 		kind = token.True
 	case "false":

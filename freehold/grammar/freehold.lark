@@ -26,15 +26,17 @@ result_payload_type: array_type | result_type | type_ref
 result_type: "Result" "<" result_payload_type "," type_ref ">"
 array_type: "Array" "<" type_ref "," INT_NUMBER ">"
 
-contract_block: requires_clause* ensures_clause*
-requires_clause: "requires" expr
-ensures_clause: "ensures" expr
+contract_block: requires_clause* aborts_clause* ensures_clause*
+requires_clause: "requires" expr_list
+aborts_clause: "aborts" NAME ("when" expr)?
+ensures_clause: "ensures" expr_list
 
-stmt: let_stmt | field_assign_stmt | assign_stmt | return_stmt | if_stmt | while_stmt | case_stmt | check_stmt | call_stmt
+stmt: let_stmt | field_assign_stmt | assign_stmt | return_stmt | abort_stmt | if_stmt | while_stmt | case_stmt | check_stmt | call_stmt
 let_stmt: "let" NAME ":" return_type "=" expr
 field_assign_stmt: field_path ":=" expr
 assign_stmt: NAME ":=" expr
 return_stmt: "return" return_value
+abort_stmt: "abort" NAME
 return_value: "ok" expr -> return_ok | "error" NAME -> return_error | expr -> return_plain
 check_stmt: "check" expr
 call_stmt: "call" qualified_name "(" arg_list? ")"
@@ -55,6 +57,7 @@ variant_clause: "variant" expr
 
 arg_list: call_arg ("," call_arg)*
 call_arg: NAME ":" expr -> named_call_arg | expr -> positional_call_arg
+expr_list: expr ("," expr)*
 named_arg_list: named_arg ("," named_arg)*
 named_arg: NAME ":" expr
 

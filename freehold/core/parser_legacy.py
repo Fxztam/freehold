@@ -77,11 +77,12 @@ class AstBuilder:
         ret = None
         if kind == "function":
             ret = self.return_type(tree.children[idx]); idx += 1
-        requires, ensures = [], []
+        requires, aborts, ensures = [], [], []
         if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "contract_block":
             for c in tree.children[idx].children:
-                if c.data == "requires_clause": requires.append(self.expr(c.children[0]))
-                elif c.data == "ensures_clause": ensures.append(self.expr(c.children[0]))
+                if c.data == "requires_clause": requires.extend(self.expr_list(c.children[0]))
+                elif c.data == "aborts_clause": aborts.append(AbortClause(str(c.children[0]), self.expr(c.children[1]) if len(c.children) > 1 else None, pos(c)))
+                elif c.data == "ensures_clause": ensures.extend(self.expr_list(c.children[0]))
             idx += 1
         end_name = None
         for child in reversed(tree.children):
@@ -91,11 +92,16 @@ class AstBuilder:
         if end_name != name:
             raise TypeCheckError(f"{pos(tree).text()}: {kind} end name mismatch: expected {name}, got {end_name}")
         body = [self.stmt(s.children[0] if s.data == "stmt" else s) for s in tree.children[idx:] if isinstance(s, Tree)]
-        return RoutineDecl(kind, name, params, ret, requires, ensures, body, pos(tree))
+        return RoutineDecl(kind, name, params, ret, requires, aborts, ensures, body, pos(tree))
 
     def return_type(self, tree: Tree):
         inner = tree.children[0]
         return self.type_ref_tree(inner)
+
+    def expr_list(self, tree: Tree):
+        if isinstance(tree, Tree) and tree.data == "expr_list":
+            return [self.expr(child) for child in tree.children]
+        return [self.expr(tree)]
 
     def type_ref_tree(self, tree: Tree):
         if tree.data == "result_payload_type":
@@ -112,6 +118,7 @@ class AstBuilder:
             return FieldAssignStmt([str(x) for x in p.children], self.expr(tree.children[1]), pos(tree))
         if tree.data == "assign_stmt": return AssignStmt(str(tree.children[0]), self.expr(tree.children[1]), pos(tree))
         if tree.data == "return_stmt": return ReturnStmt(self.return_value(tree.children[0]), pos(tree))
+        if tree.data == "abort_stmt": return AbortStmt(str(tree.children[0]), pos(tree))
         if tree.data == "check_stmt": return CheckStmt(self.expr(tree.children[0]), pos(tree))
         if tree.data == "call_stmt":
             call_name = self.qualified_name(tree.children[0]) if isinstance(tree.children[0], Tree) else str(tree.children[0])
