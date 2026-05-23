@@ -1,0 +1,68 @@
+{
+  "source_file": "..\\tests\\language_modules\\18_string_templates\\invalid_semantics\\string_template_missing_binding.fh",
+  "source_snippet": "module StringTemplateMissingBinding\r\n\r\nprocedure main()\r\nis\r\n    let id: Integer = 7\r\n    let message: String = String.template(\"id=${id}\")\r\n    check message = \"id=7\"\r\nend main\r\n\r\nend StringTemplateMissingBinding",
+  "module_name": "18_string_templates",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "StringTemplateMissingBinding",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "id",
+            "type": "Integer",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "7"
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "message",
+            "type": "String",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "String"
+                },
+                "field": "template"
+              },
+              "arguments": [
+                {
+                  "kind": "StringExpr",
+                  "value": "id=${id}"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "message"
+              },
+              "right": {
+                "kind": "StringExpr",
+                "value": "id=7"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "StringTemplateMissingBinding"
+  }
+}

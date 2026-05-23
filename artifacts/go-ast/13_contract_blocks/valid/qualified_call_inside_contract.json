@@ -1,0 +1,143 @@
+{
+  "source_file": "..\\tests\\language_modules\\13_contract_blocks\\valid\\qualified_call_inside_contract.fh",
+  "source_snippet": "module Matrix.QualifiedContract\r\n\r\nfunction normalize(amount: Integer) returns Integer\r\nis\r\n    return amount + 1\r\nend normalize\r\n\r\nfunction next(amount: Integer) returns Integer\r\nrequires Matrix.QualifiedContract.normalize(amount) \u003e amount\r\nensures result = Matrix.QualifiedContract.normalize(amount)\r\nis\r\n    return Matrix.QualifiedContract.normalize(amount)\r\nend next\r\n\r\nend Matrix.QualifiedContract",
+  "module_name": "13_contract_blocks",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Matrix.QualifiedContract",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "normalize",
+        "params": [
+          {
+            "name": "amount",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "normalize"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "next",
+        "params": [
+          {
+            "name": "amount",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Integer",
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": "\u003e",
+            "left": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "FieldAccessExpr",
+                  "object": {
+                    "kind": "IdentifierExpr",
+                    "name": "Matrix"
+                  },
+                  "field": "QualifiedContract"
+                },
+                "field": "normalize"
+              },
+              "arguments": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                }
+              ]
+            },
+            "right": {
+              "kind": "IdentifierExpr",
+              "name": "amount"
+            }
+          }
+        ],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "FieldAccessExpr",
+                  "object": {
+                    "kind": "IdentifierExpr",
+                    "name": "Matrix"
+                  },
+                  "field": "QualifiedContract"
+                },
+                "field": "normalize"
+              },
+              "arguments": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                }
+              ]
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "FieldAccessExpr",
+                  "object": {
+                    "kind": "IdentifierExpr",
+                    "name": "Matrix"
+                  },
+                  "field": "QualifiedContract"
+                },
+                "field": "normalize"
+              },
+              "arguments": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "next"
+      }
+    ],
+    "end_name": "Matrix.QualifiedContract"
+  }
+}

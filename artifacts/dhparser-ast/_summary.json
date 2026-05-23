@@ -1,7 +1,7 @@
 {
-  "total": 238,
-  "ok": 210,
-  "fail": 28,
+  "total": 262,
+  "ok": 219,
+  "fail": 43,
   "failures": [
     {
       "source_file": "tests\\language_modules\\01_core\\invalid_syntax\\empty_file.fh",
@@ -37,6 +37,13 @@
       "case_kind": "invalid_semantics",
       "file_name": "keyword_module_name.fh",
       "error": "1:8: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... lse\\\\b|success\\\\b|failure\\\\b|value\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bbmodule\n\nend module\u00ab"
+    },
+    {
+      "source_file": "tests\\language_modules\\02_import\\invalid_syntax\\bad_import_then_valid_procedure.fh",
+      "module_name": "02_import",
+      "case_kind": "invalid_syntax",
+      "file_name": "bad_import_then_valid_procedure.fh",
+      "error": "5:1: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... lse\\\\b|success\\\\b|failure\\\\b|value\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bbprocedure main()\nis\n ...\u00ab"
     },
     {
       "source_file": "tests\\language_modules\\02_import\\invalid_syntax\\missing_exposing_list.fh",
@@ -123,6 +130,41 @@
       "error": "3:6: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... lse\\\\b|success\\\\b|failure\\\\b|value\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bbrecord is record\n    ...\u00ab"
     },
     {
+      "source_file": "tests\\language_modules\\08_routines\\invalid_syntax\\error_after_valid_declaration.fh",
+      "module_name": "08_routines",
+      "case_kind": "invalid_syntax",
+      "file_name": "error_after_valid_declaration.fh",
+      "error": "8:23: Error (1040): Parser param->`:` did not match: \u00bbInteger)\nis\n    chec ...\u00ab"
+    },
+    {
+      "source_file": "tests\\language_modules\\08_routines\\invalid_syntax\\missing_end_function.fh",
+      "module_name": "08_routines",
+      "case_kind": "invalid_syntax",
+      "file_name": "missing_end_function.fh",
+      "error": "5:14: Error (1040): Parser postfix->`(` did not match: \u00bb\u00ab"
+    },
+    {
+      "source_file": "tests\\language_modules\\08_routines\\invalid_syntax\\missing_end_procedure.fh",
+      "module_name": "08_routines",
+      "case_kind": "invalid_syntax",
+      "file_name": "missing_end_procedure.fh",
+      "error": "5:15: Error (1040): Parser postfix->`(` did not match: \u00bb\u00ab"
+    },
+    {
+      "source_file": "tests\\language_modules\\08_routines\\invalid_syntax\\missing_parameter_colon.fh",
+      "module_name": "08_routines",
+      "case_kind": "invalid_syntax",
+      "file_name": "missing_parameter_colon.fh",
+      "error": "3:23: Error (1040): Parser param->`:` did not match: \u00bbInteger) returns Int ...\u00ab"
+    },
+    {
+      "source_file": "tests\\language_modules\\08_routines\\invalid_syntax\\missing_return_type.fh",
+      "module_name": "08_routines",
+      "case_kind": "invalid_syntax",
+      "file_name": "missing_return_type.fh",
+      "error": "4:1: Error (1040): Parser array_type->`Array` did not match: \u00bbis\n    return 42\nend ...\u00ab"
+    },
+    {
       "source_file": "tests\\language_modules\\08_routines\\invalid_semantics\\keyword_function_name.fh",
       "module_name": "08_routines",
       "case_kind": "invalid_semantics",
@@ -144,11 +186,60 @@
       "error": "3:11: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... lse\\\\b|success\\\\b|failure\\\\b|value\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bbreturn()\nis\n    chec ...\u00ab"
     },
     {
+      "source_file": "tests\\language_modules\\09_statements\\invalid_syntax\\bad_statement_then_following_statement.fh",
+      "module_name": "09_statements",
+      "case_kind": "invalid_syntax",
+      "file_name": "bad_statement_then_following_statement.fh",
+      "error": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb)\n    let amount :=  ...\u00ab"
+    },
+    {
       "source_file": "tests\\language_modules\\09_statements\\invalid_syntax\\let_uses_assignment_operator.fh",
       "module_name": "09_statements",
       "case_kind": "invalid_syntax",
       "file_name": "let_uses_assignment_operator.fh",
       "error": "5:17: Error (1040): Parser array_type->`Array` did not match: \u00bb= 1\n    check true\ne ...\u00ab"
+    },
+    {
+      "source_file": "tests\\language_modules\\09_statements\\invalid_syntax\\missing_end_case.fh",
+      "module_name": "09_statements",
+      "case_kind": "invalid_syntax",
+      "file_name": "missing_end_case.fh",
+      "error": "11:5: Error (1040): Parser case_stmt->`case` did not match: \u00bbmain\n\nend MissingEnd ...\u00ab"
+    },
+    {
+      "source_file": "tests\\language_modules\\09_statements\\invalid_syntax\\missing_end_if.fh",
+      "module_name": "09_statements",
+      "case_kind": "invalid_syntax",
+      "file_name": "missing_end_if.fh",
+      "error": "7:5: Error (1040): Parser if_stmt->`if` did not match: \u00bbmain\n\nend MissingEnd ...\u00ab"
+    },
+    {
+      "source_file": "tests\\language_modules\\09_statements\\invalid_syntax\\missing_end_while.fh",
+      "module_name": "09_statements",
+      "case_kind": "invalid_syntax",
+      "file_name": "missing_end_while.fh",
+      "error": "10:5: Error (1040): Parser while_stmt->`while` did not match: \u00bbmain\n\nend MissingEnd ...\u00ab"
+    },
+    {
+      "source_file": "tests\\language_modules\\09_statements\\invalid_syntax\\multiple_errors_in_one_file.fh",
+      "module_name": "09_statements",
+      "case_kind": "invalid_syntax",
+      "file_name": "multiple_errors_in_one_file.fh",
+      "error": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb)\n    let amount :=  ...\u00ab"
+    },
+    {
+      "source_file": "tests\\language_modules\\10_expressions\\invalid_syntax\\invalid_number_literal.fh",
+      "module_name": "10_expressions",
+      "case_kind": "invalid_syntax",
+      "file_name": "invalid_number_literal.fh",
+      "error": "5:17: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... lse\\\\b|success\\\\b|failure\\\\b|value\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bb56 = 12\nend main\n\nen ...\u00ab"
+    },
+    {
+      "source_file": "tests\\language_modules\\10_expressions\\invalid_syntax\\unexpected_token_in_expression.fh",
+      "module_name": "10_expressions",
+      "case_kind": "invalid_syntax",
+      "file_name": "unexpected_token_in_expression.fh",
+      "error": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb)\nend main\n\nend Unex ...\u00ab"
     },
     {
       "source_file": "tests\\language_modules\\11_errors_results\\invalid_semantics\\keyword_error_name.fh",
@@ -186,11 +277,25 @@
       "error": "3:1: Error (1040): Parser qualified_name->`.` did not match: \u00bb/* this block commen ...\u00ab"
     },
     {
+      "source_file": "tests\\language_modules\\14_comments_whitespace\\invalid_syntax\\unterminated_string.fh",
+      "module_name": "14_comments_whitespace",
+      "case_kind": "invalid_syntax",
+      "file_name": "unterminated_string.fh",
+      "error": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb\"open string\nend mai ...\u00ab"
+    },
+    {
       "source_file": "tests\\language_modules\\16_control_flow_edges\\invalid_syntax\\case_without_default.fh",
       "module_name": "16_control_flow_edges",
       "case_kind": "invalid_syntax",
       "file_name": "case_without_default.fh",
       "error": "9:5: Error (1040): Parser postfix->`(` did not match: \u00bbend case\nend main\n\ne ...\u00ab"
+    },
+    {
+      "source_file": "tests\\language_modules\\16_control_flow_edges\\invalid_syntax\\error_inside_nested_block.fh",
+      "module_name": "16_control_flow_edges",
+      "case_kind": "invalid_syntax",
+      "file_name": "error_inside_nested_block.fh",
+      "error": "10:19: Error (1040): Parser unary->`-` did not match: \u00bb)\n        end if\n    ...\u00ab"
     },
     {
       "source_file": "tests\\language_modules\\16_control_flow_edges\\invalid_syntax\\while_without_invariant.fh",

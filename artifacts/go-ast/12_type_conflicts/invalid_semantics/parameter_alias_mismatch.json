@@ -1,5 +1,6 @@
 {
   "source_file": "..\\tests\\language_modules\\12_type_conflicts\\invalid_semantics\\parameter_alias_mismatch.fh",
+  "source_snippet": "module ParameterAliasMismatch\r\n\r\ntype Count is Integer range 0..100\r\n\r\nprocedure accept(value: Count)\r\nis\r\n    check true\r\nend accept\r\n\r\nprocedure main()\r\nis\r\n    call accept(true)\r\nend main\r\n\r\nend ParameterAliasMismatch",
   "module_name": "12_type_conflicts",
   "case_kind": "invalid_semantics",
   "parse_ok": false,
@@ -22,5 +23,26 @@
     ],
     "found": "value \"value\"",
     "hint": "Use a non-keyword name here."
-  }
+  },
+  "diagnostics": [
+    {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0002",
+      "number": 2,
+      "name": "expected_identifier",
+      "message": "Expected an identifier.",
+      "location": {
+        "line": 5,
+        "column": 18,
+        "offset": 88
+      },
+      "expected": [
+        "identifier"
+      ],
+      "found": "value \"value\"",
+      "hint": "Use a non-keyword name here."
+    }
+  ]
 }

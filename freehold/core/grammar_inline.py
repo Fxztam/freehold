@@ -53,7 +53,8 @@ case_block: stmt*
 invariant_clause: "invariant" expr
 variant_clause: "variant" expr
 
-arg_list: expr ("," expr)*
+arg_list: call_arg ("," call_arg)*
+call_arg: NAME ":" expr -> named_call_arg | expr -> positional_call_arg
 named_arg_list: named_arg ("," named_arg)*
 named_arg: NAME ":" expr
 

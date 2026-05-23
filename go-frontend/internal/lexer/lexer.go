@@ -326,19 +326,24 @@ func (l *Lexer) lexString(pos token.Position) token.Token {
 	l.advance()
 	start := l.pos
 
-	for !l.eof() && l.peek() != '"' {
+	for !l.eof() && l.peek() != '"' && l.peek() != '\n' {
 		l.advance()
 	}
 
 	lexeme := string(l.input[start:l.pos])
 
-	if !l.eof() {
+	if !l.eof() && l.peek() == '"' {
 		l.advance()
+		return token.Token{
+			Kind:   token.String,
+			Lexeme: lexeme,
+			Pos:    pos,
+		}
 	}
 
 	return token.Token{
-		Kind:   token.String,
-		Lexeme: lexeme,
+		Kind:   token.Illegal,
+		Lexeme: "unterminated string",
 		Pos:    pos,
 	}
 }
@@ -358,6 +363,17 @@ func (l *Lexer) lexNumber(pos token.Position) token.Token {
 
 		for !l.eof() && unicode.IsDigit(l.peek()) {
 			l.advance()
+		}
+	}
+
+	if !l.eof() && l.peek() == '.' && l.peekNext() != '.' {
+		for !l.eof() && (unicode.IsDigit(l.peek()) || l.peek() == '.') {
+			l.advance()
+		}
+		return token.Token{
+			Kind:   token.Illegal,
+			Lexeme: "invalid number literal",
+			Pos:    pos,
 		}
 	}
 

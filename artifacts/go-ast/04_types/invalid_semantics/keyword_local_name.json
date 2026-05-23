@@ -1,5 +1,6 @@
 {
   "source_file": "..\\tests\\language_modules\\04_types\\invalid_semantics\\keyword_local_name.fh",
+  "source_snippet": "module KeywordLocalName\r\n\r\nprocedure main()\r\nis\r\n    let module: Integer = 0\r\n    check true\r\nend main\r\n\r\nend KeywordLocalName",
   "module_name": "04_types",
   "case_kind": "invalid_semantics",
   "parse_ok": false,
@@ -22,5 +23,46 @@
     ],
     "found": "module \"module\"",
     "hint": "Use a non-keyword name here."
-  }
+  },
+  "diagnostics": [
+    {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0002",
+      "number": 2,
+      "name": "expected_identifier",
+      "message": "Expected an identifier.",
+      "location": {
+        "line": 5,
+        "column": 9,
+        "offset": 57
+      },
+      "expected": [
+        "identifier"
+      ],
+      "found": "module \"module\"",
+      "hint": "Use a non-keyword name here."
+    },
+    {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0012",
+      "number": 12,
+      "name": "expected_assignment_or_call",
+      "message": "Expected assignment or call statement.",
+      "location": {
+        "line": 5,
+        "column": 25,
+        "offset": 73
+      },
+      "expected": [
+        ":=",
+        "call"
+      ],
+      "found": "= \"=\"",
+      "hint": "An identifier-led statement must be an assignment with ':=' or a procedure call."
+    }
+  ]
 }

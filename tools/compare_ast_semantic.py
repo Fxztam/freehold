@@ -183,6 +183,8 @@ def normalize_go_expr(expr: Any) -> dict[str, Any]:
         return {"kind": kind, "elements": [normalize_go_expr(item) for item in expr.get("elements") or []]}
     if kind == "CallExpr":
         return {"kind": kind, "callee": normalize_go_expr(expr.get("callee")), "arguments": [normalize_go_expr(item) for item in expr.get("arguments") or []]}
+    if kind == "NamedArgumentExpr":
+        return {"kind": kind, "name": expr.get("name", ""), "value": normalize_go_expr(expr.get("value"))}
     if kind == "RecordLiteralExpr":
         return {
             "kind": kind,
@@ -391,6 +393,15 @@ def dh_primary(node: dict[str, Any]) -> dict[str, Any]:
 
 
 def dh_arg_list(node: dict[str, Any] | None) -> list[dict[str, Any]]:
+    args: list[dict[str, Any]] = []
+    for child in children(node, "call_arg"):
+        named = first_child(child, "named_arg")
+        if named:
+            args.append({"kind": "NamedArgumentExpr", "name": nth_ident(named, 0), "value": dh_expr(first_child(named, "expr"))})
+            continue
+        args.append(dh_expr(first_child(child, "expr")))
+    if args:
+        return args
     return [dh_expr(child) for child in children(node, "expr")]
 
 

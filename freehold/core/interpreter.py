@@ -36,12 +36,15 @@ class Interpreter:
     def block(self,body,env,env_types):
         for s in body: self.stmt(s,env,env_types)
     def std_procedure_call(self, name, args, env) -> bool:
-        values = [self.eval(a, env) for a in args]
         if name in ("Std.IO.log", "Std.IO.log_int", "Std.IO.log_bool", "Std.IO.log_double"):
+            values = [self.eval(a, env) for a in args]
             std_io.log(values[0])
             return True
         if name == "Std.IO.logf":
-            std_io.logf(values[0], values[1])
+            template = self.eval(args[0], env)
+            positional = [self.eval(a, env) for a in args[1:] if not isinstance(a, NamedArg)]
+            named = {a.name: self.eval(a.expr, env) for a in args[1:] if isinstance(a, NamedArg)}
+            std_io.log(render_template(template, positional, named))
             return True
         return False
 
@@ -132,7 +135,7 @@ class Interpreter:
         if isinstance(e, FieldAccessExpr): return self.eval_field_path(e, env)
         if isinstance(e, VarExpr): return env[e.name]
         if isinstance(e, CallExpr):
-            args = [self.eval(a, env) for a in e.args]
+            args = [self.eval(a, env) for a in e.args if not isinstance(a, NamedArg)]
             if e.name == "String.concat":
                 return args[0] + args[1]
             if e.name == "String.substr":
@@ -147,7 +150,8 @@ class Interpreter:
                 s, needle = args
                 return s.find(needle)
             if e.name == "String.template":
-                return render_template(args[0], args[1:])
+                named = {a.name: self.eval(a.expr, env) for a in e.args[1:] if isinstance(a, NamedArg)}
+                return render_template(args[0], args[1:], named)
             if e.name == "Math.sin":
                 return math.sin(args[0])
             if e.name == "Math.cos":

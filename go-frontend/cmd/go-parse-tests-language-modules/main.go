@@ -16,13 +16,15 @@ import (
 )
 
 type ParseResult struct {
-	SourceFile string                 `json:"source_file"`
-	ModuleName string                 `json:"module_name"`
-	CaseKind   string                 `json:"case_kind"`
-	ParseOK    bool                   `json:"parse_ok"`
-	AST        interface{}            `json:"ast,omitempty"`
-	Error      string                 `json:"error,omitempty"`
-	Diagnostic *diagnostic.Diagnostic `json:"diagnostic,omitempty"`
+	SourceFile    string                   `json:"source_file"`
+	SourceSnippet string                   `json:"source_snippet"`
+	ModuleName    string                   `json:"module_name"`
+	CaseKind      string                   `json:"case_kind"`
+	ParseOK       bool                     `json:"parse_ok"`
+	AST           interface{}              `json:"ast,omitempty"`
+	Error         string                   `json:"error,omitempty"`
+	Diagnostic    *diagnostic.Diagnostic   `json:"diagnostic,omitempty"`
+	Diagnostics   []*diagnostic.Diagnostic `json:"diagnostics,omitempty"`
 }
 
 type RunSummary struct {
@@ -33,12 +35,13 @@ type RunSummary struct {
 }
 
 type ParseFailure struct {
-	SourceFile string                 `json:"source_file"`
-	ModuleName string                 `json:"module_name"`
-	CaseKind   string                 `json:"case_kind"`
-	FileName   string                 `json:"file_name"`
-	Error      string                 `json:"error"`
-	Diagnostic *diagnostic.Diagnostic `json:"diagnostic,omitempty"`
+	SourceFile  string                   `json:"source_file"`
+	ModuleName  string                   `json:"module_name"`
+	CaseKind    string                   `json:"case_kind"`
+	FileName    string                   `json:"file_name"`
+	Error       string                   `json:"error"`
+	Diagnostic  *diagnostic.Diagnostic   `json:"diagnostic,omitempty"`
+	Diagnostics []*diagnostic.Diagnostic `json:"diagnostics,omitempty"`
 }
 
 func main() {
@@ -115,12 +118,13 @@ func main() {
 				} else {
 					failCount++
 					failures = append(failures, ParseFailure{
-						SourceFile: result.SourceFile,
-						ModuleName: result.ModuleName,
-						CaseKind:   result.CaseKind,
-						FileName:   filepath.Base(file),
-						Error:      result.Error,
-						Diagnostic: result.Diagnostic,
+						SourceFile:  result.SourceFile,
+						ModuleName:  result.ModuleName,
+						CaseKind:    result.CaseKind,
+						FileName:    filepath.Base(file),
+						Error:       result.Error,
+						Diagnostic:  result.Diagnostic,
+						Diagnostics: result.Diagnostics,
 					})
 					fmt.Println("FAIL ", moduleName, caseKind, filepath.Base(file), "=>", result.Error)
 				}
@@ -178,6 +182,8 @@ func parseFile(file string, moduleName string, caseKind string) (result ParseRes
 
 	source := string(sourceBytes)
 
+	result.SourceSnippet = source
+
 	l := lexer.New(source)
 
 	var toks []token.Token
@@ -193,11 +199,23 @@ func parseFile(file string, moduleName string, caseKind string) (result ParseRes
 	p := parser.New(toks)
 
 	mod, err := p.ParseModule()
+	result.Diagnostics = p.Diagnostics()
+	if len(result.Diagnostics) > 0 {
+		result.Diagnostic = result.Diagnostics[0]
+	}
 	if err != nil {
 		result.ParseOK = false
 		var diag *diagnostic.Diagnostic
+		if len(result.Diagnostics) > 0 {
+			result.Diagnostic = result.Diagnostics[0]
+			result.Error = result.Diagnostics[0].Error()
+			return result
+		}
 		if errors.As(err, &diag) {
 			result.Diagnostic = diag
+			if len(result.Diagnostics) == 0 {
+				result.Diagnostics = []*diagnostic.Diagnostic{diag}
+			}
 		}
 		result.Error = err.Error()
 		return result

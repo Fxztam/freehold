@@ -483,6 +483,71 @@ emit FH-TYP-2406
     expected "numeric operand"
 end
 
+section string_templates
+
+rule template_placeholder_count_mismatch
+when StringTemplate positional_placeholder_count != positional_value_count
+emit FH-TPL-4001
+    found positional_value_count
+    expected "one value for each template placeholder"
+end
+
+rule template_old_placeholder_rejected
+when StringTemplate contains old_brace_placeholder
+emit FH-TPL-4002
+    found "{}"
+    expected "${} or ${name} placeholder"
+end
+
+rule template_invalid_named_placeholder
+when StringTemplate named_placeholder is not identifier
+emit FH-TPL-4003
+    found placeholder
+    expected "${name} placeholder"
+end
+
+rule template_invalid_brace
+when StringTemplate contains stray_brace
+emit FH-TPL-4004
+    found brace
+    expected "${} or ${name} placeholder"
+end
+
+rule template_value_type_mismatch
+when StringTemplate value_type is not scalar_display_type
+emit FH-TPL-4005
+    found value_type
+    expected "String, Integer, Boolean, or Double"
+end
+
+rule template_duplicate_binding
+when StringTemplate binding_name appears more_than_once
+emit FH-TPL-4006
+    found binding_name
+    expected "unique template binding name"
+end
+
+rule template_missing_binding
+when StringTemplate placeholder_name has no matching binding
+emit FH-TPL-4007
+    found placeholder_name
+    expected "binding for each named placeholder"
+end
+
+rule template_unused_binding
+when StringTemplate binding_name has no matching placeholder
+emit FH-TPL-4008
+    found binding_name
+    expected "placeholder for each named binding"
+end
+
+rule template_mixed_modes
+when StringTemplate has both positional and named mode
+emit FH-TPL-4009
+    found "mixed positional/named template"
+    expected "one template mode per call"
+end
+
 section result_returns
 
 rule unknown_result_error_type

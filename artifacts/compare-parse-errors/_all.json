@@ -390,6 +390,63 @@
     "same_location": true
   },
   {
+    "case": "02_import/invalid_syntax/bad_import_then_valid_procedure.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0002",
+      "number": 2,
+      "name": "expected_identifier",
+      "message": "Expected an identifier.",
+      "location": {
+        "line": 5,
+        "column": 1,
+        "offset": 64
+      },
+      "expected": [
+        "identifier"
+      ],
+      "found": "procedure \"procedure\"",
+      "hint": "Use a non-keyword name here."
+    },
+    "go": {
+      "location": {
+        "line": 5,
+        "column": 1,
+        "offset": 64
+      },
+      "message": "FH-SYN-0002: Expected an identifier. | Location: line 5, column 1 | Expected: identifier | Found: procedure \"procedure\" | Hint: Use a non-keyword name here.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0002",
+        "number": 2,
+        "name": "expected_identifier",
+        "message": "Expected an identifier.",
+        "location": {
+          "line": 5,
+          "column": 1,
+          "offset": 64
+        },
+        "expected": [
+          "identifier"
+        ],
+        "found": "procedure \"procedure\"",
+        "hint": "Use a non-keyword name here."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 5,
+        "column": 1
+      },
+      "message": "5:1: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... lse\\\\b|success\\\\b|failure\\\\b|value\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bbprocedure main() is ...\u00ab"
+    },
+    "same_location": true
+  },
+  {
     "case": "02_import/invalid_syntax/missing_exposing_list.json",
     "freehold": {
       "severity": "error",
@@ -1131,6 +1188,348 @@
     "same_location": true
   },
   {
+    "case": "08_routines/invalid_syntax/error_after_valid_declaration.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0018",
+      "number": 18,
+      "name": "missing_parameter_colon",
+      "message": "Expected ':' after a parameter name.",
+      "location": {
+        "line": 8,
+        "column": 23,
+        "offset": 124
+      },
+      "expected": [
+        ":"
+      ],
+      "found": "Ident \"Integer\"",
+      "hint": "Write parameters as 'name: Type'."
+    },
+    "go": {
+      "location": {
+        "line": 8,
+        "column": 23,
+        "offset": 124
+      },
+      "message": "FH-SYN-0018: Expected ':' after a parameter name. | Location: line 8, column 23 | Expected: : | Found: Ident \"Integer\" | Hint: Write parameters as 'name: Type'.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0018",
+        "number": 18,
+        "name": "missing_parameter_colon",
+        "message": "Expected ':' after a parameter name.",
+        "location": {
+          "line": 8,
+          "column": 23,
+          "offset": 124
+        },
+        "expected": [
+          ":"
+        ],
+        "found": "Ident \"Integer\"",
+        "hint": "Write parameters as 'name: Type'."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 8,
+        "column": 23
+      },
+      "message": "8:23: Error (1040): Parser param->`:` did not match: \u00bbInteger) is chec ...\u00ab"
+    },
+    "same_location": true
+  },
+  {
+    "case": "08_routines/invalid_syntax/missing_end_function.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0019",
+      "number": 19,
+      "name": "missing_end_function",
+      "message": "Expected 'end' for a function declaration.",
+      "location": {
+        "line": 5,
+        "column": 14,
+        "offset": 80
+      },
+      "expected": [
+        "end"
+      ],
+      "found": "EOF",
+      "hint": "Close the function body with 'end <function-name>'."
+    },
+    "go": {
+      "location": {
+        "line": 5,
+        "column": 14,
+        "offset": 80
+      },
+      "message": "FH-SYN-0019: Expected 'end' for a function declaration. | Location: line 5, column 14 | Expected: end | Found: EOF | Hint: Close the function body with 'end <function-name>'.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0019",
+        "number": 19,
+        "name": "missing_end_function",
+        "message": "Expected 'end' for a function declaration.",
+        "location": {
+          "line": 5,
+          "column": 14,
+          "offset": 80
+        },
+        "expected": [
+          "end"
+        ],
+        "found": "EOF",
+        "hint": "Close the function body with 'end <function-name>'."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 5,
+        "column": 14
+      },
+      "message": "5:14: Error (1040): Parser postfix->`(` did not match: \u00bb\u00ab"
+    },
+    "same_location": true
+  },
+  {
+    "case": "08_routines/invalid_syntax/missing_end_procedure.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0020",
+      "number": 20,
+      "name": "missing_end_procedure",
+      "message": "Expected 'end' for a procedure declaration.",
+      "location": {
+        "line": 5,
+        "column": 15,
+        "offset": 66
+      },
+      "expected": [
+        "end"
+      ],
+      "found": "EOF",
+      "hint": "Close the procedure body with 'end <procedure-name>'."
+    },
+    "go": {
+      "location": {
+        "line": 5,
+        "column": 15,
+        "offset": 66
+      },
+      "message": "FH-SYN-0020: Expected 'end' for a procedure declaration. | Location: line 5, column 15 | Expected: end | Found: EOF | Hint: Close the procedure body with 'end <procedure-name>'.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0020",
+        "number": 20,
+        "name": "missing_end_procedure",
+        "message": "Expected 'end' for a procedure declaration.",
+        "location": {
+          "line": 5,
+          "column": 15,
+          "offset": 66
+        },
+        "expected": [
+          "end"
+        ],
+        "found": "EOF",
+        "hint": "Close the procedure body with 'end <procedure-name>'."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 5,
+        "column": 15
+      },
+      "message": "5:15: Error (1040): Parser postfix->`(` did not match: \u00bb\u00ab"
+    },
+    "same_location": true
+  },
+  {
+    "case": "08_routines/invalid_syntax/missing_parameter_colon.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0018",
+      "number": 18,
+      "name": "missing_parameter_colon",
+      "message": "Expected ':' after a parameter name.",
+      "location": {
+        "line": 3,
+        "column": 23,
+        "offset": 54
+      },
+      "expected": [
+        ":"
+      ],
+      "found": "Ident \"Integer\"",
+      "hint": "Write parameters as 'name: Type'."
+    },
+    "go": {
+      "location": {
+        "line": 3,
+        "column": 23,
+        "offset": 54
+      },
+      "message": "FH-SYN-0018: Expected ':' after a parameter name. | Location: line 3, column 23 | Expected: : | Found: Ident \"Integer\" | Hint: Write parameters as 'name: Type'.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0018",
+        "number": 18,
+        "name": "missing_parameter_colon",
+        "message": "Expected ':' after a parameter name.",
+        "location": {
+          "line": 3,
+          "column": 23,
+          "offset": 54
+        },
+        "expected": [
+          ":"
+        ],
+        "found": "Ident \"Integer\"",
+        "hint": "Write parameters as 'name: Type'."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 3,
+        "column": 23
+      },
+      "message": "3:23: Error (1040): Parser param->`:` did not match: \u00bbInteger) returns Int ...\u00ab"
+    },
+    "same_location": true
+  },
+  {
+    "case": "08_routines/invalid_syntax/missing_return_type.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0014",
+      "number": 14,
+      "name": "missing_return_type",
+      "message": "Expected a function return type.",
+      "location": {
+        "line": 4,
+        "column": 1,
+        "offset": 54
+      },
+      "expected": [
+        "type"
+      ],
+      "found": "is \"is\"",
+      "hint": "Add a type name after 'returns'."
+    },
+    "go": {
+      "location": {
+        "line": 4,
+        "column": 1,
+        "offset": 54
+      },
+      "message": "FH-SYN-0014: Expected a function return type. | Location: line 4, column 1 | Expected: type | Found: is \"is\" | Hint: Add a type name after 'returns'.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0014",
+        "number": 14,
+        "name": "missing_return_type",
+        "message": "Expected a function return type.",
+        "location": {
+          "line": 4,
+          "column": 1,
+          "offset": 54
+        },
+        "expected": [
+          "type"
+        ],
+        "found": "is \"is\"",
+        "hint": "Add a type name after 'returns'."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 4,
+        "column": 1
+      },
+      "message": "4:1: Error (1040): Parser array_type->`Array` did not match: \u00bbis return 42 end ...\u00ab"
+    },
+    "same_location": true
+  },
+  {
+    "case": "09_statements/invalid_syntax/bad_statement_then_following_statement.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0015",
+      "number": 15,
+      "name": "expected_expression",
+      "message": "Expected an expression.",
+      "location": {
+        "line": 5,
+        "column": 11,
+        "offset": 77
+      },
+      "expected": [
+        "expression"
+      ],
+      "found": ") \")\"",
+      "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+    },
+    "go": {
+      "location": {
+        "line": 5,
+        "column": 11,
+        "offset": 77
+      },
+      "message": "FH-SYN-0015: Expected an expression. | Location: line 5, column 11 | Expected: expression | Found: ) \")\" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0015",
+        "number": 15,
+        "name": "expected_expression",
+        "message": "Expected an expression.",
+        "location": {
+          "line": 5,
+          "column": 11,
+          "offset": 77
+        },
+        "expected": [
+          "expression"
+        ],
+        "found": ") \")\"",
+        "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "message": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb) let amount := ...\u00ab"
+    },
+    "same_location": true
+  },
+  {
     "case": "09_statements/invalid_syntax/let_uses_assignment_operator.json",
     "freehold": {
       "severity": "error",
@@ -1186,6 +1585,354 @@
       "message": "5:17: Error (1040): Parser array_type->`Array` did not match: \u00bb= 1 check true e ...\u00ab"
     },
     "same_location": false
+  },
+  {
+    "case": "09_statements/invalid_syntax/missing_end_case.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0023",
+      "number": 23,
+      "name": "missing_end_case",
+      "message": "Expected 'end case'.",
+      "location": {
+        "line": 11,
+        "column": 5,
+        "offset": 187
+      },
+      "expected": [
+        "end",
+        "end case"
+      ],
+      "found": "Ident \"main\"",
+      "hint": "Close the case statement with 'end case'."
+    },
+    "go": {
+      "location": {
+        "line": 11,
+        "column": 5,
+        "offset": 187
+      },
+      "message": "FH-SYN-0023: Expected 'end case'. | Location: line 11, column 5 | Expected: end, end case | Found: Ident \"main\" | Hint: Close the case statement with 'end case'.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0023",
+        "number": 23,
+        "name": "missing_end_case",
+        "message": "Expected 'end case'.",
+        "location": {
+          "line": 11,
+          "column": 5,
+          "offset": 187
+        },
+        "expected": [
+          "end",
+          "end case"
+        ],
+        "found": "Ident \"main\"",
+        "hint": "Close the case statement with 'end case'."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 11,
+        "column": 5
+      },
+      "message": "11:5: Error (1040): Parser case_stmt->`case` did not match: \u00bbmain end MissingEnd ...\u00ab"
+    },
+    "same_location": true
+  },
+  {
+    "case": "09_statements/invalid_syntax/missing_end_if.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0021",
+      "number": 21,
+      "name": "missing_end_if",
+      "message": "Expected 'end if'.",
+      "location": {
+        "line": 7,
+        "column": 5,
+        "offset": 87
+      },
+      "expected": [
+        "end",
+        "end if"
+      ],
+      "found": "Ident \"main\"",
+      "hint": "Close the if statement with 'end if'."
+    },
+    "go": {
+      "location": {
+        "line": 7,
+        "column": 5,
+        "offset": 87
+      },
+      "message": "FH-SYN-0021: Expected 'end if'. | Location: line 7, column 5 | Expected: end, end if | Found: Ident \"main\" | Hint: Close the if statement with 'end if'.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0021",
+        "number": 21,
+        "name": "missing_end_if",
+        "message": "Expected 'end if'.",
+        "location": {
+          "line": 7,
+          "column": 5,
+          "offset": 87
+        },
+        "expected": [
+          "end",
+          "end if"
+        ],
+        "found": "Ident \"main\"",
+        "hint": "Close the if statement with 'end if'."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 7,
+        "column": 5
+      },
+      "message": "7:5: Error (1040): Parser if_stmt->`if` did not match: \u00bbmain end MissingEnd ...\u00ab"
+    },
+    "same_location": true
+  },
+  {
+    "case": "09_statements/invalid_syntax/missing_end_while.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0022",
+      "number": 22,
+      "name": "missing_end_while",
+      "message": "Expected 'end while'.",
+      "location": {
+        "line": 10,
+        "column": 5,
+        "offset": 172
+      },
+      "expected": [
+        "end",
+        "end while"
+      ],
+      "found": "Ident \"main\"",
+      "hint": "Close the while statement with 'end while'."
+    },
+    "go": {
+      "location": {
+        "line": 10,
+        "column": 5,
+        "offset": 172
+      },
+      "message": "FH-SYN-0022: Expected 'end while'. | Location: line 10, column 5 | Expected: end, end while | Found: Ident \"main\" | Hint: Close the while statement with 'end while'.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0022",
+        "number": 22,
+        "name": "missing_end_while",
+        "message": "Expected 'end while'.",
+        "location": {
+          "line": 10,
+          "column": 5,
+          "offset": 172
+        },
+        "expected": [
+          "end",
+          "end while"
+        ],
+        "found": "Ident \"main\"",
+        "hint": "Close the while statement with 'end while'."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 10,
+        "column": 5
+      },
+      "message": "10:5: Error (1040): Parser while_stmt->`while` did not match: \u00bbmain end MissingEnd ...\u00ab"
+    },
+    "same_location": true
+  },
+  {
+    "case": "09_statements/invalid_syntax/multiple_errors_in_one_file.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0015",
+      "number": 15,
+      "name": "expected_expression",
+      "message": "Expected an expression.",
+      "location": {
+        "line": 5,
+        "column": 11,
+        "offset": 66
+      },
+      "expected": [
+        "expression"
+      ],
+      "found": ") \")\"",
+      "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+    },
+    "go": {
+      "location": {
+        "line": 5,
+        "column": 11,
+        "offset": 66
+      },
+      "message": "FH-SYN-0015: Expected an expression. | Location: line 5, column 11 | Expected: expression | Found: ) \")\" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0015",
+        "number": 15,
+        "name": "expected_expression",
+        "message": "Expected an expression.",
+        "location": {
+          "line": 5,
+          "column": 11,
+          "offset": 66
+        },
+        "expected": [
+          "expression"
+        ],
+        "found": ") \")\"",
+        "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "message": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb) let amount := ...\u00ab"
+    },
+    "same_location": true
+  },
+  {
+    "case": "10_expressions/invalid_syntax/invalid_number_literal.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0017",
+      "number": 17,
+      "name": "invalid_number_literal",
+      "message": "Invalid number literal.",
+      "location": {
+        "line": 5,
+        "column": 11,
+        "offset": 63
+      },
+      "expected": [
+        "number"
+      ],
+      "found": "Illegal \"invalid number literal\"",
+      "hint": "Use digits with at most one decimal point and digits on both sides of the decimal point."
+    },
+    "go": {
+      "location": {
+        "line": 5,
+        "column": 11,
+        "offset": 63
+      },
+      "message": "FH-SYN-0017: Invalid number literal. | Location: line 5, column 11 | Expected: number | Found: Illegal \"invalid number literal\" | Hint: Use digits with at most one decimal point and digits on both sides of the decimal point.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0017",
+        "number": 17,
+        "name": "invalid_number_literal",
+        "message": "Invalid number literal.",
+        "location": {
+          "line": 5,
+          "column": 11,
+          "offset": 63
+        },
+        "expected": [
+          "number"
+        ],
+        "found": "Illegal \"invalid number literal\"",
+        "hint": "Use digits with at most one decimal point and digits on both sides of the decimal point."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 5,
+        "column": 17
+      },
+      "message": "5:17: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... lse\\\\b|success\\\\b|failure\\\\b|value\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bb56 = 12 end main en ...\u00ab"
+    },
+    "same_location": false
+  },
+  {
+    "case": "10_expressions/invalid_syntax/unexpected_token_in_expression.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0015",
+      "number": 15,
+      "name": "expected_expression",
+      "message": "Expected an expression.",
+      "location": {
+        "line": 5,
+        "column": 11,
+        "offset": 70
+      },
+      "expected": [
+        "expression"
+      ],
+      "found": ") \")\"",
+      "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+    },
+    "go": {
+      "location": {
+        "line": 5,
+        "column": 11,
+        "offset": 70
+      },
+      "message": "FH-SYN-0015: Expected an expression. | Location: line 5, column 11 | Expected: expression | Found: ) \")\" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0015",
+        "number": 15,
+        "name": "expected_expression",
+        "message": "Expected an expression.",
+        "location": {
+          "line": 5,
+          "column": 11,
+          "offset": 70
+        },
+        "expected": [
+          "expression"
+        ],
+        "found": ") \")\"",
+        "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "message": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb) end main end Unex ...\u00ab"
+    },
+    "same_location": true
   },
   {
     "case": "11_errors_results/invalid_semantics/keyword_error_name.json",
@@ -1481,6 +2228,63 @@
     "same_location": true
   },
   {
+    "case": "14_comments_whitespace/invalid_syntax/unterminated_string.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0016",
+      "number": 16,
+      "name": "unterminated_string",
+      "message": "Unterminated string literal.",
+      "location": {
+        "line": 5,
+        "column": 11,
+        "offset": 61
+      },
+      "expected": [
+        "\""
+      ],
+      "found": "Illegal \"unterminated string\"",
+      "hint": "Close the string literal with a double quote."
+    },
+    "go": {
+      "location": {
+        "line": 5,
+        "column": 11,
+        "offset": 61
+      },
+      "message": "FH-SYN-0016: Unterminated string literal. | Location: line 5, column 11 | Expected: \" | Found: Illegal \"unterminated string\" | Hint: Close the string literal with a double quote.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0016",
+        "number": 16,
+        "name": "unterminated_string",
+        "message": "Unterminated string literal.",
+        "location": {
+          "line": 5,
+          "column": 11,
+          "offset": 61
+        },
+        "expected": [
+          "\""
+        ],
+        "found": "Illegal \"unterminated string\"",
+        "hint": "Close the string literal with a double quote."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "message": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb\"open string end mai ...\u00ab"
+    },
+    "same_location": true
+  },
+  {
     "case": "16_control_flow_edges/invalid_syntax/case_without_default.json",
     "freehold": {
       "severity": "error",
@@ -1534,6 +2338,63 @@
         "column": 5
       },
       "message": "9:5: Error (1040): Parser postfix->`(` did not match: \u00bbend case end main e ...\u00ab"
+    },
+    "same_location": true
+  },
+  {
+    "case": "16_control_flow_edges/invalid_syntax/error_inside_nested_block.json",
+    "freehold": {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0015",
+      "number": 15,
+      "name": "expected_expression",
+      "message": "Expected an expression.",
+      "location": {
+        "line": 10,
+        "column": 19,
+        "offset": 191
+      },
+      "expected": [
+        "expression"
+      ],
+      "found": ") \")\"",
+      "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+    },
+    "go": {
+      "location": {
+        "line": 10,
+        "column": 19,
+        "offset": 191
+      },
+      "message": "FH-SYN-0015: Expected an expression. | Location: line 10, column 19 | Expected: expression | Found: ) \")\" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.",
+      "freehold": {
+        "severity": "error",
+        "phase": "parse",
+        "category": "syntax",
+        "code": "FH-SYN-0015",
+        "number": 15,
+        "name": "expected_expression",
+        "message": "Expected an expression.",
+        "location": {
+          "line": 10,
+          "column": 19,
+          "offset": 191
+        },
+        "expected": [
+          "expression"
+        ],
+        "found": ") \")\"",
+        "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+      }
+    },
+    "dhparser": {
+      "location": {
+        "line": 10,
+        "column": 19
+      },
+      "message": "10:19: Error (1040): Parser unary->`-` did not match: \u00bb) end if ...\u00ab"
     },
     "same_location": true
   },

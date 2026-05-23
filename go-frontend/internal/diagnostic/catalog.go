@@ -40,6 +40,14 @@ type Definition struct {
 	Hint     string
 }
 
+const (
+	SyntaxRange    = "FH-SYN-0001..0999"
+	SemanticRange  = "FH-SEM-1000..1999"
+	TypeRange      = "FH-TYP-2000..2999"
+	ContractRange  = "FH-CON-3000..3999"
+	BootstrapRange = "FH-BLD-9000..9999"
+)
+
 var catalog = map[string]Definition{
 	"expected_identifier": {
 		Severity: "error",
@@ -161,6 +169,106 @@ var catalog = map[string]Definition{
 		Message:  "Expected a number literal.",
 		Hint:     "Use an integer or double literal here.",
 	},
+	"missing_return_type": {
+		Severity: "error",
+		Phase:    "parse",
+		Category: "syntax",
+		Code:     "FH-SYN-0014",
+		Number:   14,
+		Name:     "missing_return_type",
+		Message:  "Expected a function return type.",
+		Hint:     "Add a type name after 'returns'.",
+	},
+	"expected_expression": {
+		Severity: "error",
+		Phase:    "parse",
+		Category: "syntax",
+		Code:     "FH-SYN-0015",
+		Number:   15,
+		Name:     "expected_expression",
+		Message:  "Expected an expression.",
+		Hint:     "Use a literal, identifier, call, parenthesized expression, or unary expression here.",
+	},
+	"unterminated_string": {
+		Severity: "error",
+		Phase:    "parse",
+		Category: "syntax",
+		Code:     "FH-SYN-0016",
+		Number:   16,
+		Name:     "unterminated_string",
+		Message:  "Unterminated string literal.",
+		Hint:     "Close the string literal with a double quote.",
+	},
+	"invalid_number_literal": {
+		Severity: "error",
+		Phase:    "parse",
+		Category: "syntax",
+		Code:     "FH-SYN-0017",
+		Number:   17,
+		Name:     "invalid_number_literal",
+		Message:  "Invalid number literal.",
+		Hint:     "Use digits with at most one decimal point and digits on both sides of the decimal point.",
+	},
+	"missing_parameter_colon": {
+		Severity: "error",
+		Phase:    "parse",
+		Category: "syntax",
+		Code:     "FH-SYN-0018",
+		Number:   18,
+		Name:     "missing_parameter_colon",
+		Message:  "Expected ':' after a parameter name.",
+		Hint:     "Write parameters as 'name: Type'.",
+	},
+	"missing_end_function": {
+		Severity: "error",
+		Phase:    "parse",
+		Category: "syntax",
+		Code:     "FH-SYN-0019",
+		Number:   19,
+		Name:     "missing_end_function",
+		Message:  "Expected 'end' for a function declaration.",
+		Hint:     "Close the function body with 'end <function-name>'.",
+	},
+	"missing_end_procedure": {
+		Severity: "error",
+		Phase:    "parse",
+		Category: "syntax",
+		Code:     "FH-SYN-0020",
+		Number:   20,
+		Name:     "missing_end_procedure",
+		Message:  "Expected 'end' for a procedure declaration.",
+		Hint:     "Close the procedure body with 'end <procedure-name>'.",
+	},
+	"missing_end_if": {
+		Severity: "error",
+		Phase:    "parse",
+		Category: "syntax",
+		Code:     "FH-SYN-0021",
+		Number:   21,
+		Name:     "missing_end_if",
+		Message:  "Expected 'end if'.",
+		Hint:     "Close the if statement with 'end if'.",
+	},
+	"missing_end_while": {
+		Severity: "error",
+		Phase:    "parse",
+		Category: "syntax",
+		Code:     "FH-SYN-0022",
+		Number:   22,
+		Name:     "missing_end_while",
+		Message:  "Expected 'end while'.",
+		Hint:     "Close the while statement with 'end while'.",
+	},
+	"missing_end_case": {
+		Severity: "error",
+		Phase:    "parse",
+		Category: "syntax",
+		Code:     "FH-SYN-0023",
+		Number:   23,
+		Name:     "missing_end_case",
+		Message:  "Expected 'end case'.",
+		Hint:     "Close the case statement with 'end case'.",
+	},
 	"expected_token": {
 		Severity: "error",
 		Phase:    "parse",
@@ -209,6 +317,41 @@ func ExpectedAssignmentOrCall(found token.Token) *Diagnostic {
 	return fromCatalog("expected_assignment_or_call", found, []string{":=", "call"})
 }
 
+func ExpectedParameterColon(found token.Token) *Diagnostic {
+	return fromCatalog("missing_parameter_colon", found, []string{":"})
+}
+
+func MissingReturnType(found token.Token) *Diagnostic {
+	return fromCatalog("missing_return_type", found, []string{"type"})
+}
+
+func ExpectedExpression(found token.Token) *Diagnostic {
+	if diag := illegalTokenDiagnostic(found); diag != nil {
+		return diag
+	}
+	return fromCatalog("expected_expression", found, []string{"expression"})
+}
+
+func MissingFunctionEnd(found token.Token) *Diagnostic {
+	return fromCatalog("missing_end_function", found, []string{"end"})
+}
+
+func MissingProcedureEnd(found token.Token) *Diagnostic {
+	return fromCatalog("missing_end_procedure", found, []string{"end"})
+}
+
+func MissingIfEnd(found token.Token) *Diagnostic {
+	return fromCatalog("missing_end_if", found, []string{"end", "end if"})
+}
+
+func MissingWhileEnd(found token.Token) *Diagnostic {
+	return fromCatalog("missing_end_while", found, []string{"end", "end while"})
+}
+
+func MissingCaseEnd(found token.Token) *Diagnostic {
+	return fromCatalog("missing_end_case", found, []string{"end", "end case"})
+}
+
 func MissingWhileInvariant(found token.Token) *Diagnostic {
 	return fromCatalog("missing_while_invariant", found, []string{"invariant"})
 }
@@ -218,12 +361,15 @@ func MissingCaseDefault(found token.Token) *Diagnostic {
 }
 
 func ExpectedNumber(found token.Token) *Diagnostic {
+	if diag := illegalTokenDiagnostic(found); diag != nil {
+		return diag
+	}
 	return fromCatalog("expected_number", found, []string{"number"})
 }
 
 func ExpectedToken(expected token.Kind, found token.Token) *Diagnostic {
-	if found.Kind == token.Illegal && found.Lexeme == "unterminated block comment" {
-		return fromCatalog("unterminated_block_comment", found, []string{"*/"})
+	if diag := illegalTokenDiagnostic(found); diag != nil {
+		return diag
 	}
 
 	name := "expected_token"
@@ -240,6 +386,23 @@ func ExpectedToken(expected token.Kind, found token.Token) *Diagnostic {
 		}
 	}
 	return fromCatalog(name, found, []string{string(expected)})
+}
+
+func illegalTokenDiagnostic(found token.Token) *Diagnostic {
+	if found.Kind != token.Illegal {
+		return nil
+	}
+
+	switch found.Lexeme {
+	case "unterminated block comment":
+		return fromCatalog("unterminated_block_comment", found, []string{"*/"})
+	case "unterminated string":
+		return fromCatalog("unterminated_string", found, []string{"\""})
+	case "invalid number literal":
+		return fromCatalog("invalid_number_literal", found, []string{"number"})
+	}
+
+	return nil
 }
 
 func fromCatalog(name string, found token.Token, expected []string) *Diagnostic {

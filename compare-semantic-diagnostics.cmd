@@ -1,0 +1,2 @@
+@echo off
+python .\tools\compare_semantic_diagnostics.py --expected .\tests\language_modules\expected_semantic_diagnostics.json --root .\tests\language_modules --out .\artifacts\compare-semantic-diagnostics

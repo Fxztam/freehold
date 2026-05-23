@@ -7,48 +7,92 @@ import (
 )
 
 type Parser struct {
-	tokens []token.Token
-	pos    int
+	tokens      []token.Token
+	pos         int
+	moduleName  string
+	diagnostics []*diagnostic.Diagnostic
 }
 
 func New(tokens []token.Token) *Parser {
 	return &Parser{tokens: tokens}
 }
 
-func (p *Parser) ParseModule() (*ast.Module, error) {
+func (p *Parser) Diagnostics() []*diagnostic.Diagnostic {
+	return p.diagnostics
+}
+
+func (p *Parser) ParseModule() (module *ast.Module, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			diag := p.diagnosticFromRecover(r)
+			p.addDiagnostic(diag)
+			err = p.diagnostics[0]
+		}
+	}()
+
 	p.expect(token.Module)
 
 	name := p.parseQualifiedName()
+	p.moduleName = name
 
 	var decls []ast.Decl
 
 	for !p.at(token.End) && !p.at(token.EOF) {
-		if p.at(token.Type) {
-			decls = append(decls, p.parseTypeDecl())
-		} else if p.at(token.Error) {
-			decls = append(decls, p.parseErrorDecl())
-		} else if p.at(token.Import) {
-			decls = append(decls, p.parseImport())
-		} else if p.at(token.Function) {
-			fn := p.parseFunction()
-			decls = append(decls, fn)
-		} else if p.at(token.Procedure) {
-			proc := p.parseProcedure()
-			decls = append(decls, proc)
-		} else {
-			return nil, diagnostic.ExpectedDeclaration(p.peek())
+		decl, ok := p.parseDeclarationRecovering()
+		if ok {
+			decls = append(decls, decl)
 		}
 	}
 
 	p.expect(token.End)
 	endName := p.parseQualifiedName()
 
-	return &ast.Module{
+	module = &ast.Module{
 		Kind:         "Module",
 		Name:         name,
 		Declarations: decls,
 		EndName:      endName,
-	}, nil
+	}
+
+	if len(p.diagnostics) > 0 {
+		return module, p.diagnostics[0]
+	}
+
+	return module, nil
+}
+
+func (p *Parser) parseDeclarationRecovering() (decl ast.Decl, ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			diag := p.diagnosticFromRecover(r)
+			p.addDiagnostic(diag)
+			p.synchronizeDeclaration()
+			decl = nil
+			ok = false
+		}
+	}()
+
+	return p.parseDeclaration(), true
+}
+
+func (p *Parser) parseDeclaration() ast.Decl {
+	if p.at(token.Type) {
+		return p.parseTypeDecl()
+	}
+	if p.at(token.Error) {
+		return p.parseErrorDecl()
+	}
+	if p.at(token.Import) {
+		return p.parseImport()
+	}
+	if p.at(token.Function) {
+		return p.parseFunction()
+	}
+	if p.at(token.Procedure) {
+		return p.parseProcedure()
+	}
+
+	panic(diagnostic.ExpectedDeclaration(p.peek()))
 }
 
 func (p *Parser) parseTypeDecl() ast.TypeDecl {
@@ -162,6 +206,9 @@ func (p *Parser) parseFunction() ast.FunctionDecl {
 	p.expect(token.RParen)
 
 	p.expect(token.Returns)
+	if p.at(token.Is) || p.at(token.Requires) || p.at(token.Ensures) || p.at(token.EOF) {
+		panic(diagnostic.MissingReturnType(p.peek()))
+	}
 	returnType := p.parseTypeName()
 
 	requires, ensures := p.parseContracts()
@@ -170,6 +217,9 @@ func (p *Parser) parseFunction() ast.FunctionDecl {
 
 	body := p.parseStatements(func() bool { return p.at(token.End) || p.at(token.EOF) })
 
+	if !p.at(token.End) {
+		panic(diagnostic.MissingFunctionEnd(p.peek()))
+	}
 	p.expect(token.End)
 	endName := p.parseName()
 
@@ -200,6 +250,9 @@ func (p *Parser) parseProcedure() ast.ProcedureDecl {
 
 	body := p.parseStatements(func() bool { return p.at(token.End) || p.at(token.EOF) })
 
+	if !p.at(token.End) {
+		panic(diagnostic.MissingProcedureEnd(p.peek()))
+	}
 	p.expect(token.End)
 	endName := p.parseName()
 
@@ -235,10 +288,27 @@ func (p *Parser) parseStatements(stop func() bool) []ast.Stmt {
 	var body []ast.Stmt
 
 	for !stop() {
-		body = append(body, p.parseStatement())
+		stmt, ok := p.parseStatementRecovering(stop)
+		if ok {
+			body = append(body, stmt)
+		}
 	}
 
 	return body
+}
+
+func (p *Parser) parseStatementRecovering(stop func() bool) (stmt ast.Stmt, ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			diag := p.diagnosticFromRecover(r)
+			p.addDiagnostic(diag)
+			p.synchronizeStatement(stop)
+			stmt = nil
+			ok = false
+		}
+	}()
+
+	return p.parseStatement(), true
 }
 
 func (p *Parser) parseStatement() ast.Stmt {
@@ -290,6 +360,9 @@ func (p *Parser) parseParams() []ast.Param {
 
 func (p *Parser) parseParam() ast.Param {
 	name := p.parseName()
+	if !p.at(token.Colon) {
+		panic(diagnostic.ExpectedParameterColon(p.peek()))
+	}
 	p.expect(token.Colon)
 	typ := p.parseTypeName()
 
@@ -378,7 +451,13 @@ func (p *Parser) parseIf() ast.IfStmt {
 		elseBody = p.parseStatements(func() bool { return p.at(token.End) || p.at(token.EOF) })
 	}
 
+	if !p.at(token.End) {
+		panic(diagnostic.MissingIfEnd(p.peek()))
+	}
 	p.expect(token.End)
+	if !p.at(token.If) {
+		panic(diagnostic.MissingIfEnd(p.peek()))
+	}
 	p.expect(token.If)
 
 	return ast.IfStmt{
@@ -411,7 +490,13 @@ func (p *Parser) parseWhile() ast.WhileStmt {
 
 	p.expect(token.Do)
 	body := p.parseStatements(func() bool { return p.at(token.End) || p.at(token.EOF) })
+	if !p.at(token.End) {
+		panic(diagnostic.MissingWhileEnd(p.peek()))
+	}
 	p.expect(token.End)
+	if !p.at(token.While) {
+		panic(diagnostic.MissingWhileEnd(p.peek()))
+	}
 	p.expect(token.While)
 
 	return ast.WhileStmt{
@@ -449,7 +534,13 @@ func (p *Parser) parseCase() ast.CaseStmt {
 		panic(diagnostic.MissingCaseDefault(tok))
 	}
 
+	if !p.at(token.End) {
+		panic(diagnostic.MissingCaseEnd(p.peek()))
+	}
 	p.expect(token.End)
+	if !p.at(token.Case) {
+		panic(diagnostic.MissingCaseEnd(p.peek()))
+	}
 	p.expect(token.Case)
 
 	return ast.CaseStmt{
@@ -641,6 +732,10 @@ func (p *Parser) parseAtom() ast.Expr {
 		})
 	}
 
+	if !p.at(token.Ident) {
+		panic(diagnostic.ExpectedExpression(p.peek()))
+	}
+
 	tok := p.parseName()
 
 	if p.at(token.LBrace) {
@@ -725,11 +820,11 @@ func (p *Parser) finishCall(callee ast.Expr) ast.CallExpr {
 
 	var args []ast.Expr
 	if !p.at(token.RParen) {
-		args = append(args, p.parseExpr())
+		args = append(args, p.parseCallArg())
 
 		for p.at(token.Comma) {
 			p.expect(token.Comma)
-			args = append(args, p.parseExpr())
+			args = append(args, p.parseCallArg())
 		}
 	}
 
@@ -740,6 +835,19 @@ func (p *Parser) finishCall(callee ast.Expr) ast.CallExpr {
 		Callee:    callee,
 		Arguments: args,
 	}
+}
+
+func (p *Parser) parseCallArg() ast.Expr {
+	if p.at(token.Ident) && p.peekAhead(1).Kind == token.Colon {
+		name := p.parseName()
+		p.expect(token.Colon)
+		return ast.NamedArgumentExpr{
+			Kind:  "NamedArgumentExpr",
+			Name:  name,
+			Value: p.parseExpr(),
+		}
+	}
+	return p.parseExpr()
 }
 
 func (p *Parser) parseArrayLiteral() ast.ArrayLiteralExpr {
@@ -845,6 +953,14 @@ func (p *Parser) peek() token.Token {
 	return p.tokens[p.pos]
 }
 
+func (p *Parser) peekAhead(offset int) token.Token {
+	index := p.pos + offset
+	if index >= len(p.tokens) {
+		return p.tokens[len(p.tokens)-1]
+	}
+	return p.tokens[index]
+}
+
 func (p *Parser) expect(kind token.Kind) token.Token {
 	tok := p.peek()
 
@@ -854,4 +970,69 @@ func (p *Parser) expect(kind token.Kind) token.Token {
 
 	p.pos++
 	return tok
+}
+
+func (p *Parser) addDiagnostic(diag *diagnostic.Diagnostic) {
+	if diag == nil {
+		return
+	}
+	for _, existing := range p.diagnostics {
+		if existing.Code == diag.Code && existing.Location.Line == diag.Location.Line && existing.Location.Column == diag.Location.Column {
+			return
+		}
+	}
+	p.diagnostics = append(p.diagnostics, diag)
+}
+
+func (p *Parser) diagnosticFromRecover(value interface{}) *diagnostic.Diagnostic {
+	if diag, ok := value.(*diagnostic.Diagnostic); ok {
+		return diag
+	}
+	panic(value)
+}
+
+func (p *Parser) synchronizeDeclaration() {
+	for !p.at(token.EOF) {
+		if p.atDeclarationBoundary() {
+			return
+		}
+		p.pos++
+	}
+}
+
+func (p *Parser) synchronizeStatement(stop func() bool) {
+	for !stop() && !p.at(token.EOF) {
+		if p.atStatementBoundary() {
+			return
+		}
+		p.pos++
+	}
+}
+
+func (p *Parser) atDeclarationBoundary() bool {
+	return p.at(token.Import) || p.at(token.Type) || p.at(token.Error) || p.at(token.Function) || p.at(token.Procedure) || p.atModuleEndBoundary()
+}
+
+func (p *Parser) atStatementBoundary() bool {
+	return p.at(token.Return) || p.at(token.Check) || p.at(token.Call) || p.at(token.Let) || p.at(token.If) || p.at(token.While) || p.at(token.Case) || p.at(token.Ident)
+}
+
+func (p *Parser) atModuleEndBoundary() bool {
+	if !p.at(token.End) || p.moduleName == "" {
+		return false
+	}
+
+	pos := p.pos + 1
+	if pos >= len(p.tokens) || p.tokens[pos].Kind != token.Ident {
+		return false
+	}
+
+	name := p.tokens[pos].Lexeme
+	pos++
+	for pos+1 < len(p.tokens) && p.tokens[pos].Kind == token.Dot && p.tokens[pos+1].Kind == token.Ident {
+		name += "." + p.tokens[pos+1].Lexeme
+		pos += 2
+	}
+
+	return name == p.moduleName
 }

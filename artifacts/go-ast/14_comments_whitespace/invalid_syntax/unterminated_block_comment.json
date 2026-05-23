@@ -1,5 +1,6 @@
 {
   "source_file": "..\\tests\\language_modules\\14_comments_whitespace\\invalid_syntax\\unterminated_block_comment.fh",
+  "source_snippet": "module UnterminatedBlockComment\r\n\r\n/* this block comment never closes\r\nprocedure main()\r\nis\r\n    check true\r\nend main\r\n\r\nend UnterminatedBlockComment",
   "module_name": "14_comments_whitespace",
   "case_kind": "invalid_syntax",
   "parse_ok": false,
@@ -22,5 +23,45 @@
     ],
     "found": "Illegal \"unterminated block comment\"",
     "hint": "Close the block comment with */."
-  }
+  },
+  "diagnostics": [
+    {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0010",
+      "number": 10,
+      "name": "unterminated_block_comment",
+      "message": "Unterminated block comment.",
+      "location": {
+        "line": 3,
+        "column": 1,
+        "offset": 35
+      },
+      "expected": [
+        "*/"
+      ],
+      "found": "Illegal \"unterminated block comment\"",
+      "hint": "Close the block comment with */."
+    },
+    {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0004",
+      "number": 4,
+      "name": "missing_end",
+      "message": "Expected an end marker.",
+      "location": {
+        "line": 9,
+        "column": 29,
+        "offset": 149
+      },
+      "expected": [
+        "end"
+      ],
+      "found": "EOF",
+      "hint": "Close the current declaration or block with the matching end clause."
+    }
+  ]
 }

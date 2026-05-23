@@ -1,0 +1,15 @@
+module Matrix.QualifiedContract
+
+function normalize(amount: Integer) returns Integer
+is
+    return amount + 1
+end normalize
+
+function next(amount: Integer) returns Integer
+requires Matrix.QualifiedContract.normalize(amount) > amount
+ensures result = Matrix.QualifiedContract.normalize(amount)
+is
+    return Matrix.QualifiedContract.normalize(amount)
+end next
+
+end Matrix.QualifiedContract

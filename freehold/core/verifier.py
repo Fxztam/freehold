@@ -113,6 +113,8 @@ class Verifier:
         def infer_arg(i):
             if i >= len(args):
                 raise TypeCheckError(f"{pos.text()}: {name} expects more arguments")
+            if isinstance(args[i], NamedArg):
+                raise TypeCheckError(f"{args[i].pos.text()}: {name} does not accept named argument: {args[i].name}")
             return self.infer(args[i], env, ctx, False, None)
         def expect_count(n):
             if len(args) != n:
@@ -121,11 +123,32 @@ class Verifier:
             t = infer_arg(i)
             if self.base(t, ctx) != base:
                 raise TypeCheckError(f"{args[i].pos.text()}: {name} argument {i+1} expected {base}, got {type_to_string(t)}")
-        def expect_template_values(start):
-            for index in range(start, len(args)):
-                t = infer_arg(index)
+        def template_values():
+            if len(args) < 1:
+                raise TypeCheckError(f"{pos.text()}: {name} expects at least 1 argument")
+            if isinstance(args[0], NamedArg):
+                raise TypeCheckError(f"{args[0].pos.text()}: {name} template argument must be positional")
+            positional = []
+            named = []
+            saw_named = False
+            for arg in args[1:]:
+                if isinstance(arg, NamedArg):
+                    saw_named = True
+                    named.append(arg)
+                else:
+                    if saw_named:
+                        raise TypeCheckError(f"{arg.pos.text()}: {name} positional template value after named binding")
+                    positional.append(arg)
+            if positional and named:
+                raise TypeCheckError(f"{pos.text()}: {name} cannot mix positional and named template arguments")
+            return args[0], positional, named
+        def expect_template_values(values):
+            for index, arg in enumerate(values, start=1):
+                value_expr = arg.expr if isinstance(arg, NamedArg) else arg
+                t = self.infer(value_expr, env, ctx, False, None)
                 if self.base(t, ctx) not in ("String", "Integer", "Boolean", "Double"):
-                    raise TypeCheckError(f"{args[index].pos.text()}: {name} template value {index} expected String, Integer, Boolean, or Double, got {type_to_string(t)}")
+                    label = arg.name if isinstance(arg, NamedArg) else str(index)
+                    raise TypeCheckError(f"{value_expr.pos.text()}: {name} template value {label} expected String, Integer, Boolean, or Double, got {type_to_string(t)}")
         if name == "Std.IO.log":
             expect_count(1)
             t = infer_arg(0)
@@ -133,15 +156,15 @@ class Verifier:
                 raise TypeCheckError(f"{args[0].pos.text()}: Std.IO.log supports String, Integer, Boolean, Double")
             return True
         if name == "Std.IO.logf":
-            if len(args) < 1:
-                raise TypeCheckError(f"{pos.text()}: Std.IO.logf expects at least 1 argument")
+            template_arg, positional_values, named_values = template_values()
             expect_base(0, "String")
-            expect_template_values(1)
-            if isinstance(args[0], StringExpr):
+            expect_template_values(positional_values)
+            expect_template_values(named_values)
+            if isinstance(template_arg, StringExpr):
                 try:
-                    validate_template(args[0].value, len(args) - 1)
+                    validate_template(template_arg.value, len(positional_values), [a.name for a in named_values])
                 except ValueError as exc:
-                    raise TypeCheckError(f"{args[0].pos.text()}: Std.IO.logf {exc}") from exc
+                    raise TypeCheckError(f"{template_arg.pos.text()}: Std.IO.logf {exc}") from exc
             return True
         if name == "Std.IO.log_int":
             expect_count(1); expect_base(0, "Integer"); return True
@@ -285,12 +308,16 @@ class Verifier:
         def expect_arg(i, base):
             if i >= len(e.args):
                 raise TypeCheckError(f"{e.pos.text()}: {e.name} expects more arguments")
+            if isinstance(e.args[i], NamedArg):
+                raise TypeCheckError(f"{e.args[i].pos.text()}: {e.name} does not accept named argument: {e.args[i].name}")
             t = self.infer(e.args[i], env, ctx, allow_result, result_type)
             if self.base(t, ctx) != base:
                 raise TypeCheckError(f"{e.args[i].pos.text()}: {e.name} argument {i+1} expected {base}, got {type_to_string(t)}")
         def infer_arg(i):
             if i >= len(e.args):
                 raise TypeCheckError(f"{e.pos.text()}: {e.name} expects more arguments")
+            if isinstance(e.args[i], NamedArg):
+                raise TypeCheckError(f"{e.args[i].pos.text()}: {e.name} does not accept named argument: {e.args[i].name}")
             return self.infer(e.args[i], env, ctx, allow_result, result_type)
         def expect_numeric(i):
             t = infer_arg(i)
@@ -325,14 +352,33 @@ class Verifier:
         if e.name == "String.template":
             if len(e.args) < 1:
                 raise TypeCheckError(f"{e.pos.text()}: String.template expects at least 1 argument")
+            if isinstance(e.args[0], NamedArg):
+                raise TypeCheckError(f"{e.args[0].pos.text()}: String.template template argument must be positional")
             expect_arg(0, "String")
-            for index in range(1, len(e.args)):
-                t = infer_arg(index)
+            positional_values = []
+            named_values = []
+            saw_named = False
+            for arg in e.args[1:]:
+                if isinstance(arg, NamedArg):
+                    saw_named = True
+                    named_values.append(arg)
+                else:
+                    if saw_named:
+                        raise TypeCheckError(f"{arg.pos.text()}: String.template positional template value after named binding")
+                    positional_values.append(arg)
+            if positional_values and named_values:
+                raise TypeCheckError(f"{e.pos.text()}: String.template cannot mix positional and named template arguments")
+            for index, arg in enumerate(positional_values, start=1):
+                t = self.infer(arg, env, ctx, allow_result, result_type)
                 if self.base(t, ctx) not in ("String", "Integer", "Boolean", "Double"):
-                    raise TypeCheckError(f"{e.args[index].pos.text()}: String.template template value {index} expected String, Integer, Boolean, or Double, got {type_to_string(t)}")
+                    raise TypeCheckError(f"{arg.pos.text()}: String.template template value {index} expected String, Integer, Boolean, or Double, got {type_to_string(t)}")
+            for arg in named_values:
+                t = self.infer(arg.expr, env, ctx, allow_result, result_type)
+                if self.base(t, ctx) not in ("String", "Integer", "Boolean", "Double"):
+                    raise TypeCheckError(f"{arg.expr.pos.text()}: String.template template value {arg.name} expected String, Integer, Boolean, or Double, got {type_to_string(t)}")
             if isinstance(e.args[0], StringExpr):
                 try:
-                    validate_template(e.args[0].value, len(e.args) - 1)
+                    validate_template(e.args[0].value, len(positional_values), [arg.name for arg in named_values])
                 except ValueError as exc:
                     raise TypeCheckError(f"{e.args[0].pos.text()}: String.template {exc}") from exc
             return TypeName("String")
@@ -543,6 +589,8 @@ class Verifier:
         if len(args) != len(r.params):
             raise TypeCheckError(f"{pos.text()}: routine {r.name} expects {len(r.params)} argument(s), got {len(args)}")
         for index, (a,p) in enumerate(zip(args,r.params), start=1):
+            if isinstance(a, NamedArg):
+                raise TypeCheckError(f"{a.pos.text()}: routine {r.name} does not accept named argument: {a.name}")
             actual = self.infer(a,env,ctx,False,None)
             expected = TypeName(p.type_name)
             if self.base(actual, ctx) != self.base(expected, ctx):

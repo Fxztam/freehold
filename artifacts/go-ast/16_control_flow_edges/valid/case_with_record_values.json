@@ -1,0 +1,184 @@
+{
+  "source_file": "..\\tests\\language_modules\\16_control_flow_edges\\valid\\case_with_record_values.fh",
+  "source_snippet": "module Matrix.CaseRecordValues\r\n\r\ntype Account is record\r\n    id: Integer\r\n    active: Boolean\r\nend record\r\n\r\nfunction choose(kind: Integer) returns Account\r\nis\r\n    case kind is\r\n        when 1 =\u003e\r\n            return Account { id: 1, active: true }\r\n        when 2 =\u003e\r\n            return Account { id: 2, active: false }\r\n        default =\u003e\r\n            return Account { id: 0, active: false }\r\n    end case\r\nend choose\r\n\r\nprocedure main()\r\nis\r\n    let selected: Account = choose(1)\r\n    check selected.id = 1\r\nend main\r\n\r\nend Matrix.CaseRecordValues",
+  "module_name": "16_control_flow_edges",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Matrix.CaseRecordValues",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Account",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "active",
+            "type": "Boolean"
+          }
+        ]
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "choose",
+        "params": [
+          {
+            "name": "kind",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Account",
+        "body": [
+          {
+            "kind": "CaseStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "kind"
+            },
+            "when": [
+              {
+                "value": {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                },
+                "body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "RecordLiteralExpr",
+                      "type": "Account",
+                      "fields": [
+                        {
+                          "name": "id",
+                          "value": {
+                            "kind": "NumberExpr",
+                            "value": "1"
+                          }
+                        },
+                        {
+                          "name": "active",
+                          "value": {
+                            "kind": "IdentifierExpr",
+                            "name": "true"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "value": {
+                  "kind": "NumberExpr",
+                  "value": "2"
+                },
+                "body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "RecordLiteralExpr",
+                      "type": "Account",
+                      "fields": [
+                        {
+                          "name": "id",
+                          "value": {
+                            "kind": "NumberExpr",
+                            "value": "2"
+                          }
+                        },
+                        {
+                          "name": "active",
+                          "value": {
+                            "kind": "IdentifierExpr",
+                            "name": "false"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ],
+            "default": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "RecordLiteralExpr",
+                  "type": "Account",
+                  "fields": [
+                    {
+                      "name": "id",
+                      "value": {
+                        "kind": "NumberExpr",
+                        "value": "0"
+                      }
+                    },
+                    {
+                      "name": "active",
+                      "value": {
+                        "kind": "IdentifierExpr",
+                        "name": "false"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "end_name": "choose"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "selected",
+            "type": "Account",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "choose"
+              },
+              "arguments": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "selected"
+                },
+                "field": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "Matrix.CaseRecordValues"
+  }
+}

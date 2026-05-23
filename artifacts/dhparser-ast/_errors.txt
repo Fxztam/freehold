@@ -1,6 +1,6 @@
-Total: 238
-OK:    210
-FAIL:  28
+Total: 262
+OK:    219
+FAIL:  43
 
 Failures
 --------
@@ -12,6 +12,9 @@ Failures
 01_core invalid_semantics keyword_module_name.fh => 1:8: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »module
 
 end module«
+02_import invalid_syntax bad_import_then_valid_procedure.fh => 5:1: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »procedure main()
+is
+ ...«
 02_import invalid_syntax missing_exposing_list.fh => 5:1: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »procedure main()
 is
  ...«
@@ -41,14 +44,44 @@ e ...«
 end  ...«
 05_records invalid_semantics keyword_record_name.fh => 3:6: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »record is record
     ...«
+08_routines invalid_syntax error_after_valid_declaration.fh => 8:23: Error (1040): Parser param->`:` did not match: »Integer)
+is
+    chec ...«
+08_routines invalid_syntax missing_end_function.fh => 5:14: Error (1040): Parser postfix->`(` did not match: »«
+08_routines invalid_syntax missing_end_procedure.fh => 5:15: Error (1040): Parser postfix->`(` did not match: »«
+08_routines invalid_syntax missing_parameter_colon.fh => 3:23: Error (1040): Parser param->`:` did not match: »Integer) returns Int ...«
+08_routines invalid_syntax missing_return_type.fh => 4:1: Error (1040): Parser array_type->`Array` did not match: »is
+    return 42
+end ...«
 08_routines invalid_semantics keyword_function_name.fh => 3:10: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »value() returns Inte ...«
 08_routines invalid_semantics keyword_parameter_name.fh => 3:15: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »value: Integer) retu ...«
 08_routines invalid_semantics keyword_procedure_name.fh => 3:11: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »return()
 is
     chec ...«
+09_statements invalid_syntax bad_statement_then_following_statement.fh => 5:11: Error (1040): Parser unary->`-` did not match: »)
+    let amount :=  ...«
 09_statements invalid_syntax let_uses_assignment_operator.fh => 5:17: Error (1040): Parser array_type->`Array` did not match: »= 1
     check true
 e ...«
+09_statements invalid_syntax missing_end_case.fh => 11:5: Error (1040): Parser case_stmt->`case` did not match: »main
+
+end MissingEnd ...«
+09_statements invalid_syntax missing_end_if.fh => 7:5: Error (1040): Parser if_stmt->`if` did not match: »main
+
+end MissingEnd ...«
+09_statements invalid_syntax missing_end_while.fh => 10:5: Error (1040): Parser while_stmt->`while` did not match: »main
+
+end MissingEnd ...«
+09_statements invalid_syntax multiple_errors_in_one_file.fh => 5:11: Error (1040): Parser unary->`-` did not match: »)
+    let amount :=  ...«
+10_expressions invalid_syntax invalid_number_literal.fh => 5:17: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »56 = 12
+end main
+
+en ...«
+10_expressions invalid_syntax unexpected_token_in_expression.fh => 5:11: Error (1040): Parser unary->`-` did not match: »)
+end main
+
+end Unex ...«
 11_errors_results invalid_semantics keyword_error_name.fh => 3:7: Error (1040): Parser IDENT->/(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|erro ... lse\\b|success\\b|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: »value
 
 end KeywordEr ...«
@@ -61,9 +94,14 @@ is
 14_comments_whitespace invalid_syntax nested_block_comment.fh => 3:22: Error (1040): Parser qualified_name->`.` did not match: »outer */
 procedure m ...«
 14_comments_whitespace invalid_syntax unterminated_block_comment.fh => 3:1: Error (1040): Parser qualified_name->`.` did not match: »/* this block commen ...«
+14_comments_whitespace invalid_syntax unterminated_string.fh => 5:11: Error (1040): Parser unary->`-` did not match: »"open string
+end mai ...«
 16_control_flow_edges invalid_syntax case_without_default.fh => 9:5: Error (1040): Parser postfix->`(` did not match: »end case
 end main
 
 e ...«
+16_control_flow_edges invalid_syntax error_inside_nested_block.fh => 10:19: Error (1040): Parser unary->`-` did not match: »)
+        end if
+    ...«
 16_control_flow_edges invalid_syntax while_without_invariant.fh => 7:5: Error (1040): Parser postfix->`(` did not match: »do
         amount := ...«

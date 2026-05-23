@@ -1,3 +1,6 @@
+# Freehold CLI Toolchain
+
+This adds a small command-line frontend without changing the Freehold language syntax.
 
 ## Structured parser diagnostics
 
@@ -7,10 +10,6 @@ The Go parser emits structured diagnostics for all parse errors.
 - **Examples:** `artifacts/go-ast/*/*.json`
 
 Every new error class gets a stable code and catalog entry.
-
-# Freehold CLI Toolchain
-
-This adds a small command-line frontend without changing the Freehold language syntax.
 
 ## Commands
 
@@ -96,7 +95,49 @@ Run the full parser conformance chain with one command:
 .\verify-parser-conformance.cmd
 ```
 
-The verify command regenerates Go AST artifacts, regenerates DHParser AST artifacts, runs all parser comparison gates, and finishes with `go test ./...`.
+The verify command regenerates Go AST artifacts, checks expected Go diagnostics, verifies the semantic-rule diagnostic spec, checks expected semantic/type diagnostics, regenerates DHParser AST artifacts, runs all parser comparison gates, and finishes with `go test ./...`.
+
+Expected Go parser diagnostics are stored in:
+
+```text
+tests/language_modules/expected_diagnostics.json
+```
+
+Expected semantic/type diagnostics are stored in:
+
+```text
+tests/language_modules/expected_semantic_diagnostics.json
+```
+
+The semantic diagnostic spec is stored in:
+
+```text
+spec/freehold.diag
+spec/freehold.rules
+```
+
+Verify the spec diagnostic coverage with:
+
+```powershell
+.\verify-spec-diagnostics.cmd
+```
+
+```text
+artifacts/verify-spec-diagnostics
+```
+
+This gate checks that every `emit FH-*` in `spec/freehold.rules` exists in `spec/freehold.diag`, every expected syntax/semantic diagnostic code exists in `spec/freehold.diag`, and every `CODE_MAP` entry from the semantic diagnostic normalizer has a matching spec diagnostic.
+
+Current spec diagnostic baseline:
+
+```text
+Diagnostic specs:        84
+Rule emits:              84
+Expected syntax codes:   19
+Expected semantic codes: 56
+CODE_MAP entries:        60
+Failures:                0
+```
 
 The Go parser frontend writes parse results and reports to:
 
@@ -143,7 +184,7 @@ Compare parse error diagnostics for the cases that both parsers reject with:
 artifacts/compare-parse-errors
 ```
 
-This diagnostic report keeps failure locations visible without making the parser conformance gates depend on identical third-party error wording. Go parser artifacts now include a structured `diagnostic` object with code, message, location, expected tokens, found token, and hint.
+This diagnostic report keeps failure locations visible without making the parser conformance gates depend on identical third-party error wording. Go parser artifacts now include a structured `diagnostic` object with code, message, location, expected tokens, found token, and hint, plus `diagnostics[]` for recovery cases that produce more than one parser diagnostic. The singular `diagnostic` field remains a compatibility alias for the first entry.
 
 The report also assigns provisional Freehold diagnostic codes. Current ranges are reserved as:
 
@@ -158,11 +199,37 @@ FH-BLD-9000..9999  bootstrap/tooling diagnostics
 Current parse-error diagnostic baseline:
 
 ```text
-Shared failures:               28
-Matching failure locations:    26
-Mismatching failure locations: 2
+Shared failures:               43
+Matching failure locations:    40
+Mismatching failure locations: 3
 Status mismatches:             0
 ```
+
+Compare semantic/type diagnostics with:
+
+```powershell
+.\compare-semantic-diagnostics.cmd
+```
+
+```text
+artifacts/compare-semantic-diagnostics
+```
+
+Current semantic/type diagnostic baseline:
+
+```text
+Expected semantic diagnostics:    57
+Matching semantic diagnostics:    57
+Mismatching semantic diagnostics: 0
+```
+
+Positive feature-matrix coverage is tracked in:
+
+```text
+tests/language_modules/positive_feature_matrix.json
+```
+
+The current matrix includes valid interaction cases for while invariants plus variants, case branches with record values, record-field contracts, qualified calls in contracts, positional and named string templates, string templates inside `Std.IO.logf`, and Big number calls inside expressions. `Result<Array<...>, E>` and `value.field` in Result ensures are kept as explicit known gaps until the grammar supports nested Result payloads and field access from the special `value` contract expression.
 
 Compare normalized AST shape for the files that both parsers accept with:
 
@@ -179,8 +246,8 @@ This second stage compares a normalized outline of modules, declarations, statem
 Current normalized AST-shape baseline:
 
 ```text
-Comparable parse-ok cases: 210
-Matching shape:            210
+Comparable parse-ok cases: 219
+Matching shape:            219
 Mismatching shape:         0
 ```
 
@@ -199,7 +266,7 @@ This third stage normalizes expressions into typed nodes such as `BinaryExpr`, `
 Current normalized semantic AST baseline:
 
 ```text
-Comparable parse-ok cases:    210
-Matching semantic AST:        210
+Comparable parse-ok cases:    219
+Matching semantic AST:        219
 Mismatching semantic AST:     0
 ```

@@ -1,5 +1,6 @@
 {
   "source_file": "..\\tests\\language_modules\\16_control_flow_edges\\invalid_syntax\\case_without_default.fh",
+  "source_snippet": "module Control.CaseWithoutDefault\r\n\r\nprocedure main()\r\nis\r\n    let choice: Integer = 1\r\n    case choice is\r\n        when 1 =\u003e\r\n            check true\r\n    end case\r\nend main\r\n\r\nend Control.CaseWithoutDefault",
   "module_name": "16_control_flow_edges",
   "case_kind": "invalid_syntax",
   "parse_ok": false,
@@ -22,5 +23,45 @@
     ],
     "found": "end \"end\"",
     "hint": "Every case statement must include a default branch."
-  }
+  },
+  "diagnostics": [
+    {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0008",
+      "number": 8,
+      "name": "missing_case_default",
+      "message": "Expected a default case branch.",
+      "location": {
+        "line": 9,
+        "column": 5,
+        "offset": 155
+      },
+      "expected": [
+        "default"
+      ],
+      "found": "end \"end\"",
+      "hint": "Every case statement must include a default branch."
+    },
+    {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0002",
+      "number": 2,
+      "name": "expected_identifier",
+      "message": "Expected an identifier.",
+      "location": {
+        "line": 9,
+        "column": 9,
+        "offset": 159
+      },
+      "expected": [
+        "identifier"
+      ],
+      "found": "case \"case\"",
+      "hint": "Use a non-keyword name here."
+    }
+  ]
 }

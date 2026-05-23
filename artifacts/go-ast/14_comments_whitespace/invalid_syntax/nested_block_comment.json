@@ -1,5 +1,6 @@
 {
   "source_file": "..\\tests\\language_modules\\14_comments_whitespace\\invalid_syntax\\nested_block_comment.fh",
+  "source_snippet": "module NestedBlockComment\r\n\r\n/* outer /* inner */ outer */\r\nprocedure main()\r\nis\r\n    check true\r\nend main\r\n\r\nend NestedBlockComment",
   "module_name": "14_comments_whitespace",
   "case_kind": "invalid_syntax",
   "parse_ok": false,
@@ -26,5 +27,30 @@
     ],
     "found": "Ident \"outer\"",
     "hint": "Use import, type, error, function, or procedure at module level."
-  }
+  },
+  "diagnostics": [
+    {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0007",
+      "number": 7,
+      "name": "expected_declaration",
+      "message": "Expected a declaration.",
+      "location": {
+        "line": 3,
+        "column": 22,
+        "offset": 50
+      },
+      "expected": [
+        "import",
+        "type",
+        "error",
+        "function",
+        "procedure"
+      ],
+      "found": "Ident \"outer\"",
+      "hint": "Use import, type, error, function, or procedure at module level."
+    }
+  ]
 }

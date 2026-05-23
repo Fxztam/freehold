@@ -1,0 +1,50 @@
+{
+  "requirements": [
+    "minimal valid case",
+    "nested valid case",
+    "interaction with imports",
+    "interaction with records/arrays",
+    "interaction with contracts",
+    "interaction with result/error returns"
+  ],
+  "matrix_cases": {
+    "while_with_multiple_invariants_and_variant": {
+      "file": "16_control_flow_edges/valid/while_with_multiple_invariants_and_variant.fh",
+      "covers": ["nested valid case"]
+    },
+    "case_with_record_values": {
+      "file": "16_control_flow_edges/valid/case_with_record_values.fh",
+      "covers": ["nested valid case", "interaction with records/arrays"]
+    },
+    "contract_uses_result_value_field": {
+      "file": "13_contract_blocks/valid/contract_uses_result_value_field.fh",
+      "covers": ["interaction with contracts", "interaction with records/arrays"]
+    },
+    "qualified_call_inside_contract": {
+      "file": "13_contract_blocks/valid/qualified_call_inside_contract.fh",
+      "covers": ["interaction with imports", "interaction with contracts"]
+    },
+    "string_template_inside_logf": {
+      "file": "18_string_templates/valid/string_template_inside_logf.fh",
+      "covers": ["interaction with imports"]
+    },
+    "string_template_named_values": {
+      "file": "18_string_templates/valid/string_template_named_values.fh",
+      "covers": ["nested valid case"]
+    },
+    "big_number_inside_expression": {
+      "file": "19_big_numbers/valid/big_number_inside_expression.fh",
+      "covers": ["interaction with imports", "nested valid case"]
+    }
+  },
+  "known_gaps": {
+    "function_returning_result_array": {
+      "reason": "Current grammar supports Result<T, E> only when T and E are simple type_ref names; Array<T, N> is only a top-level return_type/let type, not a nested Result ok type.",
+      "blocked_by": ["freehold/grammar/freehold.lark result_type", "go-frontend parser return type support", "grammar/freehold.dhparser.ebnf result type support"]
+    },
+    "result_value_field_access": {
+      "reason": "The current expression grammar treats value as a special Result contract expression atom and does not yet allow field access such as value.id.",
+      "blocked_by": ["freehold/grammar/freehold.lark atom/field_path", "go-frontend parser expression support", "grammar/freehold.dhparser.ebnf expression support"]
+    }
+  }
+}

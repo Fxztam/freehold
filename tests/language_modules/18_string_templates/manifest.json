@@ -1,6 +1,6 @@
 {
   "module": "18_string_templates",
-  "title": "String templates with positional ${} placeholders",
+  "title": "String templates with positional and named placeholders",
   "cases": [
     {
       "name": "String.template formats scalar values",
@@ -27,6 +27,18 @@
       "expected_ast": "expected_ast/std_io_logf_template.ast.json"
     },
     {
+      "name": "String.template works inside Std.IO.logf",
+      "kind": "valid",
+      "file": "valid/string_template_inside_logf.fh",
+      "expected_ast": "expected_ast/string_template_inside_logf.ast.json"
+    },
+    {
+      "name": "String.template accepts named bindings",
+      "kind": "valid",
+      "file": "valid/string_template_named_values.fh",
+      "expected_ast": "expected_ast/string_template_named_values.ast.json"
+    },
+    {
       "name": "String.template placeholder count rejected",
       "kind": "invalid_semantics",
       "file": "invalid_semantics/string_template_count_mismatch.fh",
@@ -39,10 +51,22 @@
       "expected_error": "expected_errors/string_template_old_braces.err"
     },
     {
-      "name": "named templates are TODO",
+      "name": "named template missing binding rejected",
       "kind": "invalid_semantics",
-      "file": "invalid_semantics/string_template_named_todo.fh",
-      "expected_error": "expected_errors/string_template_named_todo.err"
+      "file": "invalid_semantics/string_template_missing_binding.fh",
+      "expected_error": "expected_errors/string_template_missing_binding.err"
+    },
+    {
+      "name": "named template unused binding rejected",
+      "kind": "invalid_semantics",
+      "file": "invalid_semantics/string_template_unused_binding.fh",
+      "expected_error": "expected_errors/string_template_unused_binding.err"
+    },
+    {
+      "name": "named template duplicate binding rejected",
+      "kind": "invalid_semantics",
+      "file": "invalid_semantics/string_template_duplicate_binding.fh",
+      "expected_error": "expected_errors/string_template_duplicate_binding.err"
     },
     {
       "name": "invalid template brace rejected",

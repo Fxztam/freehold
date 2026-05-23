@@ -93,6 +93,7 @@ def parse_file(dhparser: Any, source_file: Path, module_name: str, case_kind: st
 
     try:
         source = source_file.read_text(encoding="utf-8")
+        result["source_snippet"] = source
         tree = dhparser(source)
     except Exception as exc:
         result["error"] = f"{type(exc).__name__}: {exc}"

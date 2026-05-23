@@ -1,0 +1,292 @@
+{
+  "cases": {
+    "01_core/invalid_syntax/empty_file.json": {
+      "code": "FH-SYN-0003",
+      "name": "missing_module_declaration",
+      "location": { "line": 1, "column": 1 },
+      "expected": ["module"],
+      "found": "EOF",
+      "hint": "A Freehold file must start with a module declaration."
+    },
+    "01_core/invalid_syntax/missing_module_end.json": {
+      "code": "FH-SYN-0004",
+      "name": "missing_end",
+      "location": { "line": 7, "column": 1 },
+      "expected": ["end"],
+      "found": "EOF",
+      "hint": "Close the current declaration or block with the matching end clause."
+    },
+    "01_core/invalid_syntax/missing_module_name.json": {
+      "code": "FH-SYN-0002",
+      "name": "expected_identifier",
+      "location": { "line": 2, "column": 1 },
+      "expected": ["identifier"],
+      "found": "EOF",
+      "hint": "Use a non-keyword name here."
+    },
+    "01_core/invalid_syntax/unknown_top_level_token.json": {
+      "code": "FH-SYN-0003",
+      "name": "missing_module_declaration",
+      "location": { "line": 1, "column": 1 },
+      "expected": ["module"],
+      "found": "let \"let\"",
+      "hint": "A Freehold file must start with a module declaration."
+    },
+    "02_import/invalid_syntax/missing_exposing_list.json": {
+      "code": "FH-SYN-0002",
+      "name": "expected_identifier",
+      "location": { "line": 5, "column": 1 },
+      "expected": ["identifier"],
+      "found": "procedure \"procedure\"",
+      "hint": "Use a non-keyword name here."
+    },
+    "02_import/invalid_syntax/missing_import_name.json": {
+      "code": "FH-SYN-0002",
+      "name": "expected_identifier",
+      "location": { "line": 5, "column": 1 },
+      "expected": ["identifier"],
+      "found": "procedure \"procedure\"",
+      "hint": "Use a non-keyword name here."
+    },
+    "02_import/invalid_syntax/bad_import_then_valid_procedure.json": {
+      "code": "FH-SYN-0002",
+      "name": "expected_identifier",
+      "location": { "line": 5, "column": 1 },
+      "expected": ["identifier"],
+      "found": "procedure \"procedure\"",
+      "hint": "Use a non-keyword name here."
+    },
+    "08_routines/invalid_syntax/error_after_valid_declaration.json": {
+      "code": "FH-SYN-0018",
+      "name": "missing_parameter_colon",
+      "location": { "line": 8, "column": 23 },
+      "expected": [":"],
+      "found": "Ident \"Integer\"",
+      "hint": "Write parameters as 'name: Type'.",
+      "diagnostics": [
+        {
+          "code": "FH-SYN-0018",
+          "name": "missing_parameter_colon",
+          "location": { "line": 8, "column": 23 },
+          "expected": [":"],
+          "found": "Ident \"Integer\"",
+          "hint": "Write parameters as 'name: Type'."
+        },
+        {
+          "code": "FH-SYN-0014",
+          "name": "missing_return_type",
+          "location": { "line": 14, "column": 1 },
+          "expected": ["type"],
+          "found": "is \"is\"",
+          "hint": "Add a type name after 'returns'."
+        }
+      ]
+    },
+    "08_routines/invalid_syntax/missing_end_function.json": {
+      "code": "FH-SYN-0019",
+      "name": "missing_end_function",
+      "location": { "line": 5, "column": 14 },
+      "expected": ["end"],
+      "found": "EOF",
+      "hint": "Close the function body with 'end <function-name>'."
+    },
+    "08_routines/invalid_syntax/missing_end_procedure.json": {
+      "code": "FH-SYN-0020",
+      "name": "missing_end_procedure",
+      "location": { "line": 5, "column": 15 },
+      "expected": ["end"],
+      "found": "EOF",
+      "hint": "Close the procedure body with 'end <procedure-name>'."
+    },
+    "08_routines/invalid_syntax/missing_parameter_colon.json": {
+      "code": "FH-SYN-0018",
+      "name": "missing_parameter_colon",
+      "location": { "line": 3, "column": 23 },
+      "expected": [":"],
+      "found": "Ident \"Integer\"",
+      "hint": "Write parameters as 'name: Type'."
+    },
+    "08_routines/invalid_syntax/missing_return_type.json": {
+      "code": "FH-SYN-0014",
+      "name": "missing_return_type",
+      "location": { "line": 4, "column": 1 },
+      "expected": ["type"],
+      "found": "is \"is\"",
+      "hint": "Add a type name after 'returns'."
+    },
+    "09_statements/invalid_syntax/let_uses_assignment_operator.json": {
+      "code": "FH-SYN-0005",
+      "name": "expected_type_annotation_colon",
+      "location": { "line": 5, "column": 16 },
+      "expected": [":"],
+      "found": ":= \":=\"",
+      "hint": "Use ':' in declarations such as 'let x: Integer = 1'; ':=' is used for assignment."
+    },
+    "09_statements/invalid_syntax/bad_statement_then_following_statement.json": {
+      "code": "FH-SYN-0015",
+      "name": "expected_expression",
+      "location": { "line": 5, "column": 11 },
+      "expected": ["expression"],
+      "found": ") \")\"",
+      "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here.",
+      "diagnostics": [
+        {
+          "code": "FH-SYN-0015",
+          "name": "expected_expression",
+          "location": { "line": 5, "column": 11 },
+          "expected": ["expression"],
+          "found": ") \")\"",
+          "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+        },
+        {
+          "code": "FH-SYN-0005",
+          "name": "expected_type_annotation_colon",
+          "location": { "line": 6, "column": 16 },
+          "expected": [":"],
+          "found": ":= \":=\"",
+          "hint": "Use ':' in declarations such as 'let x: Integer = 1'; ':=' is used for assignment."
+        }
+      ]
+    },
+    "09_statements/invalid_syntax/missing_end_case.json": {
+      "code": "FH-SYN-0023",
+      "name": "missing_end_case",
+      "location": { "line": 11, "column": 5 },
+      "expected": ["end", "end case"],
+      "found": "Ident \"main\"",
+      "hint": "Close the case statement with 'end case'."
+    },
+    "09_statements/invalid_syntax/missing_end_if.json": {
+      "code": "FH-SYN-0021",
+      "name": "missing_end_if",
+      "location": { "line": 7, "column": 5 },
+      "expected": ["end", "end if"],
+      "found": "Ident \"main\"",
+      "hint": "Close the if statement with 'end if'."
+    },
+    "09_statements/invalid_syntax/missing_end_while.json": {
+      "code": "FH-SYN-0022",
+      "name": "missing_end_while",
+      "location": { "line": 10, "column": 5 },
+      "expected": ["end", "end while"],
+      "found": "Ident \"main\"",
+      "hint": "Close the while statement with 'end while'."
+    },
+    "09_statements/invalid_syntax/multiple_errors_in_one_file.json": {
+      "code": "FH-SYN-0015",
+      "name": "expected_expression",
+      "location": { "line": 5, "column": 11 },
+      "expected": ["expression"],
+      "found": ") \")\"",
+      "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here.",
+      "diagnostics": [
+        {
+          "code": "FH-SYN-0015",
+          "name": "expected_expression",
+          "location": { "line": 5, "column": 11 },
+          "expected": ["expression"],
+          "found": ") \")\"",
+          "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+        },
+        {
+          "code": "FH-SYN-0005",
+          "name": "expected_type_annotation_colon",
+          "location": { "line": 6, "column": 16 },
+          "expected": [":"],
+          "found": ":= \":=\"",
+          "hint": "Use ':' in declarations such as 'let x: Integer = 1'; ':=' is used for assignment."
+        }
+      ]
+    },
+    "10_expressions/invalid_syntax/invalid_number_literal.json": {
+      "code": "FH-SYN-0017",
+      "name": "invalid_number_literal",
+      "location": { "line": 5, "column": 11 },
+      "expected": ["number"],
+      "found": "Illegal \"invalid number literal\"",
+      "hint": "Use digits with at most one decimal point and digits on both sides of the decimal point."
+    },
+    "10_expressions/invalid_syntax/unexpected_token_in_expression.json": {
+      "code": "FH-SYN-0015",
+      "name": "expected_expression",
+      "location": { "line": 5, "column": 11 },
+      "expected": ["expression"],
+      "found": ") \")\"",
+      "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+    },
+    "13_contract_blocks/invalid_syntax/ensures_before_requires.json": {
+      "code": "FH-SYN-0006",
+      "name": "invalid_contract_order",
+      "location": { "line": 5, "column": 1 },
+      "expected": ["is"],
+      "found": "requires \"requires\"",
+      "hint": "Place all requires clauses before ensures clauses in a contract block."
+    },
+    "14_comments_whitespace/invalid_syntax/nested_block_comment.json": {
+      "code": "FH-SYN-0007",
+      "name": "expected_declaration",
+      "location": { "line": 3, "column": 22 },
+      "expected": ["import", "type", "error", "function", "procedure"],
+      "found": "Ident \"outer\"",
+      "hint": "Use import, type, error, function, or procedure at module level."
+    },
+    "14_comments_whitespace/invalid_syntax/unterminated_block_comment.json": {
+      "code": "FH-SYN-0010",
+      "name": "unterminated_block_comment",
+      "location": { "line": 3, "column": 1 },
+      "expected": ["*/"],
+      "found": "Illegal \"unterminated block comment\"",
+      "hint": "Close the block comment with */."
+    },
+    "14_comments_whitespace/invalid_syntax/unterminated_string.json": {
+      "code": "FH-SYN-0016",
+      "name": "unterminated_string",
+      "location": { "line": 5, "column": 11 },
+      "expected": ["\""],
+      "found": "Illegal \"unterminated string\"",
+      "hint": "Close the string literal with a double quote."
+    },
+    "16_control_flow_edges/invalid_syntax/case_without_default.json": {
+      "code": "FH-SYN-0008",
+      "name": "missing_case_default",
+      "location": { "line": 9, "column": 5 },
+      "expected": ["default"],
+      "found": "end \"end\"",
+      "hint": "Every case statement must include a default branch."
+    },
+    "16_control_flow_edges/invalid_syntax/error_inside_nested_block.json": {
+      "code": "FH-SYN-0015",
+      "name": "expected_expression",
+      "location": { "line": 10, "column": 19 },
+      "expected": ["expression"],
+      "found": ") \")\"",
+      "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here.",
+      "diagnostics": [
+        {
+          "code": "FH-SYN-0015",
+          "name": "expected_expression",
+          "location": { "line": 10, "column": 19 },
+          "expected": ["expression"],
+          "found": ") \")\"",
+          "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+        },
+        {
+          "code": "FH-SYN-0015",
+          "name": "expected_expression",
+          "location": { "line": 12, "column": 19 },
+          "expected": ["expression"],
+          "found": ") \")\"",
+          "hint": "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+        }
+      ]
+    },
+    "16_control_flow_edges/invalid_syntax/while_without_invariant.json": {
+      "code": "FH-SYN-0009",
+      "name": "missing_while_invariant",
+      "location": { "line": 7, "column": 5 },
+      "expected": ["invariant"],
+      "found": "do \"do\"",
+      "hint": "Every while loop must declare at least one invariant before do."
+    }
+  }
+}

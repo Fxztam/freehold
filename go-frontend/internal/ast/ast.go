@@ -146,6 +146,12 @@ type CallExpr struct {
 	Arguments []Expr `json:"arguments"`
 }
 
+type NamedArgumentExpr struct {
+	Kind  string `json:"kind"`
+	Name  string `json:"name"`
+	Value Expr   `json:"value"`
+}
+
 type RecordLiteralExpr struct {
 	Kind   string        `json:"kind"`
 	Type   string        `json:"type"`

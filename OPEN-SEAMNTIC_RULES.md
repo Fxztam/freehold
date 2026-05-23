@@ -582,12 +582,31 @@ Recommended staged implementation:
 1. Write OPEN-SEAMNTIC_RULES.md as design anchor.
 2. Create spec/freehold.diag with the first stable diagnostic definitions.
 3. Create spec/freehold.rules with the first semantic rules.
-4. Add a Python loader that parses the simple rule/diag files.
+4. Add verify-spec-diagnostics to parse the simple rule/diag files and gate coverage.
 5. Connect the existing verifier to emit diagnostics using freehold.diag codes.
 6. Add freehold check file.fh --json.
 7. Teach the VS Code extension to call the CLI for edit-mode diagnostics.
 8. Add completion for record constructors and template bindings.
 9. Move from CLI polling to LSP when the behavior is stable.
+```
+
+Current implemented diagnostic-spec gate:
+
+```text
+verify-spec-diagnostics.cmd
+tools/verify_spec_diagnostics.py
+artifacts/verify-spec-diagnostics
+```
+
+The gate currently checks:
+
+```text
+every emit FH-* in spec/freehold.rules exists in spec/freehold.diag
+every code in expected_diagnostics.json exists in spec/freehold.diag
+every code in expected_semantic_diagnostics.json exists in spec/freehold.diag
+every CODE_MAP target from compare_semantic_diagnostics.py exists in spec/freehold.diag
+expected diagnostic names match spec diagnostic names
+CODE_MAP names match spec diagnostic names
 ```
 
 ## First Rule Targets

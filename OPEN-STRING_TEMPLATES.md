@@ -10,6 +10,12 @@ String templates already exist as checked built-in calls:
 let message: String = String.template("id=${}, active=${}", 7, true)
 ```
 
+Named templates are now accepted in v1 form by using named call arguments:
+
+```fh
+let message: String = String.template("id=${id}, active=${active}", id: id, active: active)
+```
+
 `Std.IO.logf` also supports template-style formatting:
 
 ```fh
@@ -31,8 +37,11 @@ String.template expects at least one argument.
 The first argument must be String.
 Template placeholders use ${}.
 Old {} placeholders are rejected.
-Named placeholders are not implemented yet.
-Placeholder count must match the number of template values.
+Named placeholders use ${name}.
+Named bindings use name: expr after the template string.
+Positional and named template modes cannot be mixed in one call.
+Positional placeholder count must match the number of template values.
+Named placeholders and bindings must match exactly.
 Template values are currently scalar: String, Integer, Boolean, or Double.
 ```
 
@@ -52,6 +61,10 @@ call Std.IO.logf("value=${}", 3)
 call Std.IO.logf(String.template("code=${}", code))
 ```
 
+```fh
+let message: String = String.template("id=${id}, active=${active}", id: id, active: true)
+```
+
 ## Rejected Examples
 
 Old placeholder form:
@@ -66,29 +79,42 @@ Placeholder count mismatch:
 let message: String = String.template("id=${}, active=${}", 7)
 ```
 
-Named placeholders are still open:
+Missing named binding:
 
 ```fh
-let message: String = String.template("id=${id}", 7)
+let message: String = String.template("id=${id}")
+```
+
+Unused named binding:
+
+```fh
+let message: String = String.template("id=${id}", id: id, active: true)
+```
+
+Duplicate named binding:
+
+```fh
+let message: String = String.template("id=${id}", id: id, id: id)
 ```
 
 ## Open Design Questions
 
 ### Named Placeholders
 
-Potential future syntax:
+The v1 syntax is fixed:
 
 ```fh
 let message: String = String.template("id=${id}", id: 7)
 ```
 
-Open points:
+Rules:
 
 ```text
-Should named template arguments use existing named_arg syntax?
-Should all placeholders be named if one is named?
-Should duplicate placeholder names be allowed?
-Should extra named values be rejected?
+Named template arguments use the shared named call-argument syntax.
+If one placeholder is named, all placeholders in that template must be named.
+Every named placeholder must have exactly one binding.
+Every binding must be used.
+Duplicate binding names are rejected.
 ```
 
 ### Record And Array Values
@@ -147,25 +173,26 @@ This is open and should be tested before implementation.
 
 ## Diagnostics
 
-Existing semantic diagnostics already classify template errors through legacy `VF-TPL*` names and can be normalized into stable Freehold diagnostics later.
+Semantic diagnostics classify template errors through legacy `VF-TPL*` names and normalize them into stable Freehold diagnostics.
 
-Suggested stable range:
+Stable range:
 
 ```text
 FH-TPL-4000..4099  string template diagnostics
 ```
 
-Suggested diagnostics:
+Diagnostics:
 
 ```text
-FH-TPL-4001 wrong template argument count
+FH-TPL-4001 template placeholder count mismatch
 FH-TPL-4002 old placeholder form rejected
-FH-TPL-4003 named templates not implemented
+FH-TPL-4003 invalid named template placeholder
 FH-TPL-4004 invalid template brace
 FH-TPL-4005 template value type mismatch
-FH-TPL-4006 duplicate named template argument
-FH-TPL-4007 missing named template argument
-FH-TPL-4008 extra named template argument
+FH-TPL-4006 duplicate named template binding
+FH-TPL-4007 missing named template binding
+FH-TPL-4008 unused named template binding
+FH-TPL-4009 mixed positional/named template mode
 ```
 
 Diagnostics should report:
@@ -186,6 +213,10 @@ string_template_no_placeholder
 string_template_spaced_placeholder
 std_io_logf_template
 string_template_inside_logf
+string_template_named_values
+string_template_missing_binding
+string_template_unused_binding
+string_template_duplicate_binding
 ```
 
 Future matrix targets:
@@ -194,15 +225,16 @@ Future matrix targets:
 string_template_with_explicit_big_conversion
 string_template_with_record_field_values
 string_template_inside_contract_message_if diagnostics later support messages
-named_string_template_values if named placeholders are accepted
 ```
 
 ## Summary Rules
 
 ```text
 Use ${} placeholders.
+Use ${name} placeholders with name: expr bindings for named templates.
 Reject old {} placeholders.
+Reject missing, unused, or duplicate named bindings.
+Reject mixed positional/named template modes.
 Keep template values scalar unless explicitly converted to String.
 Prefer explicit formatting over hidden serialization.
-Keep named placeholders open until named argument semantics are settled.
 ```

@@ -144,7 +144,11 @@ class AstBuilder:
         if tree.data == "return_error": return ReturnError(str(tree.children[0]), pos(tree))
         raise TypeCheckError(f"{pos(tree).text()}: invalid return")
 
-    def args(self, tree: Tree): return [self.expr(x) for x in tree.children]
+    def args(self, tree: Tree): return [self.call_arg(x) for x in tree.children]
+    def call_arg(self, tree: Tree):
+        if tree.data == "named_call_arg": return NamedArg(str(tree.children[0]), self.expr(tree.children[1]), pos(tree))
+        if tree.data == "positional_call_arg": return self.expr(tree.children[0])
+        return self.expr(tree)
     def named_args(self, tree: Tree): return [NamedArg(str(x.children[0]), self.expr(x.children[1]), pos(x)) for x in tree.children]
 
     def expr(self, tree: Tree):

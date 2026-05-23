@@ -1,11 +1,12 @@
 {
-  "source_file": "..\\tests\\language_modules\\18_string_templates\\invalid_semantics\\string_template_named_todo.fh",
+  "source_file": "..\\tests\\language_modules\\18_string_templates\\invalid_semantics\\string_template_duplicate_binding.fh",
+  "source_snippet": "module StringTemplateDuplicateBinding\r\n\r\nprocedure main()\r\nis\r\n    let id: Integer = 7\r\n    let message: String = String.template(\"id=${id}\", id: id, id: id)\r\n    check message = \"id=7\"\r\nend main\r\n\r\nend StringTemplateDuplicateBinding",
   "module_name": "18_string_templates",
   "case_kind": "invalid_semantics",
   "parse_ok": true,
   "ast": {
     "kind": "Module",
-    "name": "StringTemplateNamedTodo",
+    "name": "StringTemplateDuplicateBinding",
     "declarations": [
       {
         "kind": "ProcedureDecl",
@@ -41,8 +42,20 @@
                   "value": "id=${id}"
                 },
                 {
-                  "kind": "IdentifierExpr",
-                  "name": "id"
+                  "kind": "NamedArgumentExpr",
+                  "name": "id",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "id"
+                  }
+                },
+                {
+                  "kind": "NamedArgumentExpr",
+                  "name": "id",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "id"
+                  }
                 }
               ]
             }
@@ -66,6 +79,6 @@
         "end_name": "main"
       }
     ],
-    "end_name": "StringTemplateNamedTodo"
+    "end_name": "StringTemplateDuplicateBinding"
   }
 }

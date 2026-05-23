@@ -1,6 +1,6 @@
-Total: 238
-OK:    210
-FAIL:  28
+Total: 262
+OK:    219
+FAIL:  43
 
 Failures
 --------
@@ -9,6 +9,7 @@ Failures
 01_core invalid_syntax missing_module_name.fh => FH-SYN-0002: Expected an identifier. | Location: line 2, column 1 | Expected: identifier | Found: EOF | Hint: Use a non-keyword name here.
 01_core invalid_syntax unknown_top_level_token.fh => FH-SYN-0003: Expected a module declaration. | Location: line 1, column 1 | Expected: module | Found: let "let" | Hint: A Freehold file must start with a module declaration.
 01_core invalid_semantics keyword_module_name.fh => FH-SYN-0002: Expected an identifier. | Location: line 1, column 8 | Expected: identifier | Found: module "module" | Hint: Use a non-keyword name here.
+02_import invalid_syntax bad_import_then_valid_procedure.fh => FH-SYN-0002: Expected an identifier. | Location: line 5, column 1 | Expected: identifier | Found: procedure "procedure" | Hint: Use a non-keyword name here.
 02_import invalid_syntax missing_exposing_list.fh => FH-SYN-0002: Expected an identifier. | Location: line 5, column 1 | Expected: identifier | Found: procedure "procedure" | Hint: Use a non-keyword name here.
 02_import invalid_syntax missing_import_name.fh => FH-SYN-0002: Expected an identifier. | Location: line 5, column 1 | Expected: identifier | Found: procedure "procedure" | Hint: Use a non-keyword name here.
 02_import invalid_semantics keyword_exposing_symbol.fh => FH-SYN-0002: Expected an identifier. | Location: line 3, column 32 | Expected: identifier | Found: module "module" | Hint: Use a non-keyword name here.
@@ -21,14 +22,28 @@ Failures
 04_types invalid_semantics unknown_parameter_type.fh => FH-SYN-0002: Expected an identifier. | Location: line 3, column 18 | Expected: identifier | Found: value "value" | Hint: Use a non-keyword name here.
 05_records invalid_semantics keyword_record_field.fh => FH-SYN-0002: Expected an identifier. | Location: line 4, column 5 | Expected: identifier | Found: module "module" | Hint: Use a non-keyword name here.
 05_records invalid_semantics keyword_record_name.fh => FH-SYN-0002: Expected an identifier. | Location: line 3, column 6 | Expected: identifier | Found: record "record" | Hint: Use a non-keyword name here.
+08_routines invalid_syntax error_after_valid_declaration.fh => FH-SYN-0018: Expected ':' after a parameter name. | Location: line 8, column 23 | Expected: : | Found: Ident "Integer" | Hint: Write parameters as 'name: Type'.
+08_routines invalid_syntax missing_end_function.fh => FH-SYN-0019: Expected 'end' for a function declaration. | Location: line 5, column 14 | Expected: end | Found: EOF | Hint: Close the function body with 'end <function-name>'.
+08_routines invalid_syntax missing_end_procedure.fh => FH-SYN-0020: Expected 'end' for a procedure declaration. | Location: line 5, column 15 | Expected: end | Found: EOF | Hint: Close the procedure body with 'end <procedure-name>'.
+08_routines invalid_syntax missing_parameter_colon.fh => FH-SYN-0018: Expected ':' after a parameter name. | Location: line 3, column 23 | Expected: : | Found: Ident "Integer" | Hint: Write parameters as 'name: Type'.
+08_routines invalid_syntax missing_return_type.fh => FH-SYN-0014: Expected a function return type. | Location: line 4, column 1 | Expected: type | Found: is "is" | Hint: Add a type name after 'returns'.
 08_routines invalid_semantics keyword_function_name.fh => FH-SYN-0002: Expected an identifier. | Location: line 3, column 10 | Expected: identifier | Found: value "value" | Hint: Use a non-keyword name here.
 08_routines invalid_semantics keyword_parameter_name.fh => FH-SYN-0002: Expected an identifier. | Location: line 3, column 15 | Expected: identifier | Found: value "value" | Hint: Use a non-keyword name here.
 08_routines invalid_semantics keyword_procedure_name.fh => FH-SYN-0002: Expected an identifier. | Location: line 3, column 11 | Expected: identifier | Found: return "return" | Hint: Use a non-keyword name here.
+09_statements invalid_syntax bad_statement_then_following_statement.fh => FH-SYN-0015: Expected an expression. | Location: line 5, column 11 | Expected: expression | Found: ) ")" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.
 09_statements invalid_syntax let_uses_assignment_operator.fh => FH-SYN-0005: Expected ':' for a type annotation. | Location: line 5, column 16 | Expected: : | Found: := ":=" | Hint: Use ':' in declarations such as 'let x: Integer = 1'; ':=' is used for assignment.
+09_statements invalid_syntax missing_end_case.fh => FH-SYN-0023: Expected 'end case'. | Location: line 11, column 5 | Expected: end, end case | Found: Ident "main" | Hint: Close the case statement with 'end case'.
+09_statements invalid_syntax missing_end_if.fh => FH-SYN-0021: Expected 'end if'. | Location: line 7, column 5 | Expected: end, end if | Found: Ident "main" | Hint: Close the if statement with 'end if'.
+09_statements invalid_syntax missing_end_while.fh => FH-SYN-0022: Expected 'end while'. | Location: line 10, column 5 | Expected: end, end while | Found: Ident "main" | Hint: Close the while statement with 'end while'.
+09_statements invalid_syntax multiple_errors_in_one_file.fh => FH-SYN-0015: Expected an expression. | Location: line 5, column 11 | Expected: expression | Found: ) ")" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.
+10_expressions invalid_syntax invalid_number_literal.fh => FH-SYN-0017: Invalid number literal. | Location: line 5, column 11 | Expected: number | Found: Illegal "invalid number literal" | Hint: Use digits with at most one decimal point and digits on both sides of the decimal point.
+10_expressions invalid_syntax unexpected_token_in_expression.fh => FH-SYN-0015: Expected an expression. | Location: line 5, column 11 | Expected: expression | Found: ) ")" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.
 11_errors_results invalid_semantics keyword_error_name.fh => FH-SYN-0002: Expected an identifier. | Location: line 3, column 7 | Expected: identifier | Found: value "value" | Hint: Use a non-keyword name here.
 12_type_conflicts invalid_semantics parameter_alias_mismatch.fh => FH-SYN-0002: Expected an identifier. | Location: line 5, column 18 | Expected: identifier | Found: value "value" | Hint: Use a non-keyword name here.
 13_contract_blocks invalid_syntax ensures_before_requires.fh => FH-SYN-0006: Expected requires clauses before ensures clauses. | Location: line 5, column 1 | Expected: is | Found: requires "requires" | Hint: Place all requires clauses before ensures clauses in a contract block.
 14_comments_whitespace invalid_syntax nested_block_comment.fh => FH-SYN-0007: Expected a declaration. | Location: line 3, column 22 | Expected: import, type, error, function, procedure | Found: Ident "outer" | Hint: Use import, type, error, function, or procedure at module level.
 14_comments_whitespace invalid_syntax unterminated_block_comment.fh => FH-SYN-0010: Unterminated block comment. | Location: line 3, column 1 | Expected: */ | Found: Illegal "unterminated block comment" | Hint: Close the block comment with */.
+14_comments_whitespace invalid_syntax unterminated_string.fh => FH-SYN-0016: Unterminated string literal. | Location: line 5, column 11 | Expected: " | Found: Illegal "unterminated string" | Hint: Close the string literal with a double quote.
 16_control_flow_edges invalid_syntax case_without_default.fh => FH-SYN-0008: Expected a default case branch. | Location: line 9, column 5 | Expected: default | Found: end "end" | Hint: Every case statement must include a default branch.
+16_control_flow_edges invalid_syntax error_inside_nested_block.fh => FH-SYN-0015: Expected an expression. | Location: line 10, column 19 | Expected: expression | Found: ) ")" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.
 16_control_flow_edges invalid_syntax while_without_invariant.fh => FH-SYN-0009: Expected a while invariant. | Location: line 7, column 5 | Expected: invariant | Found: do "do" | Hint: Every while loop must declare at least one invariant before do.

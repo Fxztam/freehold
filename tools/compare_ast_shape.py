@@ -210,6 +210,8 @@ def go_expr_text(expr: dict[str, Any], parent_prec: int = 0, side: str = "") -> 
         return "[" + ",".join(go_expr_text(item) for item in expr.get("elements") or []) + "]"
     if kind == "CallExpr":
         return go_expr_text(expr.get("callee", {}), prec) + "(" + ",".join(go_expr_text(item) for item in expr.get("arguments") or []) + ")"
+    if kind == "NamedArgumentExpr":
+        return expr.get("name", "") + ":" + go_expr_text(expr.get("value", {}))
     if kind == "RecordLiteralExpr":
         fields = ",".join(field.get("name", "") + ":" + go_expr_text(field.get("value", {})) for field in expr.get("fields") or [])
         return expr.get("type", "") + "{" + fields + "}"

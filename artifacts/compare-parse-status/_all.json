@@ -96,6 +96,14 @@
     "dhparser_error": ""
   },
   {
+    "case": "02_import/invalid_syntax/bad_import_then_valid_procedure.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0002: Expected an identifier. | Location: line 5, column 1 | Expected: identifier | Found: procedure \"procedure\" | Hint: Use a non-keyword name here.",
+    "dhparser_error": "5:1: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... lse\\\\b|success\\\\b|failure\\\\b|value\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bbprocedure main()\nis\n ...\u00ab"
+  },
+  {
     "case": "02_import/invalid_syntax/missing_exposing_list.json",
     "status": "match",
     "go_parse_ok": false,
@@ -704,6 +712,46 @@
     "dhparser_error": ""
   },
   {
+    "case": "08_routines/invalid_syntax/error_after_valid_declaration.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0018: Expected ':' after a parameter name. | Location: line 8, column 23 | Expected: : | Found: Ident \"Integer\" | Hint: Write parameters as 'name: Type'.",
+    "dhparser_error": "8:23: Error (1040): Parser param->`:` did not match: \u00bbInteger)\nis\n    chec ...\u00ab"
+  },
+  {
+    "case": "08_routines/invalid_syntax/missing_end_function.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0019: Expected 'end' for a function declaration. | Location: line 5, column 14 | Expected: end | Found: EOF | Hint: Close the function body with 'end <function-name>'.",
+    "dhparser_error": "5:14: Error (1040): Parser postfix->`(` did not match: \u00bb\u00ab"
+  },
+  {
+    "case": "08_routines/invalid_syntax/missing_end_procedure.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0020: Expected 'end' for a procedure declaration. | Location: line 5, column 15 | Expected: end | Found: EOF | Hint: Close the procedure body with 'end <procedure-name>'.",
+    "dhparser_error": "5:15: Error (1040): Parser postfix->`(` did not match: \u00bb\u00ab"
+  },
+  {
+    "case": "08_routines/invalid_syntax/missing_parameter_colon.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0018: Expected ':' after a parameter name. | Location: line 3, column 23 | Expected: : | Found: Ident \"Integer\" | Hint: Write parameters as 'name: Type'.",
+    "dhparser_error": "3:23: Error (1040): Parser param->`:` did not match: \u00bbInteger) returns Int ...\u00ab"
+  },
+  {
+    "case": "08_routines/invalid_syntax/missing_return_type.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0014: Expected a function return type. | Location: line 4, column 1 | Expected: type | Found: is \"is\" | Hint: Add a type name after 'returns'.",
+    "dhparser_error": "4:1: Error (1040): Parser array_type->`Array` did not match: \u00bbis\n    return 42\nend ...\u00ab"
+  },
+  {
     "case": "08_routines/valid/function_call_expression.json",
     "status": "match",
     "go_parse_ok": true,
@@ -856,12 +904,52 @@
     "dhparser_error": ""
   },
   {
+    "case": "09_statements/invalid_syntax/bad_statement_then_following_statement.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0015: Expected an expression. | Location: line 5, column 11 | Expected: expression | Found: ) \")\" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.",
+    "dhparser_error": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb)\n    let amount :=  ...\u00ab"
+  },
+  {
     "case": "09_statements/invalid_syntax/let_uses_assignment_operator.json",
     "status": "match",
     "go_parse_ok": false,
     "dhparser_parse_ok": false,
     "go_error": "FH-SYN-0005: Expected ':' for a type annotation. | Location: line 5, column 16 | Expected: : | Found: := \":=\" | Hint: Use ':' in declarations such as 'let x: Integer = 1'; ':=' is used for assignment.",
     "dhparser_error": "5:17: Error (1040): Parser array_type->`Array` did not match: \u00bb= 1\n    check true\ne ...\u00ab"
+  },
+  {
+    "case": "09_statements/invalid_syntax/missing_end_case.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0023: Expected 'end case'. | Location: line 11, column 5 | Expected: end, end case | Found: Ident \"main\" | Hint: Close the case statement with 'end case'.",
+    "dhparser_error": "11:5: Error (1040): Parser case_stmt->`case` did not match: \u00bbmain\n\nend MissingEnd ...\u00ab"
+  },
+  {
+    "case": "09_statements/invalid_syntax/missing_end_if.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0021: Expected 'end if'. | Location: line 7, column 5 | Expected: end, end if | Found: Ident \"main\" | Hint: Close the if statement with 'end if'.",
+    "dhparser_error": "7:5: Error (1040): Parser if_stmt->`if` did not match: \u00bbmain\n\nend MissingEnd ...\u00ab"
+  },
+  {
+    "case": "09_statements/invalid_syntax/missing_end_while.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0022: Expected 'end while'. | Location: line 10, column 5 | Expected: end, end while | Found: Ident \"main\" | Hint: Close the while statement with 'end while'.",
+    "dhparser_error": "10:5: Error (1040): Parser while_stmt->`while` did not match: \u00bbmain\n\nend MissingEnd ...\u00ab"
+  },
+  {
+    "case": "09_statements/invalid_syntax/multiple_errors_in_one_file.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0015: Expected an expression. | Location: line 5, column 11 | Expected: expression | Found: ) \")\" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.",
+    "dhparser_error": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb)\n    let amount :=  ...\u00ab"
   },
   {
     "case": "09_statements/valid/assignment_statement.json",
@@ -990,6 +1078,22 @@
     "dhparser_parse_ok": true,
     "go_error": "",
     "dhparser_error": ""
+  },
+  {
+    "case": "10_expressions/invalid_syntax/invalid_number_literal.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0017: Invalid number literal. | Location: line 5, column 11 | Expected: number | Found: Illegal \"invalid number literal\" | Hint: Use digits with at most one decimal point and digits on both sides of the decimal point.",
+    "dhparser_error": "5:17: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... lse\\\\b|success\\\\b|failure\\\\b|value\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bb56 = 12\nend main\n\nen ...\u00ab"
+  },
+  {
+    "case": "10_expressions/invalid_syntax/unexpected_token_in_expression.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0015: Expected an expression. | Location: line 5, column 11 | Expected: expression | Found: ) \")\" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.",
+    "dhparser_error": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb)\nend main\n\nend Unex ...\u00ab"
   },
   {
     "case": "10_expressions/valid/array_index_expression.json",
@@ -1352,6 +1456,14 @@
     "dhparser_error": "5:1: Error (1040): Parser postfix->`(` did not match: \u00bbrequires true\nis\n    ...\u00ab"
   },
   {
+    "case": "13_contract_blocks/valid/contract_uses_result_value_field.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
     "case": "13_contract_blocks/valid/function_ensures_result.json",
     "status": "match",
     "go_parse_ok": true,
@@ -1377,6 +1489,14 @@
   },
   {
     "case": "13_contract_blocks/valid/procedure_contracts.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "13_contract_blocks/valid/qualified_call_inside_contract.json",
     "status": "match",
     "go_parse_ok": true,
     "dhparser_parse_ok": true,
@@ -1422,6 +1542,14 @@
     "dhparser_parse_ok": false,
     "go_error": "FH-SYN-0010: Unterminated block comment. | Location: line 3, column 1 | Expected: */ | Found: Illegal \"unterminated block comment\" | Hint: Close the block comment with */.",
     "dhparser_error": "3:1: Error (1040): Parser qualified_name->`.` did not match: \u00bb/* this block commen ...\u00ab"
+  },
+  {
+    "case": "14_comments_whitespace/invalid_syntax/unterminated_string.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0016: Unterminated string literal. | Location: line 5, column 11 | Expected: \" | Found: Illegal \"unterminated string\" | Hint: Close the string literal with a double quote.",
+    "dhparser_error": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb\"open string\nend mai ...\u00ab"
   },
   {
     "case": "14_comments_whitespace/valid/block_comments.json",
@@ -1640,6 +1768,14 @@
     "dhparser_error": "9:5: Error (1040): Parser postfix->`(` did not match: \u00bbend case\nend main\n\ne ...\u00ab"
   },
   {
+    "case": "16_control_flow_edges/invalid_syntax/error_inside_nested_block.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0015: Expected an expression. | Location: line 10, column 19 | Expected: expression | Found: ) \")\" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.",
+    "dhparser_error": "10:19: Error (1040): Parser unary->`-` did not match: \u00bb)\n        end if\n    ...\u00ab"
+  },
+  {
     "case": "16_control_flow_edges/invalid_syntax/while_without_invariant.json",
     "status": "match",
     "go_parse_ok": false,
@@ -1657,6 +1793,14 @@
   },
   {
     "case": "16_control_flow_edges/valid/case_boolean_branches.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "16_control_flow_edges/valid/case_with_record_values.json",
     "status": "match",
     "go_parse_ok": true,
     "dhparser_parse_ok": true,
@@ -1689,6 +1833,14 @@
   },
   {
     "case": "16_control_flow_edges/valid/while_multiple_invariants_no_variant.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "16_control_flow_edges/valid/while_with_multiple_invariants_and_variant.json",
     "status": "match",
     "go_parse_ok": true,
     "dhparser_parse_ok": true,
@@ -1808,6 +1960,14 @@
     "dhparser_error": ""
   },
   {
+    "case": "18_string_templates/invalid_semantics/string_template_duplicate_binding.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
     "case": "18_string_templates/invalid_semantics/string_template_invalid_brace.json",
     "status": "match",
     "go_parse_ok": true,
@@ -1816,7 +1976,7 @@
     "dhparser_error": ""
   },
   {
-    "case": "18_string_templates/invalid_semantics/string_template_named_todo.json",
+    "case": "18_string_templates/invalid_semantics/string_template_missing_binding.json",
     "status": "match",
     "go_parse_ok": true,
     "dhparser_parse_ok": true,
@@ -1832,7 +1992,31 @@
     "dhparser_error": ""
   },
   {
+    "case": "18_string_templates/invalid_semantics/string_template_unused_binding.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
     "case": "18_string_templates/valid/std_io_logf_template.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "18_string_templates/valid/string_template_inside_logf.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "18_string_templates/valid/string_template_named_values.json",
     "status": "match",
     "go_parse_ok": true,
     "dhparser_parse_ok": true,
@@ -1897,6 +2081,14 @@
   },
   {
     "case": "19_big_numbers/valid/big_integer_operations.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "19_big_numbers/valid/big_number_inside_expression.json",
     "status": "match",
     "go_parse_ok": true,
     "dhparser_parse_ok": true,

@@ -1,0 +1,26 @@
+module Matrix.CaseRecordValues
+
+type Account is record
+    id: Integer
+    active: Boolean
+end record
+
+function choose(kind: Integer) returns Account
+is
+    case kind is
+        when 1 =>
+            return Account { id: 1, active: true }
+        when 2 =>
+            return Account { id: 2, active: false }
+        default =>
+            return Account { id: 0, active: false }
+    end case
+end choose
+
+procedure main()
+is
+    let selected: Account = choose(1)
+    check selected.id = 1
+end main
+
+end Matrix.CaseRecordValues
