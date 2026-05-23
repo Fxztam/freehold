@@ -75,7 +75,7 @@ class TypeDecl:
 
 @dataclass(frozen=True)
 class RecordTypeDecl:
-    name: str; fields: list[RecordField]; pos: SourcePos
+    name: str; fields: list[RecordField]; pos: SourcePos; type_params: list[str] | None = None
 
 @dataclass(frozen=True)
 class ErrorDecl:
@@ -101,7 +101,7 @@ class Program:
 @dataclass
 class RoutineDecl:
     kind: str; name: str; params: list[Param]; return_type: TypeRef | None
-    requires: list[Any]; aborts: list[Any]; ensures: list[Any]; body: list[Any]; pos: SourcePos
+    requires: list[Any]; aborts: list[Any]; ensures: list[Any]; body: list[Any]; pos: SourcePos; type_params: list[str] | None = None
 
 @dataclass
 class AbortClause:
@@ -181,7 +181,7 @@ class FieldAccessExpr:
 
 @dataclass(frozen=True)
 class CallExpr:
-    name: str; args: list[Any]; pos: SourcePos
+    name: str; args: list[Any]; pos: SourcePos; type_args: list[str] | None = None
 
 @dataclass(frozen=True)
 class NamedArg:

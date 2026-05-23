@@ -1,0 +1,19 @@
+module GenericFunctionUnwrapBox
+
+type Box<T> is record
+    item: T
+end record
+
+function unwrap<T>(box: Box<T>) returns T
+is
+    return box.item
+end unwrap
+
+procedure main()
+is
+    let b: Box<Integer> = Box<Integer> { item: 1 }
+    let x: Integer = unwrap<Integer>(b)
+    check x = 1
+end main
+
+end GenericFunctionUnwrapBox

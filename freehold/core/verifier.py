@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import json
+import re
 from freehold.core.ast import *
 from freehold.core.control_flow import ControlFlowAnalyzer, RoutineFlowSummary
 from freehold.core.string_templates import validate_template
@@ -31,7 +32,7 @@ class Verifier:
         self.validate_imports(program)
         self.validate_qualified_name(program.module_name, program.pos)
         types = {name: TypeDef(name, name) for name in BUILTIN_TYPE_NAMES}
-        records, errors, routines = {}, set(), {}
+        records, generic_records, errors, routines = {}, {}, set(), {}
         declared_names = {name: "builtin" for name in types}
         for d in program.declarations:
             if isinstance(d, TypeDecl):
@@ -42,6 +43,10 @@ class Verifier:
             elif isinstance(d, RecordTypeDecl):
                 self.validate_declaration_name(d.name, declared_names, d.pos, "record")
                 declared_names[d.name] = "record"
+                if d.type_params:
+                    self.validate_type_params(d.type_params, d.pos)
+                    generic_records[d.name] = d
+                    continue
                 seen, fields = set(), {}
                 for f in d.fields:
                     self.validate_identifier(f.name, f.pos)
@@ -54,11 +59,19 @@ class Verifier:
                 errors.add(d.name)
             elif isinstance(d, RoutineDecl):
                 self.validate_declaration_name(d.name, declared_names, d.pos, "routine")
+                if d.type_params:
+                    self.validate_type_params(d.type_params, d.pos)
                 declared_names[d.name] = "routine"
                 routines[d.name] = d
-        ctx = Ctx(program.module_name, types, records, errors, routines)
+        ctx = Ctx(program.module_name, types, records, generic_records, errors, routines)
         for rd in [d for d in program.declarations if isinstance(d, RecordTypeDecl)]:
-            for f in rd.fields: ctx.require_type_or_record(f.type_name, f.pos)
+            previous_type_params = ctx.current_type_params
+            ctx.current_type_params = set(rd.type_params or [])
+            try:
+                for f in rd.fields:
+                    ctx.require_type_or_record(f.type_name, f.pos)
+            finally:
+                ctx.current_type_params = previous_type_params
         obs = []
         for r in routines.values(): self.routine(r, ctx, obs)
         flow_summaries = ControlFlowAnalyzer(routines, program.module_name).analyze_routines()
@@ -111,6 +124,17 @@ class Verifier:
             raise TypeCheckError(
                 f"{declaration.pos.text()}: invalid range bounds: {declaration.min_value}..{declaration.max_value}"
             )
+
+    def validate_type_params(self, type_params: list[str], pos: SourcePos) -> None:
+        seen = set()
+        for name in type_params:
+            self.validate_identifier(name, pos)
+            if name in seen:
+                raise TypeCheckError(f"{pos.text()}: duplicate type parameter: {name}")
+            seen.add(name)
+
+    def type_name_root(self, name: str) -> str:
+        return name.split("<", 1)[0].strip()
 
     def std_procedure_call(self, name, args, env, ctx, pos) -> bool:
         def infer_arg(i):
@@ -179,30 +203,35 @@ class Verifier:
 
     def routine(self, r, ctx, obs):
         ctx.current_routine = r
+        previous_type_params = ctx.current_type_params
+        ctx.current_type_params = set(r.type_params or [])
         env = {}
-        seen_params = set()
-        for p in r.params:
-            self.validate_identifier(p.name, p.pos)
-            if p.name in seen_params:
-                raise TypeCheckError(f"{p.pos.text()}: duplicate parameter name: {p.name}")
-            seen_params.add(p.name)
-            ctx.require_type_or_record(p.type_name, p.pos); env[p.name] = TypeName(p.type_name)
-        if r.return_type: ctx.require_return_type(r.return_type, r.pos)
-        if r.name == "main" and r.requires:
-            raise TypeCheckError(f"{r.requires[0].pos.text()}: main requires clause is not allowed")
-        for e in r.requires: self.contract_bool("requires", e, env, ctx, False, None)
-        declared_aborts = set()
-        for clause in r.aborts:
-            if clause.error_name not in ctx.errors:
-                raise TypeCheckError(f"{clause.pos.text()}: unknown abort error: {clause.error_name}")
-            if clause.error_name in declared_aborts:
-                raise TypeCheckError(f"{clause.pos.text()}: duplicate abort declaration: {clause.error_name}")
-            declared_aborts.add(clause.error_name)
-            if clause.condition is not None:
-                self.contract_bool("aborts", clause.condition, env, ctx, False, None)
-        for e in r.ensures: self.contract_bool("ensures", e, env, ctx, True, r.return_type)
-        ret = self.block(r.body, r, env, ctx)
-        if r.kind == "function" and not ret: raise TypeCheckError(f"{r.pos.text()}: function {r.name} has no guaranteed return")
+        try:
+            seen_params = set()
+            for p in r.params:
+                self.validate_identifier(p.name, p.pos)
+                if p.name in seen_params:
+                    raise TypeCheckError(f"{p.pos.text()}: duplicate parameter name: {p.name}")
+                seen_params.add(p.name)
+                ctx.require_type_or_record(p.type_name, p.pos); env[p.name] = TypeName(p.type_name)
+            if r.return_type: ctx.require_return_type(r.return_type, r.pos)
+            if r.name == "main" and r.requires:
+                raise TypeCheckError(f"{r.requires[0].pos.text()}: main requires clause is not allowed")
+            for e in r.requires: self.contract_bool("requires", e, env, ctx, False, None)
+            declared_aborts = set()
+            for clause in r.aborts:
+                if clause.error_name not in ctx.errors:
+                    raise TypeCheckError(f"{clause.pos.text()}: unknown abort error: {clause.error_name}")
+                if clause.error_name in declared_aborts:
+                    raise TypeCheckError(f"{clause.pos.text()}: duplicate abort declaration: {clause.error_name}")
+                declared_aborts.add(clause.error_name)
+                if clause.condition is not None:
+                    self.contract_bool("aborts", clause.condition, env, ctx, False, None)
+            for e in r.ensures: self.contract_bool("ensures", e, env, ctx, True, r.return_type)
+            ret = self.block(r.body, r, env, ctx)
+            if r.kind == "function" and not ret: raise TypeCheckError(f"{r.pos.text()}: function {r.name} has no guaranteed return")
+        finally:
+            ctx.current_type_params = previous_type_params
 
     def abort_names(self, r):
         return {clause.error_name for clause in r.aborts}
@@ -525,6 +554,8 @@ class Verifier:
         if isinstance(e, BoolExpr): return TypeName("Boolean")
         if isinstance(e, FieldAccessExpr): return self.infer_field_path(e, env, ctx, allow_result, result_type)
         if isinstance(e, RecordLiteralExpr):
+            if e.type_name not in ctx.records:
+                ctx.require_type_or_record(e.type_name, e.pos)
             if e.type_name not in ctx.records: raise TypeCheckError(f"{e.pos.text()}: unknown record type: {e.type_name}")
             rec, seen = ctx.records[e.type_name], set()
             for a in e.args:
@@ -576,9 +607,10 @@ class Verifier:
             r = ctx.routine(e.name, e.pos)
             if r.kind != "function":
                 raise TypeCheckError(f"{e.pos.text()}: function call requires function")
-            self.args(r, e.args, env, ctx, e.pos)
+            substitutions = ctx.routine_type_substitutions(r, e.type_args, e.pos)
+            self.args(r, e.args, env, ctx, e.pos, substitutions)
             self.require_abort_propagation(ctx.current_routine, r, e.pos)
-            return r.return_type
+            return ctx.substitute_type_ref(r.return_type, substitutions)
         if isinstance(e, UnaryExpr):
             operand = self.infer(e.expr, env, ctx, allow_result, result_type)
             if e.op == "not":
@@ -635,27 +667,112 @@ class Verifier:
     def base(self,t,ctx):
         if isinstance(t, ResultTypeName): return "Result"
         if isinstance(t, ArrayTypeName) or isinstance(t, ArrayLiteralType): return "Array"
+        if t.name in ctx.current_type_params: return f"TypeParam:{t.name}"
         if t.name in ctx.records: return "Record"
         if t.name in ctx.errors: return t.name
         return ctx.types[t.name].base
-    def args(self,r,args,env,ctx,pos):
+    def args(self,r,args,env,ctx,pos,substitutions=None):
+        substitutions = substitutions or {}
         if len(args) != len(r.params):
             raise TypeCheckError(f"{pos.text()}: routine {r.name} expects {len(r.params)} argument(s), got {len(args)}")
         for index, (a,p) in enumerate(zip(args,r.params), start=1):
             if isinstance(a, NamedArg):
                 raise TypeCheckError(f"{a.pos.text()}: routine {r.name} does not accept named argument: {a.name}")
             actual = self.infer(a,env,ctx,False,None)
-            expected = TypeName(p.type_name)
+            expected = TypeName(ctx.substitute_type(p.type_name, substitutions))
             if self.base(actual, ctx) != self.base(expected, ctx):
-                raise TypeCheckError(f"{a.pos.text()}: routine argument {index} type mismatch for {r.name}: expected {p.type_name}, got {type_to_string(actual)}")
+                raise TypeCheckError(f"{a.pos.text()}: routine argument {index} type mismatch for {r.name}: expected {type_to_string(expected)}, got {type_to_string(actual)}")
             self.assign(actual, expected, ctx, a.pos)
 
 class Ctx:
-    def __init__(self, module_name, types, records, errors, routines):
-        self.module_name=module_name; self.types=types; self.records=records; self.errors=errors; self.routines=routines
-        self.current_routine=None
+    def __init__(self, module_name, types, records, generic_records, errors, routines):
+        self.module_name=module_name; self.types=types; self.records=records; self.generic_records=generic_records; self.errors=errors; self.routines=routines
+        self.current_routine=None; self.current_type_params=set()
     def require_type_or_record(self,n,pos):
-        if n not in self.types and n not in self.records: raise TypeCheckError(f"{pos.text()}: unknown type: {n}")
+        if n in self.current_type_params:
+            return
+        if n in self.types or n in self.records:
+            return
+        generic = self.parse_generic_instance(n)
+        if generic is not None:
+            base, args = generic
+            if base in self.types or base in self.records:
+                raise TypeCheckError(f"{pos.text()}: non-generic type used with type arguments: {base}")
+            if base not in self.generic_records:
+                raise TypeCheckError(f"{pos.text()}: unknown type: {base}")
+            declaration = self.generic_records[base]
+            expected = len(declaration.type_params or [])
+            if len(args) != expected:
+                raise TypeCheckError(f"{pos.text()}: generic type {base} expects {expected} type argument(s), got {len(args)}")
+            for arg in args:
+                self.require_type_or_record(arg, pos)
+            self.instantiate_record(n, declaration, args)
+            return
+        if n in self.generic_records:
+            expected = len(self.generic_records[n].type_params or [])
+            raise TypeCheckError(f"{pos.text()}: generic type requires {expected} type argument(s): {n}")
+        raise TypeCheckError(f"{pos.text()}: unknown type: {n}")
+
+    def parse_generic_instance(self, name: str):
+        match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)<(.+)>", name.strip())
+        if not match:
+            return None
+        return match.group(1), self.split_type_args(match.group(2))
+
+    def split_type_args(self, text: str) -> list[str]:
+        args: list[str] = []
+        depth = 0
+        start = 0
+        for index, char in enumerate(text):
+            if char == "<":
+                depth += 1
+            elif char == ">":
+                depth -= 1
+            elif char == "," and depth == 0:
+                args.append(text[start:index].strip())
+                start = index + 1
+        args.append(text[start:].strip())
+        return args
+
+    def instantiate_record(self, concrete_name: str, declaration: RecordTypeDecl, args: list[str]) -> None:
+        if concrete_name in self.records:
+            return
+        substitutions = dict(zip(declaration.type_params or [], args))
+        fields = {field.name: self.substitute_type(field.type_name, substitutions) for field in declaration.fields}
+        self.records[concrete_name] = RecordDef(concrete_name, fields)
+
+    def substitute_type(self, name: str, substitutions: dict[str, str]) -> str:
+        if name in substitutions:
+            return substitutions[name]
+        generic = self.parse_generic_instance(name)
+        if generic is None:
+            return name
+        base, args = generic
+        replaced = [self.substitute_type(arg, substitutions) for arg in args]
+        return f"{base}<{', '.join(replaced)}>"
+    def substitute_type_ref(self, type_ref, substitutions: dict[str, str]):
+        if type_ref is None:
+            return None
+        if isinstance(type_ref, TypeName):
+            return TypeName(self.substitute_type(type_ref.name, substitutions))
+        if isinstance(type_ref, ArrayTypeName):
+            return ArrayTypeName(self.substitute_type(type_ref.element_type, substitutions), type_ref.size)
+        if isinstance(type_ref, ResultTypeName):
+            return ResultTypeName(self.substitute_type_ref(type_ref.ok_type, substitutions), self.substitute_type(type_ref.error_type, substitutions))
+        return type_ref
+    def routine_type_substitutions(self, routine: RoutineDecl, type_args: list[str] | None, pos: SourcePos) -> dict[str, str]:
+        params = routine.type_params or []
+        if not params:
+            if type_args:
+                raise TypeCheckError(f"{pos.text()}: non-generic routine used with type arguments: {routine.name}")
+            return {}
+        if not type_args:
+            raise TypeCheckError(f"{pos.text()}: generic routine requires {len(params)} type argument(s): {routine.name}")
+        if len(type_args) != len(params):
+            raise TypeCheckError(f"{pos.text()}: generic routine {routine.name} expects {len(params)} type argument(s), got {len(type_args)}")
+        for arg in type_args:
+            self.require_type_or_record(arg, pos)
+        return dict(zip(params, type_args))
     def require_return_type(self,t,pos):
         if isinstance(t, TypeName): self.require_type_or_record(t.name,pos)
         elif isinstance(t, ArrayTypeName): self.require_type_or_record(t.element_type,pos)

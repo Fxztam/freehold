@@ -7,7 +7,8 @@ exposing_clause: "exposing" exposing_list
 exposing_list: NAME ("," NAME)*
 declaration: record_type_decl | type_decl | error_decl | function_decl | procedure_decl
 
-record_type_decl: "type" NAME "is" "record" record_field+ "end" "record"
+record_type_decl: "type" NAME type_param_list? "is" "record" record_field+ "end" "record"
+type_param_list: "<" NAME ("," NAME)* ">"
 record_field: NAME ":" type_ref
 
 type_decl: "type" NAME "is" base_type range_decl?
@@ -15,12 +16,13 @@ error_decl: "error" NAME
 base_type: BASE_TYPE
 range_decl: "range" SIGNED_NUMBER ".." SIGNED_NUMBER
 
-function_decl: "function" NAME "(" param_list? ")" "returns" return_type contract_block? "is" stmt* "end" NAME
+function_decl: "function" NAME type_param_list? "(" param_list? ")" "returns" return_type contract_block? "is" stmt* "end" NAME
 procedure_decl: "procedure" NAME "(" param_list? ")" contract_block? "is" stmt* "end" NAME
 
 param_list: param ("," param)*
 param: NAME ":" type_ref
-type_ref: NAME
+type_ref: NAME type_arg_list?
+type_arg_list: "<" type_ref ("," type_ref)* ">"
 return_type: array_type | result_type | type_ref
 result_payload_type: array_type | result_type | type_ref
 result_type: "Result" "<" result_payload_type "," type_ref ">"
@@ -80,9 +82,10 @@ named_arg: NAME ":" expr
      | "value" -> result_value
      | "error" -> result_error_value
      | array_literal
-     | NAME "{" named_arg_list "}" -> record_literal
+     | type_ref "{" named_arg_list "}" -> record_literal
      | field_path -> field_access
      | NAME "[" expr "]" -> index_expr
+     | NAME type_arg_list "(" arg_list? ")" -> function_call
      | qualified_name "(" arg_list? ")" -> function_call
      | NAME -> var
      | "(" expr ")"

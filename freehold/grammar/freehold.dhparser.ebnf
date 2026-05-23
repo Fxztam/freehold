@@ -15,7 +15,8 @@ exposing_list = IDENT { "," IDENT }
 
 declaration = record_type_decl | type_decl | error_decl | function_decl | procedure_decl
 
-record_type_decl = ~ "type" IDENT "is" "record" record_field { record_field } "end" "record"
+record_type_decl = ~ "type" IDENT [ type_param_list ] "is" "record" record_field { record_field } "end" "record"
+type_param_list = "<" IDENT { "," IDENT } ">"
 record_field = IDENT ":" type_ref
 
 type_decl = ~ "type" IDENT "is" base_type [ range_decl ]
@@ -23,14 +24,15 @@ range_decl = "range" NUMBER_LITERAL ".." NUMBER_LITERAL
 error_decl = ~ "error" IDENT
 
 base_type = BASE_TYPE
-type_ref = BASE_TYPE | IDENT
+type_ref = ( BASE_TYPE | IDENT ) [ type_arg_list ]
+type_arg_list = "<" type_ref { "," type_ref } ">"
 return_type = array_type | result_type | type_ref
 
 result_payload_type = array_type | result_type | type_ref
 result_type = "Result" "<" result_payload_type "," type_ref ">"
 array_type = "Array" "<" type_ref "," INTEGER_LITERAL ">"
 
-function_decl = ~ "function" IDENT "(" [ param_list ] ")" "returns" return_type [ contract_block ] "is" { stmt } "end" IDENT
+function_decl = ~ "function" IDENT [ type_param_list ] "(" [ param_list ] ")" "returns" return_type [ contract_block ] "is" { stmt } "end" IDENT
 procedure_decl = ~ "procedure" IDENT "(" [ param_list ] ")" [ contract_block ] "is" { stmt } "end" IDENT
 
 param_list = param { "," param }
@@ -87,7 +89,9 @@ primary = STRING_LITERAL
      | DOUBLE_LITERAL
      | INTEGER_LITERAL
      | array_literal
+     | IDENT type_arg_list "(" [ arg_list ] ")"
      | IDENT "{" named_arg_list "}"
+     | type_ref "{" named_arg_list "}"
      | IDENT
      | "(" expr ")"
      | "true" | "false" | "success" | "failure" | "value" | "error"

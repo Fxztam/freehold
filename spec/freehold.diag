@@ -9,6 +9,7 @@ range FH-TPL-4000..4099 semantic template open
 range FH-RES-4100..4199 semantic result open
 range FH-JSON-4200..4299 semantic json open
 range FH-REC-4300..4399 semantic record open
+range FH-GEN-5000..5099 semantic generic open
 range FH-BLD-9000..9999 build tooling
 
 # Current parser diagnostics from go-frontend/internal/diagnostic/catalog.go.
@@ -832,6 +833,69 @@ category json
 legacy VF-J003
 message "Json value type not serializable"
 expected "JSON-serializable record field value"
+end
+
+diag FH-GEN-5002 duplicate_type_parameter
+severity error
+phase semantic
+category generic
+legacy VF-GEN002
+message "duplicate type parameter"
+expected "unique type parameter"
+end
+
+diag FH-GEN-5010 missing_type_argument
+severity error
+phase semantic
+category generic
+legacy VF-GEN010
+message "missing type argument"
+expected "declared type argument count"
+end
+
+diag FH-GEN-5011 too_many_type_arguments
+severity error
+phase semantic
+category generic
+legacy VF-GEN011
+message "too many type arguments"
+expected "declared type argument count"
+end
+
+diag FH-GEN-5012 non_generic_type_used_with_type_arguments
+severity error
+phase semantic
+category generic
+legacy VF-GEN012
+message "non-generic type used with type arguments"
+expected "generic type declaration"
+end
+
+diag FH-GEN-5030 missing_routine_type_argument
+severity error
+phase semantic
+category generic
+legacy VF-GEN030
+message "missing routine type argument"
+expected "declared routine type argument count"
+end
+
+diag FH-GEN-5031 wrong_routine_type_argument_count
+severity error
+phase semantic
+category generic
+legacy VF-GEN031
+message "wrong routine type argument count"
+expected "declared routine type argument count"
+end
+
+diag FH-GEN-5032 non_generic_routine_used_with_type_arguments
+severity error
+phase semantic
+category generic
+legacy VF-GEN032
+message "non-generic routine used with type arguments"
+expected "generic function declaration"
 end
 
 # Open Result diagnostics already fixed by OPEN-RETURN_RESULTS.md.

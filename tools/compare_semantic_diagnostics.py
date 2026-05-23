@@ -91,6 +91,13 @@ CODE_MAP = {
     "VF-J001": ("FH-JSON-4201", 4201, "json_stringify_argument_count", "json"),
     "VF-J002": ("FH-JSON-4202", 4202, "json_stringify_requires_record", "json"),
     "VF-J003": ("FH-JSON-4203", 4203, "json_stringify_unsupported_type", "json"),
+    "VF-GEN002": ("FH-GEN-5002", 5002, "duplicate_type_parameter", "generic"),
+    "VF-GEN010": ("FH-GEN-5010", 5010, "missing_type_argument", "generic"),
+    "VF-GEN011": ("FH-GEN-5011", 5011, "too_many_type_arguments", "generic"),
+    "VF-GEN012": ("FH-GEN-5012", 5012, "non_generic_type_used_with_type_arguments", "generic"),
+    "VF-GEN030": ("FH-GEN-5030", 5030, "missing_routine_type_argument", "generic"),
+    "VF-GEN031": ("FH-GEN-5031", 5031, "wrong_routine_type_argument_count", "generic"),
+    "VF-GEN032": ("FH-GEN-5032", 5032, "non_generic_routine_used_with_type_arguments", "generic"),
 }
 
 

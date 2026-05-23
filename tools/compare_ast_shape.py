@@ -216,7 +216,9 @@ def go_expr_text(expr: dict[str, Any], parent_prec: int = 0, side: str = "") -> 
     if kind == "ArrayLiteralExpr":
         return "[" + ",".join(go_expr_text(item) for item in expr.get("elements") or []) + "]"
     if kind == "CallExpr":
-        return go_expr_text(expr.get("callee", {}), prec) + "(" + ",".join(go_expr_text(item) for item in expr.get("arguments") or []) + ")"
+        type_args = expr.get("type_args") or []
+        type_arg_text = "<" + ",".join(compact_type(arg) for arg in type_args) + ">" if type_args else ""
+        return go_expr_text(expr.get("callee", {}), prec) + type_arg_text + "(" + ",".join(go_expr_text(item) for item in expr.get("arguments") or []) + ")"
     if kind == "NamedArgumentExpr":
         return expr.get("name", "") + ":" + go_expr_text(expr.get("value", {}))
     if kind == "RecordLiteralExpr":

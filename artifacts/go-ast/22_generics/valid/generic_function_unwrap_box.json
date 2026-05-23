@@ -1,0 +1,118 @@
+{
+  "source_file": "..\\tests\\language_modules\\22_generics\\valid\\generic_function_unwrap_box.fh",
+  "source_snippet": "module GenericFunctionUnwrapBox\r\n\r\ntype Box\u003cT\u003e is record\r\n    item: T\r\nend record\r\n\r\nfunction unwrap\u003cT\u003e(box: Box\u003cT\u003e) returns T\r\nis\r\n    return box.item\r\nend unwrap\r\n\r\nprocedure main()\r\nis\r\n    let b: Box\u003cInteger\u003e = Box\u003cInteger\u003e { item: 1 }\r\n    let x: Integer = unwrap\u003cInteger\u003e(b)\r\n    check x = 1\r\nend main\r\n\r\nend GenericFunctionUnwrapBox",
+  "module_name": "22_generics",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "GenericFunctionUnwrapBox",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Box",
+        "type_params": [
+          "T"
+        ],
+        "base": "record",
+        "fields": [
+          {
+            "name": "item",
+            "type": "T"
+          }
+        ]
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "unwrap",
+        "type_params": [
+          "T"
+        ],
+        "params": [
+          {
+            "name": "box",
+            "type": "Box\u003cT\u003e"
+          }
+        ],
+        "return_type": "T",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "FieldAccessExpr",
+              "object": {
+                "kind": "IdentifierExpr",
+                "name": "box"
+              },
+              "field": "item"
+            }
+          }
+        ],
+        "end_name": "unwrap"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "b",
+            "type": "Box\u003cInteger\u003e",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Box\u003cInteger\u003e",
+              "fields": [
+                {
+                  "name": "item",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "x",
+            "type": "Integer",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "unwrap"
+              },
+              "type_args": [
+                "Integer"
+              ],
+              "arguments": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "b"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "x"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "GenericFunctionUnwrapBox"
+  }
+}

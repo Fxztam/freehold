@@ -23,6 +23,8 @@ def canonical(obj: Any) -> Any:
         for name in obj.__dataclass_fields__:
             if name == "pos":
                 continue
+            if name in {"type_params", "type_args"} and not getattr(obj, name):
+                continue
             if name == "aborts" and not getattr(obj, name):
                 continue
             result[name] = canonical(getattr(obj, name))

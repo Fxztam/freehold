@@ -16,11 +16,12 @@ type ImportDecl struct {
 }
 
 type TypeDecl struct {
-	Kind   string     `json:"kind"`
-	Name   string     `json:"name"`
-	Base   string     `json:"base"`
-	Range  *TypeRange `json:"range,omitempty"`
-	Fields []Param    `json:"fields,omitempty"`
+	Kind       string     `json:"kind"`
+	Name       string     `json:"name"`
+	TypeParams []string   `json:"type_params,omitempty"`
+	Base       string     `json:"base"`
+	Range      *TypeRange `json:"range,omitempty"`
+	Fields     []Param    `json:"fields,omitempty"`
 }
 
 type TypeRange struct {
@@ -36,6 +37,7 @@ type ErrorDecl struct {
 type FunctionDecl struct {
 	Kind       string        `json:"kind"`
 	Name       string        `json:"name"`
+	TypeParams []string      `json:"type_params,omitempty"`
 	Params     []Param       `json:"params"`
 	ReturnType string        `json:"return_type"`
 	Requires   []Expr        `json:"requires,omitempty"`
@@ -153,9 +155,10 @@ type ArrayLiteralExpr struct {
 }
 
 type CallExpr struct {
-	Kind      string `json:"kind"`
-	Callee    Expr   `json:"callee"`
-	Arguments []Expr `json:"arguments"`
+	Kind      string   `json:"kind"`
+	Callee    Expr     `json:"callee"`
+	TypeArgs  []string `json:"type_args,omitempty"`
+	Arguments []Expr   `json:"arguments"`
 }
 
 type NamedArgumentExpr struct {

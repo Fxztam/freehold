@@ -2413,5 +2413,250 @@
       "expected": "declared error",
       "found": "MissingError"
     }
+  },
+  {
+    "case": "22_generics/invalid_semantics/duplicate_type_parameter.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5002",
+      "number": 5002,
+      "name": "duplicate_type_parameter",
+      "message": "duplicate type parameter",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "unique type parameter",
+      "found": "T",
+      "hint": "A generic declaration may list each type parameter only once.\n\nExample:\n    type Box<T> is record\n        value: T\n    end record\n",
+      "legacy_code": "VF-GEN002"
+    },
+    "expected": {
+      "code": "FH-GEN-5002",
+      "name": "duplicate_type_parameter",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN002",
+      "message": "duplicate type parameter",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "unique type parameter",
+      "found": "T"
+    }
+  },
+  {
+    "case": "22_generics/invalid_semantics/missing_function_type_argument.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5030",
+      "number": 5030,
+      "name": "missing_routine_type_argument",
+      "message": "missing routine type argument",
+      "location": {
+        "line": 10,
+        "column": 22
+      },
+      "expected": "1 type argument(s)",
+      "found": "identity",
+      "hint": "A generic function call must provide the number of type arguments declared by the function.\n\nExample:\n    function identity<T>(x: T) returns T\n    is\n        return x\n    end identity\n\n    let item: Integer = identity<Integer>(1)\n",
+      "legacy_code": "VF-GEN030"
+    },
+    "expected": {
+      "code": "FH-GEN-5030",
+      "name": "missing_routine_type_argument",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN030",
+      "message": "missing routine type argument",
+      "location": {
+        "line": 10,
+        "column": 22
+      },
+      "expected": "1 type argument(s)",
+      "found": "identity"
+    }
+  },
+  {
+    "case": "22_generics/invalid_semantics/missing_type_argument.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5010",
+      "number": 5010,
+      "name": "missing_type_argument",
+      "message": "missing type argument",
+      "location": {
+        "line": 9,
+        "column": 5
+      },
+      "expected": "1 type argument(s)",
+      "found": "Box",
+      "hint": "A generic type must be used with the number of type arguments declared by its template.\n\nExample:\n    type Box<T> is record\n        value: T\n    end record\n\n    let value: Box<Integer> = Box<Integer> { value: 1 }\n",
+      "legacy_code": "VF-GEN010"
+    },
+    "expected": {
+      "code": "FH-GEN-5010",
+      "name": "missing_type_argument",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN010",
+      "message": "missing type argument",
+      "location": {
+        "line": 9,
+        "column": 5
+      },
+      "expected": "1 type argument(s)",
+      "found": "Box"
+    }
+  },
+  {
+    "case": "22_generics/invalid_semantics/non_generic_function_type_arguments.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5032",
+      "number": 5032,
+      "name": "non_generic_routine_used_with_type_arguments",
+      "message": "non-generic routine used with type arguments",
+      "location": {
+        "line": 10,
+        "column": 22
+      },
+      "expected": "generic function declaration",
+      "found": "one",
+      "hint": "Only generic functions may be called with type arguments.\n\nRemove the type argument list or add type parameters to the function declaration.\n",
+      "legacy_code": "VF-GEN032"
+    },
+    "expected": {
+      "code": "FH-GEN-5032",
+      "name": "non_generic_routine_used_with_type_arguments",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN032",
+      "message": "non-generic routine used with type arguments",
+      "location": {
+        "line": 10,
+        "column": 22
+      },
+      "expected": "generic function declaration",
+      "found": "one"
+    }
+  },
+  {
+    "case": "22_generics/invalid_semantics/non_generic_type_arguments.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5012",
+      "number": 5012,
+      "name": "non_generic_type_used_with_type_arguments",
+      "message": "non-generic type used with type arguments",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "generic type declaration",
+      "found": "String",
+      "hint": "Only generic type declarations may be used with type arguments.\n\nExample:\n    Box<Integer> is valid only if Box was declared with a type parameter such as Box<T>.\n",
+      "legacy_code": "VF-GEN012"
+    },
+    "expected": {
+      "code": "FH-GEN-5012",
+      "name": "non_generic_type_used_with_type_arguments",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN012",
+      "message": "non-generic type used with type arguments",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "generic type declaration",
+      "found": "String"
+    }
+  },
+  {
+    "case": "22_generics/invalid_semantics/too_many_type_arguments.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5011",
+      "number": 5011,
+      "name": "too_many_type_arguments",
+      "message": "too many type arguments",
+      "location": {
+        "line": 9,
+        "column": 5
+      },
+      "expected": "1 type argument(s)",
+      "found": "Box<2>",
+      "hint": "A generic type instantiation must provide exactly the declared number of type arguments.\n\nCheck the generic declaration and remove or add type arguments as needed.\n",
+      "legacy_code": "VF-GEN011"
+    },
+    "expected": {
+      "code": "FH-GEN-5011",
+      "name": "too_many_type_arguments",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN011",
+      "message": "too many type arguments",
+      "location": {
+        "line": 9,
+        "column": 5
+      },
+      "expected": "1 type argument(s)",
+      "found": "Box<2>"
+    }
+  },
+  {
+    "case": "22_generics/invalid_semantics/wrong_function_type_argument_count.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5031",
+      "number": 5031,
+      "name": "wrong_routine_type_argument_count",
+      "message": "wrong routine type argument count",
+      "location": {
+        "line": 10,
+        "column": 22
+      },
+      "expected": "1 type argument(s)",
+      "found": "identity<2>",
+      "hint": "A generic function call must provide exactly the declared number of type arguments.\n\nCheck the function declaration and add or remove type arguments as needed.\n",
+      "legacy_code": "VF-GEN031"
+    },
+    "expected": {
+      "code": "FH-GEN-5031",
+      "name": "wrong_routine_type_argument_count",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN031",
+      "message": "wrong routine type argument count",
+      "location": {
+        "line": 10,
+        "column": 22
+      },
+      "expected": "1 type argument(s)",
+      "found": "identity<2>"
+    }
   }
 ]

@@ -99,10 +99,11 @@ func (p *Parser) parseTypeDecl() ast.TypeDecl {
 	p.expect(token.Type)
 
 	name := p.parseName()
+	typeParams := p.parseOptionalTypeParams()
 	p.expect(token.Is)
 
 	if p.at(token.Record) {
-		return p.parseRecordTypeDecl(name)
+		return p.parseRecordTypeDecl(name, typeParams)
 	}
 
 	base := p.parseTypeName()
@@ -117,14 +118,15 @@ func (p *Parser) parseTypeDecl() ast.TypeDecl {
 	}
 
 	return ast.TypeDecl{
-		Kind:  "TypeDecl",
-		Name:  name,
-		Base:  base,
-		Range: typeRange,
+		Kind:       "TypeDecl",
+		Name:       name,
+		TypeParams: typeParams,
+		Base:       base,
+		Range:      typeRange,
 	}
 }
 
-func (p *Parser) parseRecordTypeDecl(name string) ast.TypeDecl {
+func (p *Parser) parseRecordTypeDecl(name string, typeParams []string) ast.TypeDecl {
 	p.expect(token.Record)
 
 	var fields []ast.Param
@@ -136,11 +138,27 @@ func (p *Parser) parseRecordTypeDecl(name string) ast.TypeDecl {
 	p.expect(token.Record)
 
 	return ast.TypeDecl{
-		Kind:   "TypeDecl",
-		Name:   name,
-		Base:   "record",
-		Fields: fields,
+		Kind:       "TypeDecl",
+		Name:       name,
+		TypeParams: typeParams,
+		Base:       "record",
+		Fields:     fields,
 	}
+}
+
+func (p *Parser) parseOptionalTypeParams() []string {
+	if !p.at(token.Less) {
+		return nil
+	}
+
+	p.expect(token.Less)
+	params := []string{p.parseName()}
+	for p.at(token.Comma) {
+		p.expect(token.Comma)
+		params = append(params, p.parseName())
+	}
+	p.expect(token.Greater)
+	return params
 }
 
 func (p *Parser) parseErrorDecl() ast.ErrorDecl {
@@ -200,6 +218,7 @@ func (p *Parser) parseFunction() ast.FunctionDecl {
 	p.expect(token.Function)
 
 	name := p.parseName()
+	typeParams := p.parseOptionalTypeParams()
 
 	p.expect(token.LParen)
 	params := p.parseParams()
@@ -226,6 +245,7 @@ func (p *Parser) parseFunction() ast.FunctionDecl {
 	return ast.FunctionDecl{
 		Kind:       "FunctionDecl",
 		Name:       name,
+		TypeParams: typeParams,
 		Params:     params,
 		ReturnType: returnType,
 		Requires:   requires,
@@ -776,6 +796,18 @@ func (p *Parser) parseAtom() ast.Expr {
 		panic(diagnostic.ExpectedExpression(p.peek()))
 	}
 
+	if p.genericFunctionCallAhead() {
+		name := p.parseName()
+		typeArgs := p.parseTypeArgs()
+		callee := ast.IdentifierExpr{Kind: "IdentifierExpr", Name: name}
+		return p.finishCallWithTypeArgs(callee, typeArgs)
+	}
+
+	if p.genericRecordLiteralAhead() {
+		typeName := p.parseTypeName()
+		return p.parseRecordLiteral(typeName)
+	}
+
 	tok := p.parseName()
 
 	if p.at(token.LBrace) {
@@ -788,6 +820,44 @@ func (p *Parser) parseAtom() ast.Expr {
 	})
 
 	return p.finishPostfix(expr)
+}
+
+func (p *Parser) genericFunctionCallAhead() bool {
+	if !p.at(token.Ident) || p.peekAhead(1).Kind != token.Less {
+		return false
+	}
+	depth := 0
+	for i := p.pos + 1; i < len(p.tokens); i++ {
+		switch p.tokens[i].Kind {
+		case token.Less:
+			depth++
+		case token.Greater:
+			depth--
+			if depth == 0 {
+				return i+1 < len(p.tokens) && p.tokens[i+1].Kind == token.LParen
+			}
+		}
+	}
+	return false
+}
+
+func (p *Parser) genericRecordLiteralAhead() bool {
+	if !p.at(token.Ident) || p.peekAhead(1).Kind != token.Less {
+		return false
+	}
+	depth := 0
+	for i := p.pos + 1; i < len(p.tokens); i++ {
+		switch p.tokens[i].Kind {
+		case token.Less:
+			depth++
+		case token.Greater:
+			depth--
+			if depth == 0 {
+				return i+1 < len(p.tokens) && p.tokens[i+1].Kind == token.LBrace
+			}
+		}
+	}
+	return false
 }
 
 func (p *Parser) finishPostfix(expr ast.Expr) ast.Expr {
@@ -856,6 +926,10 @@ func (p *Parser) parseFieldAccess() ast.Expr {
 }
 
 func (p *Parser) finishCall(callee ast.Expr) ast.CallExpr {
+	return p.finishCallWithTypeArgs(callee, nil)
+}
+
+func (p *Parser) finishCallWithTypeArgs(callee ast.Expr, typeArgs []string) ast.CallExpr {
 	p.expect(token.LParen)
 
 	var args []ast.Expr
@@ -873,8 +947,20 @@ func (p *Parser) finishCall(callee ast.Expr) ast.CallExpr {
 	return ast.CallExpr{
 		Kind:      "CallExpr",
 		Callee:    callee,
+		TypeArgs:  typeArgs,
 		Arguments: args,
 	}
+}
+
+func (p *Parser) parseTypeArgs() []string {
+	p.expect(token.Less)
+	args := []string{p.parseTypeName()}
+	for p.at(token.Comma) {
+		p.expect(token.Comma)
+		args = append(args, p.parseTypeName())
+	}
+	p.expect(token.Greater)
+	return args
 }
 
 func (p *Parser) parseCallArg() ast.Expr {

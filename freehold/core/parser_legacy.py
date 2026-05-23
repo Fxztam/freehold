@@ -53,7 +53,14 @@ class AstBuilder:
 
     def declaration(self, tree: Tree):
         if tree.data == "record_type_decl":
-            return RecordTypeDecl(str(tree.children[0]), [RecordField(str(f.children[0]), str(f.children[1].children[0]), pos(f)) for f in tree.children[1:]], pos(tree))
+            name = str(tree.children[0])
+            type_params = None
+            field_start = 1
+            if len(tree.children) > 1 and isinstance(tree.children[1], Tree) and tree.children[1].data == "type_param_list":
+                type_params = [str(child) for child in tree.children[1].children]
+                field_start = 2
+            fields = [RecordField(str(f.children[0]), self.type_ref_name(f.children[1]), pos(f)) for f in tree.children[field_start:]]
+            return RecordTypeDecl(name, fields, pos(tree), type_params)
         if tree.data == "type_decl":
             base_tree = tree.children[1]
             base = str(base_tree.children[0]) if isinstance(base_tree, Tree) else str(base_tree)
@@ -70,9 +77,13 @@ class AstBuilder:
     def routine(self, tree: Tree) -> RoutineDecl:
         kind = "function" if tree.data == "function_decl" else "procedure"
         name, idx = str(tree.children[0]), 1
+        type_params = None
+        if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "type_param_list":
+            type_params = [str(child) for child in tree.children[idx].children]
+            idx += 1
         params = []
         if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "param_list":
-            params = [Param(str(p.children[0]), str(p.children[1].children[0]), pos(p)) for p in tree.children[idx].children]
+            params = [Param(str(p.children[0]), self.type_ref_name(p.children[1]), pos(p)) for p in tree.children[idx].children]
             idx += 1
         ret = None
         if kind == "function":
@@ -92,7 +103,7 @@ class AstBuilder:
         if end_name != name:
             raise TypeCheckError(f"{pos(tree).text()}: {kind} end name mismatch: expected {name}, got {end_name}")
         body = [self.stmt(s.children[0] if s.data == "stmt" else s) for s in tree.children[idx:] if isinstance(s, Tree)]
-        return RoutineDecl(kind, name, params, ret, requires, aborts, ensures, body, pos(tree))
+        return RoutineDecl(kind, name, params, ret, requires, aborts, ensures, body, pos(tree), type_params)
 
     def return_type(self, tree: Tree):
         inner = tree.children[0]
@@ -106,10 +117,21 @@ class AstBuilder:
     def type_ref_tree(self, tree: Tree):
         if tree.data == "result_payload_type":
             return self.type_ref_tree(tree.children[0])
-        if tree.data == "type_ref": return TypeName(str(tree.children[0]))
-        if tree.data == "result_type": return ResultTypeName(self.type_ref_tree(tree.children[0]), str(tree.children[1].children[0]))
-        if tree.data == "array_type": return ArrayTypeName(str(tree.children[0].children[0]), int(tree.children[1]))
+        if tree.data == "type_ref": return TypeName(self.type_ref_name(tree))
+        if tree.data == "result_type": return ResultTypeName(self.type_ref_tree(tree.children[0]), self.type_ref_name(tree.children[1]))
+        if tree.data == "array_type": return ArrayTypeName(self.type_ref_name(tree.children[0]), int(tree.children[1]))
         raise TypeCheckError(f"{pos(tree).text()}: invalid return type")
+
+    def type_ref_name(self, tree: Tree) -> str:
+        if tree.data in ("return_type", "result_payload_type"):
+            return self.type_ref_name(tree.children[0])
+        if tree.data == "type_ref":
+            name = str(tree.children[0])
+            if len(tree.children) > 1:
+                args = [self.type_ref_name(child) for child in tree.children[1].children]
+                return f"{name}<{', '.join(args)}>"
+            return name
+        raise TypeCheckError(f"{pos(tree).text()}: invalid type reference")
 
     def stmt(self, tree: Tree):
         if tree.data == "let_stmt": return LetStmt(str(tree.children[0]), self.return_type(tree.children[1]), self.expr(tree.children[2]), pos(tree))
@@ -184,8 +206,13 @@ class AstBuilder:
             return FieldAccessExpr([str(x) for x in p.children], pos(tree))
         if tree.data == "function_call":
             fn_name = self.qualified_name(tree.children[0]) if isinstance(tree.children[0], Tree) else str(tree.children[0])
-            return CallExpr(fn_name, self.args(tree.children[1]) if len(tree.children)>1 else [], pos(tree))
-        if tree.data == "record_literal": return RecordLiteralExpr(str(tree.children[0]), self.named_args(tree.children[1]), pos(tree))
+            type_args = None
+            arg_index = 1
+            if len(tree.children) > 1 and isinstance(tree.children[1], Tree) and tree.children[1].data == "type_arg_list":
+                type_args = [self.type_ref_name(child) for child in tree.children[1].children]
+                arg_index = 2
+            return CallExpr(fn_name, self.args(tree.children[arg_index]) if len(tree.children)>arg_index else [], pos(tree), type_args)
+        if tree.data == "record_literal": return RecordLiteralExpr(self.type_ref_name(tree.children[0]), self.named_args(tree.children[1]), pos(tree))
         if tree.data == "array_literal": return ArrayLiteralExpr(self.args(tree.children[0]) if len(tree.children)>0 else [], pos(tree))
         if tree.data == "index_expr": return IndexExpr(str(tree.children[0]), self.expr(tree.children[1]), pos(tree))
         if tree.data in ("neg_expr","not_expr"): return UnaryExpr("-" if tree.data=="neg_expr" else "not", self.expr(tree.children[0]), pos(tree))

@@ -1,0 +1,48 @@
+{
+  "source_file": "..\\tests\\language_modules\\22_generics\\invalid_semantics\\duplicate_type_parameter.fh",
+  "source_snippet": "module GenericDuplicateTypeParameter\r\n\r\ntype Pair\u003cT, T\u003e is record\r\n    left: T\r\n    right: T\r\nend record\r\n\r\nprocedure main()\r\nis\r\n    check true\r\nend main\r\n\r\nend GenericDuplicateTypeParameter",
+  "module_name": "22_generics",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "GenericDuplicateTypeParameter",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Pair",
+        "type_params": [
+          "T",
+          "T"
+        ],
+        "base": "record",
+        "fields": [
+          {
+            "name": "left",
+            "type": "T"
+          },
+          {
+            "name": "right",
+            "type": "T"
+          }
+        ]
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "IdentifierExpr",
+              "name": "true"
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "GenericDuplicateTypeParameter"
+  }
+}

@@ -195,7 +195,7 @@ def normalize_go_expr(expr: Any) -> dict[str, Any]:
     if kind == "RecordLiteralExpr":
         return {
             "kind": kind,
-            "type": expr.get("type", ""),
+            "type": compact_type(expr.get("type", "")),
             "fields": [{"name": field.get("name", ""), "value": normalize_go_expr(field.get("value"))} for field in expr.get("fields") or []],
         }
     if kind == "OkExpr":
@@ -394,7 +394,13 @@ def dh_primary(node: dict[str, Any]) -> dict[str, Any]:
     array = first_child(node, "array_literal")
     if array:
         return {"kind": "ArrayLiteralExpr", "elements": dh_arg_list(first_child(array, "arg_list"))}
+    type_args = first_child(node, "type_arg_list")
+    if type_args:
+        return {"kind": "CallExpr", "callee": ident_expr(nth_ident(node, 0)), "arguments": dh_arg_list(first_child(node, "arg_list"))}
     named_args = first_child(node, "named_arg_list")
+    type_ref = first_child(node, "type_ref")
+    if named_args and type_ref:
+        return {"kind": "RecordLiteralExpr", "type": type_text(type_ref), "fields": dh_named_arg_list(named_args)}
     ident = first_child(node, "IDENT")
     if named_args and ident:
         return {"kind": "RecordLiteralExpr", "type": ident_text(ident), "fields": dh_named_arg_list(named_args)}

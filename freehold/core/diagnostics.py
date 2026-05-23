@@ -179,6 +179,56 @@ Example:
     type Count is Integer range 0..100
 """
 
+GENERIC_DUPLICATE_PARAM_HINT = """A generic declaration may list each type parameter only once.
+
+Example:
+    type Box<T> is record
+        value: T
+    end record
+"""
+
+GENERIC_MISSING_ARGUMENT_HINT = """A generic type must be used with the number of type arguments declared by its template.
+
+Example:
+    type Box<T> is record
+        value: T
+    end record
+
+    let value: Box<Integer> = Box<Integer> { value: 1 }
+"""
+
+GENERIC_TOO_MANY_ARGUMENTS_HINT = """A generic type instantiation must provide exactly the declared number of type arguments.
+
+Check the generic declaration and remove or add type arguments as needed.
+"""
+
+GENERIC_NON_GENERIC_ARGUMENTS_HINT = """Only generic type declarations may be used with type arguments.
+
+Example:
+    Box<Integer> is valid only if Box was declared with a type parameter such as Box<T>.
+"""
+
+GENERIC_ROUTINE_MISSING_ARGUMENT_HINT = """A generic function call must provide the number of type arguments declared by the function.
+
+Example:
+    function identity<T>(x: T) returns T
+    is
+        return x
+    end identity
+
+    let item: Integer = identity<Integer>(1)
+"""
+
+GENERIC_ROUTINE_ARITY_HINT = """A generic function call must provide exactly the declared number of type arguments.
+
+Check the function declaration and add or remove type arguments as needed.
+"""
+
+GENERIC_NON_GENERIC_ROUTINE_HINT = """Only generic functions may be called with type arguments.
+
+Remove the type argument list or add type parameters to the function declaration.
+"""
+
 RECORD_DUPLICATE_FIELD_HINT = """A record type may declare each field name only once.
 
 Example:
@@ -755,6 +805,43 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         type_name = unknown_type_match.group(1)
         return Diagnostic("VF-T003", "unknown type reference", line, column, type_name, "declared type", TYPE_UNKNOWN_HINT, phase="semantic")
+    duplicate_type_param_match = re.search(r"duplicate type parameter: ([A-Za-z_][A-Za-z0-9_]*)", message)
+    if duplicate_type_param_match:
+        line, column = _source_position_from_message(message)
+        param_name = duplicate_type_param_match.group(1)
+        return Diagnostic("VF-GEN002", "duplicate type parameter", line, column, param_name, "unique type parameter", GENERIC_DUPLICATE_PARAM_HINT, phase="semantic")
+    generic_missing_match = re.search(r"generic type requires (\d+) type argument\(s\): ([A-Za-z_][A-Za-z0-9_]*)", message)
+    if generic_missing_match:
+        line, column = _source_position_from_message(message)
+        expected_count, type_name = generic_missing_match.groups()
+        return Diagnostic("VF-GEN010", "missing type argument", line, column, type_name, f"{expected_count} type argument(s)", GENERIC_MISSING_ARGUMENT_HINT, phase="semantic")
+    generic_arity_match = re.search(r"generic type ([A-Za-z_][A-Za-z0-9_]*) expects (\d+) type argument\(s\), got (\d+)", message)
+    if generic_arity_match:
+        line, column = _source_position_from_message(message)
+        type_name, expected_count, actual_count = generic_arity_match.groups()
+        code = "VF-GEN010" if actual_count == "0" else "VF-GEN011"
+        message_text = "missing type argument" if actual_count == "0" else "too many type arguments"
+        return Diagnostic(code, message_text, line, column, f"{type_name}<{actual_count}>", f"{expected_count} type argument(s)", GENERIC_TOO_MANY_ARGUMENTS_HINT, phase="semantic")
+    non_generic_args_match = re.search(r"non-generic type used with type arguments: ([A-Za-z_][A-Za-z0-9_]*)", message)
+    if non_generic_args_match:
+        line, column = _source_position_from_message(message)
+        type_name = non_generic_args_match.group(1)
+        return Diagnostic("VF-GEN012", "non-generic type used with type arguments", line, column, type_name, "generic type declaration", GENERIC_NON_GENERIC_ARGUMENTS_HINT, phase="semantic")
+    generic_routine_missing_match = re.search(r"generic routine requires (\d+) type argument\(s\): ([A-Za-z_][A-Za-z0-9_]*)", message)
+    if generic_routine_missing_match:
+        line, column = _source_position_from_message(message)
+        expected_count, routine_name = generic_routine_missing_match.groups()
+        return Diagnostic("VF-GEN030", "missing routine type argument", line, column, routine_name, f"{expected_count} type argument(s)", GENERIC_ROUTINE_MISSING_ARGUMENT_HINT, phase="semantic")
+    generic_routine_arity_match = re.search(r"generic routine ([A-Za-z_][A-Za-z0-9_]*) expects (\d+) type argument\(s\), got (\d+)", message)
+    if generic_routine_arity_match:
+        line, column = _source_position_from_message(message)
+        routine_name, expected_count, actual_count = generic_routine_arity_match.groups()
+        return Diagnostic("VF-GEN031", "wrong routine type argument count", line, column, f"{routine_name}<{actual_count}>", f"{expected_count} type argument(s)", GENERIC_ROUTINE_ARITY_HINT, phase="semantic")
+    non_generic_routine_match = re.search(r"non-generic routine used with type arguments: ([A-Za-z_][A-Za-z0-9_]*)", message)
+    if non_generic_routine_match:
+        line, column = _source_position_from_message(message)
+        routine_name = non_generic_routine_match.group(1)
+        return Diagnostic("VF-GEN032", "non-generic routine used with type arguments", line, column, routine_name, "generic function declaration", GENERIC_NON_GENERIC_ROUTINE_HINT, phase="semantic")
     invalid_range_match = re.search(r"invalid range bounds: (.+)", message)
     if invalid_range_match:
         line, column = _source_position_from_message(message)

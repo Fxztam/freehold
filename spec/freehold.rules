@@ -679,3 +679,54 @@ emit FH-ABT-3009
     found requires_clause
     expected "explicit top-level aborts clause or environment assumption"
 end
+
+section generics
+
+rule duplicate_type_parameter
+when GenericDecl type_parameters contain duplicate name
+emit FH-GEN-5002
+    found duplicate_type_parameter
+    expected "unique type parameter"
+end
+
+rule missing_type_argument
+when GenericTypeUse type_argument_count is less than declared_type_parameter_count
+emit FH-GEN-5010
+    found generic_type_name
+    expected "declared type argument count"
+end
+
+rule too_many_type_arguments
+when GenericTypeUse type_argument_count is greater than declared_type_parameter_count
+emit FH-GEN-5011
+    found generic_type_name
+    expected "declared type argument count"
+end
+
+rule non_generic_type_used_with_type_arguments
+when TypeUse has type_arguments and target declaration is not generic
+emit FH-GEN-5012
+    found type_name
+    expected "generic type declaration"
+end
+
+rule missing_routine_type_argument
+when GenericRoutineCall type_argument_count is less than declared_type_parameter_count
+emit FH-GEN-5030
+    found routine_name
+    expected "declared routine type argument count"
+end
+
+rule wrong_routine_type_argument_count
+when GenericRoutineCall type_argument_count is not declared_type_parameter_count
+emit FH-GEN-5031
+    found routine_name
+    expected "declared routine type argument count"
+end
+
+rule non_generic_routine_used_with_type_arguments
+when RoutineCall has type_arguments and target declaration is not generic
+emit FH-GEN-5032
+    found routine_name
+    expected "generic function declaration"
+end

@@ -1,0 +1,64 @@
+{
+  "source_file": "..\\tests\\language_modules\\22_generics\\invalid_semantics\\missing_function_type_argument.fh",
+  "source_snippet": "module GenericMissingFunctionTypeArgument\r\n\r\nfunction identity\u003cT\u003e(x: T) returns T\r\nis\r\n    return x\r\nend identity\r\n\r\nprocedure main()\r\nis\r\n    let x: Integer = identity(1)\r\nend main\r\n\r\nend GenericMissingFunctionTypeArgument",
+  "module_name": "22_generics",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "GenericMissingFunctionTypeArgument",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "identity",
+        "type_params": [
+          "T"
+        ],
+        "params": [
+          {
+            "name": "x",
+            "type": "T"
+          }
+        ],
+        "return_type": "T",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "x"
+            }
+          }
+        ],
+        "end_name": "identity"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "x",
+            "type": "Integer",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "identity"
+              },
+              "arguments": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "GenericMissingFunctionTypeArgument"
+  }
+}
