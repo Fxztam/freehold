@@ -218,6 +218,45 @@ def run_bigfloat_precision_smoke() -> None:
     if text != expected:
         raise AssertionError(f"BigFloat precision regression: {text}")
 
+def run_control_flow_summary_smoke() -> None:
+    src = """
+module ControlFlowSummarySmoke
+
+error NotFound
+
+function read(id: Integer) returns Integer
+aborts NotFound when id = 0
+is
+ if id = 0 then
+  abort NotFound
+ end if
+ return id
+end read
+
+function load(id: Integer) returns Integer
+aborts NotFound when id = 0
+is
+ return read(id)
+end load
+
+end ControlFlowSummarySmoke
+"""
+    verified = verify_program(parse_source(src))
+    read_summary = verified.flow_summaries["read"]
+    load_summary = verified.flow_summaries["load"]
+    if read_summary.declared_aborts != frozenset({"NotFound"}):
+        raise AssertionError(f"declared aborts not summarized: {read_summary}")
+    if read_summary.emitted_aborts != frozenset({"NotFound"}):
+        raise AssertionError(f"emitted aborts not summarized: {read_summary}")
+    if not read_summary.normal_return_possible:
+        raise AssertionError(f"normal return missing from read summary: {read_summary}")
+    if not read_summary.guaranteed_exit:
+        raise AssertionError(f"guaranteed exit missing from read summary: {read_summary}")
+    if load_summary.called_routines != frozenset({"read"}):
+        raise AssertionError(f"called routines not summarized: {load_summary}")
+    if load_summary.propagated_aborts != frozenset({"NotFound"}):
+        raise AssertionError(f"propagated aborts not summarized: {load_summary}")
+
 def property_addition_cases() -> list[tuple[str, str]]:
     cases = []
     for a, b in [(0,0), (1,2), (5,7), (10,-3), (-4,9), (100,23), (-8,-9), (42,58), (999,1), (17,25)]:
@@ -271,6 +310,7 @@ def meta_tests():
         ("runtime_vs_verifier", "positive consistency", run_runtime_vs_verifier_positive),
         ("runtime_vs_verifier", "negative ensures consistency", run_runtime_vs_verifier_negative),
         ("big", "BigFloat precision context", run_bigfloat_precision_smoke),
+        ("control_flow", "routine flow summary smoke", run_control_flow_summary_smoke),
     ]
     for name, src in property_addition_cases():
         items.append(("property", name, lambda s=src: run_source(s)))

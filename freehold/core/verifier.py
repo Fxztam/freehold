@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from freehold.core.ast import *
+from freehold.core.control_flow import ControlFlowAnalyzer, RoutineFlowSummary
 from freehold.core.string_templates import validate_template
 
 BUILTIN_TYPE_NAMES = {"Integer", "Boolean", "Double", "String", "BigInteger", "BigFloat"}
@@ -23,6 +24,7 @@ class VerifiedProgram:
     errors: set[str]
     routines: dict[str, RoutineDecl]
     proof_obligations: list[dict[str, str]]
+    flow_summaries: dict[str, RoutineFlowSummary]
 
 class Verifier:
     def verify(self, program: Program) -> VerifiedProgram:
@@ -59,7 +61,8 @@ class Verifier:
             for f in rd.fields: ctx.require_type_or_record(f.type_name, f.pos)
         obs = []
         for r in routines.values(): self.routine(r, ctx, obs)
-        return VerifiedProgram(program, types, records, errors, routines, obs)
+        flow_summaries = ControlFlowAnalyzer(routines, program.module_name).analyze_routines()
+        return VerifiedProgram(program, types, records, errors, routines, obs, flow_summaries)
 
     def validate_imports(self, program: Program) -> None:
         seen = set()

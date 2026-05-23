@@ -4,7 +4,7 @@ This document captures the planned Control Flow Analyzer work after the current 
 
 ## Status
 
-Open. This is the next larger language-analysis complex after the diagnostic layer.
+Open. V0 is implemented as an internal routine-summary layer. Later path-aware diagnostics remain open.
 
 The current completed foundation is:
 
@@ -47,9 +47,9 @@ RoutineFlowSummary
 
 This summary is enough to support later abort analysis without immediately implementing full path-condition proof.
 
-## Control Flow Analyzer V0 Plan
+## Control Flow Analyzer V0
 
-V0 is a planning and structure slice. Abort V2 call propagation has been implemented directly in the verifier as a small same-error-name rule; V0 remains the planned structure for later path-aware analysis.
+V0 is implemented as an internal structure slice. Abort V2 call propagation has been implemented directly in the verifier as a small same-error-name rule; V0 provides the summary shape for later path-aware analysis.
 
 The analyzer contract is also captured in a small meta-language spec:
 
@@ -127,7 +127,7 @@ sequential statements stop after a guaranteed exit for summary purposes
 
 V0 should not yet prove Boolean path conditions, check caller propagation, or reject programs. That keeps the first analyzer slice small and reviewable.
 
-The expected implementation shape is:
+The implementation shape is:
 
 ```text
 freehold/core/control_flow.py
@@ -135,7 +135,7 @@ freehold/core/control_flow.py
     ControlFlowAnalyzer
 ```
 
-The verifier can later call this analyzer after symbol resolution and before abort propagation diagnostics. V0 may be introduced without changing language behavior, as long as existing tests and conformance artifacts stay stable.
+The verifier calls this analyzer after semantic verification and stores the result on `VerifiedProgram.flow_summaries`. V0 does not change language behavior or emit diagnostics.
 
 ## Relationship To Abort Handling
 
