@@ -672,3 +672,10 @@ emit FH-ABT-3005
     found call_site
     expected "caller declares matching aborts clause or handles abort"
 end
+
+rule main_requires_clause_not_allowed
+when RoutineDecl name is "main" and requires is not empty
+emit FH-ABT-3009
+    found requires_clause
+    expected "explicit top-level aborts clause or environment assumption"
+end

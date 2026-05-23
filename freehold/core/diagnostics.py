@@ -498,6 +498,11 @@ ABORT_PROPAGATION_HINT = """A call to an aborting routine must keep the abort vi
 Add a matching `aborts ErrorName` clause to the caller, or handle the abort once handler syntax exists.
 """
 
+ABORT_MAIN_REQUIRES_HINT = """`main` has no ordinary Freehold caller, so `requires` cannot express a call-site obligation there.
+
+Use an explicit top-level `aborts ErrorName when condition` path, or introduce a future environment-assumption construct instead of `requires`.
+"""
+
 EXPRESSION_UNKNOWN_VARIABLE_HINT = """An expression may only reference variables that are in scope.
 
 Declare the variable with `let` or as a routine parameter before using it.
@@ -1037,6 +1042,10 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         routine_name, error_name = abort_propagation_match.groups()
         return Diagnostic("VF-ABT005", "caller does not handle or propagate abort", line, column, f"call {routine_name} may abort {error_name}", f"caller declares aborts {error_name} or handles {error_name}", ABORT_PROPAGATION_HINT, phase="semantic")
+    main_requires_match = re.search(r"main requires clause is not allowed", message)
+    if main_requires_match:
+        line, column = _source_position_from_message(message)
+        return Diagnostic("VF-ABT009", "main requires clause is not allowed", line, column, "requires", "explicit top-level aborts clause or environment assumption", ABORT_MAIN_REQUIRES_HINT, phase="semantic")
     unknown_variable_match = re.search(r"unknown variable: ([A-Za-z_][A-Za-z0-9_]*)", message)
     if unknown_variable_match:
         line, column = _source_position_from_message(message)

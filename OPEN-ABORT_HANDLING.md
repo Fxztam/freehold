@@ -14,17 +14,17 @@ aborts ErrorName when condition
 abort ErrorName
 ```
 
-V1 verifies declared errors, duplicate abort declarations, abort statements declared by the enclosing routine, and Boolean abort conditions. V2 adds same-error-name call propagation. Path-condition coverage, reachability, condition implication, handler syntax, and proof obligations remain future slices.
+V1 verifies declared errors, duplicate abort declarations, abort statements declared by the enclosing routine, and Boolean abort conditions. V2 adds same-error-name call propagation. V3 adds main-specific requires rejection while keeping explicit top-level main aborts valid. Path-condition coverage, reachability, condition implication, handler syntax, and proof obligations remain future slices.
 
 Current validation baseline after V2:
 
 ```text
-21_abort_handling module:       7/7
-Semantic diagnostics:           68/68
-Spec diagnostics:               91/91 emits, 64 semantic codes, 68 CODE_MAP entries
-Parser status parity:           279/279
-AST shape parity:               236/236
-Semantic AST parity:            236/236
+21_abort_handling module:       9/9
+Semantic diagnostics:           69/69
+Spec diagnostics:               92/92 emits, 65 semantic codes, 69 CODE_MAP entries
+Parser status parity:           281/281
+AST shape parity:               238/238
+Semantic AST parity:            238/238
 ```
 
 V1 is intentionally a clean, green anchor. Parser/AST support, basic verifier rules, stable diagnostics, positive and negative language tests, Go/DHParser artifacts, comparison artifacts, rules, and diagnostic specs are complete for this slice.
@@ -44,6 +44,8 @@ If routine `A` calls routine `B`, and `B` declares `aborts NotFound`, then `A` m
 This is the most useful next step because it makes aborts semantically visible across routine boundaries while remaining clearly testable.
 
 2. Abort V3: Main Rules
+
+Implemented on 2026-05-23 for rejecting normal `requires` clauses on `main`. Explicit top-level `aborts` clauses on `main` remain valid.
 
 `main` must not silently lose open aborts. Depending on whether handler syntax exists by then, `main` should either reject open aborts or allow only explicitly declared top-level program aborts.
 
@@ -743,7 +745,7 @@ Completed in V1:
 Planned after V1:
 
 1. Add caller propagation checks. Completed in V2 for same-error-name propagation.
-2. Add `main`-specific abort rules.
+2. Add `main`-specific abort rules. Completed in V3 for rejecting normal `requires` clauses on `main`.
 3. Add reachability and simple path-condition checks.
 4. Add abort path coverage and proof obligations.
 5. Consider condition implication for propagated aborts.

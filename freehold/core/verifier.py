@@ -188,6 +188,8 @@ class Verifier:
             seen_params.add(p.name)
             ctx.require_type_or_record(p.type_name, p.pos); env[p.name] = TypeName(p.type_name)
         if r.return_type: ctx.require_return_type(r.return_type, r.pos)
+        if r.name == "main" and r.requires:
+            raise TypeCheckError(f"{r.requires[0].pos.text()}: main requires clause is not allowed")
         for e in r.requires: self.contract_bool("requires", e, env, ctx, False, None)
         declared_aborts = set()
         for clause in r.aborts:

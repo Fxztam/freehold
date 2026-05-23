@@ -1,0 +1,98 @@
+{
+  "source_file": "..\\tests\\language_modules\\21_abort_handling\\valid\\main_declares_top_level_abort.fh",
+  "source_snippet": "module AbortMainTopLevel\r\n\r\nerror NotFound\r\n\r\nprocedure service(id: Integer)\r\naborts NotFound when id = 0\r\nis\r\n    if id = 0 then\r\n        abort NotFound\r\n    end if\r\nend service\r\n\r\nprocedure main()\r\naborts NotFound\r\nis\r\n    call service(0)\r\nend main\r\n\r\nend AbortMainTopLevel",
+  "module_name": "21_abort_handling",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "AbortMainTopLevel",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "service",
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "aborts": [
+          {
+            "error": "NotFound",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            },
+            "then_body": [
+              {
+                "kind": "AbortStmt",
+                "error": "NotFound"
+              }
+            ]
+          }
+        ],
+        "end_name": "service"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "aborts": [
+          {
+            "error": "NotFound"
+          }
+        ],
+        "body": [
+          {
+            "kind": "CallStmt",
+            "call": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "service"
+              },
+              "arguments": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "AbortMainTopLevel"
+  }
+}

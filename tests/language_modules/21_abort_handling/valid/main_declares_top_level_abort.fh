@@ -1,0 +1,19 @@
+module AbortMainTopLevel
+
+error NotFound
+
+procedure service(id: Integer)
+aborts NotFound when id = 0
+is
+    if id = 0 then
+        abort NotFound
+    end if
+end service
+
+procedure main()
+aborts NotFound
+is
+    call service(0)
+end main
+
+end AbortMainTopLevel

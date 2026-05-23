@@ -122,3 +122,19 @@ end
 non_goal full_symbolic_proof
 until path coverage and proof obligations are implemented
 end
+
+section main_rules_v3
+
+rule main_requires_clause_not_allowed
+when RoutineFlowSummary routine_name is "main"
+and RoutineDecl requires is not empty
+emit FH-ABT-3009
+    found requires_clause
+    expected "explicit top-level aborts clause or environment assumption"
+end
+
+policy main_top_level_aborts
+when RoutineFlowSummary routine_name is "main"
+allow propagated_aborts if declared_aborts contains same error_name
+reason "Until handler syntax exists, top-level program aborts must remain explicit on main."
+end

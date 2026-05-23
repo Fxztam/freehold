@@ -4,7 +4,7 @@ This document captures the planned Control Flow Analyzer work after the current 
 
 ## Status
 
-Open. V0 is implemented as an internal routine-summary layer. Later path-aware diagnostics remain open.
+Open. V0 is implemented as an internal routine-summary layer. Abort V3 main-specific requires rejection is implemented. Later path-aware diagnostics remain open.
 
 The current completed foundation is:
 
@@ -153,6 +153,8 @@ This gives the largest semantic gain after diagnostics because aborts become vis
 
 2. Abort V3: Main Rules
 
+Implemented on 2026-05-23 for rejecting normal `requires` clauses on `main`. Explicit top-level main abort declarations remain valid.
+
 `main` must not silently lose open aborts. Depending on whether handler syntax exists by then, `main` should either reject open aborts or allow only explicitly declared top-level program aborts.
 
 3. Abort V4: Reachability And Simple Path Checks
@@ -184,7 +186,7 @@ FH-ABT-3008 requires/abort responsibility overlap
 FH-ABT-3009 aborts clause is not allowed on main requires space
 ```
 
-The first propagation diagnostic, `FH-ABT-3005`, is implemented by the verifier. The remaining diagnostics require richer path conditions or main-specific policy decisions.
+The first propagation diagnostic, `FH-ABT-3005`, and the first main diagnostic, `FH-ABT-3009`, are implemented by the verifier. The remaining diagnostics require richer path conditions or additional main-specific policy decisions.
 
 ## Non-Goals For The First Slice
 
