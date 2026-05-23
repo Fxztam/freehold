@@ -2,7 +2,19 @@
 
 This document captures open decisions around JSON handling in Freehold and its tooling.
 
-JSON currently appears mainly as a toolchain and conformance artifact format. It is not yet a first-class Freehold language feature.
+JSON appears in two places: existing toolchain/conformance artifacts, and the V1 `Json.stringify(record_value)` library builtin for Freehold programs.
+
+Current V1 verification baseline:
+
+```text
+Json language module: 4/4
+compare-semantic-diagnostics: 62/62, 0 mismatches
+verify-spec-diagnostics: 87 specs, 87 emits, 0 failures
+verify-parser-conformance: passed
+Parser cases: 270 total, 227 OK, 43 expected FAIL
+AST shape: 227/227
+Semantic AST: 227/227
+```
 
 ## Current Status
 
@@ -54,9 +66,15 @@ round-trip-friendly data
 
 ### Language JSON
 
-Language JSON would be a future Freehold feature for reading, validating, constructing, or writing JSON data inside Freehold programs.
+Language JSON starts as a library/builtin feature, not as new Freehold syntax.
 
-This is not implemented yet.
+V1 target:
+
+```fh
+let text: String = Json.stringify(record_value)
+```
+
+This uses the existing qualified call syntax. No EBNF or parser grammar extension is required for V1.
 
 ## Tooling JSON Rules
 
@@ -102,6 +120,27 @@ Recommended diagnostic shape:
 ```
 
 ## JSON As Language Feature
+
+V1 ships only deterministic record serialization:
+
+```text
+Json.stringify(record_value) -> String
+```
+
+Rules:
+
+```text
+Json.stringify accepts exactly one argument.
+The top-level argument must be a record value.
+Output is compact deterministic JSON.
+Record fields are emitted in record declaration order.
+String, Integer, Boolean, and Double field values are supported.
+Nested record values are supported.
+Arrays of supported values are supported where array values are available.
+BigInteger, BigFloat, Result, parse, schema, optional, nullable, and @json names are Post-V1.
+```
+
+Diagnostics for V1 live in `FH-JSON-4201..4203`.
 
 If JSON becomes a Freehold language feature, records should remain the canonical structure definition.
 
@@ -526,9 +565,14 @@ json_parse_record_field_name_annotation
 json_parse_record_duplicate_json_name_rejected
 json_get_string_field
 json_get_integer_field
-json_stringify_record_deterministic
 json_schema_generated_from_record
 json_template_requires_explicit_escape
+```
+
+Implemented V1 target:
+
+```text
+json_stringify_record_deterministic
 ```
 
 Tooling-level targets:
@@ -544,7 +588,7 @@ artifact_output_is_deterministic
 
 ```text
 Tooling JSON is already part of Freehold conformance.
-Language JSON is not implemented yet.
+Language JSON V1 implements Json.stringify(record_value) as a library builtin.
 Records are the canonical JSON schema source.
 Prefer Json.parse<RecordType>(text) for hard schema validation.
 Use @json("externalName") for external JSON field names.

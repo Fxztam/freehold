@@ -95,9 +95,14 @@ class AstBuilder:
 
     def return_type(self, tree: Tree):
         inner = tree.children[0]
-        if inner.data == "type_ref": return TypeName(str(inner.children[0]))
-        if inner.data == "result_type": return ResultTypeName(str(inner.children[0].children[0]), str(inner.children[1].children[0]))
-        if inner.data == "array_type": return ArrayTypeName(str(inner.children[0].children[0]), int(inner.children[1]))
+        return self.type_ref_tree(inner)
+
+    def type_ref_tree(self, tree: Tree):
+        if tree.data == "result_payload_type":
+            return self.type_ref_tree(tree.children[0])
+        if tree.data == "type_ref": return TypeName(str(tree.children[0]))
+        if tree.data == "result_type": return ResultTypeName(self.type_ref_tree(tree.children[0]), str(tree.children[1].children[0]))
+        if tree.data == "array_type": return ArrayTypeName(str(tree.children[0].children[0]), int(tree.children[1]))
         raise TypeCheckError(f"{pos(tree).text()}: invalid return type")
 
     def stmt(self, tree: Tree):

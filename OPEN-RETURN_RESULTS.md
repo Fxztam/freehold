@@ -1,6 +1,48 @@
 # Open Return Results
 
-This document captures the open design surface for Freehold `Result<T, E>` return behavior.
+This document captures the V1 design status and remaining post-V1 design surface for Freehold `Result<T, E>` return behavior.
+
+## V1 Closure Status
+
+Status: V1 accepted and conformance-checked on 2026-05-23.
+
+V1 is now closed around this scope:
+
+```text
+Result<T, E> is a value-level success/failure return type.
+return ok expr and return error ErrorName are the only Result return forms.
+The ok side supports simple value type names and Array<T, N> payloads.
+The error side is a declared error name.
+Nested Result ok payloads are forbidden.
+Result contract atoms success, failure, value, and error refer to one Result layer.
+```
+
+The accepted V1 test/conformance package includes:
+
+```text
+result_ok_return
+result_error_return
+result_let_from_function
+result_assignment_from_function
+result_value_ensures
+result_status_ensures
+function_returning_result_array
+nested_result_payload_not_supported
+```
+
+Latest validated gate baseline:
+
+```text
+11_errors_results module:       14/14
+Semantic diagnostics:           62/62
+Spec diagnostics:               87/87 emits, 60 semantic codes, 64 CODE_MAP entries
+Parser conformance corpus:      270 total, 227 OK, 43 expected FAIL
+Parser status parity:           270/270
+AST shape parity:               227/227
+Semantic AST parity:            227/227
+```
+
+Post-V1 remains intentionally open for richer result ergonomics such as `value.field`, multiple error types, and explicit unwrapping/propagation syntax.
 
 ## Current Status
 
@@ -33,16 +75,10 @@ Both are normal function returns.
 Current result type shape:
 
 ```fh
-Result<OkTypeName, ErrorTypeName>
+Result<OkTypeName, ErrorName>
 ```
 
-Both type arguments are currently simple names.
-
-Important current limitation:
-
-```text
-The current grammar does not yet allow structured type expressions inside Result<..., ...>.
-```
+The error side is currently a declared error name. The ok side accepts a simple value type name or an Array payload.
 
 Accepted:
 
@@ -52,17 +88,17 @@ Result<Boolean, PermissionDenied>
 Result<String, ValidationError>
 Result<Account, NotFound>
 Result<Money, Overdraft>
+Result<Array<Integer, 3>, NotFound>
 ```
 
 Not currently accepted:
 
 ```fh
-Result<Array<Integer, 3>, NotFound>
 Result<Result<Integer, NotFound>, OtherError>
 Result<Integer, Array<Error, 3>>
 ```
 
-This is a grammar/type-expression limitation, not a conceptual rejection of arrays as successful Result values.
+Nested Result payloads are forbidden in V1, and the error side remains a declared error name.
 
 ## Current Return Rules
 
@@ -169,17 +205,17 @@ value.field is not yet parseable when value is a record.
 
 The positive matrix tracks this as a known gap.
 
-## Open Design Questions
+## V1 Scope And Post-V1 Questions
 
 ### Structured Result Payloads
 
-Should Freehold allow structured ok payloads such as arrays?
+Freehold V1 allows structured Array ok payloads:
 
 ```fh
 Result<Array<Integer, 3>, NotFound>
 ```
 
-Yes. This is conceptually desirable, but it requires widening the grammar from:
+This was accepted by widening the grammar from:
 
 ```text
 Result<type_ref, type_ref>
@@ -190,23 +226,23 @@ to a nested value-type expression grammar.
 Fixed v1 direction:
 
 ```text
-Allow Array<T, N> as a future Result ok type once value-type expressions are supported.
+Allow Array<T, N> as a Result ok type.
 Keep Result error type as a declared error name.
 Forbid nested Result in v1.
 ```
 
 ### Result Ok Type Expression
 
-The successful side of `Result<T, E>` should eventually accept the same value types that ordinary variables, parameters, and return values can use.
+The successful side of `Result<T, E>` now accepts simple value type names and `Array<T, N>` payloads.
 
-Recommended direction:
+V1 rule:
 
 ```text
-Result ok type should be a full value type expression.
+Result ok type may be a simple value type name or Array<T, N>.
 Result error type should remain a declared error name in v1.
 ```
 
-Future valid examples:
+V1 valid examples:
 
 ```fh
 Result<Array<Integer, 3>, NotFound>
@@ -214,6 +250,8 @@ Result<Array<String, 10>, ValidationError>
 Result<Person, NotFound>
 Result<AccountBalance, Overdraft>
 ```
+
+Post-V1 may generalize this further so the ok side accepts the same complete value type expression surface as ordinary variables, parameters, and return values.
 
 This enables functions to return successful arrays and records without losing the explicit error channel:
 
@@ -235,9 +273,9 @@ EXPECTED => Array<Integer, 3>
 
 ### Result Error Type Constraint
 
-The error side should stay narrow at first.
+The error side stays narrow in V1.
 
-Recommended v1 rule:
+V1 rule:
 
 ```text
 The E in Result<T, E> must name a declared error.
@@ -430,13 +468,13 @@ Result<Account, NotFound | PermissionDenied>
 Result<Account, ErrorSet>
 ```
 
-This is open. The current language can model multiple error outcomes with declared error families later, but this should not be rushed.
+This remains post-V1. The current language can model multiple error outcomes with declared error families later, but this should not be rushed.
 
 ### Unwrapping And Propagation
 
 Current callers receive `Result` as a value. There is no built-in `try`, `?`, or pattern match syntax.
 
-Open future designs:
+Post-V1 design candidates:
 
 ```fh
 let account: Account = try load(id)
@@ -476,9 +514,9 @@ FH-RES-4111 Result value field does not exist
 FH-RES-4112 Result value field access requires record ok type
 ```
 
-## Positive Matrix Targets
+## Coverage Matrix Status
 
-Already covered:
+Covered in V1 or current conformance gates:
 
 ```text
 result_ok_return
@@ -487,22 +525,22 @@ result_let_from_function
 result_assignment_from_function
 result_value_ensures
 result_status_ensures
+function_returning_result_array
+nested_result_payload_not_supported
 ```
 
-Open matrix targets:
+Post-V1 matrix targets:
 
 ```text
 function_returning_result_record
-function_returning_result_array once Result ok type expressions are supported
-function_returning_result_array_ok_type_mismatch
-function_returning_result_nested_result_rejected
-function_returning_result_error_array_rejected
 contract_uses_result_value_field once value.field is supported
 contract_uses_result_value_field_unknown_field
 contract_uses_result_value_field_on_scalar_rejected
 qualified_result_call_assignment
 result_return_inside_case_branches
 ```
+
+Additional V1 hardening candidates can still be added as diagnostics-focused negatives, but they do not change the accepted V1 surface.
 
 ## Summary Rules
 
@@ -511,8 +549,8 @@ Result<T, E> is value-level success/failure.
 return ok expr returns a success value.
 return error E returns a failure value.
 return error E is not abort E.
-Current Result type arguments are simple names.
-Result ok type should later allow full value type expressions such as Array<T, N> and records.
+Result ok type supports simple value type names and Array<T, N> payloads.
+Result ok type should later allow record field access through value.field contracts.
 Result error type should remain a declared error name in v1.
 Nested Result payloads are forbidden in v1 so that success, failure, value, and error remain unambiguous.
 value.field contracts should be added for record ok values.

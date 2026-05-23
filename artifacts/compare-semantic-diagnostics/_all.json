@@ -1505,6 +1505,41 @@
     }
   },
   {
+    "case": "11_errors_results/invalid_semantics/nested_result_ok_payload.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "result",
+      "code": "FH-RES-4107",
+      "number": 4107,
+      "name": "nested_result_payload_not_supported",
+      "message": "nested Result payloads are forbidden in v1",
+      "location": {
+        "line": 5,
+        "column": 1
+      },
+      "expected": "non-Result value type",
+      "found": "Result payload",
+      "hint": "Nested Result payloads are forbidden in V1.\n\nUse a non-Result success value such as Integer, a record, or Array<T, N>, and keep the error side as a declared error.\n",
+      "legacy_code": "VF-ER007"
+    },
+    "expected": {
+      "code": "FH-RES-4107",
+      "name": "nested_result_payload_not_supported",
+      "phase": "semantic",
+      "category": "result",
+      "legacy_code": "VF-ER007",
+      "message": "nested Result payloads are forbidden in v1",
+      "location": {
+        "line": 5,
+        "column": 1
+      },
+      "expected": "non-Result value type",
+      "found": "Result payload"
+    }
+  },
+  {
     "case": "11_errors_results/invalid_semantics/plain_function_ok_return.json",
     "status": "match",
     "actual": {
@@ -2027,6 +2062,111 @@
       },
       "expected": "placeholder in String.template",
       "found": "active"
+    }
+  },
+  {
+    "case": "20_json/invalid_semantics/json_stringify_argument_count.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "json",
+      "code": "FH-JSON-4201",
+      "number": 4201,
+      "name": "json_stringify_argument_count",
+      "message": "wrong Json argument count",
+      "location": {
+        "line": 10,
+        "column": 24
+      },
+      "expected": "1 argument(s) for Json.stringify",
+      "found": "argument list",
+      "hint": "Json.stringify accepts exactly one value.\n\nExample:\n    let text: String = Json.stringify(person)\n",
+      "legacy_code": "VF-J001"
+    },
+    "expected": {
+      "code": "FH-JSON-4201",
+      "name": "json_stringify_argument_count",
+      "phase": "semantic",
+      "category": "json",
+      "legacy_code": "VF-J001",
+      "message": "wrong Json argument count",
+      "location": {
+        "line": 10,
+        "column": 24
+      },
+      "expected": "1 argument(s) for Json.stringify",
+      "found": "argument list"
+    }
+  },
+  {
+    "case": "20_json/invalid_semantics/json_stringify_big_integer_field.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "json",
+      "code": "FH-JSON-4203",
+      "number": 4203,
+      "name": "json_stringify_unsupported_type",
+      "message": "Json value type not serializable",
+      "location": {
+        "line": 11,
+        "column": 39
+      },
+      "expected": "JSON-serializable value for Json.stringify",
+      "found": "value.hash: BigInteger",
+      "hint": "Json.stringify V1 serializes record fields whose values are JSON-compatible Freehold values.\n\nSupported field value types:\n    String, Integer, Boolean, Double, records, and arrays of supported values\n\nConvert BigInteger, BigFloat, Result, and other unsupported values explicitly before serializing.\n",
+      "legacy_code": "VF-J003"
+    },
+    "expected": {
+      "code": "FH-JSON-4203",
+      "name": "json_stringify_unsupported_type",
+      "phase": "semantic",
+      "category": "json",
+      "legacy_code": "VF-J003",
+      "message": "Json value type not serializable",
+      "location": {
+        "line": 11,
+        "column": 39
+      },
+      "expected": "JSON-serializable value for Json.stringify",
+      "found": "value.hash: BigInteger"
+    }
+  },
+  {
+    "case": "20_json/invalid_semantics/json_stringify_scalar.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "json",
+      "code": "FH-JSON-4202",
+      "number": 4202,
+      "name": "json_stringify_requires_record",
+      "message": "Json argument type mismatch",
+      "location": {
+        "line": 5,
+        "column": 39
+      },
+      "expected": "record argument 1 for Json.stringify",
+      "found": "String",
+      "hint": "Json.stringify V1 accepts a record value as its top-level argument.\n\nConstruct a record with TypeName { field: value } and pass that record value.\n",
+      "legacy_code": "VF-J002"
+    },
+    "expected": {
+      "code": "FH-JSON-4202",
+      "name": "json_stringify_requires_record",
+      "phase": "semantic",
+      "category": "json",
+      "legacy_code": "VF-J002",
+      "message": "Json argument type mismatch",
+      "location": {
+        "line": 5,
+        "column": 39
+      },
+      "expected": "record argument 1 for Json.stringify",
+      "found": "String"
     }
   }
 ]

@@ -71,6 +71,7 @@ CODE_MAP = {
     "VF-ER004": ("FH-SEM-1504", 1504, "result_function_requires_ok_or_error_return", "semantic"),
     "VF-ER005": ("FH-SEM-1505", 1505, "plain_function_rejects_ok_or_error_return", "semantic"),
     "VF-ER006": ("FH-TYP-2501", 2501, "result_ok_type_mismatch", "type"),
+    "VF-ER007": ("FH-RES-4107", 4107, "nested_result_payload_not_supported", "result"),
     "VF-CT001": ("FH-TYP-2601", 2601, "contract_clause_requires_boolean", "type"),
     "VF-CT002": ("FH-SEM-1601", 1601, "result_contract_expression_outside_result_ensures", "semantic"),
     "VF-TPL001": ("FH-TPL-4001", 4001, "template_placeholder_count_mismatch", "template"),
@@ -82,6 +83,9 @@ CODE_MAP = {
     "VF-TPL007": ("FH-TPL-4007", 4007, "template_missing_binding", "template"),
     "VF-TPL008": ("FH-TPL-4008", 4008, "template_unused_binding", "template"),
     "VF-TPL009": ("FH-TPL-4009", 4009, "template_mixed_modes", "template"),
+    "VF-J001": ("FH-JSON-4201", 4201, "json_stringify_argument_count", "json"),
+    "VF-J002": ("FH-JSON-4202", 4202, "json_stringify_requires_record", "json"),
+    "VF-J003": ("FH-JSON-4203", 4203, "json_stringify_unsupported_type", "json"),
 }
 
 

@@ -762,12 +762,40 @@ message "mixed string template modes"
 expected "one template mode per call"
 end
 
+diag FH-JSON-4201 json_stringify_argument_count
+severity error
+phase semantic
+category json
+legacy VF-J001
+message "wrong Json argument count"
+expected "one argument for Json.stringify"
+end
+
+diag FH-JSON-4202 json_stringify_requires_record
+severity error
+phase semantic
+category json
+legacy VF-J002
+message "Json argument type mismatch"
+expected "record argument for Json.stringify"
+end
+
+diag FH-JSON-4203 json_stringify_unsupported_type
+severity error
+phase semantic
+category json
+legacy VF-J003
+message "Json value type not serializable"
+expected "JSON-serializable record field value"
+end
+
 # Open Result diagnostics already fixed by OPEN-RETURN_RESULTS.md.
 
 diag FH-RES-4107 nested_result_payload_not_supported
 severity error
 phase semantic
 category result
+legacy VF-ER007
 message "nested Result payloads are forbidden in v1"
 expected "non-Result value type"
 hint "Nested Result is forbidden in v1 so success, failure, value, and error remain unambiguous."

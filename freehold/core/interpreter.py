@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 import math
 from freehold.core.ast import *
 from freehold.core.string_templates import render_template
@@ -108,6 +109,20 @@ class Interpreter:
             value = value.fields[field]
         return value
 
+    def json_value(self, value):
+        if isinstance(value, RecordValue):
+            record = self.records[value.type_name]
+            return {field_name: self.json_value(value.fields[field_name]) for field_name in record.fields}
+        if isinstance(value, list):
+            return [self.json_value(item) for item in value]
+        if value is None or isinstance(value, (str, bool)):
+            return value
+        if isinstance(value, int) and not isinstance(value, bool):
+            return value
+        if isinstance(value, float):
+            return value
+        raise VerificationError(f"Json.stringify cannot serialize runtime value {type(value).__name__}")
+
     def assign_field_path(self, path, new_value, env, pos):
         if len(path) < 2:
             raise VerificationError(f"{pos.text()}: invalid field assignment")
@@ -152,6 +167,8 @@ class Interpreter:
             if e.name == "String.template":
                 named = {a.name: self.eval(a.expr, env) for a in e.args[1:] if isinstance(a, NamedArg)}
                 return render_template(args[0], args[1:], named)
+            if e.name == "Json.stringify":
+                return json.dumps(self.json_value(args[0]), ensure_ascii=False, separators=(",", ":"))
             if e.name == "Math.sin":
                 return math.sin(args[0])
             if e.name == "Math.cos":

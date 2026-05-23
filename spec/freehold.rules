@@ -548,6 +548,29 @@ emit FH-TPL-4009
     expected "one template mode per call"
 end
 
+section json
+
+rule json_stringify_argument_count
+when Json.stringify argument_count != 1
+emit FH-JSON-4201
+    found argument_count
+    expected "one argument for Json.stringify"
+end
+
+rule json_stringify_requires_record
+when Json.stringify argument_type is not record
+emit FH-JSON-4202
+    found argument_type
+    expected "record argument for Json.stringify"
+end
+
+rule json_stringify_unsupported_type
+when Json.stringify record_field_type is not json_serializable_v1
+emit FH-JSON-4203
+    found record_field_type
+    expected "String, Integer, Boolean, Double, record, or Array of supported values"
+end
+
 section result_returns
 
 rule unknown_result_error_type

@@ -1,0 +1,71 @@
+{
+  "source_file": "..\\tests\\language_modules\\11_errors_results\\valid\\result_array_ok_payload.fh",
+  "source_snippet": "module ResultArrayOkPayload\r\n\r\nerror NotFound\r\n\r\nfunction collect() returns Result\u003cArray\u003cInteger, 3\u003e, NotFound\u003e\r\nis\r\n    return ok [1, 2, 3]\r\nend collect\r\n\r\nprocedure main()\r\nis\r\n    let values: Result\u003cArray\u003cInteger, 3\u003e, NotFound\u003e = collect()\r\nend main\r\n\r\nend ResultArrayOkPayload",
+  "module_name": "11_errors_results",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "ResultArrayOkPayload",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "collect",
+        "params": null,
+        "return_type": "Result\u003cArray\u003cInteger, 3\u003e, NotFound\u003e",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "OkExpr",
+              "value": {
+                "kind": "ArrayLiteralExpr",
+                "elements": [
+                  {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  },
+                  {
+                    "kind": "NumberExpr",
+                    "value": "2"
+                  },
+                  {
+                    "kind": "NumberExpr",
+                    "value": "3"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "end_name": "collect"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "values",
+            "type": "Result\u003cArray\u003cInteger, 3\u003e, NotFound\u003e",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "collect"
+              },
+              "arguments": null
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "ResultArrayOkPayload"
+  }
+}

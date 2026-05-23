@@ -23,7 +23,8 @@ param_list: param ("," param)*
 param: NAME ":" type_ref
 type_ref: NAME
 return_type: array_type | result_type | type_ref
-result_type: "Result" "<" type_ref "," type_ref ">"
+result_payload_type: array_type | result_type | type_ref
+result_type: "Result" "<" result_payload_type "," type_ref ">"
 array_type: "Array" "<" type_ref "," INT_NUMBER ">"
 
 contract_block: requires_clause* ensures_clause*

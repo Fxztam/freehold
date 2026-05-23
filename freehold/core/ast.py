@@ -16,7 +16,7 @@ class TypeName:
 
 @dataclass(frozen=True)
 class ResultTypeName:
-    ok_type: str
+    ok_type: Any
     error_type: str
 
 @dataclass(frozen=True)
@@ -210,7 +210,7 @@ class ReturnSignal(Exception):
 def type_to_string(t: TypeRef | None) -> str:
     if t is None: return "Void"
     if isinstance(t, TypeName): return t.name
-    if isinstance(t, ResultTypeName): return f"Result<{t.ok_type},{t.error_type}>"
+    if isinstance(t, ResultTypeName): return f"Result<{type_to_string(t.ok_type)},{t.error_type}>"
     if isinstance(t, ArrayTypeName): return f"Array<{t.element_type},{t.size}>"
     if isinstance(t, ArrayLiteralType): return f"ArrayLiteral<{t.element_type},{t.size}>"
     return str(t)

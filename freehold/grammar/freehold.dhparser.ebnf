@@ -23,10 +23,11 @@ range_decl = "range" NUMBER_LITERAL ".." NUMBER_LITERAL
 error_decl = ~ "error" IDENT
 
 base_type = BASE_TYPE
-type_ref = array_type | result_type | BASE_TYPE | IDENT
+type_ref = BASE_TYPE | IDENT
 return_type = array_type | result_type | type_ref
 
-result_type = "Result" "<" type_ref "," type_ref ">"
+result_payload_type = array_type | result_type | type_ref
+result_type = "Result" "<" result_payload_type "," type_ref ">"
 array_type = "Array" "<" type_ref "," INTEGER_LITERAL ">"
 
 function_decl = ~ "function" IDENT "(" [ param_list ] ")" "returns" return_type [ contract_block ] "is" { stmt } "end" IDENT

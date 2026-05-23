@@ -268,9 +268,9 @@ class Verifier:
         if isinstance(expected, ResultTypeName):
             if isinstance(rv, ReturnOk):
                 actual = self.infer(rv.expr, env, ctx, False, None)
-                ok_type = TypeName(expected.ok_type)
+                ok_type = expected.ok_type
                 if self.base(actual, ctx) != self.base(ok_type, ctx):
-                    raise TypeCheckError(f"{rv.pos.text()}: Result ok type mismatch: expected {expected.ok_type}, got {type_to_string(actual)}")
+                    raise TypeCheckError(f"{rv.pos.text()}: Result ok type mismatch: expected {type_to_string(ok_type)}, got {type_to_string(actual)}")
                 self.assign(actual, ok_type, ctx, rv.pos)
             elif isinstance(rv, ReturnError):
                 if rv.error_name not in ctx.errors:
@@ -329,6 +329,19 @@ class Verifier:
             t = infer_arg(i)
             if self.base(t, ctx) != expected:
                 raise TypeCheckError(f"{e.args[i].pos.text()}: {e.name} argument {i+1} expected {expected}, got {type_to_string(t)}")
+        def expect_json_serializable(t, pos, path, top_level=False):
+            if isinstance(t, TypeName) and t.name in ctx.records:
+                for field_name, field_type in ctx.records[t.name].fields.items():
+                    expect_json_serializable(TypeName(field_type), pos, f"{path}.{field_name}")
+                return
+            if top_level:
+                raise TypeCheckError(f"{pos.text()}: Json.stringify argument 1 expected record, got {type_to_string(t)}")
+            if isinstance(t, ArrayTypeName):
+                expect_json_serializable(TypeName(t.element_type), pos, f"{path}[]")
+                return
+            if isinstance(t, TypeName) and self.base(t, ctx) in ("String", "Integer", "Boolean", "Double"):
+                return
+            raise TypeCheckError(f"{pos.text()}: Json.stringify cannot serialize {type_to_string(t)} at {path}")
         if e.name == "String.concat":
             if len(e.args) != 2:
                 raise TypeCheckError(f"{e.pos.text()}: String.concat expects 2 arguments")
@@ -381,6 +394,12 @@ class Verifier:
                     validate_template(e.args[0].value, len(positional_values), [arg.name for arg in named_values])
                 except ValueError as exc:
                     raise TypeCheckError(f"{e.args[0].pos.text()}: String.template {exc}") from exc
+            return TypeName("String")
+        if e.name == "Json.stringify":
+            if len(e.args) != 1:
+                raise TypeCheckError(f"{e.pos.text()}: Json.stringify expects 1 arguments")
+            actual = infer_arg(0)
+            expect_json_serializable(actual, e.args[0].pos, "value", top_level=True)
             return TypeName("String")
         if e.name in {"Math.sin", "Math.cos", "Math.tan", "Math.sqrt"}:
             if len(e.args) != 1:
@@ -512,7 +531,7 @@ class Verifier:
             if not allow_result or not isinstance(result_type, ResultTypeName):
                 raise TypeCheckError(f"{e.pos.text()}: Result contract expression {e.name} is only available in Result ensures")
             if e.name in ("success","failure"): return TypeName("Boolean")
-            return TypeName(result_type.ok_type if e.name == "value" else result_type.error_type)
+            return result_type.ok_type if e.name == "value" else TypeName(result_type.error_type)
         if isinstance(e, VarExpr):
             if e.name in ctx.errors: return TypeName(e.name)
             if e.name == "result" and allow_result and result_type: return result_type
@@ -573,8 +592,9 @@ class Verifier:
                 raise TypeCheckError(f"{pos.text()}: cannot assign {type_to_string(s)} to {type_to_string(t)}")
             return
         if isinstance(s, ResultTypeName) and isinstance(t, ResultTypeName):
-            if self.base(TypeName(s.ok_type), ctx) != self.base(TypeName(t.ok_type), ctx) or s.error_type != t.error_type:
+            if self.base(s.ok_type, ctx) != self.base(t.ok_type, ctx) or s.error_type != t.error_type:
                 raise TypeCheckError(f"{pos.text()}: cannot assign {type_to_string(s)} to {type_to_string(t)}")
+            self.assign(s.ok_type, t.ok_type, ctx, pos)
             return
         if self.base(s,ctx) != self.base(t,ctx): raise TypeCheckError(f"{pos.text()}: cannot assign {type_to_string(s)} to {type_to_string(t)}")
         if isinstance(t, TypeName) and t.name in ctx.records and (not isinstance(s, TypeName) or s.name != t.name):
@@ -606,7 +626,9 @@ class Ctx:
         if isinstance(t, TypeName): self.require_type_or_record(t.name,pos)
         elif isinstance(t, ArrayTypeName): self.require_type_or_record(t.element_type,pos)
         elif isinstance(t, ResultTypeName):
-            self.require_type_or_record(t.ok_type,pos)
+            if isinstance(t.ok_type, ResultTypeName):
+                raise TypeCheckError(f"{pos.text()}: nested Result payloads are forbidden in v1")
+            self.require_return_type(t.ok_type,pos)
             if t.error_type not in self.errors:
                 raise TypeCheckError(f"{pos.text()}: unknown result error type: {t.error_type}")
     def routine(self,n,pos):

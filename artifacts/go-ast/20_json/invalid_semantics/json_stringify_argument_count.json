@@ -1,0 +1,77 @@
+{
+  "source_file": "..\\tests\\language_modules\\20_json\\invalid_semantics\\json_stringify_argument_count.fh",
+  "source_snippet": "module JsonStringifyArgumentCount\r\n\r\ntype Person is record\r\n    name: String\r\nend record\r\n\r\nprocedure main()\r\nis\r\n    let person: Person = Person { name: \"Ada\" }\r\n    let text: String = Json.stringify(person, person)\r\nend main\r\n\r\nend JsonStringifyArgumentCount\r\n",
+  "module_name": "20_json",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "JsonStringifyArgumentCount",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Person",
+        "base": "record",
+        "fields": [
+          {
+            "name": "name",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "person",
+            "type": "Person",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Person",
+              "fields": [
+                {
+                  "name": "name",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Ada"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "text",
+            "type": "String",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "Json"
+                },
+                "field": "stringify"
+              },
+              "arguments": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "person"
+                },
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "person"
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "JsonStringifyArgumentCount"
+  }
+}

@@ -389,6 +389,25 @@ Use BigInteger values for Big.*Int operations and BigFloat values for Big.*Float
 Convert explicitly with Big.fromInteger or Big.floatFromInteger.
 """
 
+JSON_ARGUMENT_COUNT_HINT = """Json.stringify accepts exactly one value.
+
+Example:
+    let text: String = Json.stringify(person)
+"""
+
+JSON_ARGUMENT_TYPE_HINT = """Json.stringify V1 accepts a record value as its top-level argument.
+
+Construct a record with TypeName { field: value } and pass that record value.
+"""
+
+JSON_SERIALIZABLE_TYPE_HINT = """Json.stringify V1 serializes record fields whose values are JSON-compatible Freehold values.
+
+Supported field value types:
+    String, Integer, Boolean, Double, records, and arrays of supported values
+
+Convert BigInteger, BigFloat, Result, and other unsupported values explicitly before serializing.
+"""
+
 STATEMENT_UNKNOWN_ASSIGNMENT_HINT = """Assignment requires an existing local variable.
 
 Declare the variable with `let` before assigning to it.
@@ -528,6 +547,11 @@ Use `returns Result<T, E>` when the function should return `ok` or `error`.
 ERROR_OK_TYPE_HINT = """A Result `ok` return value must match the Result's success type.
 
 Check the first type argument in `Result<T, E>` and the expression after `ok`.
+"""
+
+ERROR_NESTED_RESULT_HINT = """Nested Result payloads are forbidden in V1.
+
+Use a non-Result success value such as Integer, a record, or Array<T, N>, and keep the error side as a declared error.
 """
 
 def _token_value(token: Any) -> str:
@@ -919,6 +943,21 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         function_name, argument_index, expected_type, found_type = big_arg_type_match.groups()
         return Diagnostic("VF-BI002", "Big argument type mismatch", line, column, found_type, f"argument {argument_index} as {expected_type} for {function_name}", BIG_ARGUMENT_TYPE_HINT, phase="semantic")
+    json_arg_count_match = re.search(r"(Json\.stringify) expects (\d+) arguments", message)
+    if json_arg_count_match:
+        line, column = _source_position_from_message(message)
+        function_name, expected_count = json_arg_count_match.groups()
+        return Diagnostic("VF-J001", "wrong Json argument count", line, column, "argument list", f"{expected_count} argument(s) for {function_name}", JSON_ARGUMENT_COUNT_HINT, phase="semantic")
+    json_arg_type_match = re.search(r"(Json\.stringify) argument (\d+) expected record, got (.+)", message)
+    if json_arg_type_match:
+        line, column = _source_position_from_message(message)
+        function_name, argument_index, found_type = json_arg_type_match.groups()
+        return Diagnostic("VF-J002", "Json argument type mismatch", line, column, found_type, f"record argument {argument_index} for {function_name}", JSON_ARGUMENT_TYPE_HINT, phase="semantic")
+    json_serializable_type_match = re.search(r"(Json\.stringify) cannot serialize (.+) at (.+)", message)
+    if json_serializable_type_match:
+        line, column = _source_position_from_message(message)
+        function_name, found_type, path = json_serializable_type_match.groups()
+        return Diagnostic("VF-J003", "Json value type not serializable", line, column, f"{path}: {found_type}", f"JSON-serializable value for {function_name}", JSON_SERIALIZABLE_TYPE_HINT, phase="semantic")
     unknown_assignment_match = re.search(r"unknown assignment target: ([A-Za-z_][A-Za-z0-9_]*)", message)
     if unknown_assignment_match:
         line, column = _source_position_from_message(message)
@@ -1021,6 +1060,10 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         expected_type, found_type = result_ok_type_match.groups()
         return Diagnostic("VF-ER006", "Result ok type mismatch", line, column, found_type, expected_type, ERROR_OK_TYPE_HINT, phase="semantic")
+    nested_result_match = re.search(r"nested Result payloads are forbidden in v1", message)
+    if nested_result_match:
+        line, column = _source_position_from_message(message)
+        return Diagnostic("VF-ER007", "nested Result payloads are forbidden in v1", line, column, "Result payload", "non-Result value type", ERROR_NESTED_RESULT_HINT, phase="semantic")
     return Diagnostic("VF-S999", f"semantic error ({type(exc).__name__})", _line(exc), _column(exc), repr(str(exc)),
                       "valid Freehold semantics",
                       "The parser accepted the input, but semantic analysis rejected it.\nAdd a targeted semantic diagnostic rule.",

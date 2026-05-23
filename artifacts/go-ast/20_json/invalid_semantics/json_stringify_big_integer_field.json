@@ -1,0 +1,95 @@
+{
+  "source_file": "..\\tests\\language_modules\\20_json\\invalid_semantics\\json_stringify_big_integer_field.fh",
+  "source_snippet": "module JsonStringifyBigIntegerField\r\n\r\ntype Payload is record\r\n    hash: BigInteger\r\nend record\r\n\r\nprocedure main()\r\nis\r\n    let hash: BigInteger = Big.int(\"123\")\r\n    let payload: Payload = Payload { hash: hash }\r\n    let text: String = Json.stringify(payload)\r\nend main\r\n\r\nend JsonStringifyBigIntegerField\r\n",
+  "module_name": "20_json",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "JsonStringifyBigIntegerField",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Payload",
+        "base": "record",
+        "fields": [
+          {
+            "name": "hash",
+            "type": "BigInteger"
+          }
+        ]
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "hash",
+            "type": "BigInteger",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "Big"
+                },
+                "field": "int"
+              },
+              "arguments": [
+                {
+                  "kind": "StringExpr",
+                  "value": "123"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "payload",
+            "type": "Payload",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Payload",
+              "fields": [
+                {
+                  "name": "hash",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "hash"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "text",
+            "type": "String",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "Json"
+                },
+                "field": "stringify"
+              },
+              "arguments": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "payload"
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "JsonStringifyBigIntegerField"
+  }
+}

@@ -20,12 +20,12 @@ Positive and negative language-module tests cover positional, named, missing, un
 The V1 verification baseline is:
 
 ```text
-compare-semantic-diagnostics: 58/58, 0 mismatches
-verify-spec-diagnostics: 84 specs, 84 emits, 0 failures
+compare-semantic-diagnostics: 62/62, 0 mismatches
+verify-spec-diagnostics: 87 specs, 87 emits, 0 failures
 verify-parser-conformance: passed
-Parser cases: 264 total, 221 OK, 43 expected FAIL
-AST shape: 221/221
-Semantic AST: 221/221
+Parser cases: 270 total, 227 OK, 43 expected FAIL
+AST shape: 227/227
+Semantic AST: 227/227
 Go tests: passed
 ```
 

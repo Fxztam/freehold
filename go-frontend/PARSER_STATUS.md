@@ -34,13 +34,13 @@ The wrapper writes repository-local artifacts to:
 artifacts/go-ast/<module>/<case>/<source>.json
 ```
 
-Latest artifact generation produced 264 JSON files across the 19 numbered language-module directories currently present in `tests/language_modules` (`01` through `19`).
+Latest artifact generation produced 270 JSON files across the 20 numbered language-module directories currently present in `tests/language_modules` (`01` through `20`).
 
 Baseline:
 
 ```text
-Total: 264
-OK:    221
+Total: 270
+OK:    227
 FAIL:  43
 ```
 
@@ -73,8 +73,8 @@ artifacts/dhparser-ast/_errors.txt
 Initial DHParser bootstrap baseline:
 
 ```text
-Total: 264
-OK:    221
+Total: 270
+OK:    227
 FAIL:  43
 ```
 
@@ -97,13 +97,13 @@ artifacts/compare-parse-status/_mismatches.txt
 Current parse-status comparison:
 
 ```text
-Total cases:        264
-Matching status:    264
+Total cases:        270
+Matching status:    270
 Mismatching status: 0
 Missing Go:         0
 Missing DHParser:   0
-Go:                 OK 221 / FAIL 43
-DHParser:           OK 221 / FAIL 43
+Go:                 OK 227 / FAIL 43
+DHParser:           OK 227 / FAIL 43
 ```
 
 The parse error diagnostic comparison is:
@@ -146,8 +146,8 @@ The semantic/type diagnostic manifest reserves stable Freehold codes in the `FH-
 Current semantic/type diagnostic comparison:
 
 ```text
-Expected semantic diagnostics:    58
-Matching semantic diagnostics:    58
+Expected semantic diagnostics:    61
+Matching semantic diagnostics:    61
 Mismatching semantic diagnostics: 0
 ```
 
@@ -162,11 +162,11 @@ It verifies that `spec/freehold.rules`, `spec/freehold.diag`, the expected synta
 Current spec diagnostic verification:
 
 ```text
-Diagnostic specs:        84
-Rule emits:              84
+Diagnostic specs:        87
+Rule emits:              87
 Expected syntax codes:   19
-Expected semantic codes: 56
-CODE_MAP entries:        60
+Expected semantic codes: 60
+CODE_MAP entries:        64
 Failures:                0
 ```
 
@@ -176,7 +176,7 @@ Positive feature-matrix coverage is tracked in:
 tests/language_modules/positive_feature_matrix.json
 ```
 
-The first matrix wave adds valid interaction cases for multiple while invariants with a variant, case branches returning record values, record-field contracts, qualified calls inside contracts, positional and named string templates, string templates inside `Std.IO.logf`, string templates inside record literals, and Big number calls inside expressions. `Result<Array<...>, E>` and `value.field` in Result ensures are recorded as known grammar gaps rather than green positive cases.
+The first matrix wave adds valid interaction cases for multiple while invariants with a variant, case branches returning record values, record-field contracts, qualified calls inside contracts, positional and named string templates, string templates inside `Std.IO.logf`, string templates inside record literals, Big number calls inside expressions, `Json.stringify` on record values, and `Result<Array<...>, E>` ok payloads. `value.field` in Result ensures remains recorded as a known grammar gap rather than a green positive case.
 
 The first AST-shape comparison stage is:
 
@@ -184,13 +184,13 @@ The first AST-shape comparison stage is:
 .\compare-ast-shape.cmd
 ```
 
-It compares the 221 files that both parsers accept after normalizing DHParser CST nodes and Go AST nodes into module/declaration/statement/expression outlines.
+It compares the 227 files that both parsers accept after normalizing DHParser CST nodes and Go AST nodes into module/declaration/statement/expression outlines.
 
 Current AST-shape comparison:
 
 ```text
-Comparable parse-ok cases: 221
-Matching shape:            221
+Comparable parse-ok cases: 227
+Matching shape:            227
 Mismatching shape:         0
 ```
 
@@ -200,13 +200,13 @@ The semantic AST comparison stage is:
 .\compare-ast-semantic.cmd
 ```
 
-It compares the same 221 accepted files after normalizing expressions into typed semantic nodes rather than canonical expression text.
+It compares the same 227 accepted files after normalizing expressions into typed semantic nodes rather than canonical expression text.
 
 Current semantic AST comparison:
 
 ```text
-Comparable parse-ok cases:    221
-Matching semantic AST:        221
+Comparable parse-ok cases:    227
+Matching semantic AST:        227
 Mismatching semantic AST:     0
 ```
 
