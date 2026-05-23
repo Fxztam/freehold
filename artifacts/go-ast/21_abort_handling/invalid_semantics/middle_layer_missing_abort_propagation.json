@@ -1,0 +1,144 @@
+{
+  "source_file": "..\\tests\\language_modules\\21_abort_handling\\invalid_semantics\\middle_layer_missing_abort_propagation.fh",
+  "source_snippet": "module AbortPropagationChain\r\n\r\nerror NotFound\r\n\r\nprocedure read(id: Integer)\r\naborts NotFound when id = 0\r\nis\r\n    if id = 0 then\r\n        abort NotFound\r\n    end if\r\nend read\r\n\r\nprocedure load(id: Integer)\r\nis\r\n    call read(id)\r\nend load\r\n\r\nprocedure service(id: Integer)\r\naborts NotFound when id = 0\r\nis\r\n    call load(id)\r\nend service\r\n\r\nend AbortPropagationChain",
+  "module_name": "21_abort_handling",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "AbortPropagationChain",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "read",
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "aborts": [
+          {
+            "error": "NotFound",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            },
+            "then_body": [
+              {
+                "kind": "AbortStmt",
+                "error": "NotFound"
+              }
+            ]
+          }
+        ],
+        "end_name": "read"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "load",
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "body": [
+          {
+            "kind": "CallStmt",
+            "call": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "read"
+              },
+              "arguments": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "id"
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "load"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "service",
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "aborts": [
+          {
+            "error": "NotFound",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "CallStmt",
+            "call": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "load"
+              },
+              "arguments": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "id"
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "service"
+      }
+    ],
+    "end_name": "AbortPropagationChain"
+  }
+}

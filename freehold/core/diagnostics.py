@@ -493,6 +493,11 @@ ABORT_DUPLICATE_HINT = """Each routine may declare a given abort error at most o
 Use one `aborts ErrorName` clause per controlled abort path.
 """
 
+ABORT_PROPAGATION_HINT = """A call to an aborting routine must keep the abort visible.
+
+Add a matching `aborts ErrorName` clause to the caller, or handle the abort once handler syntax exists.
+"""
+
 EXPRESSION_UNKNOWN_VARIABLE_HINT = """An expression may only reference variables that are in scope.
 
 Declare the variable with `let` or as a routine parameter before using it.
@@ -1027,6 +1032,11 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         error_name = duplicate_abort_match.group(1)
         return Diagnostic("VF-ABT003", "duplicate abort declaration", line, column, error_name, "unique abort declaration", ABORT_DUPLICATE_HINT, phase="semantic")
+    abort_propagation_match = re.search(r"caller does not handle or propagate abort: ([A-Za-z_][A-Za-z0-9_.]*) may abort ([A-Za-z_][A-Za-z0-9_]*)", message)
+    if abort_propagation_match:
+        line, column = _source_position_from_message(message)
+        routine_name, error_name = abort_propagation_match.groups()
+        return Diagnostic("VF-ABT005", "caller does not handle or propagate abort", line, column, f"call {routine_name} may abort {error_name}", f"caller declares aborts {error_name} or handles {error_name}", ABORT_PROPAGATION_HINT, phase="semantic")
     unknown_variable_match = re.search(r"unknown variable: ([A-Za-z_][A-Za-z0-9_]*)", message)
     if unknown_variable_match:
         line, column = _source_position_from_message(message)

@@ -14,28 +14,30 @@ aborts ErrorName when condition
 abort ErrorName
 ```
 
-V1 verifies declared errors, duplicate abort declarations, abort statements declared by the enclosing routine, and Boolean abort conditions. Call-chain propagation, path-condition coverage, reachability, and proof obligations remain future slices.
+V1 verifies declared errors, duplicate abort declarations, abort statements declared by the enclosing routine, and Boolean abort conditions. V2 adds same-error-name call propagation. Path-condition coverage, reachability, condition implication, handler syntax, and proof obligations remain future slices.
 
-Validation baseline:
+Current validation baseline after V2:
 
 ```text
-21_abort_handling module:       4/4
-Semantic diagnostics:           66/66
-Spec diagnostics:               90/90 emits, 63 semantic codes, 67 CODE_MAP entries
-Parser status parity:           276/276
-AST shape parity:               233/233
-Semantic AST parity:            233/233
+21_abort_handling module:       7/7
+Semantic diagnostics:           68/68
+Spec diagnostics:               91/91 emits, 64 semantic codes, 68 CODE_MAP entries
+Parser status parity:           279/279
+AST shape parity:               236/236
+Semantic AST parity:            236/236
 ```
 
 V1 is intentionally a clean, green anchor. Parser/AST support, basic verifier rules, stable diagnostics, positive and negative language tests, Go/DHParser artifacts, comparison artifacts, rules, and diagnostic specs are complete for this slice.
 
-The heavier control-flow work is explicitly not part of V1. It should be implemented as follow-up slices after the V1 commit, so parser/AST/diagnostic hardening stays separate from cross-routine abort reasoning and proof-oriented control-flow analysis.
+The heavier proof-oriented control-flow work is explicitly not part of V1. It should be implemented as follow-up slices, so parser/AST/diagnostic hardening stays separate from deeper path reasoning.
 
 ## Post-V1 Roadmap
 
 Recommended order after committing Abort V1:
 
 1. Abort V2: Call Propagation
+
+Implemented on 2026-05-23 for same-error-name propagation without condition implication.
 
 If routine `A` calls routine `B`, and `B` declares `aborts NotFound`, then `A` must either declare `aborts NotFound` as well or, in a later language version, handle `NotFound` explicitly.
 
@@ -740,12 +742,13 @@ Completed in V1:
 
 Planned after V1:
 
-1. Add caller propagation checks.
+1. Add caller propagation checks. Completed in V2 for same-error-name propagation.
 2. Add `main`-specific abort rules.
 3. Add reachability and simple path-condition checks.
 4. Add abort path coverage and proof obligations.
-5. Consider `return` without value for early normal procedure exit.
-6. Consider `Program.Args` and optional explicit abort handling syntax.
+5. Consider condition implication for propagated aborts.
+6. Consider `return` without value for early normal procedure exit.
+7. Consider `Program.Args` and optional explicit abort handling syntax.
 
 ## Summary Rules
 

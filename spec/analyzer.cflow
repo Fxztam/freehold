@@ -1,0 +1,124 @@
+schema freehold.cflow.v1
+uses spec/freehold.diag
+
+# This file describes the planned control-flow analyzer in a deliberately small
+# meta-language, similar in spirit to spec/freehold.rules. It is specification
+# input for the future analyzer. It is not executable yet.
+
+analyzer ControlFlowAnalyzer
+input ModuleAST
+input RoutineDecl
+input SymbolTable
+output RoutineFlowSummary
+end
+
+summary RoutineFlowSummary
+field routine_name String
+field routine_kind FunctionOrProcedure
+field normal_return_possible Boolean
+field guaranteed_exit Boolean
+field declared_aborts Set<ErrorName>
+field emitted_aborts Set<ErrorName>
+field called_routines Set<RoutineName>
+field propagated_aborts Set<ErrorName>
+end
+
+meaning normal_return_possible
+when routine has at_least_one path ending in normal_return or normal_procedure_completion
+end
+
+meaning guaranteed_exit
+when routine all_paths end in return or abort
+end
+
+meaning declared_aborts
+when routine contract contains aborts ErrorName
+collect ErrorName
+end
+
+meaning emitted_aborts
+when routine body contains abort ErrorName
+collect ErrorName
+end
+
+meaning called_routines
+when routine body contains call statement RoutineName
+collect RoutineName
+when routine body contains call expression RoutineName
+collect RoutineName
+end
+
+meaning propagated_aborts
+when routine contract contains aborts ErrorName
+collect ErrorName
+end
+
+section flow_facts
+
+fact return_statement
+when ReturnStmt encountered
+effect normal_exit
+effect guaranteed_exit_for_current_path
+end
+
+fact abort_statement
+when AbortStmt error_name encountered
+effect abnormal_exit
+effect guaranteed_exit_for_current_path
+collect emitted_aborts error_name
+end
+
+fact call_statement
+when CallStmt routine_name encountered
+collect called_routines routine_name
+end
+
+fact call_expression
+when CallExpr routine_name encountered
+collect called_routines routine_name
+end
+
+fact if_else
+when IfStmt has then_body and else_body
+combine branches conservatively
+normal_return_possible if any_branch normal_return_possible
+guaranteed_exit if all_branches guaranteed_exit
+end
+
+fact while_loop
+when WhileStmt encountered
+analyze body for emitted_aborts and called_routines
+normal_return_possible remains possible_after_loop
+guaranteed_exit remains false unless later analyzer proves loop always exits
+end
+
+fact sequential_block
+when statement guaranteed_exit_for_current_path
+stop path_summary for following statements
+end
+
+section abort_propagation_v2
+
+rule caller_does_not_handle_or_propagate_abort
+when CallSite callee propagated_aborts contains error_name
+and caller declared_aborts does not contain error_name
+emit FH-ABT-3005
+    found call_site
+    expected "caller declares matching aborts clause or handles abort"
+end
+
+limit same_error_name_only
+reason "Abort V2 checks only that the error name is propagated. It does not prove condition implication."
+end
+
+non_goal condition_implication
+until abort_path_conditions are implemented
+end
+
+non_goal handler_syntax
+until language defines explicit abort handlers
+end
+
+non_goal full_symbolic_proof
+until path coverage and proof obligations are implemented
+end

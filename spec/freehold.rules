@@ -665,3 +665,10 @@ emit FH-ABT-3003
     found error_name
     expected "unique abort declaration"
 end
+
+rule caller_does_not_handle_or_propagate_abort
+when RoutineCall callee aborts error_name and enclosing RoutineDecl aborts does not contain error_name
+emit FH-ABT-3005
+    found call_site
+    expected "caller declares matching aborts clause or handles abort"
+end

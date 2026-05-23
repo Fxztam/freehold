@@ -1,0 +1,24 @@
+module AbortPropagationChain
+
+error NotFound
+
+procedure read(id: Integer)
+aborts NotFound when id = 0
+is
+    if id = 0 then
+        abort NotFound
+    end if
+end read
+
+procedure load(id: Integer)
+is
+    call read(id)
+end load
+
+procedure service(id: Integer)
+aborts NotFound when id = 0
+is
+    call load(id)
+end service
+
+end AbortPropagationChain

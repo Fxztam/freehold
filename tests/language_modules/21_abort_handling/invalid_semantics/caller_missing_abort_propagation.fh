@@ -1,0 +1,20 @@
+module AbortPropagationMissing
+
+error NotFound
+
+function read(id: Integer) returns Integer
+aborts NotFound when id = 0
+is
+    if id = 0 then
+        abort NotFound
+    end if
+
+    return id
+end read
+
+function load(id: Integer) returns Integer
+is
+    return read(id)
+end load
+
+end AbortPropagationMissing

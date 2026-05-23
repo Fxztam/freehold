@@ -175,6 +175,7 @@ class Verifier:
         return False
 
     def routine(self, r, ctx, obs):
+        ctx.current_routine = r
         env = {}
         seen_params = set()
         for p in r.params:
@@ -197,6 +198,15 @@ class Verifier:
         for e in r.ensures: self.contract_bool("ensures", e, env, ctx, True, r.return_type)
         ret = self.block(r.body, r, env, ctx)
         if r.kind == "function" and not ret: raise TypeCheckError(f"{r.pos.text()}: function {r.name} has no guaranteed return")
+
+    def abort_names(self, r):
+        return {clause.error_name for clause in r.aborts}
+
+    def require_abort_propagation(self, caller, callee, pos):
+        missing = sorted(self.abort_names(callee) - self.abort_names(caller))
+        if missing:
+            error_name = missing[0]
+            raise TypeCheckError(f"{pos.text()}: caller does not handle or propagate abort: {callee.name} may abort {error_name}")
 
     def block(self, body, r, env, ctx):
         saw = False
@@ -265,6 +275,7 @@ class Verifier:
                 cal = ctx.routine(s.name, s.pos)
                 if cal.kind != "procedure": raise TypeCheckError(f"{s.pos.text()}: call requires procedure")
                 self.args(cal, s.args, env, ctx, s.pos)
+                self.require_abort_propagation(r, cal, s.pos)
         return saw
 
     def statement_bool(self, label, expr, env, ctx, allow_result, result_type):
@@ -560,7 +571,9 @@ class Verifier:
             r = ctx.routine(e.name, e.pos)
             if r.kind != "function":
                 raise TypeCheckError(f"{e.pos.text()}: function call requires function")
-            self.args(r, e.args, env, ctx, e.pos); return r.return_type
+            self.args(r, e.args, env, ctx, e.pos)
+            self.require_abort_propagation(ctx.current_routine, r, e.pos)
+            return r.return_type
         if isinstance(e, UnaryExpr):
             operand = self.infer(e.expr, env, ctx, allow_result, result_type)
             if e.op == "not":
@@ -635,6 +648,7 @@ class Verifier:
 class Ctx:
     def __init__(self, module_name, types, records, errors, routines):
         self.module_name=module_name; self.types=types; self.records=records; self.errors=errors; self.routines=routines
+        self.current_routine=None
     def require_type_or_record(self,n,pos):
         if n not in self.types and n not in self.records: raise TypeCheckError(f"{pos.text()}: unknown type: {n}")
     def require_return_type(self,t,pos):
