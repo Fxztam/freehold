@@ -1,0 +1,111 @@
+{
+  "source_file": "..\\tests\\language_modules\\05_records\\valid\\record_literal_with_string_template.fh",
+  "source_snippet": "module RecordLiteralWithStringTemplate\r\n\r\ntype Person is record\r\n    name: String\r\n    email: String\r\nend record\r\n\r\nprocedure main()\r\nis\r\n    let user_name: String = \"ada\"\r\n    let person: Person = Person {\r\n        name: \"Ada\",\r\n        email: String.template(\"${user}@example.com\", user: user_name)\r\n    }\r\n    check person.email = \"ada@example.com\"\r\nend main\r\n\r\nend RecordLiteralWithStringTemplate",
+  "module_name": "05_records",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "RecordLiteralWithStringTemplate",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Person",
+        "base": "record",
+        "fields": [
+          {
+            "name": "name",
+            "type": "String"
+          },
+          {
+            "name": "email",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "user_name",
+            "type": "String",
+            "value": {
+              "kind": "StringExpr",
+              "value": "ada"
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "person",
+            "type": "Person",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Person",
+              "fields": [
+                {
+                  "name": "name",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Ada"
+                  }
+                },
+                {
+                  "name": "email",
+                  "value": {
+                    "kind": "CallExpr",
+                    "callee": {
+                      "kind": "FieldAccessExpr",
+                      "object": {
+                        "kind": "IdentifierExpr",
+                        "name": "String"
+                      },
+                      "field": "template"
+                    },
+                    "arguments": [
+                      {
+                        "kind": "StringExpr",
+                        "value": "${user}@example.com"
+                      },
+                      {
+                        "kind": "NamedArgumentExpr",
+                        "name": "user",
+                        "value": {
+                          "kind": "IdentifierExpr",
+                          "name": "user_name"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "person"
+                },
+                "field": "email"
+              },
+              "right": {
+                "kind": "StringExpr",
+                "value": "ada@example.com"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "RecordLiteralWithStringTemplate"
+  }
+}

@@ -1,0 +1,18 @@
+module RecordTemplateSmoke
+
+type Person is record
+    name: String
+    email: String
+end record
+
+procedure main()
+is
+    let user_name: String = "ada"
+    let person: Person = Person {
+        name: "Ada",
+        email: String.template("${user}@example.com", user: user_name)
+    }
+    check person.email = "ada@example.com"
+end main
+
+end RecordTemplateSmoke

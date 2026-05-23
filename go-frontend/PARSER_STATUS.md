@@ -34,13 +34,13 @@ The wrapper writes repository-local artifacts to:
 artifacts/go-ast/<module>/<case>/<source>.json
 ```
 
-Latest artifact generation produced 262 JSON files across the 19 numbered language-module directories currently present in `tests/language_modules` (`01` through `19`).
+Latest artifact generation produced 264 JSON files across the 19 numbered language-module directories currently present in `tests/language_modules` (`01` through `19`).
 
 Baseline:
 
 ```text
-Total: 262
-OK:    219
+Total: 264
+OK:    221
 FAIL:  43
 ```
 
@@ -73,8 +73,8 @@ artifacts/dhparser-ast/_errors.txt
 Initial DHParser bootstrap baseline:
 
 ```text
-Total: 262
-OK:    219
+Total: 264
+OK:    221
 FAIL:  43
 ```
 
@@ -97,13 +97,13 @@ artifacts/compare-parse-status/_mismatches.txt
 Current parse-status comparison:
 
 ```text
-Total cases:        262
-Matching status:    262
+Total cases:        264
+Matching status:    264
 Mismatching status: 0
 Missing Go:         0
 Missing DHParser:   0
-Go:                 OK 219 / FAIL 43
-DHParser:           OK 219 / FAIL 43
+Go:                 OK 221 / FAIL 43
+DHParser:           OK 221 / FAIL 43
 ```
 
 The parse error diagnostic comparison is:
@@ -146,8 +146,8 @@ The semantic/type diagnostic manifest reserves stable Freehold codes in the `FH-
 Current semantic/type diagnostic comparison:
 
 ```text
-Expected semantic diagnostics:    57
-Matching semantic diagnostics:    57
+Expected semantic diagnostics:    58
+Matching semantic diagnostics:    58
 Mismatching semantic diagnostics: 0
 ```
 
@@ -176,7 +176,7 @@ Positive feature-matrix coverage is tracked in:
 tests/language_modules/positive_feature_matrix.json
 ```
 
-The first matrix wave adds valid interaction cases for multiple while invariants with a variant, case branches returning record values, record-field contracts, qualified calls inside contracts, positional and named string templates, string templates inside `Std.IO.logf`, and Big number calls inside expressions. `Result<Array<...>, E>` and `value.field` in Result ensures are recorded as known grammar gaps rather than green positive cases.
+The first matrix wave adds valid interaction cases for multiple while invariants with a variant, case branches returning record values, record-field contracts, qualified calls inside contracts, positional and named string templates, string templates inside `Std.IO.logf`, string templates inside record literals, and Big number calls inside expressions. `Result<Array<...>, E>` and `value.field` in Result ensures are recorded as known grammar gaps rather than green positive cases.
 
 The first AST-shape comparison stage is:
 
@@ -184,13 +184,13 @@ The first AST-shape comparison stage is:
 .\compare-ast-shape.cmd
 ```
 
-It compares the 219 files that both parsers accept after normalizing DHParser CST nodes and Go AST nodes into module/declaration/statement/expression outlines.
+It compares the 221 files that both parsers accept after normalizing DHParser CST nodes and Go AST nodes into module/declaration/statement/expression outlines.
 
 Current AST-shape comparison:
 
 ```text
-Comparable parse-ok cases: 219
-Matching shape:            219
+Comparable parse-ok cases: 221
+Matching shape:            221
 Mismatching shape:         0
 ```
 
@@ -200,13 +200,13 @@ The semantic AST comparison stage is:
 .\compare-ast-semantic.cmd
 ```
 
-It compares the same 219 accepted files after normalizing expressions into typed semantic nodes rather than canonical expression text.
+It compares the same 221 accepted files after normalizing expressions into typed semantic nodes rather than canonical expression text.
 
 Current semantic AST comparison:
 
 ```text
-Comparable parse-ok cases:    219
-Matching semantic AST:        219
+Comparable parse-ok cases:    221
+Matching semantic AST:        221
 Mismatching semantic AST:     0
 ```
 
