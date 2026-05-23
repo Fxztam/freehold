@@ -4,6 +4,33 @@ This document captures the open design surface for Freehold string templates.
 
 ## Current Status
 
+V1 status: fulfilled and verified.
+
+The V1 goal for string templates is implemented end to end:
+
+```text
+Grammar accepts positional and named template calls.
+Python parser, verifier, and runtime support named template bindings.
+Go parser and AST support named call arguments for conformance artifacts.
+DHParser grammar and AST normalizers are aligned with the Go/Python shape.
+Diagnostics FH-TPL-4001..4009 are specified, mapped, and covered by tests.
+Positive and negative language-module tests cover positional, named, missing, unused, duplicate, old-brace, invalid-brace, and mixed-mode cases.
+```
+
+The V1 verification baseline is:
+
+```text
+compare-semantic-diagnostics: 57/57, 0 mismatches
+verify-spec-diagnostics: 84 specs, 84 emits, 0 failures
+verify-parser-conformance: passed
+Parser cases: 262 total, 219 OK, 43 expected FAIL
+AST shape: 219/219
+Semantic AST: 219/219
+Go tests: passed
+```
+
+Open items below are post-V1 design questions, not blockers for the V1 fulfillment.
+
 String templates already exist as checked built-in calls:
 
 ```fh
