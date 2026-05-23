@@ -1,0 +1,693 @@
+schema freehold.diag.v1
+
+range FH-SYN-0001..0999 parse syntax
+range FH-SEM-1000..1999 semantic semantic
+range FH-TYP-2000..2999 semantic type
+range FH-CON-3000..3999 semantic contract
+range FH-ABT-3000..3999 semantic abort open
+range FH-TPL-4000..4099 semantic template open
+range FH-RES-4100..4199 semantic result open
+range FH-JSON-4200..4299 semantic json open
+range FH-REC-4300..4399 semantic record open
+range FH-BLD-9000..9999 build tooling
+
+# Current parser diagnostics from go-frontend/internal/diagnostic/catalog.go.
+
+diag FH-SYN-0002 expected_identifier
+severity error
+phase parse
+category syntax
+message "Expected an identifier."
+expected "identifier"
+hint "Use a non-keyword name here."
+end
+
+diag FH-SYN-0003 missing_module_declaration
+severity error
+phase parse
+category syntax
+message "Expected a module declaration."
+expected "module"
+hint "A Freehold file must start with a module declaration."
+end
+
+diag FH-SYN-0004 missing_end
+severity error
+phase parse
+category syntax
+message "Expected an end marker."
+expected "end"
+hint "Close the current declaration or block with the matching end clause."
+end
+
+diag FH-SYN-0005 expected_type_annotation_colon
+severity error
+phase parse
+category syntax
+message "Expected ':' for a type annotation."
+expected ":"
+hint "Use ':' in declarations such as 'let x: Integer = 1'; ':=' is used for assignment."
+end
+
+diag FH-SYN-0006 invalid_contract_order
+severity error
+phase parse
+category syntax
+message "Expected requires clauses before ensures clauses."
+expected "requires clauses before ensures clauses"
+hint "Place all requires clauses before ensures clauses in a contract block."
+end
+
+diag FH-SYN-0007 expected_declaration
+severity error
+phase parse
+category syntax
+message "Expected a declaration."
+expected "import, type, error, function, or procedure"
+hint "Use import, type, error, function, or procedure at module level."
+end
+
+diag FH-SYN-0008 missing_case_default
+severity error
+phase parse
+category syntax
+message "Expected a default case branch."
+expected "default"
+hint "Every case statement must include a default branch."
+end
+
+diag FH-SYN-0009 missing_while_invariant
+severity error
+phase parse
+category syntax
+message "Expected a while invariant."
+expected "invariant"
+hint "Every while loop must declare at least one invariant before do."
+end
+
+diag FH-SYN-0010 unterminated_block_comment
+severity error
+phase parse
+category syntax
+message "Unterminated block comment."
+expected "*/"
+hint "Close the block comment with */."
+end
+
+diag FH-SYN-0011 expected_statement
+severity error
+phase parse
+category syntax
+message "Expected a statement."
+expected "statement"
+hint "Use let, return, check, call, assignment, if, while, or case in a statement block."
+end
+
+diag FH-SYN-0012 expected_assignment_or_call
+severity error
+phase parse
+category syntax
+message "Expected assignment or call statement."
+expected ":= or call"
+hint "An identifier-led statement must be an assignment with ':=' or a procedure call."
+end
+
+diag FH-SYN-0013 expected_number
+severity error
+phase parse
+category syntax
+message "Expected a number literal."
+expected "number"
+hint "Use an integer or double literal here."
+end
+
+diag FH-SYN-0014 missing_return_type
+severity error
+phase parse
+category syntax
+message "Expected a function return type."
+expected "type"
+hint "Add a type name after 'returns'."
+end
+
+diag FH-SYN-0015 expected_expression
+severity error
+phase parse
+category syntax
+message "Expected an expression."
+expected "expression"
+hint "Use a literal, identifier, call, parenthesized expression, or unary expression here."
+end
+
+diag FH-SYN-0016 unterminated_string
+severity error
+phase parse
+category syntax
+message "Unterminated string literal."
+expected "double quote"
+hint "Close the string literal with a double quote."
+end
+
+diag FH-SYN-0017 invalid_number_literal
+severity error
+phase parse
+category syntax
+message "Invalid number literal."
+expected "number"
+hint "Use digits with at most one decimal point and digits on both sides of the decimal point."
+end
+
+diag FH-SYN-0018 missing_parameter_colon
+severity error
+phase parse
+category syntax
+message "Expected ':' after a parameter name."
+expected ":"
+hint "Write parameters as 'name: Type'."
+end
+
+diag FH-SYN-0019 missing_end_function
+severity error
+phase parse
+category syntax
+message "Expected 'end' for a function declaration."
+expected "end"
+hint "Close the function body with 'end <function-name>'."
+end
+
+diag FH-SYN-0020 missing_end_procedure
+severity error
+phase parse
+category syntax
+message "Expected 'end' for a procedure declaration."
+expected "end"
+hint "Close the procedure body with 'end <procedure-name>'."
+end
+
+diag FH-SYN-0021 missing_end_if
+severity error
+phase parse
+category syntax
+message "Expected 'end if'."
+expected "end if"
+hint "Close the if statement with 'end if'."
+end
+
+diag FH-SYN-0022 missing_end_while
+severity error
+phase parse
+category syntax
+message "Expected 'end while'."
+expected "end while"
+hint "Close the while statement with 'end while'."
+end
+
+diag FH-SYN-0023 missing_end_case
+severity error
+phase parse
+category syntax
+message "Expected 'end case'."
+expected "end case"
+hint "Close the case statement with 'end case'."
+end
+
+diag FH-SYN-0999 expected_token
+severity error
+phase parse
+category syntax
+message "Expected a different token."
+expected "expected token"
+hint "Check the syntax around this token."
+end
+
+# Current semantic/type diagnostics from tools/compare_semantic_diagnostics.py CODE_MAP.
+
+diag FH-SEM-1001 module_self_import
+severity error
+phase semantic
+category semantic
+legacy VF-I001
+message "module cannot import itself"
+expected "different module name"
+end
+
+diag FH-SEM-1002 duplicate_import
+severity error
+phase semantic
+category semantic
+legacy VF-I002
+message "duplicate import declaration"
+expected "unique imported module"
+end
+
+diag FH-SEM-1003 duplicate_exposing_symbol
+severity error
+phase semantic
+category semantic
+legacy VF-I003
+message "duplicate exposing symbol"
+expected "unique symbol in import"
+end
+
+diag FH-SEM-1004 reserved_keyword_name
+severity error
+phase semantic
+category semantic
+legacy VF-N002
+message "reserved keyword cannot be used as name"
+expected "non-keyword identifier"
+end
+
+diag FH-TYP-2001 duplicate_type_declaration
+severity error
+phase semantic
+category type
+legacy VF-T001
+message "duplicate type declaration"
+expected "unique type name"
+end
+
+diag FH-TYP-2002 builtin_type_redefinition
+severity error
+phase semantic
+category type
+legacy VF-T002
+message "built-in type cannot be redefined"
+expected "new type name"
+end
+
+diag FH-TYP-2003 unknown_type_reference
+severity error
+phase semantic
+category type
+legacy VF-T003
+message "unknown type reference"
+expected "declared type name"
+end
+
+diag FH-TYP-2004 invalid_range_bounds
+severity error
+phase semantic
+category type
+legacy VF-T004
+message "invalid range bounds"
+expected "lower bound <= upper bound"
+end
+
+diag FH-TYP-2005 range_requires_numeric_base
+severity error
+phase semantic
+category type
+legacy VF-T005
+message "range requires numeric base type"
+expected "Integer or Double"
+end
+
+diag FH-TYP-2006 integer_range_requires_integer_bounds
+severity error
+phase semantic
+category type
+legacy VF-T006
+message "integer range bounds must be integers"
+expected "integer bounds"
+end
+
+diag FH-TYP-2007 statement_requires_boolean
+severity error
+phase semantic
+category type
+legacy VF-ST003
+message "statement requires Boolean"
+expected "Boolean"
+end
+
+diag FH-SEM-1101 duplicate_record_field
+severity error
+phase semantic
+category semantic
+legacy VF-R001
+message "duplicate record field"
+expected "unique field name"
+end
+
+diag FH-SEM-1102 duplicate_record_literal_field
+severity error
+phase semantic
+category semantic
+legacy VF-R003
+message "duplicate record literal field"
+expected "unique literal field"
+end
+
+diag FH-SEM-1103 unknown_record_literal_field
+severity error
+phase semantic
+category semantic
+legacy VF-R004
+message "unknown record literal field"
+expected "declared field in record"
+end
+
+diag FH-SEM-1104 missing_record_literal_field
+severity error
+phase semantic
+category semantic
+legacy VF-R005
+message "missing record literal field"
+expected "all required record fields"
+end
+
+diag FH-TYP-2101 field_access_requires_record
+severity error
+phase semantic
+category type
+legacy VF-R006
+message "field access requires record"
+expected "record before field access"
+end
+
+diag FH-SEM-1105 unknown_record_field
+severity error
+phase semantic
+category semantic
+legacy VF-R007
+message "unknown record field"
+expected "declared record field"
+end
+
+diag FH-TYP-2111 array_literal_requires_scalar
+severity error
+phase semantic
+category type
+legacy VF-A001
+message "array literal elements must be scalar"
+expected "scalar element"
+end
+
+diag FH-TYP-2112 array_literal_mixed_element_types
+severity error
+phase semantic
+category type
+legacy VF-A002
+message "array literal has mixed element types"
+expected "same element type"
+end
+
+diag FH-TYP-2113 array_length_mismatch
+severity error
+phase semantic
+category type
+legacy VF-A003
+message "array length mismatch"
+expected "declared array length"
+end
+
+diag FH-TYP-2114 array_element_type_mismatch
+severity error
+phase semantic
+category type
+legacy VF-A004
+message "array element type mismatch"
+expected "declared array element type"
+end
+
+diag FH-TYP-2115 index_access_requires_array
+severity error
+phase semantic
+category type
+legacy VF-A006
+message "index access requires Array"
+expected "Array"
+end
+
+diag FH-TYP-2116 array_index_requires_integer
+severity error
+phase semantic
+category type
+legacy VF-A007
+message "array index must be Integer"
+expected "Integer"
+end
+
+diag FH-SEM-1111 array_index_out_of_bounds
+severity error
+phase semantic
+category semantic
+legacy VF-A008
+message "array index out of bounds"
+expected "0 <= index < length"
+end
+
+diag FH-SEM-1201 duplicate_parameter_name
+severity error
+phase semantic
+category semantic
+legacy VF-U002
+message "duplicate parameter name"
+expected "unique parameter name"
+end
+
+diag FH-SEM-1202 function_missing_guaranteed_return
+severity error
+phase semantic
+category semantic
+legacy VF-U003
+message "function has no guaranteed return"
+expected "guaranteed return on all paths"
+end
+
+diag FH-SEM-1203 procedure_return_value
+severity error
+phase semantic
+category semantic
+legacy VF-U004
+message "procedure cannot return a value"
+expected "return without value"
+end
+
+diag FH-SEM-1204 unknown_routine
+severity error
+phase semantic
+category semantic
+legacy VF-U005
+message "unknown routine"
+expected "declared routine"
+end
+
+diag FH-SEM-1205 routine_argument_count_mismatch
+severity error
+phase semantic
+category semantic
+legacy VF-U007
+message "wrong routine argument count"
+expected "declared parameter count"
+end
+
+diag FH-TYP-2201 routine_argument_type_mismatch
+severity error
+phase semantic
+category type
+legacy VF-U008
+message "routine argument type mismatch"
+expected "declared parameter type"
+end
+
+diag FH-TYP-2202 function_return_type_mismatch
+severity error
+phase semantic
+category type
+legacy VF-U009
+message "function return type mismatch"
+expected "declared return type"
+end
+
+diag FH-SEM-1301 unknown_assignment_target
+severity error
+phase semantic
+category semantic
+legacy VF-ST001
+message "unknown assignment target"
+expected "declared assignable target"
+end
+
+diag FH-TYP-2301 assignment_type_mismatch
+severity error
+phase semantic
+category type
+legacy VF-ST002
+message "assignment type mismatch"
+expected "target type"
+end
+
+diag FH-TYP-2302 while_variant_requires_integer
+severity error
+phase semantic
+category type
+legacy VF-ST004
+message "while variant must be Integer"
+expected "Integer"
+end
+
+diag FH-TYP-2303 case_branch_type_mismatch
+severity error
+phase semantic
+category type
+legacy VF-ST005
+message "case branch type mismatch"
+expected "case selector type"
+end
+
+diag FH-SEM-1302 duplicate_case_branch_value
+severity error
+phase semantic
+category semantic
+legacy VF-ST006
+message "duplicate case branch value"
+expected "unique case branch value"
+end
+
+diag FH-SEM-1401 unknown_variable
+severity error
+phase semantic
+category semantic
+legacy VF-E001
+message "unknown variable"
+expected "declared variable"
+end
+
+diag FH-TYP-2401 comparison_type_mismatch
+severity error
+phase semantic
+category type
+legacy VF-E002
+message "comparison type mismatch"
+expected "same comparable types"
+end
+
+diag FH-TYP-2402 boolean_operator_operand_mismatch
+severity error
+phase semantic
+category type
+legacy VF-E003
+message "Boolean operator operand mismatch"
+expected "Boolean operands"
+end
+
+diag FH-TYP-2403 ordering_comparison_operand_mismatch
+severity error
+phase semantic
+category type
+legacy VF-E004
+message "ordering comparison requires numeric operands"
+expected "numeric operands"
+end
+
+diag FH-TYP-2404 arithmetic_operand_mismatch
+severity error
+phase semantic
+category type
+legacy VF-E005
+message "arithmetic requires numeric operands"
+expected "numeric operands"
+end
+
+diag FH-TYP-2405 unary_not_requires_boolean
+severity error
+phase semantic
+category type
+legacy VF-E006
+message "unary not requires Boolean"
+expected "Boolean"
+end
+
+diag FH-TYP-2406 unary_negative_requires_numeric
+severity error
+phase semantic
+category type
+legacy VF-E007
+message "unary negative requires numeric operand"
+expected "numeric operand"
+end
+
+diag FH-SEM-1501 unknown_result_error_type
+severity error
+phase semantic
+category semantic
+legacy VF-ER001
+message "unknown result error type"
+expected "declared error type"
+end
+
+diag FH-SEM-1502 unknown_returned_error
+severity error
+phase semantic
+category semantic
+legacy VF-ER002
+message "unknown returned error"
+expected "declared error"
+end
+
+diag FH-SEM-1503 wrong_result_error_return
+severity error
+phase semantic
+category semantic
+legacy VF-ER003
+message "wrong Result error return"
+expected "declared Result error type"
+end
+
+diag FH-SEM-1504 result_function_requires_ok_or_error_return
+severity error
+phase semantic
+category semantic
+legacy VF-ER004
+message "Result function must return ok or error"
+expected "return ok or return error"
+end
+
+diag FH-SEM-1505 plain_function_rejects_ok_or_error_return
+severity error
+phase semantic
+category semantic
+legacy VF-ER005
+message "plain function cannot return ok or error"
+expected "plain return expression"
+end
+
+diag FH-TYP-2501 result_ok_type_mismatch
+severity error
+phase semantic
+category type
+legacy VF-ER006
+message "Result ok type mismatch"
+expected "Result ok type"
+end
+
+diag FH-TYP-2601 contract_clause_requires_boolean
+severity error
+phase semantic
+category type
+legacy VF-CT001
+message "contract clause requires Boolean"
+expected "Boolean"
+end
+
+diag FH-SEM-1601 result_contract_expression_outside_result_ensures
+severity error
+phase semantic
+category semantic
+legacy VF-CT002
+message "Result contract expression outside Result ensures"
+expected "Result-returning ensures clause"
+end
+
+# Open Result diagnostics already fixed by OPEN-RETURN_RESULTS.md.
+
+diag FH-RES-4107 nested_result_payload_not_supported
+severity error
+phase semantic
+category result
+message "nested Result payloads are forbidden in v1"
+expected "non-Result value type"
+hint "Nested Result is forbidden in v1 so success, failure, value, and error remain unambiguous."
+end

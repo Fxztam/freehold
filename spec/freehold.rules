@@ -1,0 +1,552 @@
+schema freehold.rules.v1
+uses spec/freehold.diag
+
+# These rules describe the current diagnostic contracts in a deliberately small
+# meta-language. They are specification input for the verifier, CLI diagnostics,
+# and later VS Code/LSP support. They are not executable yet.
+
+section parse_syntax
+
+rule expected_identifier
+when parser expects identifier
+emit FH-SYN-0002
+    found current_token
+    expected "identifier"
+end
+
+rule missing_module_declaration
+when parser at file_start and current_token is not "module"
+emit FH-SYN-0003
+    found current_token
+    expected "module"
+end
+
+rule missing_end
+when parser reaches eof inside declaration_or_block
+emit FH-SYN-0004
+    found current_token
+    expected "end"
+end
+
+rule expected_type_annotation_colon
+when parser in type_annotation and current_token is not ":"
+emit FH-SYN-0005
+    found current_token
+    expected ":"
+end
+
+rule invalid_contract_order
+when contract_block has ensures before requires
+emit FH-SYN-0006
+    found offending_clause
+    expected "requires clauses before ensures clauses"
+end
+
+rule expected_declaration
+when parser at module_level and current_token is not declaration_start
+emit FH-SYN-0007
+    found current_token
+    expected "import, type, error, function, or procedure"
+end
+
+rule missing_case_default
+when CaseStmt has no default branch
+emit FH-SYN-0008
+    found current_token
+    expected "default"
+end
+
+rule missing_while_invariant
+when WhileStmt has no invariant before do
+emit FH-SYN-0009
+    found current_token
+    expected "invariant"
+end
+
+rule unterminated_block_comment
+when lexer sees unterminated block comment
+emit FH-SYN-0010
+    found illegal_token
+    expected "*/"
+end
+
+rule expected_statement
+when parser inside statement_block and current_token is not statement_start
+emit FH-SYN-0011
+    found current_token
+    expected "statement"
+end
+
+rule expected_assignment_or_call
+when identifier_led_statement is neither assignment nor call
+emit FH-SYN-0012
+    found current_token
+    expected ":= or call"
+end
+
+rule expected_number
+when parser expects number literal
+emit FH-SYN-0013
+    found current_token
+    expected "number"
+end
+
+rule missing_return_type
+when FunctionDecl has returns without type
+emit FH-SYN-0014
+    found current_token
+    expected "type"
+end
+
+rule expected_expression
+when parser expects expression
+emit FH-SYN-0015
+    found current_token
+    expected "expression"
+end
+
+rule unterminated_string
+when lexer sees unterminated string
+emit FH-SYN-0016
+    found illegal_token
+    expected "double quote"
+end
+
+rule invalid_number_literal
+when lexer sees invalid number literal
+emit FH-SYN-0017
+    found illegal_token
+    expected "number"
+end
+
+rule missing_parameter_colon
+when Parameter lacks colon before type
+emit FH-SYN-0018
+    found current_token
+    expected ":"
+end
+
+rule missing_end_function
+when FunctionDecl body is not closed
+emit FH-SYN-0019
+    found current_token
+    expected "end <function-name>"
+end
+
+rule missing_end_procedure
+when ProcedureDecl body is not closed
+emit FH-SYN-0020
+    found current_token
+    expected "end <procedure-name>"
+end
+
+rule missing_end_if
+when IfStmt is not closed
+emit FH-SYN-0021
+    found current_token
+    expected "end if"
+end
+
+rule missing_end_while
+when WhileStmt is not closed
+emit FH-SYN-0022
+    found current_token
+    expected "end while"
+end
+
+rule missing_end_case
+when CaseStmt is not closed
+emit FH-SYN-0023
+    found current_token
+    expected "end case"
+end
+
+rule expected_token_fallback
+when parser expected token differs from current_token and no specific rule applies
+emit FH-SYN-0999
+    found current_token
+    expected expected_token
+end
+
+section imports_and_names
+
+rule module_self_import
+when ImportDecl module equals current_module
+emit FH-SEM-1001
+    found import_module
+    expected "different module name"
+end
+
+rule duplicate_import
+when module imports same module more_than_once
+emit FH-SEM-1002
+    found import_module
+    expected "unique imported module"
+end
+
+rule duplicate_exposing_symbol
+when ImportDecl exposing contains duplicate symbol
+emit FH-SEM-1003
+    found symbol
+    expected "unique symbol in import"
+end
+
+rule reserved_keyword_name
+when NamedDecl name is reserved_keyword
+emit FH-SEM-1004
+    found name
+    expected "non-keyword identifier"
+end
+
+section types
+
+rule duplicate_type_declaration
+when TypeDecl name already declared in module
+emit FH-TYP-2001
+    found type_name
+    expected "unique type name"
+end
+
+rule builtin_type_redefinition
+when TypeDecl name is builtin_type
+emit FH-TYP-2002
+    found type_name
+    expected "new type name"
+end
+
+rule unknown_type_reference
+when TypeRef name is not builtin_type and not declared_type
+emit FH-TYP-2003
+    found type_name
+    expected "declared type name"
+end
+
+rule invalid_range_bounds
+when RangeType lower > upper
+emit FH-TYP-2004
+    found range_bounds
+    expected "lower bound <= upper bound"
+end
+
+rule range_requires_numeric_base
+when RangeType base is not Integer and base is not Double
+emit FH-TYP-2005
+    found base_type
+    expected "Integer or Double"
+end
+
+rule integer_range_requires_integer_bounds
+when RangeType base is Integer and bounds are not integers
+emit FH-TYP-2006
+    found range_bounds
+    expected "integer bounds"
+end
+
+section records
+
+rule duplicate_record_field
+when RecordDecl fields contain duplicate name
+emit FH-SEM-1101
+    found field_name
+    expected "unique field name"
+end
+
+rule duplicate_record_literal_field
+when RecordLiteral fields contain duplicate name
+emit FH-SEM-1102
+    found field_name
+    expected "unique literal field"
+end
+
+rule unknown_record_literal_field
+when RecordLiteral field is not declared on target_record
+emit FH-SEM-1103
+    found field_name
+    expected fields(target_record)
+end
+
+rule missing_record_literal_field
+when RecordLiteral omits required field of target_record
+emit FH-SEM-1104
+    found supplied_fields
+    expected required_fields(target_record)
+end
+
+rule field_access_requires_record
+when FieldAccess receiver_type is not record
+emit FH-TYP-2101
+    found receiver_type
+    expected "record before field access"
+end
+
+rule unknown_record_field
+when FieldAccess field is not declared on receiver_record
+emit FH-SEM-1105
+    found field_name
+    expected fields(receiver_record)
+end
+
+section arrays
+
+rule array_literal_requires_scalar
+when ArrayLiteral contains non_scalar element
+emit FH-TYP-2111
+    found element
+    expected "scalar element"
+end
+
+rule array_literal_mixed_element_types
+when ArrayLiteral element_types are not all same
+emit FH-TYP-2112
+    found element_types
+    expected "same element type"
+end
+
+rule array_length_mismatch
+when ArrayLiteral length != declared_array_length
+emit FH-TYP-2113
+    found actual_length
+    expected declared_array_length
+end
+
+rule array_element_type_mismatch
+when ArrayLiteral element_type != declared_element_type
+emit FH-TYP-2114
+    found element_type
+    expected declared_element_type
+end
+
+rule index_access_requires_array
+when IndexAccess receiver_type is not Array
+emit FH-TYP-2115
+    found receiver_type
+    expected "Array"
+end
+
+rule array_index_requires_integer
+when IndexAccess index_type is not Integer
+emit FH-TYP-2116
+    found index_type
+    expected "Integer"
+end
+
+rule array_index_out_of_bounds
+when IndexAccess index_literal is outside array_bounds
+emit FH-SEM-1111
+    found index_literal
+    expected array_bounds
+end
+
+section routines
+
+rule duplicate_parameter_name
+when RoutineDecl parameters contain duplicate name
+emit FH-SEM-1201
+    found parameter_name
+    expected "unique parameter name"
+end
+
+rule function_missing_guaranteed_return
+when FunctionDecl has no guaranteed return on all paths
+emit FH-SEM-1202
+    found function_body
+    expected "guaranteed return on all paths"
+end
+
+rule procedure_return_value
+when ProcedureDecl contains ReturnStmt with value
+emit FH-SEM-1203
+    found return_value
+    expected "return without value"
+end
+
+rule unknown_routine
+when CallExpr callee is not declared routine
+emit FH-SEM-1204
+    found callee
+    expected "declared routine"
+end
+
+rule routine_argument_count_mismatch
+when CallExpr argument_count != routine_parameter_count
+emit FH-SEM-1205
+    found argument_count
+    expected routine_parameter_count
+end
+
+rule routine_argument_type_mismatch
+when CallExpr argument_type != parameter_type
+emit FH-TYP-2201
+    found argument_type
+    expected parameter_type
+end
+
+rule function_return_type_mismatch
+when ReturnStmt value_type != function_return_type
+emit FH-TYP-2202
+    found value_type
+    expected function_return_type
+end
+
+section statements
+
+rule unknown_assignment_target
+when AssignStmt target is not declared assignable
+emit FH-SEM-1301
+    found target
+    expected "declared assignable target"
+end
+
+rule assignment_type_mismatch
+when AssignStmt value_type != target_type
+emit FH-TYP-2301
+    found value_type
+    expected target_type
+end
+
+rule statement_requires_boolean
+when CheckStmt or condition expression_type is not Boolean
+emit FH-TYP-2007
+    found expression_type
+    expected "Boolean"
+end
+
+rule while_variant_requires_integer
+when WhileStmt variant_type is not Integer
+emit FH-TYP-2302
+    found variant_type
+    expected "Integer"
+end
+
+rule case_branch_type_mismatch
+when CaseStmt branch_value_type != selector_type
+emit FH-TYP-2303
+    found branch_value_type
+    expected selector_type
+end
+
+rule duplicate_case_branch_value
+when CaseStmt branches contain duplicate literal value
+emit FH-SEM-1302
+    found branch_value
+    expected "unique case branch value"
+end
+
+section expressions
+
+rule unknown_variable
+when NameExpr name is not in scope
+emit FH-SEM-1401
+    found name
+    expected "declared variable"
+end
+
+rule comparison_type_mismatch
+when EqualityExpr lhs_type != rhs_type
+emit FH-TYP-2401
+    found lhs_type + " vs " + rhs_type
+    expected "same comparable types"
+end
+
+rule boolean_operator_operand_mismatch
+when BooleanExpr operand_type is not Boolean
+emit FH-TYP-2402
+    found operand_type
+    expected "Boolean operands"
+end
+
+rule ordering_comparison_operand_mismatch
+when OrderingExpr operand_type is not numeric
+emit FH-TYP-2403
+    found operand_type
+    expected "numeric operands"
+end
+
+rule arithmetic_operand_mismatch
+when ArithmeticExpr operand_type is not numeric
+emit FH-TYP-2404
+    found operand_type
+    expected "numeric operands"
+end
+
+rule unary_not_requires_boolean
+when UnaryNot operand_type is not Boolean
+emit FH-TYP-2405
+    found operand_type
+    expected "Boolean"
+end
+
+rule unary_negative_requires_numeric
+when UnaryNegative operand_type is not numeric
+emit FH-TYP-2406
+    found operand_type
+    expected "numeric operand"
+end
+
+section result_returns
+
+rule unknown_result_error_type
+when ResultType error is not declared error
+emit FH-SEM-1501
+    found error_type
+    expected "declared error type"
+end
+
+rule unknown_returned_error
+when ReturnError error_name is not declared error
+emit FH-SEM-1502
+    found error_name
+    expected "declared error"
+end
+
+rule wrong_result_error_return
+when ReturnError error_name != function_result_error_type
+emit FH-SEM-1503
+    found error_name
+    expected function_result_error_type
+end
+
+rule result_function_requires_ok_or_error_return
+when ResultFunction contains plain ReturnStmt
+emit FH-SEM-1504
+    found return_form
+    expected "return ok or return error"
+end
+
+rule plain_function_rejects_ok_or_error_return
+when PlainFunction contains ReturnOk or ReturnError
+emit FH-SEM-1505
+    found return_form
+    expected "plain return expression"
+end
+
+rule result_ok_type_mismatch
+when ReturnOk value_type != result_ok_type
+emit FH-TYP-2501
+    found value_type
+    expected result_ok_type
+end
+
+rule nested_result_payload_forbidden_v1
+when ResultType ok is ResultType
+emit FH-RES-4107
+    found ok
+    expected "non-Result value type"
+    hint "Nested Result is forbidden in v1 so success, failure, value, and error remain unambiguous."
+end
+
+section contracts
+
+rule contract_clause_requires_boolean
+when ContractClause expression_type is not Boolean
+emit FH-TYP-2601
+    found expression_type
+    expected "Boolean"
+end
+
+rule result_contract_expression_outside_result_ensures
+when ResultContractAtom appears outside ResultReturningEnsures
+emit FH-SEM-1601
+    found atom
+    expected "Result-returning ensures clause"
+end
