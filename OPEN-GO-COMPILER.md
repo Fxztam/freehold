@@ -2,7 +2,7 @@
 
 Stand: 2026-05-24
 
-Status: Compiler V1 Start-Slice plus Import- und Result-Codegen-Slices implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
+Status: Compiler V1 Start-Slice plus Import-, Result- und Abort-Codegen-Slices implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
 
 Dieses Dokument legt die Leitplanken fuer die naechste Implementierungsphase fest: einen Go-Compiler fuer Freehold, der auf dem bestehenden Parser/AST/Verifier/Spec-Fundament aufsetzt. Wichtigste Vorgabe: Der Compiler darf das Freehold-Modularitaetskonzept nicht aufweichen. Codegen muss Modulgrenzen, Imports, Exposing-Regeln und qualifizierte Namen respektieren.
 
@@ -19,7 +19,7 @@ Der erste Go-Compiler-Slice ist vorhanden:
 - `valid_go_codegen`-Manifestfaelle verankern Golden-Vergleiche in den Language-Modulen.
 - `verify-parser-conformance.cmd` fuehrt den Go-Codegen-Artefaktcheck als eigenen Gate-Schritt aus.
 
-Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Der Import-Slice nutzt `ModuleResolver` fuer dateibasierte Entry-Module, erzeugt deterministische Go-Importpfade fuer benutzte Freehold-Imports und spiegelt Package-/Import-Metadaten in JSON-Artefakten. Der Result-Slice bildet `Result<T,E>` als modul-lokalen Go-Struct-Typ ab und generiert `return ok`/`return error` als normale Wert-Returns. Nicht unterstuetzte AST-Formen werden im Result als Diagnostics markiert.
+Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Der Import-Slice nutzt `ModuleResolver` fuer dateibasierte Entry-Module, erzeugt deterministische Go-Importpfade fuer benutzte Freehold-Imports und spiegelt Package-/Import-Metadaten in JSON-Artefakten. Der Result-Slice bildet `Result<T,E>` als modul-lokalen Go-Struct-Typ ab und generiert `return ok`/`return error` als normale Wert-Returns. Der Abort-Slice bildet `aborts` als expliziten Go-`error`-Rückgabewert ab und propagiert lokale abortende Calls ueber `err`. Nicht unterstuetzte AST-Formen werden im Codegen-Result als Diagnostics markiert.
 
 ## Ziel
 
@@ -105,13 +105,14 @@ Record   -> struct
 Array<T> -> noch festzulegen, vermutlich []T oder fixed-size representation je nach Freehold-Arrayform
 Result<T,E> -> modul-lokaler generierter Result-Struct-Typ
 ErrorName -> modul-lokale string-Konstante
+abort E -> Go `error`-Return, keine Panic-Semantik
 ```
 
 Entscheidungen, die vor breitem Codegen finalisiert werden sollten:
 
 - `Array<T, N>` als `[N]T` oder Freehold-eigene Runtime-Struktur?
 - `Result<T,E>` V1-Entscheidung: modul-lokaler Struct-Typ je konkret verwendeter Result-Form.
-- `abort E` als Go `error` return, panic-freier Kontrollfluss oder spezielle Runtime-Struktur?
+- `abort E` V1-Entscheidung: Go `error`-Return, panic-freier Kontrollfluss.
 - Record-Feldnamen: original Freehold names plus Go-exported aliases oder rein package-intern?
 
 ## Runtime-/Stdlib-Grenze
@@ -143,6 +144,7 @@ return ok value
 return error E
     normaler Return eines Result<T,E>-Werts mit Fehlerpayload
     kein abort, kein panic, kein abnormaler Control Flow
+```
 
 Compiler-V1-Abbildung:
 
@@ -157,14 +159,24 @@ return error NotFound
 -> return ResultIntegerNotFound{Ok: false, Error: NotFound}
 ```
 
+Abort-V1-Abbildung:
+
+```text
+function read(id: Integer) returns Integer
+aborts NotFound when id = 0
+-> func Read(id int64) (int64, error)
+
 abort E
-    abnormaler Exit gemaess Abort-Regeln
-    muss spaeter eine eigene Go-Abbildung bekommen
+-> return <zero-value>, errors.New(E)
+
+propagierender Call
+-> value, err := Read(id); if err != nil { return <zero-value>, err }
 ```
 
 Contracts:
 
-- `requires`, `ensures`, `aborts` sind in V1 vor allem verifierseitige Semantik.
+- `requires` und `ensures` sind in V1 vor allem verifierseitige Semantik.
+- `aborts` beeinflusst die Go-Signatur; `aborts ... when`-Bedingungen bleiben verifierseitig und werden nicht als Runtime-Checks generiert.
 - Runtime-Contract-Enforcement ist nicht Teil des ersten Go-Compiler-Slice.
 - Der Compiler darf Contracts nicht stillschweigend falsch interpretieren.
 
@@ -236,8 +248,8 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 1. Go-Package-Pfadkonvention fuer Freehold-Module weiter haerten, sobald echte Go-Moduldateien gebaut werden.
 2. Feature-Matrix pro Language-Modul pflegen: supported, rejected, deferred.
 3. Runtime-/Stdlib-Packages systematisch anbinden.
-4. Abort-Codegen explizit entscheiden und implementieren.
-5. Danach Multi-File-Emission mehrerer Freehold-Module in einem Compilerlauf ausbauen.
+4. Multi-File-Emission mehrerer Freehold-Module in einem Compilerlauf ausbauen.
+5. Danach Runtime-/Stdlib-Builtins systematisch anbinden.
 
 ## Akzeptanzkriterien fuer Compiler V1 Start
 

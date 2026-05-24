@@ -10,6 +10,7 @@ from typing import Any
 from freehold.core.ast import (
     ArrayLiteralExpr,
     ArrayTypeName,
+    AbortStmt,
     AssignStmt,
     BinaryExpr,
     BoolExpr,
@@ -118,11 +119,14 @@ class GoGenerator:
         self.diagnostics: list[dict[str, str]] = []
         self.imports = program.imports or []
         self.local_routines = {declaration.name for declaration in program.declarations if isinstance(declaration, RoutineDecl)}
+        self.routines_by_name = {declaration.name: declaration for declaration in program.declarations if isinstance(declaration, RoutineDecl)}
         self.imports_by_module = {import_decl.module_name: import_decl for import_decl in self.imports}
         self.exposed_symbols = self.build_exposed_symbols(self.imports)
         self.used_import_modules: set[str] = set()
+        self.std_imports: set[str] = set()
         self.result_types: dict[str, ResultTypeName] = {}
         self.current_return_type: Any = None
+        self.current_aborts: list[Any] = []
 
     def generate(self) -> GoCodegenResult:
         package_name = go_package_name(self.program.module_name)
@@ -169,9 +173,11 @@ class GoGenerator:
 
     def import_block(self) -> list[str]:
         used_imports = [import_decl for import_decl in self.imports if import_decl.module_name in self.used_import_modules]
-        if not used_imports:
+        if not used_imports and not self.std_imports:
             return []
         lines = ["import ("]
+        for import_path in sorted(self.std_imports):
+            lines.append(f"\t{json.dumps(import_path)}")
         for import_decl in used_imports:
             lines.append(f"\t{go_import_alias(import_decl.module_name)} \"{go_import_path(import_decl.module_name)}\"")
         lines.extend([")", ""])
@@ -222,17 +228,27 @@ class GoGenerator:
             self.unsupported(routine, "async routines are not supported by Go codegen V1")
             return []
         params = ", ".join(self.param(param) for param in routine.params)
-        result_type = "" if routine.return_type is None else f" {self.go_type_ref(routine.return_type)}"
+        result_type = self.routine_result_type(routine)
         lines = [f"func {go_exported_name(routine.name)}({params}){result_type} {{"]
-        if routine.requires or routine.ensures or routine.aborts:
+        if routine.requires or routine.ensures:
             self.unsupported(routine, "runtime contracts are not supported by Go codegen V1")
         previous_return_type = self.current_return_type
+        previous_aborts = self.current_aborts
         self.current_return_type = routine.return_type
+        self.current_aborts = routine.aborts or []
         for stmt in routine.body:
             lines.extend(f"\t{line}" for line in self.statement(stmt))
         self.current_return_type = previous_return_type
+        self.current_aborts = previous_aborts
         lines.extend(["}", ""])
         return lines
+
+    def routine_result_type(self, routine: RoutineDecl) -> str:
+        has_aborts = bool(routine.aborts)
+        if routine.return_type is None:
+            return " error" if has_aborts else ""
+        result_type = self.go_type_ref(routine.return_type)
+        return f" ({result_type}, error)" if has_aborts else f" {result_type}"
 
     def param(self, param: Param) -> str:
         return f"{go_local_name(param.name)} {go_type_string(param.type_name)}"
@@ -248,11 +264,21 @@ class GoGenerator:
             return [f"{target} = {self.expr(stmt.expr)}"]
         if isinstance(stmt, ReturnStmt):
             if isinstance(stmt.value, ReturnPlain):
+                if isinstance(stmt.value.expr, CallExpr):
+                    call_routine = self.local_called_routine(stmt.value.expr.name)
+                    if call_routine is not None and call_routine.aborts:
+                        return self.return_aborting_call(stmt.value.expr, call_routine)
+                if self.current_aborts:
+                    return [f"return {self.expr(stmt.value.expr)}, nil"]
                 return [f"return {self.expr(stmt.value.expr)}"]
             if isinstance(stmt.value, ReturnOk):
                 if not isinstance(self.current_return_type, ResultTypeName):
                     self.unsupported(stmt, "return ok requires a Result return type")
                     return ["// unsupported result return"]
+                if self.current_aborts:
+                    return [
+                        f"return {go_result_type_name(self.current_return_type)}{{Ok: true, Value: {self.expr_with_type(stmt.value.expr, self.current_return_type.ok_type)}}}, nil"
+                    ]
                 return [
                     f"return {go_result_type_name(self.current_return_type)}{{Ok: true, Value: {self.expr_with_type(stmt.value.expr, self.current_return_type.ok_type)}}}"
                 ]
@@ -260,12 +286,19 @@ class GoGenerator:
                 if not isinstance(self.current_return_type, ResultTypeName):
                     self.unsupported(stmt, "return error requires a Result return type")
                     return ["// unsupported result return"]
+                if self.current_aborts:
+                    return [f"return {go_result_type_name(self.current_return_type)}{{Ok: false, Error: {go_exported_name(stmt.value.error_name)}}}, nil"]
                 return [f"return {go_result_type_name(self.current_return_type)}{{Ok: false, Error: {go_exported_name(stmt.value.error_name)}}}"]
             self.unsupported(stmt, "return form is not supported by Go codegen V1")
             return ["// unsupported return"]
+        if isinstance(stmt, AbortStmt):
+            return self.abort_return(stmt.error_name)
         if isinstance(stmt, CheckStmt):
             return [f"if !({self.expr(stmt.expr)}) {{ panic(\"freehold check failed\") }}"]
         if isinstance(stmt, CallStmt):
+            call_routine = self.local_called_routine(stmt.name)
+            if call_routine is not None and call_routine.aborts:
+                return self.call_aborting_routine(stmt.name, stmt.args, call_routine)
             args = ", ".join(self.expr(arg) for arg in stmt.args)
             return [f"{self.callable_name(stmt.name, stmt)}({args})"]
         if isinstance(stmt, IfStmt):
@@ -299,6 +332,50 @@ class GoGenerator:
         for statement in statements:
             lines.extend(self.statement(statement))
         return lines or ["// empty"]
+
+    def abort_return(self, error_name: str) -> list[str]:
+        self.std_imports.add("errors")
+        if self.current_return_type is None:
+            return [f"return errors.New({go_exported_name(error_name)})"]
+        return [f"return {go_zero_value(self.current_return_type)}, errors.New({go_exported_name(error_name)})"]
+
+    def call_aborting_routine(self, name: str, args: list[Any], routine: RoutineDecl) -> list[str]:
+        args_text = ", ".join(self.expr(arg) for arg in args)
+        call_text = f"{self.callable_name(name, routine)}({args_text})"
+        if routine.return_type is None:
+            lines = [f"if err := {call_text}; err != nil {{"]
+        else:
+            lines = [f"_, err := {call_text}", "if err != nil {"]
+        lines.extend(indent_lines(self.propagate_abort_return()))
+        lines.append("}")
+        return lines
+
+    def return_aborting_call(self, call: CallExpr, routine: RoutineDecl) -> list[str]:
+        if routine.return_type is None:
+            self.unsupported(call, "aborting procedure call cannot be returned as a value")
+            return ["// unsupported aborting procedure return"]
+        args_text = ", ".join(self.expr(arg) for arg in call.args)
+        call_text = f"{self.callable_name(call.name, call)}({args_text})"
+        lines = [f"value, err := {call_text}", "if err != nil {"]
+        lines.extend(indent_lines(self.propagate_abort_return()))
+        lines.append("}")
+        lines.append("return value, nil" if self.current_aborts else "return value")
+        return lines
+
+    def propagate_abort_return(self) -> list[str]:
+        if not self.current_aborts:
+            self.unsupported(self.program, "aborting call requires the enclosing routine to declare abort propagation")
+            return ["// unsupported abort propagation"]
+        if self.current_return_type is None:
+            return ["return err"]
+        return [f"return {go_zero_value(self.current_return_type)}, err"]
+
+    def local_called_routine(self, name: str) -> RoutineDecl | None:
+        current_prefix = f"{self.program.module_name}."
+        local_name = name[len(current_prefix):] if name.startswith(current_prefix) else name
+        if "." in local_name:
+            return None
+        return self.routines_by_name.get(local_name)
 
     def expr(self, expr: Any) -> str:
         return self.expr_at(expr, 0)
@@ -348,6 +425,9 @@ class GoGenerator:
         if isinstance(expr, CallExpr):
             if expr.type_args:
                 self.unsupported(expr, "generic calls are not supported by Go codegen V1")
+            call_routine = self.local_called_routine(expr.name)
+            if call_routine is not None and call_routine.aborts:
+                self.unsupported(expr, "aborting calls in expressions are not supported by Go codegen V1")
             args = ", ".join(self.expr(arg) for arg in expr.args)
             return f"{self.callable_name(expr.name, expr)}({args})"
         self.unsupported(expr, "expression not supported by Go codegen V1")
@@ -420,6 +500,37 @@ def go_type_string(type_name: str) -> str:
 
 def go_result_type_name(type_ref: ResultTypeName) -> str:
     return f"Result{go_type_name_fragment(type_ref.ok_type)}{go_exported_name(type_ref.error_type)}"
+
+
+def go_zero_value(type_ref: Any) -> str:
+    if isinstance(type_ref, str):
+        return go_zero_value_for_type_name(type_ref)
+    if isinstance(type_ref, TypeName):
+        return go_zero_value_for_type_name(type_ref.name)
+    if isinstance(type_ref, ArrayTypeName):
+        return f"[{type_ref.size}]{go_type_string(type_ref.element_type)}{{}}"
+    if isinstance(type_ref, ResultTypeName):
+        return f"{go_result_type_name(type_ref)}{{}}"
+    return "nil"
+
+
+def go_zero_value_for_type_name(type_name: str) -> str:
+    mapping = {
+        "Integer": "0",
+        "Boolean": "false",
+        "Double": "0.0",
+        "String": "\"\"",
+    }
+    if type_name in mapping:
+        return mapping[type_name]
+    generic = parse_generic(type_name)
+    if generic is not None:
+        base, args = generic
+        if base == "Array" and len(args) == 2 and args[1].isdigit():
+            return f"[{args[1]}]{go_type_string(args[0])}{{}}"
+        if base == "Result" and len(args) == 2:
+            return f"{go_result_type_name(ResultTypeName(TypeName(args[0]), args[1]))}{{}}"
+    return f"{go_exported_name(type_name)}{{}}"
 
 
 def go_type_name_fragment(type_ref: Any) -> str:
