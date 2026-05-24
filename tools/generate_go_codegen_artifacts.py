@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -10,7 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from freehold.core.go_codegen import generate_go_file, generate_go_project, generate_go_source
+from freehold.core.go_codegen import generate_go_file, generate_go_project, generate_go_project_build_files, generate_go_source
 
 
 DEFAULT_ROOT = Path("tests/language_modules")
@@ -108,17 +109,22 @@ def run_project_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> 
     expected_root = module_dir / case["expected_go_dir"]
     artifact_root = out_root / module_dir.name / Path(case["root"]).name / "project"
     json_path = artifact_root / "_project.json"
+    if artifact_root.exists():
+        shutil.rmtree(artifact_root)
     try:
         files = generate_go_project(entry_path)
+        build_files = generate_go_project_build_files(files)
         actual = {file.output_path: file.result.go_source for file in files}
+        actual.update({file.output_path: file.content for file in build_files})
         error = None
     except Exception as exc:
         files = []
+        build_files = []
         actual = {}
         error = {"type": type(exc).__name__, "message": str(exc)}
     expected = {
         path.relative_to(expected_root).as_posix(): path.read_text(encoding="utf-8")
-        for path in sorted(expected_root.rglob("*.go"))
+        for path in sorted(path for path in expected_root.rglob("*") if path.is_file())
     } if expected_root.exists() else {}
     for output_path, source in actual.items():
         artifact_path = artifact_root / output_path
@@ -144,6 +150,7 @@ def run_project_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> 
             }
             for file in files
         ],
+        "build_files": [file.to_json() for file in build_files],
         "error": error,
     }
     json_path.parent.mkdir(parents=True, exist_ok=True)

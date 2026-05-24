@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from freehold.core.diagnostics import diagnose_exception
-from freehold.core.go_codegen import generate_go_file, generate_go_project, project_result_json, result_json
+from freehold.core.go_codegen import generate_go_file, generate_go_project, generate_go_project_build_files, project_result_json, result_json
 from freehold.core.grpc_codegen import generate_proto_file
 from freehold.core.pipeline import verify_file, run_file, print_ast
 
@@ -70,16 +70,22 @@ def cmd_go_codegen(args):
 
 def cmd_go_codegen_project(args):
     files = generate_go_project(args.file)
+    build_files = generate_go_project_build_files(files)
     out_root = Path(args.output_dir)
     for file in files:
         out_path = out_root / file.output_path
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(file.result.go_source, encoding="utf-8")
         print(f"[OK] Go project file generated: {out_path}")
+    for file in build_files:
+        out_path = out_root / file.output_path
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(file.content, encoding="utf-8")
+        print(f"[OK] Go project build file generated: {out_path}")
     if args.json:
         json_path = Path(args.json)
         json_path.parent.mkdir(parents=True, exist_ok=True)
-        json_path.write_text(project_result_json(files), encoding="utf-8")
+        json_path.write_text(project_result_json(files, build_files), encoding="utf-8")
         print(f"[OK] Go project JSON written: {json_path}")
     return 0 if all(file.result.supported for file in files) else 1
 

@@ -60,6 +60,8 @@ GO_RUNTIME_MODULE_EXPORTS: dict[str, set[str]] = {
     "Std.IO": {"log", "logf", "log_int", "log_bool", "log_double"},
 }
 
+GO_PROJECT_MODULE_PATH = "freehold.local"
+
 
 @dataclass(frozen=True)
 class GoCodegenResult:
@@ -108,6 +110,20 @@ class GoProjectFile:
         }
 
 
+@dataclass(frozen=True)
+class GoProjectBuildFile:
+    output_path: str
+    content: str
+    kind: str
+
+    def to_json(self) -> dict[str, str]:
+        return {
+            "output_path": self.output_path,
+            "kind": self.kind,
+            "content": self.content,
+        }
+
+
 def generate_go_source(source: str) -> GoCodegenResult:
     program = parse_source(source)
     verify_program(program)
@@ -149,16 +165,35 @@ def generate_go_project(entry_file: str | Path) -> list[GoProjectFile]:
     return files
 
 
+def generate_go_project_build_files(files: list[GoProjectFile]) -> list[GoProjectBuildFile]:
+    return [
+        GoProjectBuildFile(
+            output_path="go.mod",
+            kind="go_mod",
+            content=f"module {GO_PROJECT_MODULE_PATH}\n\ngo 1.22\n",
+        ),
+        GoProjectBuildFile(
+            output_path="build.cmd",
+            kind="build_cmd",
+            content="@echo off\nsetlocal\ngo test ./...\n",
+        ),
+    ]
+
+
 def result_json(result: GoCodegenResult, **metadata: str) -> str:
     return json.dumps(result.to_json(**metadata), indent=2) + "\n"
 
 
-def project_result_json(files: list[GoProjectFile]) -> str:
+def project_result_json(files: list[GoProjectFile], build_files: list[GoProjectBuildFile] | None = None) -> str:
+    build_files = build_files or []
     return json.dumps(
         {
+            "module_path": GO_PROJECT_MODULE_PATH,
             "total_files": len(files),
+            "total_build_files": len(build_files),
             "supported": all(file.result.supported for file in files),
             "files": [file.to_json() for file in files],
+            "build_files": [file.to_json() for file in build_files],
         },
         indent=2,
     ) + "\n"
@@ -726,7 +761,7 @@ def go_module_output_path(module_name: str) -> Path:
 
 
 def go_import_path(module_name: str) -> str:
-    return f"freehold.local/{go_package_path(module_name)}"
+    return f"{GO_PROJECT_MODULE_PATH}/{go_package_path(module_name)}"
 
 
 def runtime_module_import_path(module_name: str) -> str | None:
