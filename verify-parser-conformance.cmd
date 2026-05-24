@@ -3,62 +3,67 @@ setlocal
 
 pushd "%~dp0" || exit /b 1
 
-echo [1/12] Regenerate Go AST
+echo [1/13] Regenerate Go AST
 cmd /c "cd /d go-frontend && call .\go-parse-tests-language-modules.cmd"
 if errorlevel 1 goto :fail
 
 echo.
-echo [2/12] Verify Go diagnostics
+echo [2/13] Verify Go diagnostics
 python ".\tools\verify_go_diagnostics.py"
 if errorlevel 1 goto :fail
 
 echo.
-echo [3/12] Verify spec diagnostics
+echo [3/13] Verify spec diagnostics
 call ".\verify-spec-diagnostics.cmd"
 if errorlevel 1 goto :fail
 
 echo.
-echo [4/12] Compare semantic diagnostics
+echo [4/13] Compare semantic diagnostics
 call ".\compare-semantic-diagnostics.cmd"
 if errorlevel 1 goto :fail
 
 echo.
-echo [5/12] Generate gRPC proto artifacts
+echo [5/13] Generate gRPC proto artifacts
 call ".\generate-grpc-proto-artifacts.cmd"
 if errorlevel 1 goto :fail
 
 echo.
-echo [6/12] Generate Go codegen artifacts
+echo [6/13] Generate Go codegen artifacts
 call ".\generate-go-codegen-artifacts.cmd"
 if errorlevel 1 goto :fail
 
 echo.
-echo [7/12] Regenerate DHParser AST
+echo [7/13] Generate DHParser parser code
+call ".\generate-dhparser-parser.cmd"
+if errorlevel 1 goto :fail
+
+echo.
+echo [8/13] Regenerate DHParser AST
 call ".\dhparser-parse-tests-language-modules.cmd"
 if errorlevel 1 goto :fail
 
 echo.
-echo [8/12] Compare parser status
+echo [9/13] Compare parser status
 call ".\compare-parser-status.cmd"
 if errorlevel 1 goto :fail
 
 echo.
-echo [9/12] Compare parse errors
+echo [10/13] Compare parse errors
 call ".\compare-parse-errors.cmd"
 if errorlevel 1 goto :fail
 
 echo.
-echo [10/12] Compare AST shape
+echo [11/13] Compare AST shape
 call ".\compare-ast-shape.cmd"
 if errorlevel 1 goto :fail
 
 echo.
-echo [11/12] Compare semantic AST
+echo [12/13] Compare semantic AST
 call ".\compare-ast-semantic.cmd"
 if errorlevel 1 goto :fail
 
 echo.
-echo [12/12] Go tests
+echo [13/13] Go tests
 cmd /c "cd /d go-frontend && go test ./..."
 if errorlevel 1 goto :fail
 
