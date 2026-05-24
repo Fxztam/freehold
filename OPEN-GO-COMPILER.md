@@ -2,7 +2,7 @@
 
 Stand: 2026-05-24
 
-Status: Compiler V1 Start-Slice plus import-aware Codegen-Slice implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
+Status: Compiler V1 Start-Slice plus Import- und Result-Codegen-Slices implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
 
 Dieses Dokument legt die Leitplanken fuer die naechste Implementierungsphase fest: einen Go-Compiler fuer Freehold, der auf dem bestehenden Parser/AST/Verifier/Spec-Fundament aufsetzt. Wichtigste Vorgabe: Der Compiler darf das Freehold-Modularitaetskonzept nicht aufweichen. Codegen muss Modulgrenzen, Imports, Exposing-Regeln und qualifizierte Namen respektieren.
 
@@ -19,7 +19,7 @@ Der erste Go-Compiler-Slice ist vorhanden:
 - `valid_go_codegen`-Manifestfaelle verankern Golden-Vergleiche in den Language-Modulen.
 - `verify-parser-conformance.cmd` fuehrt den Go-Codegen-Artefaktcheck als eigenen Gate-Schritt aus.
 
-Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Der Import-Slice nutzt `ModuleResolver` fuer dateibasierte Entry-Module, erzeugt deterministische Go-Importpfade fuer benutzte Freehold-Imports und spiegelt Package-/Import-Metadaten in JSON-Artefakten. Nicht unterstuetzte AST-Formen werden im Result als Diagnostics markiert.
+Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Der Import-Slice nutzt `ModuleResolver` fuer dateibasierte Entry-Module, erzeugt deterministische Go-Importpfade fuer benutzte Freehold-Imports und spiegelt Package-/Import-Metadaten in JSON-Artefakten. Der Result-Slice bildet `Result<T,E>` als modul-lokalen Go-Struct-Typ ab und generiert `return ok`/`return error` als normale Wert-Returns. Nicht unterstuetzte AST-Formen werden im Result als Diagnostics markiert.
 
 ## Ziel
 
@@ -103,14 +103,14 @@ Double   -> float64
 String   -> string
 Record   -> struct
 Array<T> -> noch festzulegen, vermutlich []T oder fixed-size representation je nach Freehold-Arrayform
-Result<T,E> -> generierter Result-Typ oder Runtime-Generic, noch festzulegen
-ErrorName -> symbolischer Fehlerwert oder typed error wrapper, noch festzulegen
+Result<T,E> -> modul-lokaler generierter Result-Struct-Typ
+ErrorName -> modul-lokale string-Konstante
 ```
 
 Entscheidungen, die vor breitem Codegen finalisiert werden sollten:
 
 - `Array<T, N>` als `[N]T` oder Freehold-eigene Runtime-Struktur?
-- `Result<T,E>` als generischer Go-Typ, monomorphisierte Structs oder Runtime-Wrapper?
+- `Result<T,E>` V1-Entscheidung: modul-lokaler Struct-Typ je konkret verwendeter Result-Form.
 - `abort E` als Go `error` return, panic-freier Kontrollfluss oder spezielle Runtime-Struktur?
 - Record-Feldnamen: original Freehold names plus Go-exported aliases oder rein package-intern?
 
@@ -143,6 +143,19 @@ return ok value
 return error E
     normaler Return eines Result<T,E>-Werts mit Fehlerpayload
     kein abort, kein panic, kein abnormaler Control Flow
+
+Compiler-V1-Abbildung:
+
+```text
+Result<Integer, NotFound>
+-> type ResultIntegerNotFound struct { Ok bool; Value int64; Error string }
+
+return ok 1
+-> return ResultIntegerNotFound{Ok: true, Value: 1}
+
+return error NotFound
+-> return ResultIntegerNotFound{Ok: false, Error: NotFound}
+```
 
 abort E
     abnormaler Exit gemaess Abort-Regeln
@@ -220,11 +233,10 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 
 ## Empfohlene naechste Schritte
 
-1. Go-Package-Pfadkonvention fuer Freehold-Module festlegen.
 1. Go-Package-Pfadkonvention fuer Freehold-Module weiter haerten, sobald echte Go-Moduldateien gebaut werden.
 2. Feature-Matrix pro Language-Modul pflegen: supported, rejected, deferred.
 3. Runtime-/Stdlib-Packages systematisch anbinden.
-4. Result-/Abort-Codegen explizit entscheiden und implementieren.
+4. Abort-Codegen explizit entscheiden und implementieren.
 5. Danach Multi-File-Emission mehrerer Freehold-Module in einem Compilerlauf ausbauen.
 
 ## Akzeptanzkriterien fuer Compiler V1 Start

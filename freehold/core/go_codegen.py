@@ -18,6 +18,7 @@ from freehold.core.ast import (
     CallExpr,
     CheckStmt,
     DoubleExpr,
+    ErrorDecl,
     FieldAccessExpr,
     FieldAssignStmt,
     IfStmt,
@@ -30,8 +31,11 @@ from freehold.core.ast import (
     RecordLiteralExpr,
     RecordTypeDecl,
     ReturnPlain,
+    ReturnOk,
+    ReturnError,
     ReturnStmt,
     RoutineDecl,
+    ResultTypeName,
     StringExpr,
     TypeDecl,
     TypeName,
@@ -117,6 +121,8 @@ class GoGenerator:
         self.imports_by_module = {import_decl.module_name: import_decl for import_decl in self.imports}
         self.exposed_symbols = self.build_exposed_symbols(self.imports)
         self.used_import_modules: set[str] = set()
+        self.result_types: dict[str, ResultTypeName] = {}
+        self.current_return_type: Any = None
 
     def generate(self) -> GoCodegenResult:
         package_name = go_package_name(self.program.module_name)
@@ -128,6 +134,8 @@ class GoGenerator:
                 body_lines.extend(self.record_decl(declaration))
             elif isinstance(declaration, RoutineDecl):
                 body_lines.extend(self.routine_decl(declaration))
+            elif isinstance(declaration, ErrorDecl):
+                body_lines.extend(self.error_decl(declaration))
             else:
                 self.unsupported(declaration, "declaration not supported by Go codegen V1")
         lines = [
@@ -136,6 +144,7 @@ class GoGenerator:
             "",
         ]
         lines.extend(self.import_block())
+        lines.extend(self.result_type_decls())
         lines.extend(body_lines)
         go_source = format_go_source("\n".join(lines).rstrip() + "\n")
         return GoCodegenResult(
@@ -182,6 +191,19 @@ class GoGenerator:
     def type_decl(self, declaration: TypeDecl) -> list[str]:
         return [f"type {go_exported_name(declaration.name)} {go_type_string(declaration.base)}", ""]
 
+    def error_decl(self, declaration: ErrorDecl) -> list[str]:
+        return [f"const {go_exported_name(declaration.name)} = {json.dumps(declaration.name)}", ""]
+
+    def result_type_decls(self) -> list[str]:
+        lines: list[str] = []
+        for result_type in self.result_types.values():
+            lines.append(f"type {go_result_type_name(result_type)} struct {{")
+            lines.append("\tOk bool")
+            lines.append(f"\tValue {self.go_type_ref(result_type.ok_type)}")
+            lines.append("\tError string")
+            lines.extend(["}", ""])
+        return lines
+
     def record_decl(self, declaration: RecordTypeDecl) -> list[str]:
         if declaration.type_params:
             self.unsupported(declaration, "generic records are not supported by Go codegen V1")
@@ -200,12 +222,15 @@ class GoGenerator:
             self.unsupported(routine, "async routines are not supported by Go codegen V1")
             return []
         params = ", ".join(self.param(param) for param in routine.params)
-        result_type = "" if routine.return_type is None else f" {go_type_ref(routine.return_type)}"
+        result_type = "" if routine.return_type is None else f" {self.go_type_ref(routine.return_type)}"
         lines = [f"func {go_exported_name(routine.name)}({params}){result_type} {{"]
         if routine.requires or routine.ensures or routine.aborts:
             self.unsupported(routine, "runtime contracts are not supported by Go codegen V1")
+        previous_return_type = self.current_return_type
+        self.current_return_type = routine.return_type
         for stmt in routine.body:
             lines.extend(f"\t{line}" for line in self.statement(stmt))
+        self.current_return_type = previous_return_type
         lines.extend(["}", ""])
         return lines
 
@@ -224,8 +249,20 @@ class GoGenerator:
         if isinstance(stmt, ReturnStmt):
             if isinstance(stmt.value, ReturnPlain):
                 return [f"return {self.expr(stmt.value.expr)}"]
-            self.unsupported(stmt, "Result return forms are not supported by Go codegen V1")
-            return ["// unsupported result return"]
+            if isinstance(stmt.value, ReturnOk):
+                if not isinstance(self.current_return_type, ResultTypeName):
+                    self.unsupported(stmt, "return ok requires a Result return type")
+                    return ["// unsupported result return"]
+                return [
+                    f"return {go_result_type_name(self.current_return_type)}{{Ok: true, Value: {self.expr_with_type(stmt.value.expr, self.current_return_type.ok_type)}}}"
+                ]
+            if isinstance(stmt.value, ReturnError):
+                if not isinstance(self.current_return_type, ResultTypeName):
+                    self.unsupported(stmt, "return error requires a Result return type")
+                    return ["// unsupported result return"]
+                return [f"return {go_result_type_name(self.current_return_type)}{{Ok: false, Error: {go_exported_name(stmt.value.error_name)}}}"]
+            self.unsupported(stmt, "return form is not supported by Go codegen V1")
+            return ["// unsupported return"]
         if isinstance(stmt, CheckStmt):
             return [f"if !({self.expr(stmt.expr)}) {{ panic(\"freehold check failed\") }}"]
         if isinstance(stmt, CallStmt):
@@ -271,6 +308,11 @@ class GoGenerator:
             values = ", ".join(self.expr(item) for item in expr.items)
             return f"[{type_ref.size}]{go_type_string(type_ref.element_type)}{{{values}}}"
         return self.expr(expr)
+
+    def go_type_ref(self, type_ref: Any) -> str:
+        if isinstance(type_ref, ResultTypeName):
+            self.result_types.setdefault(type_to_string(type_ref), type_ref)
+        return go_type_ref(type_ref)
 
     def expr_at(self, expr: Any, parent_precedence: int, side: str = "") -> str:
         if isinstance(expr, NumberExpr):
@@ -352,6 +394,8 @@ def go_type_ref(type_ref: Any) -> str:
         return go_type_string(type_ref.name)
     if isinstance(type_ref, ArrayTypeName):
         return f"[{type_ref.size}]{go_type_string(type_ref.element_type)}"
+    if isinstance(type_ref, ResultTypeName):
+        return go_result_type_name(type_ref)
     raise GoCodegenError(f"unsupported Go type reference: {type_to_string(type_ref)}")
 
 
@@ -361,7 +405,9 @@ def go_type_string(type_name: str) -> str:
         base, args = generic
         if base == "Array" and len(args) == 2 and args[1].isdigit():
             return f"[{args[1]}]{go_type_string(args[0])}"
-        if base in {"Result", "JoinHandle", "Channel", "Sender", "Receiver"}:
+        if base == "Result" and len(args) == 2:
+            return go_result_type_name(ResultTypeName(TypeName(args[0]), args[1]))
+        if base in {"JoinHandle", "Channel", "Sender", "Receiver"}:
             raise GoCodegenError(f"{base} is not supported by Go codegen V1")
     mapping = {
         "Integer": "int64",
@@ -370,6 +416,20 @@ def go_type_string(type_name: str) -> str:
         "String": "string",
     }
     return mapping.get(type_name, go_exported_name(type_name))
+
+
+def go_result_type_name(type_ref: ResultTypeName) -> str:
+    return f"Result{go_type_name_fragment(type_ref.ok_type)}{go_exported_name(type_ref.error_type)}"
+
+
+def go_type_name_fragment(type_ref: Any) -> str:
+    if isinstance(type_ref, TypeName):
+        return go_exported_name(type_ref.name)
+    if isinstance(type_ref, ArrayTypeName):
+        return f"Array{go_exported_name(type_ref.element_type)}{type_ref.size}"
+    if isinstance(type_ref, ResultTypeName):
+        return go_result_type_name(type_ref)
+    return go_exported_name(type_to_string(type_ref))
 
 
 def go_package_name(module_name: str) -> str:
