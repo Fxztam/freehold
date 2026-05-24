@@ -127,6 +127,8 @@ def normalize_go_decl(decl: dict[str, Any]) -> dict[str, Any]:
             "body": [normalize_go_stmt(stmt) for stmt in decl.get("body") or []],
             "end_name": decl.get("end_name", ""),
         }
+        if decl.get("is_async"):
+            item["is_async"] = True
         if kind == "FunctionDecl":
             item["return_type"] = compact_type(decl.get("return_type", ""))
         return item
@@ -219,6 +221,8 @@ def go_expr_text(expr: dict[str, Any], parent_prec: int = 0, side: str = "") -> 
         type_args = expr.get("type_args") or []
         type_arg_text = "<" + ",".join(compact_type(arg) for arg in type_args) + ">" if type_args else ""
         return go_expr_text(expr.get("callee", {}), prec) + type_arg_text + "(" + ",".join(go_expr_text(item) for item in expr.get("arguments") or []) + ")"
+    if kind == "AwaitExpr":
+        return "await" + go_expr_text(expr.get("value", {}), prec)
     if kind == "NamedArgumentExpr":
         return expr.get("name", "") + ":" + go_expr_text(expr.get("value", {}))
     if kind == "RecordLiteralExpr":
@@ -246,7 +250,7 @@ def go_expr_prec(expr: dict[str, Any]) -> int:
         if op in {"*", "/"}:
             return 5
         return 3
-    if kind == "UnaryExpr":
+    if kind in {"UnaryExpr", "AwaitExpr"}:
         return 6
     if kind in {"FieldAccessExpr", "IndexExpr", "CallExpr"}:
         return 7
@@ -310,6 +314,8 @@ def normalize_dhparser_decl(node: dict[str, Any]) -> dict[str, Any]:
             "body": [normalize_dhparser_stmt(stmt) for stmt in children(node, "stmt")],
             "end_name": nth_ident(node, -1),
         }
+        if first_child(node, "async_marker"):
+            item["is_async"] = True
         if kind == "FunctionDecl":
             item["return_type"] = type_text(first_child(node, "return_type"))
         return item

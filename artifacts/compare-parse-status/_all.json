@@ -925,7 +925,7 @@
     "go_parse_ok": false,
     "dhparser_parse_ok": false,
     "go_error": "FH-SYN-0015: Expected an expression. | Location: line 5, column 11 | Expected: expression | Found: ) \")\" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.",
-    "dhparser_error": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb)\n    let amount :=  ...\u00ab"
+    "dhparser_error": "5:11: Error (1040): Parser unary->`await` did not match: \u00bb)\n    let amount :=  ...\u00ab"
   },
   {
     "case": "09_statements/invalid_syntax/let_uses_assignment_operator.json",
@@ -965,7 +965,7 @@
     "go_parse_ok": false,
     "dhparser_parse_ok": false,
     "go_error": "FH-SYN-0015: Expected an expression. | Location: line 5, column 11 | Expected: expression | Found: ) \")\" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.",
-    "dhparser_error": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb)\n    let amount :=  ...\u00ab"
+    "dhparser_error": "5:11: Error (1040): Parser unary->`await` did not match: \u00bb)\n    let amount :=  ...\u00ab"
   },
   {
     "case": "09_statements/valid/assignment_statement.json",
@@ -1109,7 +1109,7 @@
     "go_parse_ok": false,
     "dhparser_parse_ok": false,
     "go_error": "FH-SYN-0015: Expected an expression. | Location: line 5, column 11 | Expected: expression | Found: ) \")\" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.",
-    "dhparser_error": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb)\nend main\n\nend Unex ...\u00ab"
+    "dhparser_error": "5:11: Error (1040): Parser unary->`await` did not match: \u00bb)\nend main\n\nend Unex ...\u00ab"
   },
   {
     "case": "10_expressions/valid/array_index_expression.json",
@@ -1597,7 +1597,7 @@
     "go_parse_ok": false,
     "dhparser_parse_ok": false,
     "go_error": "FH-SYN-0016: Unterminated string literal. | Location: line 5, column 11 | Expected: \" | Found: Illegal \"unterminated string\" | Hint: Close the string literal with a double quote.",
-    "dhparser_error": "5:11: Error (1040): Parser unary->`-` did not match: \u00bb\"open string\nend mai ...\u00ab"
+    "dhparser_error": "5:11: Error (1040): Parser unary->`await` did not match: \u00bb\"open string\nend mai ...\u00ab"
   },
   {
     "case": "14_comments_whitespace/valid/block_comments.json",
@@ -1821,7 +1821,7 @@
     "go_parse_ok": false,
     "dhparser_parse_ok": false,
     "go_error": "FH-SYN-0015: Expected an expression. | Location: line 10, column 19 | Expected: expression | Found: ) \")\" | Hint: Use a literal, identifier, call, parenthesized expression, or unary expression here.",
-    "dhparser_error": "10:19: Error (1040): Parser unary->`-` did not match: \u00bb)\n        end if\n    ...\u00ab"
+    "dhparser_error": "10:19: Error (1040): Parser unary->`await` did not match: \u00bb)\n        end if\n    ...\u00ab"
   },
   {
     "case": "16_control_flow_edges/invalid_syntax/while_without_invariant.json",
@@ -2321,6 +2321,118 @@
   },
   {
     "case": "22_generics/valid/generic_record_box.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/await_executor.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/await_outside_async.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/await_sync_value.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/channel_missing_type_argument.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/channel_send_payload_mismatch.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/reserved_async_name.json",
+    "status": "match",
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0002: Expected an identifier. | Location: line 3, column 10 | Expected: identifier | Found: async \"async\" | Hint: Use a non-keyword name here.",
+    "dhparser_error": "3:10: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... lse\\\\b|success\\\\b|failure\\\\b|value\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bbasync() returns Inte ...\u00ab"
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/runtime_generic_missing_argument.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/runtime_generic_wrong_arity.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/runtime_non_generic_type_arguments.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/valid/async_function_await.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/valid/await_channel_send_receive.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/valid/await_join_handle.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/valid/channel_endpoints.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/valid/runtime_core_types.json",
     "status": "match",
     "go_parse_ok": true,
     "dhparser_parse_ok": true,

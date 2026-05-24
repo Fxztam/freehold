@@ -1,0 +1,107 @@
+{
+  "source_file": "..\\tests\\language_modules\\23_concurrency\\valid\\await_channel_send_receive.fh",
+  "source_snippet": "module Concurrency.AwaitChannelSendReceive\r\n\r\nasync function exchange(sender: Sender\u003cInteger\u003e, receiver: Receiver\u003cInteger\u003e) returns Integer\r\nis\r\n    let sent: Boolean = await channel_send\u003cInteger\u003e(sender, 42)\r\n    check sent = true\r\n    let item: Integer = await channel_receive\u003cInteger\u003e(receiver)\r\n    return item\r\nend exchange\r\n\r\nend Concurrency.AwaitChannelSendReceive",
+  "module_name": "23_concurrency",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Concurrency.AwaitChannelSendReceive",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "exchange",
+        "is_async": true,
+        "params": [
+          {
+            "name": "sender",
+            "type": "Sender\u003cInteger\u003e"
+          },
+          {
+            "name": "receiver",
+            "type": "Receiver\u003cInteger\u003e"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "sent",
+            "type": "Boolean",
+            "value": {
+              "kind": "AwaitExpr",
+              "value": {
+                "kind": "CallExpr",
+                "callee": {
+                  "kind": "IdentifierExpr",
+                  "name": "channel_send"
+                },
+                "type_args": [
+                  "Integer"
+                ],
+                "arguments": [
+                  {
+                    "kind": "IdentifierExpr",
+                    "name": "sender"
+                  },
+                  {
+                    "kind": "NumberExpr",
+                    "value": "42"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "sent"
+              },
+              "right": {
+                "kind": "IdentifierExpr",
+                "name": "true"
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "item",
+            "type": "Integer",
+            "value": {
+              "kind": "AwaitExpr",
+              "value": {
+                "kind": "CallExpr",
+                "callee": {
+                  "kind": "IdentifierExpr",
+                  "name": "channel_receive"
+                },
+                "type_args": [
+                  "Integer"
+                ],
+                "arguments": [
+                  {
+                    "kind": "IdentifierExpr",
+                    "name": "receiver"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "item"
+            }
+          }
+        ],
+        "end_name": "exchange"
+      }
+    ],
+    "end_name": "Concurrency.AwaitChannelSendReceive"
+  }
+}

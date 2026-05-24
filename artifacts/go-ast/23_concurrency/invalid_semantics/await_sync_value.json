@@ -1,0 +1,63 @@
+{
+  "source_file": "..\\tests\\language_modules\\23_concurrency\\invalid_semantics\\await_sync_value.fh",
+  "source_snippet": "module Concurrency.AwaitSyncValue\r\n\r\nfunction plain() returns Integer\r\nis\r\n    return 42\r\nend plain\r\n\r\nasync function bad() returns Integer\r\nis\r\n    let item: Integer = await plain()\r\n    return item\r\nend bad\r\n\r\nend Concurrency.AwaitSyncValue",
+  "module_name": "23_concurrency",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Concurrency.AwaitSyncValue",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "plain",
+        "params": null,
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "42"
+            }
+          }
+        ],
+        "end_name": "plain"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "bad",
+        "is_async": true,
+        "params": null,
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "item",
+            "type": "Integer",
+            "value": {
+              "kind": "AwaitExpr",
+              "value": {
+                "kind": "CallExpr",
+                "callee": {
+                  "kind": "IdentifierExpr",
+                  "name": "plain"
+                },
+                "arguments": null
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "item"
+            }
+          }
+        ],
+        "end_name": "bad"
+      }
+    ],
+    "end_name": "Concurrency.AwaitSyncValue"
+  }
+}

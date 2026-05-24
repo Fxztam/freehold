@@ -1,0 +1,110 @@
+{
+  "declarations": [
+    {
+      "body": [
+        {
+          "expr": {
+            "expr": {
+              "args": [
+                {
+                  "name": "sender",
+                  "node": "VarExpr"
+                },
+                {
+                  "node": "NumberExpr",
+                  "value": 42
+                }
+              ],
+              "name": "channel_send",
+              "node": "CallExpr",
+              "type_args": [
+                "Integer"
+              ]
+            },
+            "node": "AwaitExpr"
+          },
+          "name": "sent",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Boolean",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "left": {
+              "name": "sent",
+              "node": "VarExpr"
+            },
+            "node": "BinaryExpr",
+            "op": "=",
+            "right": {
+              "node": "BoolExpr",
+              "value": true
+            }
+          },
+          "node": "CheckStmt"
+        },
+        {
+          "expr": {
+            "expr": {
+              "args": [
+                {
+                  "name": "receiver",
+                  "node": "VarExpr"
+                }
+              ],
+              "name": "channel_receive",
+              "node": "CallExpr",
+              "type_args": [
+                "Integer"
+              ]
+            },
+            "node": "AwaitExpr"
+          },
+          "name": "item",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "item",
+              "node": "VarExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [],
+      "is_async": true,
+      "kind": "function",
+      "name": "exchange",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "sender",
+          "node": "Param",
+          "type_name": "Sender<Integer>"
+        },
+        {
+          "name": "receiver",
+          "node": "Param",
+          "type_name": "Receiver<Integer>"
+        }
+      ],
+      "requires": [],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    }
+  ],
+  "imports": [],
+  "module_name": "Concurrency.AwaitChannelSendReceive",
+  "node": "Program"
+}

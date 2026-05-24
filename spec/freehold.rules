@@ -168,6 +168,36 @@ emit FH-SYN-0999
     expected expected_token
 end
 
+section concurrency
+
+rule await_outside_async_function
+when AwaitExpr appears outside async_function_body
+emit FH-CON-3101
+    found "await"
+    expected "async function context"
+end
+
+rule await_requires_awaitable_expression
+when AwaitExpr operand is not awaitable
+emit FH-CON-3102
+    found operand_type
+    expected "awaitable expression"
+end
+
+rule channel_argument_count_mismatch
+when ChannelBuiltinCall argument_count differs from builtin_signature
+emit FH-CON-3111
+    found argument_list
+    expected "declared channel built-in arguments"
+end
+
+rule channel_argument_type_mismatch
+when ChannelBuiltinCall argument_type does not match channel_element_type
+emit FH-CON-3112
+    found argument_type
+    expected "matching Channel<T>, Sender<T>, Receiver<T>, or payload T"
+end
+
 section imports_and_names
 
 rule module_self_import

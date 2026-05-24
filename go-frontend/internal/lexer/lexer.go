@@ -473,6 +473,10 @@ func (l *Lexer) lexIdentifier(pos token.Position) token.Token {
 		kind = token.Failure
 	case "value":
 		kind = token.Value
+	case "async":
+		kind = token.Async
+	case "await":
+		kind = token.Await
 	case "end":
 		kind = token.End
 	}

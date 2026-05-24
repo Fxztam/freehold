@@ -98,6 +98,10 @@ CODE_MAP = {
     "VF-GEN030": ("FH-GEN-5030", 5030, "missing_routine_type_argument", "generic"),
     "VF-GEN031": ("FH-GEN-5031", 5031, "wrong_routine_type_argument_count", "generic"),
     "VF-GEN032": ("FH-GEN-5032", 5032, "non_generic_routine_used_with_type_arguments", "generic"),
+    "VF-ASY001": ("FH-CON-3101", 3101, "await_outside_async_function", "concurrency"),
+    "VF-ASY002": ("FH-CON-3102", 3102, "await_requires_awaitable_expression", "concurrency"),
+    "VF-CH001": ("FH-CON-3111", 3111, "channel_argument_count_mismatch", "concurrency"),
+    "VF-CH002": ("FH-CON-3112", 3112, "channel_argument_type_mismatch", "concurrency"),
 }
 
 

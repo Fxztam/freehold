@@ -1,0 +1,11 @@
+module Concurrency.AwaitChannelSendReceive
+
+async function exchange(sender: Sender<Integer>, receiver: Receiver<Integer>) returns Integer
+is
+    let sent: Boolean = await channel_send<Integer>(sender, 42)
+    check sent = true
+    let item: Integer = await channel_receive<Integer>(receiver)
+    return item
+end exchange
+
+end Concurrency.AwaitChannelSendReceive

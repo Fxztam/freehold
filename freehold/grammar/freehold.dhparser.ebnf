@@ -32,7 +32,8 @@ result_payload_type = array_type | result_type | type_ref
 result_type = "Result" "<" result_payload_type "," type_ref ">"
 array_type = "Array" "<" type_ref "," INTEGER_LITERAL ">"
 
-function_decl = ~ "function" IDENT [ type_param_list ] "(" [ param_list ] ")" "returns" return_type [ contract_block ] "is" { stmt } "end" IDENT
+function_decl = ~ [ async_marker ] "function" IDENT [ type_param_list ] "(" [ param_list ] ")" "returns" return_type [ contract_block ] "is" { stmt } "end" IDENT
+async_marker = "async"
 procedure_decl = ~ "procedure" IDENT "(" [ param_list ] ")" [ contract_block ] "is" { stmt } "end" IDENT
 
 param_list = param { "," param }
@@ -80,7 +81,7 @@ equality = comparison { ( "!=" | "=" ) comparison }
 comparison = sum { ( "<=" | ">=" | "<" | ">" ) sum }
 sum = product { ( "+" | "-" ) product }
 product = unary { ( "*" | "/" ) unary }
-unary = "-" unary | "not" unary | postfix_expr
+unary = "await" unary | "-" unary | "not" unary | postfix_expr
 
 postfix_expr = primary { postfix }
 postfix = "(" [ arg_list ] ")" | "[" expr "]" | "." IDENT
@@ -105,6 +106,6 @@ BASE_TYPE = "Integer" | "Boolean" | "Double" | "String" | "BigInteger" | "BigFlo
 DOUBLE_LITERAL = /-?(?:[0-9]+\.[0-9]+)/~
 NUMBER_LITERAL = DOUBLE_LITERAL | INTEGER_LITERAL
 INTEGER_LITERAL = /-?[0-9]+/~
-IDENT = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*/~
-FIELD_PATH = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+/~
+IDENT = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|async\b|await\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*/~
+FIELD_PATH = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|async\b|await\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+/~
 STRING_LITERAL = /"[^"\\]*(?:\\.[^"\\]*)*"/~

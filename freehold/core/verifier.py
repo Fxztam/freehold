@@ -6,7 +6,13 @@ from freehold.core.ast import *
 from freehold.core.control_flow import ControlFlowAnalyzer, RoutineFlowSummary
 from freehold.core.string_templates import validate_template
 
-BUILTIN_TYPE_NAMES = {"Integer", "Boolean", "Double", "String", "BigInteger", "BigFloat"}
+BUILTIN_TYPE_NAMES = {"Integer", "Boolean", "Double", "String", "BigInteger", "BigFloat", "Executor", "Scope"}
+BUILTIN_GENERIC_TYPE_ARITY = {
+    "JoinHandle": 1,
+    "Channel": 1,
+    "Sender": 1,
+    "Receiver": 1,
+}
 
 RESERVED_NAMES = {
     "Array", "BigFloat", "BigInteger", "Boolean", "Double", "Integer", "Result", "String",
@@ -14,7 +20,7 @@ RESERVED_NAMES = {
     "error", "exposing", "failure", "false", "function", "if", "import",
     "invariant", "is", "let", "module", "not", "ok", "or", "procedure",
     "record", "requires", "aborts", "return", "abort", "returns", "success", "then", "true",
-    "type", "value", "variant", "when", "while",
+    "type", "value", "variant", "when", "while", "async", "await",
 }
 
 @dataclass
@@ -94,7 +100,7 @@ class Verifier:
                 exposed.add(name)
 
     def validate_declaration_name(self, name: str, declared_names: dict[str, str], pos: SourcePos, kind: str) -> None:
-        if name in BUILTIN_TYPE_NAMES:
+        if name in BUILTIN_TYPE_NAMES or name in BUILTIN_GENERIC_TYPE_ARITY:
             raise TypeCheckError(f"{pos.text()}: built-in type name already defined: {name}")
         self.validate_identifier(name, pos)
         existing_kind = declared_names.get(name)
@@ -204,7 +210,9 @@ class Verifier:
     def routine(self, r, ctx, obs):
         ctx.current_routine = r
         previous_type_params = ctx.current_type_params
+        previous_async = ctx.current_async
         ctx.current_type_params = set(r.type_params or [])
+        ctx.current_async = r.is_async
         env = {}
         try:
             seen_params = set()
@@ -232,6 +240,7 @@ class Verifier:
             if r.kind == "function" and not ret: raise TypeCheckError(f"{r.pos.text()}: function {r.name} has no guaranteed return")
         finally:
             ctx.current_type_params = previous_type_params
+            ctx.current_async = previous_async
 
     def abort_names(self, r):
         return {clause.error_name for clause in r.aborts}
@@ -365,6 +374,9 @@ class Verifier:
         return self.infer_field_path_obj(e.path, e.pos, env, ctx, allow_result, result_type)
 
     def builtin_call_type(self, e, env, ctx, allow_result, result_type):
+        def expect_count(n):
+            if len(e.args) != n:
+                raise TypeCheckError(f"{e.pos.text()}: {e.name} expects {n} arguments")
         def expect_arg(i, base):
             if i >= len(e.args):
                 raise TypeCheckError(f"{e.pos.text()}: {e.name} expects more arguments")
@@ -389,6 +401,20 @@ class Verifier:
             t = infer_arg(i)
             if self.base(t, ctx) != expected:
                 raise TypeCheckError(f"{e.args[i].pos.text()}: {e.name} argument {i+1} expected {expected}, got {type_to_string(t)}")
+        def expect_exact_type(i, expected):
+            t = infer_arg(i)
+            expected_type = TypeName(expected)
+            if self.base(t, ctx) != self.base(expected_type, ctx):
+                raise TypeCheckError(f"{e.args[i].pos.text()}: {e.name} argument {i+1} expected {expected}, got {type_to_string(t)}")
+            self.assign(t, expected_type, ctx, e.args[i].pos)
+        def require_builtin_type_arg(count=1):
+            if not e.type_args:
+                raise TypeCheckError(f"{e.pos.text()}: generic routine requires {count} type argument(s): {e.name}")
+            if len(e.type_args) != count:
+                raise TypeCheckError(f"{e.pos.text()}: generic routine {e.name} expects {count} type argument(s), got {len(e.type_args)}")
+            for type_arg in e.type_args:
+                ctx.require_type_or_record(type_arg, e.pos)
+            return e.type_args[0]
         def expect_json_serializable(t, pos, path, top_level=False):
             if isinstance(t, TypeName) and t.name in ctx.records:
                 for field_name, field_type in ctx.records[t.name].fields.items():
@@ -402,6 +428,32 @@ class Verifier:
             if isinstance(t, TypeName) and self.base(t, ctx) in ("String", "Integer", "Boolean", "Double"):
                 return
             raise TypeCheckError(f"{pos.text()}: Json.stringify cannot serialize {type_to_string(t)} at {path}")
+        if e.name == "channel":
+            item_type = require_builtin_type_arg()
+            expect_count(1)
+            expect_type(0, "Integer")
+            return TypeName(f"Channel<{item_type}>")
+        if e.name == "channel_sender":
+            item_type = require_builtin_type_arg()
+            expect_count(1)
+            expect_exact_type(0, f"Channel<{item_type}>")
+            return TypeName(f"Sender<{item_type}>")
+        if e.name == "channel_receiver":
+            item_type = require_builtin_type_arg()
+            expect_count(1)
+            expect_exact_type(0, f"Channel<{item_type}>")
+            return TypeName(f"Receiver<{item_type}>")
+        if e.name == "channel_send":
+            item_type = require_builtin_type_arg()
+            expect_count(2)
+            expect_exact_type(0, f"Sender<{item_type}>")
+            expect_exact_type(1, item_type)
+            return AwaitableType(TypeName("Boolean"))
+        if e.name == "channel_receive":
+            item_type = require_builtin_type_arg()
+            expect_count(1)
+            expect_exact_type(0, f"Receiver<{item_type}>")
+            return AwaitableType(TypeName(item_type))
         if e.name == "String.concat":
             if len(e.args) != 2:
                 raise TypeCheckError(f"{e.pos.text()}: String.concat expects 2 arguments")
@@ -601,16 +653,17 @@ class Verifier:
                 raise TypeCheckError(f"{e.pos.text()}: unknown variable: {e.name}")
             return env[e.name]
         if isinstance(e, CallExpr):
-            bt = self.builtin_call_type(e, env, ctx, allow_result, result_type)
-            if bt is not None:
-                return bt
-            r = ctx.routine(e.name, e.pos)
-            if r.kind != "function":
-                raise TypeCheckError(f"{e.pos.text()}: function call requires function")
-            substitutions = ctx.routine_type_substitutions(r, e.type_args, e.pos)
-            self.args(r, e.args, env, ctx, e.pos, substitutions)
-            self.require_abort_propagation(ctx.current_routine, r, e.pos)
-            return ctx.substitute_type_ref(r.return_type, substitutions)
+            return self.call_expr_type(e, env, ctx, allow_result, result_type)
+        if isinstance(e, AwaitExpr):
+            if not ctx.current_async:
+                raise TypeCheckError(f"{e.pos.text()}: await is only allowed inside async functions")
+            awaited = self.infer(e.expr, env, ctx, allow_result, result_type)
+            if not isinstance(awaited, AwaitableType):
+                join_inner = ctx.join_handle_inner_type(awaited)
+                if join_inner is not None:
+                    return TypeName(join_inner)
+                raise TypeCheckError(f"{e.pos.text()}: await requires an awaitable expression, got {type_to_string(awaited)}")
+            return awaited.inner_type
         if isinstance(e, UnaryExpr):
             operand = self.infer(e.expr, env, ctx, allow_result, result_type)
             if e.op == "not":
@@ -642,6 +695,21 @@ class Verifier:
             return TypeName("Double" if self.base(a,ctx)=="Double" or self.base(b,ctx)=="Double" else "Integer")
         raise TypeCheckError(f"unsupported expression {e}")
 
+    def call_expr_type(self, e, env, ctx, allow_result, result_type):
+        bt = self.builtin_call_type(e, env, ctx, allow_result, result_type)
+        if bt is not None:
+            return bt
+        r = ctx.routine(e.name, e.pos)
+        if r.kind != "function":
+            raise TypeCheckError(f"{e.pos.text()}: function call requires function")
+        substitutions = ctx.routine_type_substitutions(r, e.type_args, e.pos)
+        self.args(r, e.args, env, ctx, e.pos, substitutions)
+        self.require_abort_propagation(ctx.current_routine, r, e.pos)
+        return_type = ctx.substitute_type_ref(r.return_type, substitutions)
+        if r.is_async:
+            return AwaitableType(return_type)
+        return return_type
+
     def expect(self,e,env,base,ctx,allow,result):
         t = self.infer(e, env, ctx, allow, result)
         if self.base(t, ctx) != base: raise TypeCheckError(f"{e.pos.text()}: Expected {base}, got {type_to_string(t)}")
@@ -661,12 +729,18 @@ class Verifier:
                 raise TypeCheckError(f"{pos.text()}: cannot assign {type_to_string(s)} to {type_to_string(t)}")
             self.assign(s.ok_type, t.ok_type, ctx, pos)
             return
+        if isinstance(s, TypeName) and isinstance(t, TypeName) and (ctx.is_builtin_generic_instance(s.name) or ctx.is_builtin_generic_instance(t.name)):
+            if s.name != t.name:
+                raise TypeCheckError(f"{pos.text()}: cannot assign {type_to_string(s)} to {type_to_string(t)}")
+            return
         if self.base(s,ctx) != self.base(t,ctx): raise TypeCheckError(f"{pos.text()}: cannot assign {type_to_string(s)} to {type_to_string(t)}")
         if isinstance(t, TypeName) and t.name in ctx.records and (not isinstance(s, TypeName) or s.name != t.name):
             raise TypeCheckError(f"{pos.text()}: cannot assign {type_to_string(s)} to {type_to_string(t)}")
     def base(self,t,ctx):
+        if isinstance(t, AwaitableType): return "Awaitable"
         if isinstance(t, ResultTypeName): return "Result"
         if isinstance(t, ArrayTypeName) or isinstance(t, ArrayLiteralType): return "Array"
+        if isinstance(t, TypeName) and ctx.is_builtin_generic_instance(t.name): return t.name
         if t.name in ctx.current_type_params: return f"TypeParam:{t.name}"
         if t.name in ctx.records: return "Record"
         if t.name in ctx.errors: return t.name
@@ -687,7 +761,7 @@ class Verifier:
 class Ctx:
     def __init__(self, module_name, types, records, generic_records, errors, routines):
         self.module_name=module_name; self.types=types; self.records=records; self.generic_records=generic_records; self.errors=errors; self.routines=routines
-        self.current_routine=None; self.current_type_params=set()
+        self.current_routine=None; self.current_type_params=set(); self.current_async=False
     def require_type_or_record(self,n,pos):
         if n in self.current_type_params:
             return
@@ -696,6 +770,13 @@ class Ctx:
         generic = self.parse_generic_instance(n)
         if generic is not None:
             base, args = generic
+            if base in BUILTIN_GENERIC_TYPE_ARITY:
+                expected = BUILTIN_GENERIC_TYPE_ARITY[base]
+                if len(args) != expected:
+                    raise TypeCheckError(f"{pos.text()}: generic type {base} expects {expected} type argument(s), got {len(args)}")
+                for arg in args:
+                    self.require_type_or_record(arg, pos)
+                return
             if base in self.types or base in self.records:
                 raise TypeCheckError(f"{pos.text()}: non-generic type used with type arguments: {base}")
             if base not in self.generic_records:
@@ -711,7 +792,25 @@ class Ctx:
         if n in self.generic_records:
             expected = len(self.generic_records[n].type_params or [])
             raise TypeCheckError(f"{pos.text()}: generic type requires {expected} type argument(s): {n}")
+        if n in BUILTIN_GENERIC_TYPE_ARITY:
+            expected = BUILTIN_GENERIC_TYPE_ARITY[n]
+            raise TypeCheckError(f"{pos.text()}: generic type requires {expected} type argument(s): {n}")
         raise TypeCheckError(f"{pos.text()}: unknown type: {n}")
+
+    def is_builtin_generic_instance(self, name: str) -> bool:
+        generic = self.parse_generic_instance(name)
+        return generic is not None and generic[0] in BUILTIN_GENERIC_TYPE_ARITY
+
+    def join_handle_inner_type(self, type_ref) -> str | None:
+        if not isinstance(type_ref, TypeName):
+            return None
+        generic = self.parse_generic_instance(type_ref.name)
+        if generic is None:
+            return None
+        base, args = generic
+        if base == "JoinHandle" and len(args) == 1:
+            return args[0]
+        return None
 
     def parse_generic_instance(self, name: str):
         match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)<(.+)>", name.strip())

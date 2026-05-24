@@ -76,7 +76,12 @@ class AstBuilder:
 
     def routine(self, tree: Tree) -> RoutineDecl:
         kind = "function" if tree.data == "function_decl" else "procedure"
-        name, idx = str(tree.children[0]), 1
+        is_async = False
+        idx = 0
+        if kind == "function" and tree.children and isinstance(tree.children[0], Tree) and tree.children[0].data == "async_marker":
+            is_async = True
+            idx = 1
+        name = str(tree.children[idx]); idx += 1
         type_params = None
         if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "type_param_list":
             type_params = [str(child) for child in tree.children[idx].children]
@@ -103,7 +108,7 @@ class AstBuilder:
         if end_name != name:
             raise TypeCheckError(f"{pos(tree).text()}: {kind} end name mismatch: expected {name}, got {end_name}")
         body = [self.stmt(s.children[0] if s.data == "stmt" else s) for s in tree.children[idx:] if isinstance(s, Tree)]
-        return RoutineDecl(kind, name, params, ret, requires, aborts, ensures, body, pos(tree), type_params)
+        return RoutineDecl(kind, name, params, ret, requires, aborts, ensures, body, pos(tree), type_params, is_async)
 
     def return_type(self, tree: Tree):
         inner = tree.children[0]
@@ -215,6 +220,7 @@ class AstBuilder:
         if tree.data == "record_literal": return RecordLiteralExpr(self.type_ref_name(tree.children[0]), self.named_args(tree.children[1]), pos(tree))
         if tree.data == "array_literal": return ArrayLiteralExpr(self.args(tree.children[0]) if len(tree.children)>0 else [], pos(tree))
         if tree.data == "index_expr": return IndexExpr(str(tree.children[0]), self.expr(tree.children[1]), pos(tree))
+        if tree.data == "await_expr": return AwaitExpr(self.expr(tree.children[0]), pos(tree))
         if tree.data in ("neg_expr","not_expr"): return UnaryExpr("-" if tree.data=="neg_expr" else "not", self.expr(tree.children[0]), pos(tree))
         ops = {"add_expr":"+","sub_expr":"-","mul_expr":"*","div_expr":"/","eq_expr":"=","neq_expr":"!=","lt_expr":"<","le_expr":"<=","gt_expr":">","ge_expr":">=","and_expr":"and","or_expr":"or"}
         if tree.data in ops: return BinaryExpr(ops[tree.data], self.expr(tree.children[0]), self.expr(tree.children[1]), pos(tree))

@@ -5,6 +5,7 @@ range FH-SEM-1000..1999 semantic semantic
 range FH-TYP-2000..2999 semantic type
 range FH-CON-3000..3999 semantic contract
 range FH-ABT-3000..3999 semantic abort open
+range FH-CON-3100..3199 semantic concurrency open
 range FH-TPL-4000..4099 semantic template open
 range FH-RES-4100..4199 semantic result open
 range FH-JSON-4200..4299 semantic json open
@@ -219,6 +220,42 @@ category syntax
 message "Expected a different token."
 expected "expected token"
 hint "Check the syntax around this token."
+end
+
+diag FH-CON-3101 await_outside_async_function
+severity error
+phase semantic
+category concurrency
+legacy VF-ASY001
+message "await outside async function"
+expected "async function context"
+end
+
+diag FH-CON-3102 await_requires_awaitable_expression
+severity error
+phase semantic
+category concurrency
+legacy VF-ASY002
+message "await requires awaitable expression"
+expected "awaitable expression"
+end
+
+diag FH-CON-3111 channel_argument_count_mismatch
+severity error
+phase semantic
+category concurrency
+legacy VF-CH001
+message "wrong Channel argument count"
+expected "declared channel built-in arguments"
+end
+
+diag FH-CON-3112 channel_argument_type_mismatch
+severity error
+phase semantic
+category concurrency
+legacy VF-CH002
+message "Channel argument type mismatch"
+expected "matching Channel<T>, Sender<T>, Receiver<T>, or payload T"
 end
 
 # Current semantic/type diagnostics from tools/compare_semantic_diagnostics.py CODE_MAP.

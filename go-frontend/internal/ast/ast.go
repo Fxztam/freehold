@@ -37,6 +37,7 @@ type ErrorDecl struct {
 type FunctionDecl struct {
 	Kind       string        `json:"kind"`
 	Name       string        `json:"name"`
+	IsAsync    bool          `json:"is_async,omitempty"`
 	TypeParams []string      `json:"type_params,omitempty"`
 	Params     []Param       `json:"params"`
 	ReturnType string        `json:"return_type"`
@@ -159,6 +160,11 @@ type CallExpr struct {
 	Callee    Expr     `json:"callee"`
 	TypeArgs  []string `json:"type_args,omitempty"`
 	Arguments []Expr   `json:"arguments"`
+}
+
+type AwaitExpr struct {
+	Kind  string `json:"kind"`
+	Value Expr   `json:"value"`
 }
 
 type NamedArgumentExpr struct {

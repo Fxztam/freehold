@@ -590,6 +590,38 @@ Example:
     -amount
 """
 
+ASYNC_AWAIT_CONTEXT_HINT = """`await` may only be used inside an async function.
+
+Example:
+    async function load() returns Integer
+    is
+        return await fetch()
+    end load
+"""
+
+ASYNC_AWAITABLE_HINT = """`await` requires an awaitable expression.
+
+In V1a, async function calls are awaitable:
+    let item: Integer = await fetch()
+
+Do not use `await` on plain scalar values or synchronous function calls.
+"""
+
+CHANNEL_ARGUMENT_COUNT_HINT = """A Channel built-in call must pass exactly the arguments required by that function.
+
+Examples:
+    channel<Integer>(capacity)
+    channel_sender<Integer>(channel)
+    channel_receiver<Integer>(channel)
+    channel_send<Integer>(sender, value)
+    channel_receive<Integer>(receiver)
+"""
+
+CHANNEL_ARGUMENT_TYPE_HINT = """Channel built-in arguments must match the channel element type.
+
+Use Sender<T> with values of T, Receiver<T> for receive, and Channel<T> when splitting endpoints.
+"""
+
 ERROR_UNKNOWN_RESULT_TYPE_HINT = """The error type in `Result<T, E>` must name a declared error.
 
 Declare the error before using it in a Result type.
@@ -1168,6 +1200,25 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         found_type = unary_negative_match.group(1)
         return Diagnostic("VF-E007", "unary negative requires numeric operand", line, column, found_type, "Integer or Double", EXPRESSION_UNARY_NEGATIVE_HINT, phase="semantic")
+    await_context_match = re.search(r"await is only allowed inside async functions", message)
+    if await_context_match:
+        line, column = _source_position_from_message(message)
+        return Diagnostic("VF-ASY001", "await outside async function", line, column, "await", "async function context", ASYNC_AWAIT_CONTEXT_HINT, phase="semantic")
+    awaitable_match = re.search(r"await requires an awaitable expression, got (.+)", message)
+    if awaitable_match:
+        line, column = _source_position_from_message(message)
+        found_type = awaitable_match.group(1)
+        return Diagnostic("VF-ASY002", "await requires awaitable expression", line, column, found_type, "awaitable expression", ASYNC_AWAITABLE_HINT, phase="semantic")
+    channel_arg_count_match = re.search(r"(channel|channel_sender|channel_receiver|channel_send|channel_receive) expects (\d+) arguments", message)
+    if channel_arg_count_match:
+        line, column = _source_position_from_message(message)
+        function_name, expected_count = channel_arg_count_match.groups()
+        return Diagnostic("VF-CH001", "wrong Channel argument count", line, column, "argument list", f"{expected_count} argument(s) for {function_name}", CHANNEL_ARGUMENT_COUNT_HINT, phase="semantic")
+    channel_arg_type_match = re.search(r"(channel|channel_sender|channel_receiver|channel_send|channel_receive) argument (\d+) expected (.+), got (.+)", message)
+    if channel_arg_type_match:
+        line, column = _source_position_from_message(message)
+        function_name, argument_index, expected_type, found_type = channel_arg_type_match.groups()
+        return Diagnostic("VF-CH002", "Channel argument type mismatch", line, column, found_type, f"argument {argument_index} as {expected_type} for {function_name}", CHANNEL_ARGUMENT_TYPE_HINT, phase="semantic")
     unknown_result_error_type_match = re.search(r"unknown result error type: ([A-Za-z_][A-Za-z0-9_]*)", message)
     if unknown_result_error_type_match:
         line, column = _source_position_from_message(message)

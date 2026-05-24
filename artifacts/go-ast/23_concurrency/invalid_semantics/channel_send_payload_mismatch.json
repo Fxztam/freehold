@@ -1,0 +1,55 @@
+{
+  "source_file": "..\\tests\\language_modules\\23_concurrency\\invalid_semantics\\channel_send_payload_mismatch.fh",
+  "source_snippet": "module Concurrency.ChannelSendPayloadMismatch\r\n\r\nasync function bad(sender: Sender\u003cInteger\u003e) returns Boolean\r\nis\r\n    return await channel_send\u003cInteger\u003e(sender, \"oops\")\r\nend bad\r\n\r\nend Concurrency.ChannelSendPayloadMismatch",
+  "module_name": "23_concurrency",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Concurrency.ChannelSendPayloadMismatch",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "bad",
+        "is_async": true,
+        "params": [
+          {
+            "name": "sender",
+            "type": "Sender\u003cInteger\u003e"
+          }
+        ],
+        "return_type": "Boolean",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "AwaitExpr",
+              "value": {
+                "kind": "CallExpr",
+                "callee": {
+                  "kind": "IdentifierExpr",
+                  "name": "channel_send"
+                },
+                "type_args": [
+                  "Integer"
+                ],
+                "arguments": [
+                  {
+                    "kind": "IdentifierExpr",
+                    "name": "sender"
+                  },
+                  {
+                    "kind": "StringExpr",
+                    "value": "oops"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "end_name": "bad"
+      }
+    ],
+    "end_name": "Concurrency.ChannelSendPayloadMismatch"
+  }
+}

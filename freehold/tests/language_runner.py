@@ -25,6 +25,8 @@ def canonical(obj: Any) -> Any:
                 continue
             if name in {"type_params", "type_args"} and not getattr(obj, name):
                 continue
+            if name == "is_async" and not getattr(obj, name):
+                continue
             if name == "aborts" and not getattr(obj, name):
                 continue
             result[name] = canonical(getattr(obj, name))

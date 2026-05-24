@@ -50,6 +50,8 @@ const (
 	Success   Kind = "success"
 	Failure   Kind = "failure"
 	Value     Kind = "value"
+	Async     Kind = "async"
+	Await     Kind = "await"
 
 	Plus         Kind = "+"
 	Minus        Kind = "-"

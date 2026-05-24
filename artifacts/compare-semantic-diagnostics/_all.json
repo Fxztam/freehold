@@ -2658,5 +2658,320 @@
       "expected": "1 type argument(s)",
       "found": "identity<2>"
     }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/await_executor.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3102",
+      "number": 3102,
+      "name": "await_requires_awaitable_expression",
+      "message": "await requires awaitable expression",
+      "location": {
+        "line": 5,
+        "column": 25
+      },
+      "expected": "awaitable expression",
+      "found": "Executor",
+      "hint": "`await` requires an awaitable expression.\n\nIn V1a, async function calls are awaitable:\n    let item: Integer = await fetch()\n\nDo not use `await` on plain scalar values or synchronous function calls.\n",
+      "legacy_code": "VF-ASY002"
+    },
+    "expected": {
+      "code": "FH-CON-3102",
+      "name": "await_requires_awaitable_expression",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-ASY002",
+      "message": "await requires awaitable expression",
+      "location": {
+        "line": 5,
+        "column": 25
+      },
+      "expected": "awaitable expression",
+      "found": "Executor"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/await_outside_async.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3101",
+      "number": 3101,
+      "name": "await_outside_async_function",
+      "message": "await outside async function",
+      "location": {
+        "line": 10,
+        "column": 25
+      },
+      "expected": "async function context",
+      "found": "await",
+      "hint": "`await` may only be used inside an async function.\n\nExample:\n    async function load() returns Integer\n    is\n        return await fetch()\n    end load\n",
+      "legacy_code": "VF-ASY001"
+    },
+    "expected": {
+      "code": "FH-CON-3101",
+      "name": "await_outside_async_function",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-ASY001",
+      "message": "await outside async function",
+      "location": {
+        "line": 10,
+        "column": 25
+      },
+      "expected": "async function context",
+      "found": "await"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/await_sync_value.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3102",
+      "number": 3102,
+      "name": "await_requires_awaitable_expression",
+      "message": "await requires awaitable expression",
+      "location": {
+        "line": 10,
+        "column": 25
+      },
+      "expected": "awaitable expression",
+      "found": "Integer",
+      "hint": "`await` requires an awaitable expression.\n\nIn V1a, async function calls are awaitable:\n    let item: Integer = await fetch()\n\nDo not use `await` on plain scalar values or synchronous function calls.\n",
+      "legacy_code": "VF-ASY002"
+    },
+    "expected": {
+      "code": "FH-CON-3102",
+      "name": "await_requires_awaitable_expression",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-ASY002",
+      "message": "await requires awaitable expression",
+      "location": {
+        "line": 10,
+        "column": 25
+      },
+      "expected": "awaitable expression",
+      "found": "Integer"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/channel_missing_type_argument.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5030",
+      "number": 5030,
+      "name": "missing_routine_type_argument",
+      "message": "missing routine type argument",
+      "location": {
+        "line": 5,
+        "column": 12
+      },
+      "expected": "1 type argument(s)",
+      "found": "channel",
+      "hint": "A generic function call must provide the number of type arguments declared by the function.\n\nExample:\n    function identity<T>(x: T) returns T\n    is\n        return x\n    end identity\n\n    let item: Integer = identity<Integer>(1)\n",
+      "legacy_code": "VF-GEN030"
+    },
+    "expected": {
+      "code": "FH-GEN-5030",
+      "name": "missing_routine_type_argument",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN030",
+      "message": "missing routine type argument",
+      "location": {
+        "line": 5,
+        "column": 12
+      },
+      "expected": "1 type argument(s)",
+      "found": "channel"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/channel_send_payload_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3112",
+      "number": 3112,
+      "name": "channel_argument_type_mismatch",
+      "message": "Channel argument type mismatch",
+      "location": {
+        "line": 5,
+        "column": 48
+      },
+      "expected": "argument 2 as Integer for channel_send",
+      "found": "String",
+      "hint": "Channel built-in arguments must match the channel element type.\n\nUse Sender<T> with values of T, Receiver<T> for receive, and Channel<T> when splitting endpoints.\n",
+      "legacy_code": "VF-CH002"
+    },
+    "expected": {
+      "code": "FH-CON-3112",
+      "name": "channel_argument_type_mismatch",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-CH002",
+      "message": "Channel argument type mismatch",
+      "location": {
+        "line": 5,
+        "column": 48
+      },
+      "expected": "argument 2 as Integer for channel_send",
+      "found": "String"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/reserved_async_name.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1004",
+      "number": 1004,
+      "name": "reserved_keyword_name",
+      "message": "reserved keyword cannot be used as name",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "non-keyword identifier",
+      "found": "async",
+      "hint": "Reserved Freehold words cannot be used as user-defined names.\n\nExamples of reserved words:\n    module, import, type, record, function, procedure, let, return, if, while\n",
+      "legacy_code": "VF-N002"
+    },
+    "expected": {
+      "code": "FH-SEM-1004",
+      "name": "reserved_keyword_name",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-N002",
+      "message": "reserved keyword cannot be used as name",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "non-keyword identifier",
+      "found": "async"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/runtime_generic_missing_argument.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5010",
+      "number": 5010,
+      "name": "missing_type_argument",
+      "message": "missing type argument",
+      "location": {
+        "line": 3,
+        "column": 14
+      },
+      "expected": "1 type argument(s)",
+      "found": "JoinHandle",
+      "hint": "A generic type must be used with the number of type arguments declared by its template.\n\nExample:\n    type Box<T> is record\n        value: T\n    end record\n\n    let value: Box<Integer> = Box<Integer> { value: 1 }\n",
+      "legacy_code": "VF-GEN010"
+    },
+    "expected": {
+      "code": "FH-GEN-5010",
+      "name": "missing_type_argument",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN010",
+      "message": "missing type argument",
+      "location": {
+        "line": 3,
+        "column": 14
+      },
+      "expected": "1 type argument(s)",
+      "found": "JoinHandle"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/runtime_generic_wrong_arity.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5011",
+      "number": 5011,
+      "name": "too_many_type_arguments",
+      "message": "too many type arguments",
+      "location": {
+        "line": 3,
+        "column": 14
+      },
+      "expected": "1 type argument(s)",
+      "found": "JoinHandle<2>",
+      "hint": "A generic type instantiation must provide exactly the declared number of type arguments.\n\nCheck the generic declaration and remove or add type arguments as needed.\n",
+      "legacy_code": "VF-GEN011"
+    },
+    "expected": {
+      "code": "FH-GEN-5011",
+      "name": "too_many_type_arguments",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN011",
+      "message": "too many type arguments",
+      "location": {
+        "line": 3,
+        "column": 14
+      },
+      "expected": "1 type argument(s)",
+      "found": "JoinHandle<2>"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/runtime_non_generic_type_arguments.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5012",
+      "number": 5012,
+      "name": "non_generic_type_used_with_type_arguments",
+      "message": "non-generic type used with type arguments",
+      "location": {
+        "line": 3,
+        "column": 14
+      },
+      "expected": "generic type declaration",
+      "found": "Executor",
+      "hint": "Only generic type declarations may be used with type arguments.\n\nExample:\n    Box<Integer> is valid only if Box was declared with a type parameter such as Box<T>.\n",
+      "legacy_code": "VF-GEN012"
+    },
+    "expected": {
+      "code": "FH-GEN-5012",
+      "name": "non_generic_type_used_with_type_arguments",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN012",
+      "message": "non-generic type used with type arguments",
+      "location": {
+        "line": 3,
+        "column": 14
+      },
+      "expected": "generic type declaration",
+      "found": "Executor"
+    }
   }
 ]

@@ -1,0 +1,64 @@
+{
+  "source_file": "..\\tests\\language_modules\\23_concurrency\\valid\\async_function_await.fh",
+  "source_snippet": "module Concurrency.AsyncAwait\r\n\r\nasync function fetch() returns Integer\r\nis\r\n    return 42\r\nend fetch\r\n\r\nasync function compute() returns Integer\r\nis\r\n    let item: Integer = await fetch()\r\n    return item\r\nend compute\r\n\r\nend Concurrency.AsyncAwait",
+  "module_name": "23_concurrency",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Concurrency.AsyncAwait",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "fetch",
+        "is_async": true,
+        "params": null,
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "42"
+            }
+          }
+        ],
+        "end_name": "fetch"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "compute",
+        "is_async": true,
+        "params": null,
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "item",
+            "type": "Integer",
+            "value": {
+              "kind": "AwaitExpr",
+              "value": {
+                "kind": "CallExpr",
+                "callee": {
+                  "kind": "IdentifierExpr",
+                  "name": "fetch"
+                },
+                "arguments": null
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "item"
+            }
+          }
+        ],
+        "end_name": "compute"
+      }
+    ],
+    "end_name": "Concurrency.AsyncAwait"
+  }
+}

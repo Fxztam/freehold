@@ -85,6 +85,9 @@ func (p *Parser) parseDeclaration() ast.Decl {
 	if p.at(token.Import) {
 		return p.parseImport()
 	}
+	if p.at(token.Async) {
+		return p.parseFunction()
+	}
 	if p.at(token.Function) {
 		return p.parseFunction()
 	}
@@ -215,6 +218,11 @@ func (p *Parser) parseName() string {
 }
 
 func (p *Parser) parseFunction() ast.FunctionDecl {
+	isAsync := false
+	if p.at(token.Async) {
+		p.expect(token.Async)
+		isAsync = true
+	}
 	p.expect(token.Function)
 
 	name := p.parseName()
@@ -245,6 +253,7 @@ func (p *Parser) parseFunction() ast.FunctionDecl {
 	return ast.FunctionDecl{
 		Kind:       "FunctionDecl",
 		Name:       name,
+		IsAsync:    isAsync,
 		TypeParams: typeParams,
 		Params:     params,
 		ReturnType: returnType,
@@ -719,6 +728,14 @@ func (p *Parser) parseProduct() ast.Expr {
 }
 
 func (p *Parser) parseUnary() ast.Expr {
+	if p.at(token.Await) {
+		p.expect(token.Await)
+		return ast.AwaitExpr{
+			Kind:  "AwaitExpr",
+			Value: p.parseUnary(),
+		}
+	}
+
 	if p.at(token.Not) || p.at(token.Minus) {
 		tok := p.peek()
 		p.pos++

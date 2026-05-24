@@ -16,7 +16,8 @@ error_decl: "error" NAME
 base_type: BASE_TYPE
 range_decl: "range" SIGNED_NUMBER ".." SIGNED_NUMBER
 
-function_decl: "function" NAME type_param_list? "(" param_list? ")" "returns" return_type contract_block? "is" stmt* "end" NAME
+function_decl: async_marker? "function" NAME type_param_list? "(" param_list? ")" "returns" return_type contract_block? "is" stmt* "end" NAME
+async_marker: "async"
 procedure_decl: "procedure" NAME "(" param_list? ")" contract_block? "is" stmt* "end" NAME
 
 param_list: param ("," param)*
@@ -70,7 +71,7 @@ named_arg: NAME ":" expr
 ?comparison: sum | comparison "<" sum -> lt_expr | comparison "<=" sum -> le_expr | comparison ">" sum -> gt_expr | comparison ">=" sum -> ge_expr
 ?sum: product | sum "+" product -> add_expr | sum "-" product -> sub_expr
 ?product: unary | product "*" unary -> mul_expr | product "/" unary -> div_expr
-?unary: atom | "-" unary -> neg_expr | "not" unary -> not_expr
+?unary: atom | "await" unary -> await_expr | "-" unary -> neg_expr | "not" unary -> not_expr
 
 ?atom: ESCAPED_STRING -> string
      | SIGNED_FLOAT -> double

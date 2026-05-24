@@ -1,0 +1,606 @@
+{
+  "source_file": "tests\\language_modules\\23_concurrency\\invalid_semantics\\await_outside_async.fh",
+  "module_name": "23_concurrency",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "source_snippet": "module Concurrency.AwaitOutside\n\nasync function fetch() returns Integer\nis\n    return 42\nend fetch\n\nfunction bad() returns Integer\nis\n    let item: Integer = await fetch()\n    return item\nend bad\n\nend Concurrency.AwaitOutside",
+  "ast": {
+    "name": "start",
+    "pos": 0,
+    "children": [
+      {
+        "name": "module_decl",
+        "pos": 0,
+        "children": [
+          {
+            "name": ":Text",
+            "pos": 0,
+            "text": "module"
+          },
+          {
+            "name": "qualified_name",
+            "pos": 7,
+            "children": [
+              {
+                "name": "IDENT",
+                "pos": 7,
+                "text": "Concurrency"
+              },
+              {
+                "name": ":Text",
+                "pos": 18,
+                "text": "."
+              },
+              {
+                "name": "IDENT",
+                "pos": 19,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 19,
+                    "text": "AwaitOutside"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 33,
+        "children": [
+          {
+            "name": "function_decl",
+            "pos": 33,
+            "children": [
+              {
+                "name": "async_marker",
+                "pos": 33,
+                "children": [
+                  {
+                    "name": ":Text",
+                    "pos": 33,
+                    "text": "async"
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 39,
+                "text": "function"
+              },
+              {
+                "name": "IDENT",
+                "pos": 48,
+                "text": "fetch"
+              },
+              {
+                "name": ":Text",
+                "pos": 53,
+                "text": "("
+              },
+              {
+                "name": ":Text",
+                "pos": 54,
+                "text": ")"
+              },
+              {
+                "name": ":Text",
+                "pos": 56,
+                "text": "returns"
+              },
+              {
+                "name": "return_type",
+                "pos": 64,
+                "children": [
+                  {
+                    "name": "type_ref",
+                    "pos": 64,
+                    "children": [
+                      {
+                        "name": "BASE_TYPE",
+                        "pos": 64,
+                        "children": [
+                          {
+                            "name": ":Text",
+                            "pos": 64,
+                            "text": "Integer"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "contract_block",
+                "pos": 72,
+                "text": ""
+              },
+              {
+                "name": ":Text",
+                "pos": 72,
+                "text": "is"
+              },
+              {
+                "name": "stmt",
+                "pos": 79,
+                "children": [
+                  {
+                    "name": "return_stmt",
+                    "pos": 79,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 79,
+                        "text": "return"
+                      },
+                      {
+                        "name": "return_value",
+                        "pos": 86,
+                        "children": [
+                          {
+                            "name": "expr",
+                            "pos": 86,
+                            "children": [
+                              {
+                                "name": "logic_or",
+                                "pos": 86,
+                                "children": [
+                                  {
+                                    "name": "logic_and",
+                                    "pos": 86,
+                                    "children": [
+                                      {
+                                        "name": "equality",
+                                        "pos": 86,
+                                        "children": [
+                                          {
+                                            "name": "comparison",
+                                            "pos": 86,
+                                            "children": [
+                                              {
+                                                "name": "sum",
+                                                "pos": 86,
+                                                "children": [
+                                                  {
+                                                    "name": "product",
+                                                    "pos": 86,
+                                                    "children": [
+                                                      {
+                                                        "name": "unary",
+                                                        "pos": 86,
+                                                        "children": [
+                                                          {
+                                                            "name": "postfix_expr",
+                                                            "pos": 86,
+                                                            "children": [
+                                                              {
+                                                                "name": "primary",
+                                                                "pos": 86,
+                                                                "children": [
+                                                                  {
+                                                                    "name": "INTEGER_LITERAL",
+                                                                    "pos": 86,
+                                                                    "children": [
+                                                                      {
+                                                                        "name": ":RegExp",
+                                                                        "pos": 86,
+                                                                        "text": "42"
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 89,
+                "text": "end"
+              },
+              {
+                "name": "IDENT",
+                "pos": 93,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 93,
+                    "text": "fetch"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 100,
+        "children": [
+          {
+            "name": "function_decl",
+            "pos": 100,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 100,
+                "text": "function"
+              },
+              {
+                "name": "IDENT",
+                "pos": 109,
+                "text": "bad"
+              },
+              {
+                "name": ":Text",
+                "pos": 112,
+                "text": "("
+              },
+              {
+                "name": ":Text",
+                "pos": 113,
+                "text": ")"
+              },
+              {
+                "name": ":Text",
+                "pos": 115,
+                "text": "returns"
+              },
+              {
+                "name": "return_type",
+                "pos": 123,
+                "children": [
+                  {
+                    "name": "type_ref",
+                    "pos": 123,
+                    "children": [
+                      {
+                        "name": "BASE_TYPE",
+                        "pos": 123,
+                        "children": [
+                          {
+                            "name": ":Text",
+                            "pos": 123,
+                            "text": "Integer"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "contract_block",
+                "pos": 131,
+                "text": ""
+              },
+              {
+                "name": ":Text",
+                "pos": 131,
+                "text": "is"
+              },
+              {
+                "name": "stmt",
+                "pos": 138,
+                "children": [
+                  {
+                    "name": "let_stmt",
+                    "pos": 138,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 138,
+                        "text": "let"
+                      },
+                      {
+                        "name": "IDENT",
+                        "pos": 142,
+                        "text": "item"
+                      },
+                      {
+                        "name": ":Text",
+                        "pos": 146,
+                        "text": ":"
+                      },
+                      {
+                        "name": "return_type",
+                        "pos": 148,
+                        "children": [
+                          {
+                            "name": "type_ref",
+                            "pos": 148,
+                            "children": [
+                              {
+                                "name": "BASE_TYPE",
+                                "pos": 148,
+                                "children": [
+                                  {
+                                    "name": ":Text",
+                                    "pos": 148,
+                                    "text": "Integer"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": ":Text",
+                        "pos": 156,
+                        "text": "="
+                      },
+                      {
+                        "name": "expr",
+                        "pos": 158,
+                        "children": [
+                          {
+                            "name": "logic_or",
+                            "pos": 158,
+                            "children": [
+                              {
+                                "name": "logic_and",
+                                "pos": 158,
+                                "children": [
+                                  {
+                                    "name": "equality",
+                                    "pos": 158,
+                                    "children": [
+                                      {
+                                        "name": "comparison",
+                                        "pos": 158,
+                                        "children": [
+                                          {
+                                            "name": "sum",
+                                            "pos": 158,
+                                            "children": [
+                                              {
+                                                "name": "product",
+                                                "pos": 158,
+                                                "children": [
+                                                  {
+                                                    "name": "unary",
+                                                    "pos": 158,
+                                                    "children": [
+                                                      {
+                                                        "name": ":Text",
+                                                        "pos": 158,
+                                                        "text": "await"
+                                                      },
+                                                      {
+                                                        "name": "unary",
+                                                        "pos": 164,
+                                                        "children": [
+                                                          {
+                                                            "name": "postfix_expr",
+                                                            "pos": 164,
+                                                            "children": [
+                                                              {
+                                                                "name": "primary",
+                                                                "pos": 164,
+                                                                "children": [
+                                                                  {
+                                                                    "name": "IDENT",
+                                                                    "pos": 164,
+                                                                    "text": "fetch"
+                                                                  }
+                                                                ]
+                                                              },
+                                                              {
+                                                                "name": "postfix",
+                                                                "pos": 169,
+                                                                "children": [
+                                                                  {
+                                                                    "name": ":Text",
+                                                                    "pos": 169,
+                                                                    "text": "("
+                                                                  },
+                                                                  {
+                                                                    "name": ":Text",
+                                                                    "pos": 170,
+                                                                    "text": ")"
+                                                                  }
+                                                                ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "stmt",
+                "pos": 176,
+                "children": [
+                  {
+                    "name": "return_stmt",
+                    "pos": 176,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 176,
+                        "text": "return"
+                      },
+                      {
+                        "name": "return_value",
+                        "pos": 183,
+                        "children": [
+                          {
+                            "name": "expr",
+                            "pos": 183,
+                            "children": [
+                              {
+                                "name": "logic_or",
+                                "pos": 183,
+                                "children": [
+                                  {
+                                    "name": "logic_and",
+                                    "pos": 183,
+                                    "children": [
+                                      {
+                                        "name": "equality",
+                                        "pos": 183,
+                                        "children": [
+                                          {
+                                            "name": "comparison",
+                                            "pos": 183,
+                                            "children": [
+                                              {
+                                                "name": "sum",
+                                                "pos": 183,
+                                                "children": [
+                                                  {
+                                                    "name": "product",
+                                                    "pos": 183,
+                                                    "children": [
+                                                      {
+                                                        "name": "unary",
+                                                        "pos": 183,
+                                                        "children": [
+                                                          {
+                                                            "name": "postfix_expr",
+                                                            "pos": 183,
+                                                            "children": [
+                                                              {
+                                                                "name": "primary",
+                                                                "pos": 183,
+                                                                "children": [
+                                                                  {
+                                                                    "name": "IDENT",
+                                                                    "pos": 183,
+                                                                    "children": [
+                                                                      {
+                                                                        "name": ":RegExp",
+                                                                        "pos": 183,
+                                                                        "text": "item"
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 188,
+                "text": "end"
+              },
+              {
+                "name": "IDENT",
+                "pos": 192,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 192,
+                    "text": "bad"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "module_end",
+        "pos": 197,
+        "children": [
+          {
+            "name": ":Text",
+            "pos": 197,
+            "text": "end"
+          },
+          {
+            "name": "qualified_name",
+            "pos": 201,
+            "children": [
+              {
+                "name": "IDENT",
+                "pos": 201,
+                "text": "Concurrency"
+              },
+              {
+                "name": ":Text",
+                "pos": 212,
+                "text": "."
+              },
+              {
+                "name": "IDENT",
+                "pos": 213,
+                "text": "AwaitOutside"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "EOF",
+        "pos": 225,
+        "text": ""
+      }
+    ]
+  }
+}

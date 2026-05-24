@@ -110,6 +110,8 @@ def normalize_go_decl(decl: dict[str, Any]) -> dict[str, Any]:
             "body": [normalize_go_stmt(stmt) for stmt in decl.get("body") or []],
             "end_name": decl.get("end_name", ""),
         }
+        if decl.get("is_async"):
+            item["is_async"] = True
         if kind == "FunctionDecl":
             item["return_type"] = compact_type(decl.get("return_type", ""))
         return item
@@ -190,6 +192,8 @@ def normalize_go_expr(expr: Any) -> dict[str, Any]:
         return {"kind": kind, "elements": [normalize_go_expr(item) for item in expr.get("elements") or []]}
     if kind == "CallExpr":
         return {"kind": kind, "callee": normalize_go_expr(expr.get("callee")), "arguments": [normalize_go_expr(item) for item in expr.get("arguments") or []]}
+    if kind == "AwaitExpr":
+        return {"kind": kind, "value": normalize_go_expr(expr.get("value"))}
     if kind == "NamedArgumentExpr":
         return {"kind": kind, "name": expr.get("name", ""), "value": normalize_go_expr(expr.get("value"))}
     if kind == "RecordLiteralExpr":
@@ -252,6 +256,8 @@ def normalize_dhparser_decl(node: dict[str, Any]) -> dict[str, Any]:
             "body": [normalize_dhparser_stmt(stmt) for stmt in children(node, "stmt")],
             "end_name": nth_ident(node, -1),
         }
+        if first_child(node, "async_marker"):
+            item["is_async"] = True
         if kind == "FunctionDecl":
             item["return_type"] = type_text(first_child(node, "return_type"))
         return item
@@ -341,6 +347,8 @@ def dh_expr(node: dict[str, Any] | None) -> dict[str, Any]:
         named = children(node)
         if named and node_name(named[0]) == ":Text" and text_of(named[0]) in {"-", "not"}:
             return {"kind": "UnaryExpr", "op": text_of(named[0]), "value": dh_expr(next_non_token(named[1:]))}
+        if named and node_name(named[0]) == ":Text" and text_of(named[0]) == "await":
+            return {"kind": "AwaitExpr", "value": dh_expr(next_non_token(named[1:]))}
         return dh_expr(first_named(node))
     if name == "postfix_expr":
         return dh_postfix(node)

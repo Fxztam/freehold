@@ -29,6 +29,10 @@ class ArrayLiteralType:
     element_type: str
     size: int
 
+@dataclass(frozen=True)
+class AwaitableType:
+    inner_type: Any
+
 TypeRef = Union[TypeName, ResultTypeName, ArrayTypeName, ArrayLiteralType]
 
 @dataclass(frozen=True)
@@ -101,7 +105,7 @@ class Program:
 @dataclass
 class RoutineDecl:
     kind: str; name: str; params: list[Param]; return_type: TypeRef | None
-    requires: list[Any]; aborts: list[Any]; ensures: list[Any]; body: list[Any]; pos: SourcePos; type_params: list[str] | None = None
+    requires: list[Any]; aborts: list[Any]; ensures: list[Any]; body: list[Any]; pos: SourcePos; type_params: list[str] | None = None; is_async: bool = False
 
 @dataclass
 class AbortClause:
@@ -184,6 +188,10 @@ class CallExpr:
     name: str; args: list[Any]; pos: SourcePos; type_args: list[str] | None = None
 
 @dataclass(frozen=True)
+class AwaitExpr:
+    expr: Any; pos: SourcePos
+
+@dataclass(frozen=True)
 class NamedArg:
     name: str; expr: Any; pos: SourcePos
 
@@ -225,6 +233,7 @@ def type_to_string(t: TypeRef | None) -> str:
     if isinstance(t, ResultTypeName): return f"Result<{type_to_string(t.ok_type)},{t.error_type}>"
     if isinstance(t, ArrayTypeName): return f"Array<{t.element_type},{t.size}>"
     if isinstance(t, ArrayLiteralType): return f"ArrayLiteral<{t.element_type},{t.size}>"
+    if isinstance(t, AwaitableType): return f"Awaitable<{type_to_string(t.inner_type)}>"
     return str(t)
 
 
