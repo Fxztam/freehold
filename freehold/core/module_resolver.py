@@ -36,7 +36,6 @@ class ModuleResolver:
         entry_path = entry_path.resolve()
         source = entry_path.read_text(encoding="utf-8")
         program = parse_source(source)
-        verified = verify_program(program)
         if self.root is None:
             self.root = infer_module_root(entry_path, program.module_name)
         expected_path = self.module_path(program.module_name).resolve()
@@ -44,9 +43,12 @@ class ModuleResolver:
             raise TypeCheckError(
                 f"{program.pos.text()}: module file path mismatch: expected {expected_path}, got {entry_path}"
             )
-        self.entry = ResolvedModule(program.module_name, entry_path, program, verified)
+        self.entry = ResolvedModule(program.module_name, entry_path, program, None)
         self.resolved[program.module_name] = self.entry
         self._resolve_imports(program, stack=[program.module_name])
+        verified = self._verify_module(program.module_name)
+        self.entry = ResolvedModule(program.module_name, entry_path, program, verified)
+        self.resolved[program.module_name] = self.entry
         return dict(self.resolved)
 
     def verify_entry(self, entry_file: str | Path) -> Any:
@@ -75,14 +77,24 @@ class ModuleResolver:
                     if type(exc).__name__ in {"UnexpectedToken", "UnexpectedCharacters", "UnexpectedEOF"}:
                         raise TypeCheckError(f"{import_decl.pos.text()}: imported module has syntax error: {module_name}") from exc
                     raise
-                imported_verified = verify_program(imported_program)
                 if imported_program.module_name != module_name:
                     raise TypeCheckError(
                         f"{import_decl.pos.text()}: imported module name mismatch: expected {module_name}, got {imported_program.module_name}"
                     )
-                self.resolved[module_name] = ResolvedModule(module_name, path, imported_program, imported_verified)
+                self.resolved[module_name] = ResolvedModule(module_name, path, imported_program, None)
                 self._resolve_imports(imported_program, stack + [module_name])
+                imported_verified = self._verify_module(module_name)
+                self.resolved[module_name] = ResolvedModule(module_name, path, imported_program, imported_verified)
             self._check_exposing(import_decl, self.resolved[module_name].ast)
+
+    def _verify_module(self, module_name: str) -> Any:
+        resolved = self.resolved[module_name]
+        imported_modules = {}
+        for import_decl in resolved.ast.imports or []:
+            imported = self.resolved.get(import_decl.module_name)
+            if imported is not None and imported.verified is not None:
+                imported_modules[import_decl.module_name] = imported.verified
+        return verify_program(resolved.ast, imported_modules)
 
     def _check_runtime_exposing(self, import_decl) -> None:
         if not import_decl.exposing:

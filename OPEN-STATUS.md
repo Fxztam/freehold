@@ -27,7 +27,7 @@ Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V
 | --- | --- | --- |
 | Before Go Compiler | `OPEN-BEFORE-GO-COMPILER.md` | Abgeschlossen fuer Compiler V1 Start: proto mapping getestet, schema minimal rule, generics codegen policy, Result/Abort policy, runtime builtins boundary, syntax freeze. |
 | VS Code Language Support | `OPEN-VSCODE-LANGUAGE-SUPPORT.md` | Completion V1 vor Formatter-Ausbau vorgezogen; Extension nach `tools/vscode/freehold-vscode` ueberfuehrt. |
-| Go Compiler | `OPEN-GO-COMPILER.md` | Compiler V1 Start-Slice plus Import-, Result-, Abort-, Multi-File-, Runtime-Builtin-, Go-Projekt-Build- und Feature-Matrix-Slices implementiert: `go-codegen`, `go-codegen-project`, JSON-Spiegel, Golden-Faelle, Artefakt-Gate, import-aware Package-Calls, Result-Wertreturns, Abort-Error-Returns, Math/Std.IO/String/Json.stringify Runtime-Imports, `go.mod`/`build.cmd` fuer generierte Projekte, Zwei-Package-Projektgoldens fuer `App.Main`/`Banking.Proofs` sowie 24/24 Go-Codegen-Feature-Matrix-Abdeckung. |
+| Go Compiler | `OPEN-GO-COMPILER.md` | Compiler V1 Start-Slice plus Import-, Cross-Module-Call-, Result-, Abort-, Multi-File-, Runtime-Builtin-, Go-Projekt-Build- und Feature-Matrix-Slices implementiert: `go-codegen`, `go-codegen-project`, JSON-Spiegel, Golden-Faelle, Artefakt-Gate, import-aware Package-Calls, importierte Freehold-Routinen via `exposing` und qualifizierte Modulnamen, Result-Wertreturns, Abort-Error-Returns, Math/Std.IO/String/Json.stringify Runtime-Imports, `go.mod`/`build.cmd` fuer generierte Projekte, Zwei-Package-Projektgoldens fuer `App.Main`/`Banking.Proofs` sowie 24/24 Go-Codegen-Feature-Matrix-Abdeckung. |
 
 ## V2/V3 geparkt
 
@@ -62,7 +62,7 @@ verify-parser-conformance.cmd
 Total: 319
 OK:    274
 FAIL:  45
-Go codegen artifacts: 49/49 matching
+Go codegen artifacts: 51/51 matching
 Go feature matrix: 24/24 modules covered; supported 13, rejected 3, deferred 8
 AST shape:     274/274
 Semantic AST:  274/274

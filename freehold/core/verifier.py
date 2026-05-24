@@ -37,7 +37,8 @@ class VerifiedProgram:
     flow_summaries: dict[str, RoutineFlowSummary]
 
 class Verifier:
-    def verify(self, program: Program) -> VerifiedProgram:
+    def verify(self, program: Program, imported_modules: dict[str, VerifiedProgram] | None = None) -> VerifiedProgram:
+        imported_modules = imported_modules or {}
         self.validate_imports(program)
         self.validate_qualified_name(program.module_name, program.pos)
         types = {name: TypeDef(name, name) for name in BUILTIN_TYPE_NAMES}
@@ -77,7 +78,7 @@ class Verifier:
                     self.validate_type_params(d.type_params, d.pos)
                 declared_names[d.name] = "routine"
                 routines[d.name] = d
-        ctx = Ctx(program.module_name, types, records, generic_records, errors, routines)
+        ctx = Ctx(program.module_name, types, records, generic_records, errors, routines, program.imports or [], imported_modules)
         for rd in [d for d in program.declarations if isinstance(d, RecordTypeDecl)]:
             previous_type_params = ctx.current_type_params
             ctx.current_type_params = set(rd.type_params or [])
@@ -883,10 +884,27 @@ class Verifier:
             self.assign(actual, expected, ctx, a.pos)
 
 class Ctx:
-    def __init__(self, module_name, types, records, generic_records, errors, routines):
+    def __init__(self, module_name, types, records, generic_records, errors, routines, imports=None, imported_modules=None):
         self.module_name=module_name; self.types=types; self.records=records; self.generic_records=generic_records; self.errors=errors; self.routines=routines
+        self.imports=imports or []; self.imported_modules=imported_modules or {}; self.exposed_routines=self.build_exposed_routines()
         self.current_routine=None; self.current_type_params=set(); self.current_async=False
         self.scope_vars=set(); self.scope_handles={}
+
+    def build_exposed_routines(self):
+        exposed = {}
+        for import_decl in self.imports:
+            imported = self.imported_modules.get(import_decl.module_name)
+            if imported is None:
+                continue
+            for symbol_name in import_decl.exposing:
+                routine = imported.routines.get(symbol_name)
+                if routine is None:
+                    continue
+                if symbol_name in exposed and exposed[symbol_name] is not routine:
+                    exposed[symbol_name] = None
+                else:
+                    exposed[symbol_name] = routine
+        return exposed
 
     def note_let(self, name: str, type_ref, expr, pos: SourcePos) -> None:
         if isinstance(expr, CallExpr) and expr.name == "scope" and isinstance(type_ref, TypeName) and type_ref.name == "Scope":
@@ -1052,11 +1070,31 @@ class Ctx:
                 raise TypeCheckError(f"{pos.text()}: unknown result error type: {t.error_type}")
     def routine(self,n,pos):
         local_name = self.local_routine_name(n)
-        if local_name not in self.routines: raise TypeCheckError(f"{pos.text()}: unknown routine: {n}")
-        return self.routines[local_name]
+        if local_name in self.routines:
+            return self.routines[local_name]
+        imported = self.imported_routine(n)
+        if imported is not None:
+            return imported
+        raise TypeCheckError(f"{pos.text()}: unknown routine: {n}")
+
+    def imported_routine(self, name):
+        if "." in name:
+            for module_name, verified in sorted(self.imported_modules.items(), key=lambda item: len(item[0]), reverse=True):
+                prefix = f"{module_name}."
+                if not name.startswith(prefix):
+                    continue
+                routine_name = name[len(prefix):]
+                if "." in routine_name:
+                    return None
+                return verified.routines.get(routine_name)
+            return None
+        exposed = self.exposed_routines.get(name)
+        if exposed is None:
+            return None
+        return exposed
     def local_routine_name(self,n):
         prefix = f"{self.module_name}."
         return n[len(prefix):] if n.startswith(prefix) else n
 
-def verify_program(program: Program) -> VerifiedProgram: return Verifier().verify(program)
+def verify_program(program: Program, imported_modules: dict[str, VerifiedProgram] | None = None) -> VerifiedProgram: return Verifier().verify(program, imported_modules)
 def proof_json(vp: VerifiedProgram) -> str: return json.dumps(vp.proof_obligations, indent=2)

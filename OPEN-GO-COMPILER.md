@@ -2,7 +2,7 @@
 
 Stand: 2026-05-24
 
-Status: Compiler V1 Start-Slice plus Import-, Result-, Abort-, Multi-File-, Runtime-Builtin- und Go-Projekt-Build-Slices implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
+Status: Compiler V1 Start-Slice plus Import-, Cross-Module-Call-, Result-, Abort-, Multi-File-, Runtime-Builtin- und Go-Projekt-Build-Slices implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
 
 Dieses Dokument legt die Leitplanken fuer die naechste Implementierungsphase fest: einen Go-Compiler fuer Freehold, der auf dem bestehenden Parser/AST/Verifier/Spec-Fundament aufsetzt. Wichtigste Vorgabe: Der Compiler darf das Freehold-Modularitaetskonzept nicht aufweichen. Codegen muss Modulgrenzen, Imports, Exposing-Regeln und qualifizierte Namen respektieren.
 
@@ -23,7 +23,7 @@ Der erste Go-Compiler-Slice ist vorhanden:
 - Runtime-Builtins fuer `Math`, `Std.IO`, `String.*` und `Json.stringify` werden als explizite Go-Stdlib-Imports generiert.
 - `verify-parser-conformance.cmd` fuehrt den Go-Codegen-Artefaktcheck als eigenen Gate-Schritt aus.
 
-Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Der Import-Slice nutzt `ModuleResolver` fuer dateibasierte Entry-Module, erzeugt deterministische Go-Importpfade fuer benutzte Freehold-Imports und spiegelt Package-/Import-Metadaten in JSON-Artefakten. Der Result-Slice bildet `Result<T,E>` als modul-lokalen Go-Struct-Typ ab und generiert `return ok`/`return error` als normale Wert-Returns. Der Abort-Slice bildet `aborts` als expliziten Go-`error`-Rückgabewert ab und propagiert lokale abortende Calls ueber `err`. Der Multi-File-Slice schreibt aufgeloeste Modulgraphen deterministisch nach `go_package_path/module_file.go`, z.B. `App.Main -> app/main/main.go` und `Banking.Proofs -> banking/proofs/proofs.go`; bekannte Runtime-Module werden nicht als Freehold-Stubs emittiert. Der Go-Projekt-Slice erzeugt fuer Projekt-Codegen deterministisch ein `freehold.local`-`go.mod`, ein `build.cmd` mit `go test ./...` und JSON-Metadaten zu Build-Dateien. Die Feature-Matrix deckt alle 24 Language-Module ab und wird im offiziellen Gate validiert. Der Runtime-Builtin-Slice bildet `Math.*` auf Go `math`, `Std.IO.log`/`logf` auf Go `fmt`, `String.concat` auf `+`, `String.substr` auf Slicing, `String.replace`/`String.instr` auf Go `strings`, `String.template` auf `fmt.Sprintf` und `Json.stringify` auf `encoding/json` ab. Record-Felder erhalten JSON-Tags mit Freehold-Feldnamen. Nicht unterstuetzte AST-Formen werden im Codegen-Result als Diagnostics markiert.
+Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Der Import-Slice nutzt `ModuleResolver` fuer dateibasierte Entry-Module, erzeugt deterministische Go-Importpfade fuer benutzte Freehold-Imports und spiegelt Package-/Import-Metadaten in JSON-Artefakten. Der Cross-Module-Call-Slice verifiziert importierte Freehold-Routinen im Modulgraphen und generiert Go-Aufrufe ueber das importierte Package, sowohl fuer `exposing`-Namen als auch fuer qualifizierte Modulnamen. Der Result-Slice bildet `Result<T,E>` als modul-lokalen Go-Struct-Typ ab und generiert `return ok`/`return error` als normale Wert-Returns. Der Abort-Slice bildet `aborts` als expliziten Go-`error`-Rückgabewert ab und propagiert lokale abortende Calls ueber `err`. Der Multi-File-Slice schreibt aufgeloeste Modulgraphen deterministisch nach `go_package_path/module_file.go`, z.B. `App.Main -> app/main/main.go` und `Banking.Proofs -> banking/proofs/proofs.go`; bekannte Runtime-Module werden nicht als Freehold-Stubs emittiert. Der Go-Projekt-Slice erzeugt fuer Projekt-Codegen deterministisch ein `freehold.local`-`go.mod`, ein `build.cmd` mit `go test ./...` und JSON-Metadaten zu Build-Dateien. Die Feature-Matrix deckt alle 24 Language-Module ab und wird im offiziellen Gate validiert. Der Runtime-Builtin-Slice bildet `Math.*` auf Go `math`, `Std.IO.log`/`logf` auf Go `fmt`, `String.concat` auf `+`, `String.substr` auf Slicing, `String.replace`/`String.instr` auf Go `strings`, `String.template` auf `fmt.Sprintf` und `Json.stringify` auf `encoding/json` ab. Record-Felder erhalten JSON-Tags mit Freehold-Feldnamen. Nicht unterstuetzte AST-Formen werden im Codegen-Result als Diagnostics markiert.
 
 ## Ziel
 
@@ -249,8 +249,8 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 
 ## Empfohlene naechste Schritte
 
-1. Cross-Module-Call-Semantik fuer importierte Freehold-Routinen verifier- und codegenseitig anbinden.
-2. Danach BigNumber-/Runtime-Builtins oder weitere V1-Codegen-Luecken priorisieren.
+1. BigNumber-/Runtime-Builtins oder weitere V1-Codegen-Luecken priorisieren.
+2. Danach Record-/Result-/Abort-Interaktionen ueber Modulgrenzen haerten.
 3. Feature-Matrix bei jedem neuen Go-Codegen-Slice mitpflegen.
 
 ## Akzeptanzkriterien fuer Compiler V1 Start
