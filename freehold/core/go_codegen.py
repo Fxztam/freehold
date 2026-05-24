@@ -85,6 +85,22 @@ class GoCodegenResult:
         return data
 
 
+@dataclass(frozen=True)
+class GoProjectFile:
+    module_name: str
+    source_file: str
+    output_path: str
+    result: GoCodegenResult
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "module": self.module_name,
+            "source_file": self.source_file,
+            "output_path": self.output_path,
+            "result": self.result.to_json(),
+        }
+
+
 def generate_go_source(source: str) -> GoCodegenResult:
     program = parse_source(source)
     verify_program(program)
@@ -108,8 +124,37 @@ def generate_go_file(path: str | Path) -> GoCodegenResult:
     return generator.generate()
 
 
+def generate_go_project(entry_file: str | Path) -> list[GoProjectFile]:
+    resolver = ModuleResolver()
+    resolved_modules = resolver.resolve_entry(entry_file)
+    files: list[GoProjectFile] = []
+    for module_name in sorted(resolved_modules):
+        resolved = resolved_modules[module_name]
+        result = GoGenerator(resolved.ast, resolved_modules).generate()
+        files.append(
+            GoProjectFile(
+                module_name=module_name,
+                source_file=display_path(resolved.path),
+                output_path=go_module_output_path(module_name).as_posix(),
+                result=result,
+            )
+        )
+    return files
+
+
 def result_json(result: GoCodegenResult, **metadata: str) -> str:
     return json.dumps(result.to_json(**metadata), indent=2) + "\n"
+
+
+def project_result_json(files: list[GoProjectFile]) -> str:
+    return json.dumps(
+        {
+            "total_files": len(files),
+            "supported": all(file.result.supported for file in files),
+            "files": [file.to_json() for file in files],
+        },
+        indent=2,
+    ) + "\n"
 
 
 class GoGenerator:
@@ -554,6 +599,11 @@ def go_package_path(module_name: str) -> str:
     return "/".join(go_package_path_part(part) for part in module_name.split("."))
 
 
+def go_module_output_path(module_name: str) -> Path:
+    parts = module_name.split(".")
+    return Path(go_package_path(module_name)) / f"{go_package_path_part(parts[-1])}.go"
+
+
 def go_import_path(module_name: str) -> str:
     return f"freehold.local/{go_package_path(module_name)}"
 
@@ -658,3 +708,10 @@ def split_type_args(text: str) -> list[str]:
             start = index + 1
     args.append(text[start:].strip())
     return args
+
+
+def display_path(path: Path) -> str:
+    try:
+        return path.relative_to(Path.cwd()).as_posix()
+    except ValueError:
+        return path.as_posix()

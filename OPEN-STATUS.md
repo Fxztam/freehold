@@ -27,7 +27,7 @@ Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V
 | --- | --- | --- |
 | Before Go Compiler | `OPEN-BEFORE-GO-COMPILER.md` | Abgeschlossen fuer Compiler V1 Start: proto mapping getestet, schema minimal rule, generics codegen policy, Result/Abort policy, runtime builtins boundary, syntax freeze. |
 | VS Code Language Support | `OPEN-VSCODE-LANGUAGE-SUPPORT.md` | Completion V1 vor Formatter-Ausbau vorgezogen; Extension nach `tools/vscode/freehold-vscode` ueberfuehrt. |
-| Go Compiler | `OPEN-GO-COMPILER.md` | Compiler V1 Start-Slice plus Import-, Result- und Abort-Slices implementiert: `go-codegen`, `--verify`, JSON-Spiegel, Golden-Faelle, Artefakt-Gate, import-aware Package-Calls, Result-Wertreturns und Abort-Error-Returns. |
+| Go Compiler | `OPEN-GO-COMPILER.md` | Compiler V1 Start-Slice plus Import-, Result-, Abort- und Multi-File-Slices implementiert: `go-codegen`, `go-codegen-project`, JSON-Spiegel, Golden-Faelle, Artefakt-Gate, import-aware Package-Calls, Result-Wertreturns und Abort-Error-Returns. |
 
 ## V2/V3 geparkt
 
@@ -62,7 +62,7 @@ verify-parser-conformance.cmd
 Total: 319
 OK:    274
 FAIL:  45
-Go codegen artifacts: 30/30 matching
+Go codegen artifacts: 31/31 matching
 AST shape:     274/274
 Semantic AST:  274/274
 Parser conformance verify passed.

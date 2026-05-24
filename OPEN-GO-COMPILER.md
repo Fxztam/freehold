@@ -2,7 +2,7 @@
 
 Stand: 2026-05-24
 
-Status: Compiler V1 Start-Slice plus Import-, Result- und Abort-Codegen-Slices implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
+Status: Compiler V1 Start-Slice plus Import-, Result-, Abort- und Multi-File-Codegen-Slices implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
 
 Dieses Dokument legt die Leitplanken fuer die naechste Implementierungsphase fest: einen Go-Compiler fuer Freehold, der auf dem bestehenden Parser/AST/Verifier/Spec-Fundament aufsetzt. Wichtigste Vorgabe: Der Compiler darf das Freehold-Modularitaetskonzept nicht aufweichen. Codegen muss Modulgrenzen, Imports, Exposing-Regeln und qualifizierte Namen respektieren.
 
@@ -16,10 +16,12 @@ Der erste Go-Compiler-Slice ist vorhanden:
 - `--verify <expected.go>` vergleicht normalisiert gegen ein Golden-File und liefert Exit-Code 1 bei Mismatch.
 - `--json <file>` schreibt einen JSON-Spiegel mit Modul, Package, Status, Diagnostics und Go-Quelle.
 - `generate-go-codegen-artifacts.cmd` erzeugt reproduzierbare `.go`- und `.json`-Artefakte unter `artifacts/go-codegen`.
+- `python -m freehold go-codegen-project <entry> --output-dir <dir>` loest den Modulgraphen auf und schreibt pro Freehold-Modul eine Go-Datei.
 - `valid_go_codegen`-Manifestfaelle verankern Golden-Vergleiche in den Language-Modulen.
+- `valid_go_project_codegen`-Manifestfaelle verankern Multi-File-Golden-Vergleiche fuer importierte Modulgraphen.
 - `verify-parser-conformance.cmd` fuehrt den Go-Codegen-Artefaktcheck als eigenen Gate-Schritt aus.
 
-Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Der Import-Slice nutzt `ModuleResolver` fuer dateibasierte Entry-Module, erzeugt deterministische Go-Importpfade fuer benutzte Freehold-Imports und spiegelt Package-/Import-Metadaten in JSON-Artefakten. Der Result-Slice bildet `Result<T,E>` als modul-lokalen Go-Struct-Typ ab und generiert `return ok`/`return error` als normale Wert-Returns. Der Abort-Slice bildet `aborts` als expliziten Go-`error`-Rückgabewert ab und propagiert lokale abortende Calls ueber `err`. Nicht unterstuetzte AST-Formen werden im Codegen-Result als Diagnostics markiert.
+Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Der Import-Slice nutzt `ModuleResolver` fuer dateibasierte Entry-Module, erzeugt deterministische Go-Importpfade fuer benutzte Freehold-Imports und spiegelt Package-/Import-Metadaten in JSON-Artefakten. Der Result-Slice bildet `Result<T,E>` als modul-lokalen Go-Struct-Typ ab und generiert `return ok`/`return error` als normale Wert-Returns. Der Abort-Slice bildet `aborts` als expliziten Go-`error`-Rückgabewert ab und propagiert lokale abortende Calls ueber `err`. Der Multi-File-Slice schreibt aufgeloeste Modulgraphen deterministisch nach `go_package_path/module_file.go`, z.B. `App.Main -> app/main/main.go` und `Math -> math/math.go`. Nicht unterstuetzte AST-Formen werden im Codegen-Result als Diagnostics markiert.
 
 ## Ziel
 
@@ -248,8 +250,8 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 1. Go-Package-Pfadkonvention fuer Freehold-Module weiter haerten, sobald echte Go-Moduldateien gebaut werden.
 2. Feature-Matrix pro Language-Modul pflegen: supported, rejected, deferred.
 3. Runtime-/Stdlib-Packages systematisch anbinden.
-4. Multi-File-Emission mehrerer Freehold-Module in einem Compilerlauf ausbauen.
-5. Danach Runtime-/Stdlib-Builtins systematisch anbinden.
+4. Builtin-Mapping fuer Math/String/Json/Std.IO in Codegen und Runtime-Imports konkretisieren.
+5. Danach Go-Modul-/Build-Dateien fuer generierte Projekte einfuehren.
 
 ## Akzeptanzkriterien fuer Compiler V1 Start
 

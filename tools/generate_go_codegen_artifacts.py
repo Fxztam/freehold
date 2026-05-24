@@ -10,7 +10,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from freehold.core.go_codegen import generate_go_file, generate_go_source
+from freehold.core.go_codegen import generate_go_file, generate_go_project, generate_go_source
 
 
 DEFAULT_ROOT = Path("tests/language_modules")
@@ -34,6 +34,12 @@ def main() -> int:
             continue
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         for case in manifest.get("cases", []):
+            if case.get("kind") == "valid_go_project_codegen":
+                row = run_project_case(module_dir, case, out_root)
+                rows.append(row)
+                if row["status"] != "match":
+                    mismatches.append(row)
+                continue
             if case.get("kind") != "valid_go_codegen":
                 continue
             row = run_case(module_dir, case, out_root)
@@ -97,6 +103,61 @@ def run_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> dict[str
     return row
 
 
+def run_project_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> dict[str, Any]:
+    entry_path = module_dir / case["root"] / case["entry"]
+    expected_root = module_dir / case["expected_go_dir"]
+    artifact_root = out_root / module_dir.name / Path(case["root"]).name / "project"
+    json_path = artifact_root / "_project.json"
+    try:
+        files = generate_go_project(entry_path)
+        actual = {file.output_path: file.result.go_source for file in files}
+        error = None
+    except Exception as exc:
+        files = []
+        actual = {}
+        error = {"type": type(exc).__name__, "message": str(exc)}
+    expected = {
+        path.relative_to(expected_root).as_posix(): path.read_text(encoding="utf-8")
+        for path in sorted(expected_root.rglob("*.go"))
+    } if expected_root.exists() else {}
+    for output_path, source in actual.items():
+        artifact_path = artifact_root / output_path
+        artifact_path.parent.mkdir(parents=True, exist_ok=True)
+        artifact_path.write_text(source, encoding="utf-8")
+    status = "match" if error is None and normalize_project(actual) == normalize_project(expected) else "mismatch"
+    row = {
+        "case": f"{module_dir.name}/{case['root']}/{case['entry']}",
+        "name": case.get("name", entry_path.stem),
+        "status": status,
+        "source_file": display_path(entry_path),
+        "artifact_dir": display_path(artifact_root),
+        "json_file": display_path(json_path),
+        "expected_go_dir": display_path(expected_root),
+        "supported": all(file.result.supported for file in files) if files else False,
+        "files": [
+            {
+                "module": file.module_name,
+                "source_file": file.source_file,
+                "output_path": file.output_path,
+                "supported": file.result.supported,
+                "diagnostics": file.result.diagnostics,
+            }
+            for file in files
+        ],
+        "error": error,
+    }
+    json_path.parent.mkdir(parents=True, exist_ok=True)
+    write_json(json_path, row)
+    print("OK   " if status == "match" else "FAIL ", row["case"])
+    print("WRITE", artifact_root)
+    print("JSON ", json_path)
+    return row
+
+
+def normalize_project(files: dict[str, str]) -> dict[str, str]:
+    return {path: normalize(source) for path, source in files.items()}
+
+
 def case_source_path(module_dir: Path, case: dict[str, Any]) -> Path:
     if "root" in case:
         return module_dir / case["root"] / case["entry"]
@@ -128,7 +189,9 @@ def write_text_report(path: Path, summary: dict[str, Any]) -> None:
     if summary["mismatches"]:
         lines.extend(["", "Mismatches", "----------"])
         for mismatch in summary["mismatches"]:
-            lines.append(f"{mismatch['case']} => {mismatch['artifact_file']} != {mismatch['expected_go']}")
+            actual = mismatch.get("artifact_file") or mismatch.get("artifact_dir") or "<no artifact>"
+            expected = mismatch.get("expected_go") or mismatch.get("expected_go_dir") or "<no expected>"
+            lines.append(f"{mismatch['case']} => {actual} != {expected}")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
