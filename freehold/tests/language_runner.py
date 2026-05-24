@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from freehold.core.diagnostics import diagnose_exception
+from freehold.core.go_codegen import generate_go_source
 from freehold.core.grpc_codegen import generate_proto
 from freehold.core.module_resolver import ModuleResolver
 from freehold.core.parser import parse_source
@@ -53,6 +54,8 @@ def run_case(module_dir: Path, case: dict, update: bool = False):
     if kind == "valid":
         source = (module_dir / case["file"]).read_text(encoding="utf-8")
         ast, _ = parse_and_verify(source)
+        if "expected_ast" not in case:
+            return True, f"valid OK: {case['name']}"
         actual = json.dumps(canonical(ast), indent=2, sort_keys=True)
         expected_path = module_dir / case["expected_ast"]
         if update or not expected_path.exists():
@@ -75,6 +78,18 @@ def run_case(module_dir: Path, case: dict, update: bool = False):
         if normalize(actual) != normalize(expected):
             return False, f"gRPC proto mismatch: {case['name']}"
         return True, f"valid_grpc_proto OK: {case['name']}"
+
+    if kind == "valid_go_codegen":
+        source = (module_dir / case["file"]).read_text(encoding="utf-8")
+        actual = generate_go_source(source).go_source
+        expected_path = module_dir / case["expected_go"]
+        if update or not expected_path.exists():
+            expected_path.parent.mkdir(parents=True, exist_ok=True)
+            expected_path.write_text(actual, encoding="utf-8")
+        expected = expected_path.read_text(encoding="utf-8")
+        if normalize(actual) != normalize(expected):
+            return False, f"Go codegen mismatch: {case['name']}"
+        return True, f"valid_go_codegen OK: {case['name']}"
 
     if kind in {"invalid_syntax", "invalid_semantics"}:
         source = (module_dir / case["file"]).read_text(encoding="utf-8")

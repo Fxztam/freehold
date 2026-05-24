@@ -2,11 +2,24 @@
 
 Stand: 2026-05-24
 
-Status: Vorbereitung fuer Compiler V1; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
+Status: Compiler V1 Start-Slice implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
 
 Dieses Dokument legt die Leitplanken fuer die naechste Implementierungsphase fest: einen Go-Compiler fuer Freehold, der auf dem bestehenden Parser/AST/Verifier/Spec-Fundament aufsetzt. Wichtigste Vorgabe: Der Compiler darf das Freehold-Modularitaetskonzept nicht aufweichen. Codegen muss Modulgrenzen, Imports, Exposing-Regeln und qualifizierte Namen respektieren.
 
 Die konkrete Abschlussliste vor dem Compilerstart steht in `OPEN-BEFORE-GO-COMPILER.md`: proto Typ-Mapping, Schema-Evolution-Minimalregel, Generics-Codegen-Policy, Result/Abort-Semantik, Runtime-Builtins-Grenze und Syntax-Freeze.
+
+## Implementierter Start-Slice
+
+Der erste Go-Compiler-Slice ist vorhanden:
+
+- `python -m freehold go-codegen <file>` erzeugt Go-Code aus einem Freehold-Modul.
+- `--verify <expected.go>` vergleicht normalisiert gegen ein Golden-File und liefert Exit-Code 1 bei Mismatch.
+- `--json <file>` schreibt einen JSON-Spiegel mit Modul, Package, Status, Diagnostics und Go-Quelle.
+- `generate-go-codegen-artifacts.cmd` erzeugt reproduzierbare `.go`- und `.json`-Artefakte unter `artifacts/go-codegen`.
+- `valid_go_codegen`-Manifestfaelle verankern Golden-Vergleiche in den Language-Modulen.
+- `verify-parser-conformance.cmd` fuehrt den Go-Codegen-Artefaktcheck als eigenen Gate-Schritt aus.
+
+Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, `return`, `check`, Basis-Literale, binaere Ausdruecke, Feldzugriffe, Record-Literale und einfache Calls. Nicht unterstuetzte AST-Formen werden im Result als Diagnostics markiert.
 
 ## Ziel
 

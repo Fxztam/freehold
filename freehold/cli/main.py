@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from freehold.core.diagnostics import diagnose_exception
+from freehold.core.go_codegen import generate_go_file, result_json
 from freehold.core.grpc_codegen import generate_proto_file
 from freehold.core.pipeline import verify_file, run_file, print_ast
 
@@ -37,6 +38,38 @@ def cmd_grpc_proto(args):
     else:
         print(proto, end="")
     return 0
+
+def cmd_go_codegen(args):
+    result = generate_go_file(args.file)
+    status = "generated"
+    if args.verify:
+        expected = Path(args.verify).read_text(encoding="utf-8")
+        status = "match" if normalize_text(result.go_source) == normalize_text(expected) else "mismatch"
+    if args.output:
+        out = Path(args.output)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(result.go_source, encoding="utf-8")
+        print(f"[OK] Go code generated: {out}")
+    else:
+        print(result.go_source, end="")
+    if args.json:
+        json_path = Path(args.json)
+        json_path.parent.mkdir(parents=True, exist_ok=True)
+        json_path.write_text(result_json(
+            result,
+            source_file=args.file,
+            artifact_file=args.output or "",
+            expected_file=args.verify or "",
+            status=status,
+        ), encoding="utf-8")
+        print(f"[OK] Go codegen JSON written: {json_path}")
+    if args.verify:
+        print(f"[OK] Go codegen verify {status}: {args.verify}" if status == "match" else f"[FAIL] Go codegen verify mismatch: {args.verify}")
+        return 0 if status == "match" else 1
+    return 0
+
+def normalize_text(text: str) -> str:
+    return text.strip().replace("\r\n", "\n")
 
 def cmd_test(args):
     cmd = [sys.executable, "run_modular_tests.py"]
@@ -112,6 +145,12 @@ def build_parser():
     p.add_argument("file")
     p.add_argument("--output", "-o", default=None)
     p.set_defaults(func=cmd_grpc_proto)
+    p = sub.add_parser("go-codegen", help="Generate Go code from a Freehold module")
+    p.add_argument("file")
+    p.add_argument("--output", "-o", default=None)
+    p.add_argument("--json", default=None, help="Write a JSON mirror of the codegen result")
+    p.add_argument("--verify", default=None, help="Compare generated Go source with an expected .go file")
+    p.set_defaults(func=cmd_go_codegen)
     p = sub.add_parser("test", help="Run regression tests"); p.add_argument("--log", default=None); p.add_argument("--json-summary", default=None); p.add_argument("--no-console", action="store_true"); p.set_defaults(func=cmd_test)
     p = sub.add_parser("ebnf", help="Regenerate generated EBNF")
     p.add_argument("--dialects", action="store_true", help="Also generate Forge, RR/W3C, VS Code plugin, pyebnf, and parse-ebnf EBNF files")
@@ -128,7 +167,7 @@ def main(argv=None):
     parser = build_parser(); args = parser.parse_args(argv)
     if args.version:
         print("Freehold CLI: toolchain frontend")
-        print("Commands: run, verify, test, ebnf, ast, grpc-proto")
+        print("Commands: run, verify, test, ebnf, ast, grpc-proto, go-codegen")
         return 0
     if not args.command:
         parser.print_help(); return 0
