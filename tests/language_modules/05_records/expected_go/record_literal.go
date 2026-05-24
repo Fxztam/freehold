@@ -2,8 +2,8 @@
 package recordliteral
 
 type Account struct {
-	Id     int64
-	Active bool
+	Id     int64 `json:"id"`
+	Active bool  `json:"active"`
 }
 
 func Main() {

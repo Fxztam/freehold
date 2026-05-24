@@ -178,6 +178,7 @@ class GoGenerator:
         self.used_runtime_modules: set[str] = set()
         self.std_imports: set[str] = set()
         self.result_types: dict[str, ResultTypeName] = {}
+        self.needs_json_helper = False
         self.current_return_type: Any = None
         self.current_aborts: list[Any] = []
 
@@ -202,6 +203,7 @@ class GoGenerator:
         ]
         lines.extend(self.import_block())
         lines.extend(self.result_type_decls())
+        lines.extend(self.helper_decls())
         lines.extend(body_lines)
         go_source = format_go_source("\n".join(lines).rstrip() + "\n")
         return GoCodegenResult(
@@ -266,13 +268,27 @@ class GoGenerator:
             lines.extend(["}", ""])
         return lines
 
+    def helper_decls(self) -> list[str]:
+        if not self.needs_json_helper:
+            return []
+        return [
+            "func freeholdJSONString(value interface{}) string {",
+            "\tdata, err := json.Marshal(value)",
+            "\tif err != nil {",
+            "\t\tpanic(err)",
+            "\t}",
+            "\treturn string(data)",
+            "}",
+            "",
+        ]
+
     def record_decl(self, declaration: RecordTypeDecl) -> list[str]:
         if declaration.type_params:
             self.unsupported(declaration, "generic records are not supported by Go codegen V1")
             return []
         lines = [f"type {go_exported_name(declaration.name)} struct {{"]
         for field in declaration.fields:
-            lines.append(f"\t{go_exported_name(field.name)} {go_type_string(field.type_name)}")
+            lines.append(f"\t{go_exported_name(field.name)} {go_type_string(field.type_name)} `json:\"{field.name}\"`")
         lines.extend(["}", ""])
         return lines
 
@@ -541,6 +557,13 @@ class GoGenerator:
         return None
 
     def runtime_call_expr(self, expr: CallExpr, expected_type: Any) -> str | None:
+        if expr.name == "Json.stringify":
+            self.std_imports.add("encoding/json")
+            self.needs_json_helper = True
+            return f"freeholdJSONString({self.expr(expr.args[0])})"
+        string_call = self.string_runtime_call_expr(expr)
+        if string_call is not None:
+            return string_call
         if expr.name == "String.template":
             self.std_imports.add("fmt")
             return self.render_string_template_call(expr.args)
@@ -565,6 +588,24 @@ class GoGenerator:
             go_name = "Min" if expr.name == "Math.min" else "Max"
             rendered = f"math.{go_name}(float64({args[0]}), float64({args[1]}))"
             return f"int64({rendered})" if go_expected_base(expected_type) == "Integer" else rendered
+        return None
+
+    def string_runtime_call_expr(self, expr: CallExpr) -> str | None:
+        if expr.name == "String.concat":
+            return f"{self.expr_at(expr.args[0], go_precedence('+'), 'left')} + {self.expr_at(expr.args[1], go_precedence('+'), 'right')}"
+        if expr.name == "String.substr":
+            text = self.expr(expr.args[0])
+            start = self.expr(expr.args[1])
+            length = self.expr(expr.args[2])
+            return f"{text}[int({start}):int({start}+{length})]"
+        if expr.name == "String.replace":
+            self.std_imports.add("strings")
+            args = [self.expr(arg) for arg in expr.args]
+            return f"strings.ReplaceAll({args[0]}, {args[1]}, {args[2]})"
+        if expr.name == "String.instr":
+            self.std_imports.add("strings")
+            args = [self.expr(arg) for arg in expr.args]
+            return f"int64(strings.Index({args[0]}, {args[1]}))"
         return None
 
     def render_string_template_call(self, args: list[Any]) -> str:
