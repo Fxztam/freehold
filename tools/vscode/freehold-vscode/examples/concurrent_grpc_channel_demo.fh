@@ -1,0 +1,75 @@
+module examples.concurrent_grpc_channel_demo
+
+-- Demo: gRPC IDL + structured concurrency + channels in one Freehold module.
+-- The service block defines the transport surface; the async routines below show
+-- the current concurrency/channel language shape without requiring Go bindings yet.
+
+type PriceRequest is record
+    sku: String proto 1
+    quantity: Integer proto 2
+    trace_id: String proto 3
+end record
+
+type AuditEvent is record
+    trace_id: String proto 1
+    message: String proto 2
+end record
+
+type PriceReply is record
+    total: Integer proto 1
+    accepted: Boolean proto 2
+    audit: AuditEvent proto 3
+end record
+
+service PricingService is
+    rpc Quote(request: PriceRequest): PriceReply
+end PricingService
+
+async function load_unit_price(sku: String) returns Integer
+is
+    check String.instr(sku, "") = 0
+    return 42
+end load_unit_price
+
+async function reserve_inventory(quantity: Integer) returns Boolean
+is
+    check quantity > 0
+    return true
+end reserve_inventory
+
+async function audit_roundtrip(sender: Sender<AuditEvent>, receiver: Receiver<AuditEvent>, trace_id: String) returns AuditEvent
+is
+    let event: AuditEvent = AuditEvent { trace_id: trace_id, message: "quote requested" }
+    let sent: Boolean = await channel_send<AuditEvent>(sender, event)
+    check sent = true
+    let received: AuditEvent = await channel_receive<AuditEvent>(receiver)
+    return received
+end audit_roundtrip
+
+async function quote(request: PriceRequest, sender: Sender<AuditEvent>, receiver: Receiver<AuditEvent>) returns PriceReply
+is
+    scope quote_scope do
+        spawn
+            let price_handle: JoinHandle<Integer> = quote_scope.spawn<Integer>(load_unit_price(request.sku))
+            let reserve_handle: JoinHandle<Boolean> = quote_scope.spawn<Boolean>(reserve_inventory(request.quantity))
+            let audit_handle: JoinHandle<AuditEvent> = quote_scope.spawn<AuditEvent>(audit_roundtrip(sender, receiver, request.trace_id))
+        join
+            let unit_price: Integer = await quote_scope.join<Integer>(price_handle)
+            let reserved: Boolean = await quote_scope.join<Boolean>(reserve_handle)
+            let audit: AuditEvent = await quote_scope.join<AuditEvent>(audit_handle)
+        result
+            let total: Integer = unit_price * request.quantity
+            return PriceReply { total: total, accepted: reserved, audit: audit }
+    end scope
+end quote
+
+async function demo() returns PriceReply
+is
+    let audit_channel: Channel<AuditEvent> = channel<AuditEvent>(8)
+    let sender: Sender<AuditEvent> = channel_sender<AuditEvent>(audit_channel)
+    let receiver: Receiver<AuditEvent> = channel_receiver<AuditEvent>(audit_channel)
+    let request: PriceRequest = PriceRequest { sku: "tea", quantity: 3, trace_id: "demo-001" }
+    return await quote(request, sender, receiver)
+end demo
+
+end examples.concurrent_grpc_channel_demo
