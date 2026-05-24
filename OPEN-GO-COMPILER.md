@@ -25,6 +25,73 @@ Der erste Go-Compiler-Slice ist vorhanden:
 
 Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Der Import-Slice nutzt `ModuleResolver` fuer dateibasierte Entry-Module, erzeugt deterministische Go-Importpfade fuer benutzte Freehold-Imports und spiegelt Package-/Import-Metadaten in JSON-Artefakten. Der Cross-Module-Call-Slice verifiziert importierte Freehold-Routinen im Modulgraphen und generiert Go-Aufrufe ueber das importierte Package, sowohl fuer `exposing`-Namen als auch fuer qualifizierte Modulnamen. Der Result-Slice bildet `Result<T,E>` als modul-lokalen Go-Struct-Typ ab und generiert `return ok`/`return error` als normale Wert-Returns. Der Abort-Slice bildet `aborts` als expliziten Go-`error`-Rückgabewert ab und propagiert lokale abortende Calls ueber `err`. Der Multi-File-Slice schreibt aufgeloeste Modulgraphen deterministisch nach `go_package_path/module_file.go`, z.B. `App.Main -> app/main/main.go` und `Banking.Proofs -> banking/proofs/proofs.go`; bekannte Runtime-Module werden nicht als Freehold-Stubs emittiert. Der Go-Projekt-Slice erzeugt fuer Projekt-Codegen deterministisch ein `freehold.local`-`go.mod`, ein `build.cmd` mit `go test ./...` und JSON-Metadaten zu Build-Dateien. Die Feature-Matrix deckt alle 24 Language-Module ab und wird im offiziellen Gate validiert. Der Runtime-Builtin-Slice bildet `Math.*` auf Go `math`, `Std.IO.log`/`logf` auf Go `fmt`, `String.concat` auf `+`, `String.substr` auf Slicing, `String.replace`/`String.instr` auf Go `strings`, `String.template` auf `fmt.Sprintf` und `Json.stringify` auf `encoding/json` ab. Record-Felder erhalten JSON-Tags mit Freehold-Feldnamen. Nicht unterstuetzte AST-Formen werden im Codegen-Result als Diagnostics markiert.
 
+## Aktueller Compiler-TODO
+
+Der Compiler-TODO ist nach den abgeschlossenen Start-, Projekt-, Feature-Matrix- und Cross-Module-Call-Slices deutlich kleiner. Dieser Abschnitt ist der aktuelle operative Blick auf das, was fuer den Compiler noch offen ist.
+
+Bereits erledigt:
+
+- Go-Codegen-Grundpfad: `go-codegen`, `go-codegen-project`, JSON-Spiegel, Goldens und Artefakt-Gate.
+- Multi-File-/Projekt-Codegen mit `go.mod` und `build.cmd`.
+- Importaufloesung, `exposing`, qualifizierte Namen und Cross-Module-Calls auf importierte Freehold-Routinen.
+- Primitive Typen, Records, einfache Routinen, Statements und Expressions.
+- Result-Wertmodell.
+- Abort als Go-`error`-Return fuer abgedeckte V1-Faelle.
+- Runtime-Builtins fuer `Math`, `Std.IO`, `String.*`, `String.template` und `Json.stringify`.
+- Feature-Matrix-Gate mit `24/24` Language-Modulen.
+- Go-Codegen-Artefakte mit aktuell `51/51` matching.
+
+Direkt offen fuer die naechsten Compiler-Slices:
+
+1. BigNumber-/Runtime-Builtins
+    - `BigInteger` und `BigFloat`.
+    - Runtime-Package oder Go-Codegen-Mapping fuer `Big.*`.
+    - Feature-Matrix: `19_big_numbers` ist `deferred`.
+
+2. Arrays weiter haerten
+    - Eigene Go-Goldens im Array-Modul fehlen noch.
+    - Finale Array-Repraesentation sauber entscheiden und absichern.
+    - Feature-Matrix: `06_arrays` ist `deferred`, obwohl Arrays schon in anderen Slices vorkommen.
+
+3. Record-/Result-/Abort-Interaktionen ueber Modulgrenzen
+    - Cross-Module-Routine-Calls sind vorhanden.
+    - Noch zu haerten sind importierte Records, Result-Typen, Abort-Fehler, Signaturtypen, Fehlernamen und Package-Typnamen ueber Modulgrenzen.
+
+4. Result value field access
+    - Feature-Matrix: `11_errors_results` fuehrt `Result value field access` als deferred.
+
+5. Abort breiter machen
+    - Breitere abort contract implication.
+    - Handler-Syntax bleibt offen/geparkt.
+    - Feature-Matrix: `21_abort_handling` hat entsprechende deferred items.
+
+6. Dynamische `String.template`-Formate
+    - Statische Templates sind implementiert.
+    - Dynamische Formatargumente sind noch deferred.
+    - Feature-Matrix: `18_string_templates`.
+
+7. Core-/Import-/Whitespace-/Control-Flow-Goldens
+    - `01_core`: minimal/empty module Go-Golden-Policy.
+    - `02_import`: single-file import declaration codegen policy.
+    - `14_comments_whitespace`: optionale Formatter-/Comment-Preservation-Policy.
+    - `16_control_flow_edges`: Edge-Goldens und path-aware proof integration.
+
+Bewusst geparkt fuer V2/V3:
+
+- Generics-Codegen, Monomorphisierung, Bounds und Inference.
+- Async Runtime, Channels, Scheduler und Scope/JoinHandle-Ausfuehrung.
+- gRPC Go server/client bindings.
+- REST/WebSocket/SSE Transport-Libs.
+- Runtime-Contract-Enforcement.
+- path-aware Control-Flow-Proofs.
+- Native/Image Builder.
+
+Empfohlene Reihenfolge aus heutiger Sicht:
+
+1. BigNumber-/Runtime-Builtins, weil der Slice klar abgegrenzt ist und direkt einen deferred Matrix-Eintrag in supported verwandeln kann.
+2. Danach Cross-Module Typ-/Result-/Abort-Signaturen haerten, weil das architektonisch wichtiger ist als kosmetische Goldens.
+3. Danach Array-Goldens und kleinere Matrix-Luecken schliessen.
+
 ## Ziel
 
 Compiler V1 soll Freehold-Programme aus dem stabilisierten V1-Sprachkern nach Go uebersetzen. Er soll klein beginnen, aber von Anfang an so strukturiert sein, dass spaetere Features wie gRPC-Bindings, Runtime-Ausfuehrung, Generics-Monomorphisierung und Transport-Libs ohne Architekturbruch hinzukommen koennen.
