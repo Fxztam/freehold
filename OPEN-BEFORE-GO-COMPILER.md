@@ -2,11 +2,13 @@
 
 Stand: 2026-05-24
 
-Status: Vorbereitende Abschlussliste vor Go-Compiler V1; V1-Policies festgezurrt, gRPC/proto Mapping getestet, V2/V3-Themen geparkt
+Status: Abgeschlossen fuer Go-Compiler V1 Start; V1-Policies festgezurrt, gRPC/proto Mapping getestet, V2/V3-Themen geparkt
 
-Dieses Dokument sammelt die Punkte, die vor dem Start des Go-Compiler-Basis-Codegens abgeschlossen oder bewusst entschieden sein sollen. Ziel ist nicht, neue Sprachfeatures einzubauen, sondern die Compilergrundlage stabil zu machen: Syntax einfrieren, Typ- und Runtime-Policies festhalten, und spaetere Transport-/Runtime-Themen sauber aus V1 herausnehmen.
+Dieses Dokument sammelt die Punkte, die vor dem Start des Go-Compiler-Basis-Codegens abgeschlossen oder bewusst entschieden sein sollen. Stand 2026-05-24 sind diese Punkte fuer den Compiler-V1-Start abgeschlossen: Syntax-Freeze, gRPC/proto Mapping, Schema-Minimalregel, Generics-Codegen-Policy, Result/Abort-Semantik und Runtime-Builtins-Grenze sind dokumentiert oder getestet. Ziel ist nicht, neue Sprachfeatures einzubauen, sondern die Compilergrundlage stabil zu machen: Syntax einfrieren, Typ- und Runtime-Policies festhalten, und spaetere Transport-/Runtime-Themen sauber aus V1 herausnehmen.
 
 ## Muss vor Go-Compiler V1 feststehen
+
+Status: abgeschlossen fuer den Compiler-V1-Start.
 
 ### Source-Level Syntax einfrieren
 
@@ -171,6 +173,8 @@ Diese Punkte sind nicht Teil des Go-Compiler-Basisstarts:
 - `reserved proto`
 
 ## Vor-Go-Compiler Akzeptanzkriterien
+
+Status: erfuellt fuer den Compiler-V1-Start.
 
 Vor dem Start der breiten Go-Compiler-Implementierung sollte gelten:
 

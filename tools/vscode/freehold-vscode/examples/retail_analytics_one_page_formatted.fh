@@ -1,0 +1,54 @@
+module Retail.Analytics
+import Retail.Types exposing Customer, Basket
+import Retail.Proofs exposing basket_total_non_negative
+/**
+@ai intent: Compact v11g one-page module.
+@ai safety: comments are documentation only; no hidden semantics.
+*/
+type Money is Integer range 0 .. 1000000
+type Customer is record
+    id: Integer
+    name: String
+    active: Boolean
+end record
+type Basket is record
+    owner: Customer
+    items: Set<String>
+    prices: Array<Integer, 4>
+end record
+function sum4(xs: Array<Integer, 4>) returns Money
+requires xs[0] >= 0
+requires xs[1] >= 0
+requires xs[2] >= 0
+requires xs[3] >= 0
+ensures result >= 0
+is
+    return xs[0] + xs[1] + xs[2] + xs[3]
+end sum4
+function make_basket(id: Integer, name: String) returns Basket
+ensures result.owner.id = id
+ensures Set.contains(result.items, "tea")
+is
+    let c: Customer = Customer { id: id, name: name, active: true }
+    let raw: Array<String, 4> = ["tea", "coffee", "tea", "milk"]
+    let unique: Set<String> = Set.from_array(raw)
+    return Basket { owner: c, items: unique, prices: [12, 20, 12, 8] }
+end make_basket
+procedure main()
+is
+    let basket: Basket = make_basket(1001, "Ada")
+    let total: Money = sum4(basket.prices)
+    let count: Integer = Set.cardinality(basket.items)
+    let preferred: Set<String> = Set { "tea", "honey" }
+    let both: Set<String> = Set.intersect(basket.items, preferred)
+    case count is
+    when 3 =>
+        check total = 52
+        check Set.contains(both, "tea")
+    default =>
+        check false
+    end case
+    basket.owner.name := String.replace(basket.owner.name, "Ada", "Ada Lovelace")
+    check String.instr(basket.owner.name, "Love") = 4
+end main
+end Retail.Analytics

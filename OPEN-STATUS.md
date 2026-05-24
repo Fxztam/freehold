@@ -25,7 +25,8 @@ Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V
 
 | Bereich | Dokument | Status |
 | --- | --- | --- |
-| Before Go Compiler | `OPEN-BEFORE-GO-COMPILER.md` | Abschlussliste vor Codegen: proto mapping, schema minimal rule, generics codegen policy, Result/Abort policy, runtime builtins boundary, syntax freeze. |
+| Before Go Compiler | `OPEN-BEFORE-GO-COMPILER.md` | Abgeschlossen fuer Compiler V1 Start: proto mapping getestet, schema minimal rule, generics codegen policy, Result/Abort policy, runtime builtins boundary, syntax freeze. |
+| VS Code Language Support | `OPEN-VSCODE-LANGUAGE-SUPPORT.md` | Completion V1 vor Formatter-Ausbau vorgezogen; Extension nach `tools/vscode/freehold-vscode` ueberfuehrt. |
 | Go Compiler | `OPEN-GO-COMPILER.md` | Compiler V1 preparation recorded; modularity contract is the binding codegen guideline. |
 
 ## V2/V3 geparkt
@@ -40,6 +41,7 @@ Diese Themen sind absichtlich nicht Teil des aktuellen V1-Abschlusses:
 - Generics bounds, inference, qualified generic calls, monomorphized codegen artifacts, and generic IDL monomorphization.
 - Path-aware control-flow analysis, abort condition implication, handler syntax, reachability, and proof-obligation integration.
 - Broad Go compiler feature coverage beyond the modular Compiler V1 start slice.
+- AST-based VS Code formatter and semantic editor completion; pragmatic completion V1 comes first.
 
 ## Current Gate Baseline
 

@@ -1,0 +1,191 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "scopeName": "source.freehold",
+  "name": "Freehold",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#contracts"
+    },
+    {
+      "include": "#types"
+    },
+    {
+      "include": "#builtins"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#functionNames"
+    },
+    {
+      "include": "#moduleNames"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.documentation.ai.freehold",
+          "begin": "/\\*\\*",
+          "end": "\\*/",
+          "patterns": [
+            {
+              "name": "keyword.other.annotation.freehold",
+              "match": "@[A-Za-z_][A-Za-z0-9_-]*"
+            }
+          ]
+        },
+        {
+          "name": "comment.block.freehold",
+          "begin": "/\\*",
+          "end": "\\*/"
+        },
+        {
+          "name": "comment.line.double-dash.freehold",
+          "match": "--.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.freehold",
+          "match": "\"(?:\\\\.|[^\"\\\\])*\""
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.freehold",
+          "match": "\\b(module|import|exposing|function|procedure|async|returns|is|end|if|then|else|while|do|case|when|default|return|let|type|record|service|rpc|proto|scope|spawn|join|result|check|call|await|ok|error|abort)\\b"
+        }
+      ]
+    },
+    "contracts": {
+      "patterns": [
+        {
+          "name": "keyword.control.contract.freehold",
+          "match": "\\b(requires|ensures|aborts|invariant|variant)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "support.type.freehold",
+          "match": "\\b(Integer|Boolean|Double|String|BigInteger|BigFloat|Result|Array|Set|Executor|Scope|JoinHandle|Channel|Sender|Receiver)\\b"
+        }
+      ]
+    },
+    "builtins": {
+      "patterns": [
+        {
+          "name": "support.function.string.freehold",
+          "match": "\\bString\\.(concat|substr|replace|instr)\\b"
+        },
+        {
+          "name": "support.function.set.freehold",
+          "match": "\\bSet\\.(cardinality|contains|union|intersect|difference|symmetric_difference|from_array)\\b"
+        },
+        {
+          "name": "support.function.math.freehold",
+          "match": "\\bMath\\.(abs|sqrt|pow|floor|ceil|min|max)\\b"
+        },
+        {
+          "name": "support.function.json.freehold",
+          "match": "\\bJson\\.stringify\\b"
+        },
+        {
+          "name": "support.function.std.freehold",
+          "match": "\\bStd\\.IO\\.(log|logf|log_int|log_bool|log_double)\\b"
+        },
+        {
+          "name": "constant.language.boolean.freehold",
+          "match": "\\b(true|false|success|failure|result|value)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.assignment.freehold",
+          "match": ":="
+        },
+        {
+          "name": "keyword.operator.arrow.freehold",
+          "match": "=>"
+        },
+        {
+          "name": "keyword.operator.comparison.freehold",
+          "match": "(<=|>=|!=|=|<|>)"
+        },
+        {
+          "name": "keyword.operator.logical.freehold",
+          "match": "\\b(and|or|not)\\b"
+        },
+        {
+          "name": "keyword.operator.arithmetic.freehold",
+          "match": "[+\\-*/]"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.freehold",
+          "match": "\\b-?\\d+\\.\\d+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.freehold",
+          "match": "\\b-?\\d+\\b"
+        }
+      ]
+    },
+    "functionNames": {
+      "patterns": [
+        {
+          "name": "entity.name.function.freehold",
+          "match": "\\b(function|procedure|rpc)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": {
+              "name": "keyword.control.freehold"
+            },
+            "2": {
+              "name": "entity.name.function.freehold"
+            }
+          }
+        }
+      ]
+    },
+    "moduleNames": {
+      "patterns": [
+        {
+          "name": "entity.name.namespace.freehold",
+          "match": "\\b(module|import|end)\\s+([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)",
+          "captures": {
+            "1": {
+              "name": "keyword.control.freehold"
+            },
+            "2": {
+              "name": "entity.name.namespace.freehold"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

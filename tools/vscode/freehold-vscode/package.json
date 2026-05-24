@@ -1,0 +1,69 @@
+{
+  "name": "freehold-language-support",
+  "displayName": "Freehold Language Support",
+  "description": "Completion, formatting, and syntax highlighting for Freehold (.fh/.freehold).",
+  "version": "0.1.0",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Formatters",
+    "Snippets"
+  ],
+  "activationEvents": [
+    "onLanguage:freehold"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "freehold",
+        "aliases": [
+          "Freehold",
+          "freehold"
+        ],
+        "extensions": [
+          ".fh",
+          ".freehold",
+          ".veraflow"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "freehold",
+        "scopeName": "source.freehold",
+        "path": "./syntaxes/freehold.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "Freehold Language Support",
+      "properties": {
+        "freehold.format.indentSize": {
+          "type": "number",
+          "default": 4,
+          "description": "Number of spaces per Freehold indentation level."
+        },
+        "freehold.format.alignArrows": {
+          "type": "boolean",
+          "default": false,
+          "description": "Reserved for future case arrow alignment."
+        },
+        "freehold.completion.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Freehold keyword, builtin, and snippet completions."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "freehold.formatDocument",
+        "title": "Freehold: Format Document"
+      }
+    ]
+  }
+}
