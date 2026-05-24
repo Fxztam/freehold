@@ -10,12 +10,18 @@ from typing import Any
 from freehold.core.ast import (
     ArrayLiteralExpr,
     ArrayTypeName,
+    AssignStmt,
     BinaryExpr,
     BoolExpr,
+    CallStmt,
+    CaseStmt,
     CallExpr,
     CheckStmt,
     DoubleExpr,
     FieldAccessExpr,
+    FieldAssignStmt,
+    IfStmt,
+    IndexExpr,
     LetStmt,
     NumberExpr,
     Param,
@@ -28,7 +34,9 @@ from freehold.core.ast import (
     StringExpr,
     TypeDecl,
     TypeName,
+    UnaryExpr,
     VarExpr,
+    WhileStmt,
     type_to_string,
 )
 from freehold.core.parser import parse_source
@@ -147,6 +155,12 @@ class GoGenerator:
     def statement(self, stmt: Any) -> list[str]:
         if isinstance(stmt, LetStmt):
             return [f"{go_local_name(stmt.name)} := {self.expr(stmt.expr)}"]
+        if isinstance(stmt, AssignStmt):
+            return [f"{go_local_name(stmt.name)} = {self.expr(stmt.expr)}"]
+        if isinstance(stmt, FieldAssignStmt):
+            head, *tail = stmt.path
+            target = ".".join([go_local_name(head)] + [go_exported_name(part) for part in tail])
+            return [f"{target} = {self.expr(stmt.expr)}"]
         if isinstance(stmt, ReturnStmt):
             if isinstance(stmt.value, ReturnPlain):
                 return [f"return {self.expr(stmt.value.expr)}"]
@@ -154,8 +168,40 @@ class GoGenerator:
             return ["// unsupported result return"]
         if isinstance(stmt, CheckStmt):
             return [f"if !({self.expr(stmt.expr)}) {{ panic(\"freehold check failed\") }}"]
+        if isinstance(stmt, CallStmt):
+            args = ", ".join(self.expr(arg) for arg in stmt.args)
+            return [f"{go_qualified_name(stmt.name)}({args})"]
+        if isinstance(stmt, IfStmt):
+            lines = [f"if {self.expr(stmt.condition)} {{"]
+            lines.extend(indent_lines(self.statement_block(stmt.then_body)))
+            if stmt.else_body:
+                lines.append("} else {")
+                lines.extend(indent_lines(self.statement_block(stmt.else_body)))
+            lines.append("}")
+            return lines
+        if isinstance(stmt, WhileStmt):
+            lines = [f"for {self.expr(stmt.condition)} {{"]
+            lines.extend(indent_lines(self.statement_block(stmt.body)))
+            lines.append("}")
+            return lines
+        if isinstance(stmt, CaseStmt):
+            lines = [f"switch {self.expr(stmt.expr)} {{"]
+            for branch in stmt.branches:
+                lines.append(f"case {self.expr(branch.value)}:")
+                lines.extend(indent_lines(self.statement_block(branch.body)))
+            if stmt.default_body:
+                lines.append("default:")
+                lines.extend(indent_lines(self.statement_block(stmt.default_body)))
+            lines.append("}")
+            return lines
         self.unsupported(stmt, "statement not supported by Go codegen V1")
         return ["// unsupported statement"]
+
+    def statement_block(self, statements: list[Any]) -> list[str]:
+        lines: list[str] = []
+        for statement in statements:
+            lines.extend(self.statement(statement))
+        return lines or ["// empty"]
 
     def expr(self, expr: Any) -> str:
         if isinstance(expr, NumberExpr):
@@ -172,6 +218,10 @@ class GoGenerator:
             head, *tail = expr.path
             parts = [go_local_name(head)] + [go_exported_name(part) for part in tail]
             return ".".join(parts)
+        if isinstance(expr, IndexExpr):
+            return f"{go_local_name(expr.name)}[{self.expr(expr.index)}]"
+        if isinstance(expr, UnaryExpr):
+            return f"{go_operator(expr.op)}{self.expr(expr.expr)}"
         if isinstance(expr, BinaryExpr):
             return f"{self.expr(expr.left)} {go_operator(expr.op)} {self.expr(expr.right)}"
         if isinstance(expr, RecordLiteralExpr):
@@ -250,6 +300,10 @@ def go_qualified_name(name: str) -> str:
 
 def go_operator(op: str) -> str:
     return {"=": "==", "and": "&&", "or": "||", "not": "!"}.get(op, op)
+
+
+def indent_lines(lines: list[str]) -> list[str]:
+    return [f"\t{line}" for line in lines]
 
 
 def parse_generic(type_name: str) -> tuple[str, list[str]] | None:

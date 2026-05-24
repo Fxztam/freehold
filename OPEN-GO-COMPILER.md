@@ -19,7 +19,7 @@ Der erste Go-Compiler-Slice ist vorhanden:
 - `valid_go_codegen`-Manifestfaelle verankern Golden-Vergleiche in den Language-Modulen.
 - `verify-parser-conformance.cmd` fuehrt den Go-Codegen-Artefaktcheck als eigenen Gate-Schritt aus.
 
-Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, `return`, `check`, Basis-Literale, binaere Ausdruecke, Feldzugriffe, Record-Literale und einfache Calls. Nicht unterstuetzte AST-Formen werden im Result als Diagnostics markiert.
+Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, Record-Literale und einfache Calls. Nicht unterstuetzte AST-Formen werden im Result als Diagnostics markiert.
 
 ## Ziel
 
