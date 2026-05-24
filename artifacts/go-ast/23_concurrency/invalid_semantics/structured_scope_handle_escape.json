@@ -1,0 +1,121 @@
+{
+  "source_file": "..\\tests\\language_modules\\23_concurrency\\invalid_semantics\\structured_scope_handle_escape.fh",
+  "source_snippet": "module Concurrency.StructuredScopeHandleEscape\r\n\r\ntype Invoice is record\r\n    id: Integer\r\nend record\r\n\r\nasync function load_invoice(id: Integer) returns Invoice\r\nis\r\n    return Invoice { id: id }\r\nend load_invoice\r\n\r\nasync function handle(id: Integer) returns JoinHandle\u003cInvoice\u003e\r\nis\r\n    scope request_scope do\r\n        spawn\r\n            let invoice_handle: JoinHandle\u003cInvoice\u003e = request_scope.spawn\u003cInvoice\u003e(load_invoice(id))\r\n        join\r\n        result\r\n            return invoice_handle\r\n    end scope\r\nend handle\r\n\r\nend Concurrency.StructuredScopeHandleEscape\r\n",
+  "module_name": "23_concurrency",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Concurrency.StructuredScopeHandleEscape",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Invoice",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ]
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "load_invoice",
+        "is_async": true,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Invoice",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Invoice",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "id"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "load_invoice"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "handle",
+        "is_async": true,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "JoinHandle\u003cInvoice\u003e",
+        "body": [
+          {
+            "kind": "ScopeStmt",
+            "name": "request_scope",
+            "spawn_body": [
+              {
+                "kind": "LetStmt",
+                "name": "invoice_handle",
+                "type": "JoinHandle\u003cInvoice\u003e",
+                "value": {
+                  "kind": "CallExpr",
+                  "callee": {
+                    "kind": "FieldAccessExpr",
+                    "object": {
+                      "kind": "IdentifierExpr",
+                      "name": "request_scope"
+                    },
+                    "field": "spawn"
+                  },
+                  "type_args": [
+                    "Invoice"
+                  ],
+                  "arguments": [
+                    {
+                      "kind": "CallExpr",
+                      "callee": {
+                        "kind": "IdentifierExpr",
+                        "name": "load_invoice"
+                      },
+                      "arguments": [
+                        {
+                          "kind": "IdentifierExpr",
+                          "name": "id"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ],
+            "join_body": null,
+            "result_body": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "IdentifierExpr",
+                  "name": "invoice_handle"
+                }
+              }
+            ]
+          }
+        ],
+        "end_name": "handle"
+      }
+    ],
+    "end_name": "Concurrency.StructuredScopeHandleEscape"
+  }
+}

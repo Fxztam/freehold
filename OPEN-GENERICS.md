@@ -1,10 +1,10 @@
 # Open: Generics und Templates in Freehold
 
-Stand: 2026-05-23
+Stand: 2026-05-24
 
-Status: offen, V1b Record- und Function-Generics implementiert
+Status: V1b abgeschlossen; Bounds, Inference, qualifizierte generische Calls und Codegen-Monomorphisierung fuer V2/V3 geparkt
 
-Dieses Dokument haelt die erste Entscheidung zur Aufnahme von Generics in Freehold fest. Ziel ist noch keine Implementierung, sondern eine klare Richtung fuer Syntax, Semantik, Diagnostics und spaetere Compiler-Umsetzung.
+Dieses Dokument haelt die erste Entscheidung zur Aufnahme von Generics in Freehold fest. V1b Record- und Function-Generics sind implementiert und conformance-geprueft. Bounds, Inference, qualifizierte generische Calls, monomorphisierte Codegen-Artefakte und generische IDL-Monomorphisierung bleiben V2/V3.
 
 ## Ausgangsfragen
 

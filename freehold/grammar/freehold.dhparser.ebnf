@@ -13,11 +13,12 @@ import_decl = ~ "import" qualified_name [ exposing_clause ]
 exposing_clause = "exposing" exposing_list
 exposing_list = IDENT { "," IDENT }
 
-declaration = record_type_decl | type_decl | error_decl | function_decl | procedure_decl
+declaration = record_type_decl | type_decl | error_decl | service_decl | function_decl | procedure_decl
 
 record_type_decl = ~ "type" IDENT [ type_param_list ] "is" "record" record_field { record_field } "end" "record"
 type_param_list = "<" IDENT { "," IDENT } ">"
-record_field = IDENT ":" type_ref
+record_field = IDENT ":" type_ref [ proto_field_id ]
+proto_field_id = "proto" INTEGER_LITERAL
 
 type_decl = ~ "type" IDENT "is" base_type [ range_decl ]
 range_decl = "range" NUMBER_LITERAL ".." NUMBER_LITERAL
@@ -35,6 +36,8 @@ array_type = "Array" "<" type_ref "," INTEGER_LITERAL ">"
 function_decl = ~ [ async_marker ] "function" IDENT [ type_param_list ] "(" [ param_list ] ")" "returns" return_type [ contract_block ] "is" { stmt } "end" IDENT
 async_marker = "async"
 procedure_decl = ~ "procedure" IDENT "(" [ param_list ] ")" [ contract_block ] "is" { stmt } "end" IDENT
+service_decl = ~ "service" IDENT "is" rpc_decl { rpc_decl } "end" IDENT
+rpc_decl = ~ "rpc" IDENT "(" IDENT ":" type_ref ")" ":" type_ref
 
 param_list = param { "," param }
 param = IDENT ":" type_ref
@@ -44,7 +47,7 @@ requires_clause = "requires" expr_list
 aborts_clause = "aborts" IDENT [ "when" expr ]
 ensures_clause = "ensures" expr_list
 
-stmt = let_stmt | return_stmt | abort_stmt | if_stmt | while_stmt | case_stmt | check_stmt | call_stmt | field_assign_stmt | assign_stmt
+stmt = let_stmt | return_stmt | abort_stmt | if_stmt | while_stmt | case_stmt | scope_stmt | check_stmt | call_stmt | field_assign_stmt | assign_stmt
 let_stmt = ~ "let" IDENT ":" return_type "=" expr
 field_assign_stmt = ~ FIELD_PATH ":=" expr
 assign_stmt = ~ IDENT ":=" expr
@@ -68,6 +71,11 @@ case_branch = ~ "when" expr "=>" case_block
 default_branch = ~ "default" "=>" case_block
 case_block = { stmt }
 
+scope_stmt = ~ "scope" IDENT "do" scope_spawn_block scope_join_block scope_result_block "end" "scope"
+scope_spawn_block = ~ "spawn" { stmt }
+scope_join_block = ~ "join" { stmt }
+scope_result_block = ~ "result" { stmt }
+
 arg_list = call_arg { "," call_arg }
 call_arg = named_arg | expr
 expr_list = expr { "," expr }
@@ -84,12 +92,14 @@ product = unary { ( "*" | "/" ) unary }
 unary = "await" unary | "-" unary | "not" unary | postfix_expr
 
 postfix_expr = primary { postfix }
-postfix = "(" [ arg_list ] ")" | "[" expr "]" | "." IDENT
+postfix = [ type_arg_list ] "(" [ arg_list ] ")" | "[" expr "]" | "." member_name
+member_name = IDENT | "spawn" | "join"
 
 primary = STRING_LITERAL
      | DOUBLE_LITERAL
      | INTEGER_LITERAL
      | array_literal
+     | "scope" "(" [ arg_list ] ")"
      | IDENT type_arg_list "(" [ arg_list ] ")"
      | IDENT "{" named_arg_list "}"
      | type_ref "{" named_arg_list "}"
@@ -106,6 +116,6 @@ BASE_TYPE = "Integer" | "Boolean" | "Double" | "String" | "BigInteger" | "BigFlo
 DOUBLE_LITERAL = /-?(?:[0-9]+\.[0-9]+)/~
 NUMBER_LITERAL = DOUBLE_LITERAL | INTEGER_LITERAL
 INTEGER_LITERAL = /-?[0-9]+/~
-IDENT = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|async\b|await\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*/~
-FIELD_PATH = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|async\b|await\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+/~
+IDENT = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|service\b|rpc\b|proto\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|async\b|await\b|scope\b|spawn\b|join\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*/~
+FIELD_PATH = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|service\b|rpc\b|proto\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|async\b|await\b|scope\b|spawn\b|join\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+/~
 STRING_LITERAL = /"[^"\\]*(?:\\.[^"\\]*)*"/~

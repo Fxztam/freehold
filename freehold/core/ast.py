@@ -47,11 +47,27 @@ class RecordField:
     name: str
     type_name: str
     pos: SourcePos
+    proto_id: int | None = None
 
 @dataclass(frozen=True)
 class RecordDef:
     name: str
     fields: dict[str, str]
+    proto_fields: dict[str, int] | None = None
+
+@dataclass(frozen=True)
+class RpcDecl:
+    name: str
+    request_name: str
+    request_type: str
+    response_type: str
+    pos: SourcePos
+
+@dataclass(frozen=True)
+class ServiceDecl:
+    name: str
+    rpcs: list[RpcDecl]
+    pos: SourcePos
 
 @dataclass(frozen=True)
 class RecordValue:
@@ -248,6 +264,15 @@ class CaseStmt:
     expr: Any
     branches: list[CaseBranch]
     default_body: list[Any]
+    pos: SourcePos
+
+
+@dataclass
+class ScopeStmt:
+    name: str
+    spawn_body: list[Any]
+    join_body: list[Any]
+    result_body: list[Any]
     pos: SourcePos
 
 

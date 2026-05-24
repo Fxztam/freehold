@@ -10,6 +10,7 @@ range FH-TPL-4000..4099 semantic template open
 range FH-RES-4100..4199 semantic result open
 range FH-JSON-4200..4299 semantic json open
 range FH-REC-4300..4399 semantic record open
+range FH-GRPC-4400..4499 semantic grpc open
 range FH-GEN-5000..5099 semantic generic open
 range FH-BLD-9000..9999 build tooling
 
@@ -256,6 +257,24 @@ category concurrency
 legacy VF-CH002
 message "Channel argument type mismatch"
 expected "matching Channel<T>, Sender<T>, Receiver<T>, or payload T"
+end
+
+diag FH-CON-3121 scope_join_handle_escape
+severity error
+phase semantic
+category concurrency
+legacy VF-SC001
+message "scope JoinHandle cannot escape"
+expected "scope-local JoinHandle joined before return or end scope"
+end
+
+diag FH-CON-3122 scope_join_handle_not_joined
+severity error
+phase semantic
+category concurrency
+legacy VF-SC002
+message "scope JoinHandle must be joined"
+expected "scope_join or scope.join before leaving Scope"
 end
 
 # Current semantic/type diagnostics from tools/compare_semantic_diagnostics.py CODE_MAP.
@@ -870,6 +889,60 @@ category json
 legacy VF-J003
 message "Json value type not serializable"
 expected "JSON-serializable record field value"
+end
+
+diag FH-GRPC-4401 duplicate_proto_field_id
+severity error
+phase semantic
+category grpc
+legacy VF-GRPC001
+message "duplicate proto field id"
+expected "unique proto field id in record"
+end
+
+diag FH-GRPC-4402 invalid_proto_field_id
+severity error
+phase semantic
+category grpc
+legacy VF-GRPC002
+message "invalid proto field id"
+expected "positive proto field id"
+end
+
+diag FH-GRPC-4403 missing_proto_field_id
+severity error
+phase semantic
+category grpc
+legacy VF-GRPC003
+message "missing proto field id in grpc message"
+expected "field: Type proto N"
+end
+
+diag FH-GRPC-4404 unknown_rpc_type
+severity error
+phase semantic
+category grpc
+legacy VF-GRPC004
+message "unknown rpc type"
+expected "declared record message type"
+end
+
+diag FH-GRPC-4405 duplicate_rpc_name
+severity error
+phase semantic
+category grpc
+legacy VF-GRPC005
+message "duplicate rpc name"
+expected "unique rpc name in service"
+end
+
+diag FH-GRPC-4406 unsupported_grpc_proto_field_type
+severity error
+phase semantic
+category grpc
+legacy VF-GRPC006
+message "unsupported grpc proto field type"
+expected "String, Integer, Boolean, Double, record, or Array of supported values"
 end
 
 diag FH-GEN-5002 duplicate_type_parameter

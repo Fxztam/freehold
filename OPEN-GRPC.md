@@ -1,10 +1,10 @@
 # Open: gRPC und IDL in Freehold
 
-Stand: 2026-05-23
+Stand: 2026-05-24
 
-Status: offen, Design-Diskussion
+Status: V1 abgeschlossen; Go-Bindings, Streaming, Error-Mapping und Versionierung fuer V2/V3 geparkt
 
-Dieses Dokument haelt die erste Diskussion zur Aufnahme von gRPC in Freehold fest. Ziel ist noch keine Implementierung, sondern eine klare strategische Richtung fuer Records, Services, Contracts, Fehlerabbildung und spaeteren Codegen.
+Dieses Dokument haelt die erste Richtung zur Aufnahme von gRPC in Freehold fest. V1 ist bewusst klein: Records koennen stabile Protobuf-Field-IDs tragen, Services koennen unary RPC-Signaturen deklarieren, der Verifier prueft die IDL-Grundregeln, und ein erster Generator kann daraus proto3 ausgeben. Streaming, Error-Mapping, Versionierung und Go-Bindings bleiben vorbereitete Ausbauschritte.
 
 ## Ausgangsfrage
 
@@ -16,6 +16,119 @@ Ja. Ein Freehold-`record` kann sehr gut eine gRPC/Protobuf-Message beschreiben. 
 
 Der wichtigste Designpunkt ist: Protobuf braucht stabile Field Numbers. Daher braucht Freehold fuer gRPC-kompatible Records eine explizite oder eindeutig ableitbare Field-ID-Regel.
 
+## V1 jetzt
+
+Der aktuelle V1-Slice ist implementiert und durch den Parser-Conformance-Gate validiert.
+
+Unterstuetzte Syntax:
+
+```fh
+module Grpc.Basic
+
+type UserRequest is record
+    id: String proto 1
+end record
+
+type UserReply is record
+    name: String proto 1
+    active: Boolean proto 2
+end record
+
+service UserService is
+    rpc GetUser(request: UserRequest): UserReply
+end UserService
+
+end Grpc.Basic
+```
+
+V1 umfasst:
+
+- `field: Type proto N` an Record-Feldern
+- top-level `service Name is ... end Name`
+- unary `rpc Name(request: RequestRecord): ResponseRecord`
+- AST-Knoten fuer `ServiceDecl` und `RpcDecl`
+- Python-, Go- und DHParser-Parsing fuer dieselbe Struktur
+- Semantik-Diagnostics fuer doppelte/ungueltige/fehlende Proto-IDs, unbekannte RPC-Typen und doppelte RPC-Namen
+- proto3-Codegen per `freehold grpc-proto <file>`
+
+V1 umfasst ausdruecklich noch nicht:
+
+- Go-gRPC-Server- oder Client-Bindings
+- Streaming
+- Error-/Statuscode-Mapping
+- Import-/Package-Codegen ueber Modulgrenzen
+- Schema-Evolution-Diagnostics wie reservierte Field Numbers
+
+Die formalen Regeln in `spec/freehold.rules` beschreiben nur die heute existierenden V1-Diagnostics `FH-GRPC-4401..4406`. Fuer vorbereitete V2-Ideen werden noch keine neuen Emits eingetragen, solange die Syntax und Semantik nicht existieren.
+
+## V2 vorbereitet
+
+Damit spaetere gRPC-Kommunikation mit Go-Servern stabil aus V1 wachsen kann, sollte Freehold vor allem die folgenden Designentscheidungen vorbereiten, ohne sie schon als Parser-Syntax zu erzwingen.
+
+### Typ-Mapping
+
+Freehold braucht ein klares Mapping von IDL-faehigen Typen nach Protobuf:
+
+```text
+String      -> string
+Boolean     -> bool
+Integer     -> int64 oder sint64, noch festzulegen
+Double      -> double
+Record      -> message
+Array<T>    -> repeated T, wenn T protobuf-faehig ist
+```
+
+Nicht jedes Freehold-Konzept ist automatisch protobuf-faehig. `BigInteger`, `BigFloat`, `Result<T, E>`, generische Records, Ranges und spaetere optionale Werte brauchen explizite Regeln: erlaubt, verboten oder per Annotation gemappt.
+
+### Package und Imports
+
+Freehold-Module koennen spaeter auf Protobuf-Packages abgebildet werden:
+
+```text
+module Billing.Invoice -> package billing.invoice;
+```
+
+Importierte Freehold-Records sollten spaeter als `.proto` imports erscheinen koennen. V1 muss dafuer noch nichts generieren, aber die IDL-Semantik sollte Modulnamen und Record-Identitaeten stabil halten.
+
+### Freehold-zu-Go-Bindings
+
+V1 beschreibt nur die IDL. Spaeter braucht Freehold eine explizite Bindung von RPCs an Implementierungen, zum Beispiel als noch offene Designrichtung:
+
+```fh
+procedure get_user(request: UserRequest) returns UserReply
+implements UserService.GetUser
+```
+
+Die genaue Syntax ist offen. Wichtig ist nur: Service-IDL und Implementierung duerfen nicht zufaellig ueber Namenskonventionen gekoppelt werden, sondern brauchen spaeter eine pruefbare Bindung.
+
+### Fehler und Statuscodes
+
+Freehold-`error`, `aborts` und `Result<T, E>` koennen spaeter auf gRPC Status Codes und Details abgebildet werden. Eine moegliche Richtung:
+
+```fh
+error NotFound grpc status NOT_FOUND
+error InvalidInput grpc status INVALID_ARGUMENT
+```
+
+V1 erzeugt dafuer noch keine Syntax und keine Diagnostics. Die spaetere Regel sollte aber fachliche Fehler (`abort`) von Transportereignissen (`cancel`, Deadline, Client Disconnect) trennen.
+
+### Versionierung
+
+Das wichtigste V1-Fundament fuer Versionierung ist bereits vorhanden: stabile `proto N` Field IDs. Spaeter sollten Regeln dazukommen fuer:
+
+- Field IDs nicht wiederverwenden
+- geloeschte Field IDs reservieren
+- Feldnamen optional reservieren
+- inkompatible Typaenderungen diagnostizieren
+
+Moegliche spaetere Syntax:
+
+```fh
+reserved proto 4, 7..9
+```
+
+Auch diese Syntax wird in V1 bewusst nicht eingefuehrt.
+
 ## Record als gRPC Message
 
 Ein Freehold-Record kann als Protobuf-Message interpretiert werden:
@@ -23,12 +136,12 @@ Ein Freehold-Record kann als Protobuf-Message interpretiert werden:
 ```fh
 type UserRequest is record
     id: String
-end
+end record
 
 type UserReply is record
     name: String
     active: Boolean
-end
+end record
 ```
 
 Moegliche Protobuf-Ausgabe:
@@ -96,11 +209,14 @@ proto field ids are optional for normal records,
 required for records used as gRPC/protobuf messages.
 ```
 
-Erwartete spaetere Diagnostics:
+Aktuelle V1-Diagnostics:
 
 - duplicate proto field id
 - missing proto field id in grpc message
 - invalid proto field id
+
+Erwartete spaetere Diagnostics:
+
 - reserved proto field id used
 - proto field id changed incompatibly
 
@@ -108,14 +224,14 @@ Eine explizite Field-ID-Syntax ist langfristig besser als reine Reihenfolge. Sie
 
 ## Service als gRPC Service
 
-Ein gRPC-Service ist nicht nur ein Record, sondern ein Set von Remote-Routinen. Freehold koennte dafuer eine eigene `service`-Deklaration bekommen.
+Ein gRPC-Service ist nicht nur ein Record, sondern ein Set von Remote-Routinen. Freehold hat dafuer in V1 eine eigene `service`-Deklaration.
 
-Moegliche Freehold-Syntax:
+Aktuelle V1-Freehold-Syntax:
 
 ```fh
 service UserService is
     rpc GetUser(request: UserRequest): UserReply
-end
+end UserService
 ```
 
 Moegliche Protobuf-Ausgabe:
@@ -151,11 +267,11 @@ Wie kann man das Streaming fuer gRPC aus Freehold vorbereiten?
 
 ### Kurzantwort zu Streaming
 
-Freehold sollte Streaming frueh syntaktisch und im internen Modell vorbereiten, aber nicht sofort voll ausfuehren. Streaming ist nicht nur ein anderer Rueckgabetyp, sondern ein anderes Ausfuehrungsmodell mit Cancellation, Deadlines, Backpressure, Message-Contracts und Abschluss-Semantik.
+Freehold sollte Streaming frueh im Design und internen Modell vorbereiten, aber nicht sofort syntaktisch aktivieren. Streaming ist nicht nur ein anderer Rueckgabetyp, sondern ein anderes Ausfuehrungsmodell mit Cancellation, Deadlines, Backpressure, Message-Contracts und Abschluss-Semantik.
 
 ### `stream T` als reservierte Typform
 
-Freehold sollte eine Typform `stream T` fuer RPC-Positionen reservieren:
+Freehold sollte spaeter eine Typform `stream T` fuer RPC-Positionen reservieren:
 
 ```fh
 stream LogEvent
@@ -188,7 +304,7 @@ Bidirectional streaming:
     rpc Chat(stream ChatMessage): stream ChatMessage
 ```
 
-Empfehlung: `stream T` zunaechst nur in `rpc`-Request- und Response-Positionen erlauben, nicht in beliebigen Variablen, Records oder normalen Funktionen. So bleibt V1 klein und die spaetere Stream-Semantik wird nicht versehentlich Teil der Kernsprache.
+Empfehlung: `stream T` spaeter nur in `rpc`-Request- und Response-Positionen erlauben, nicht in beliebigen Variablen, Records oder normalen Funktionen. So bleibt V1 klein und die spaetere Stream-Semantik wird nicht versehentlich Teil der Kernsprache.
 
 ### Interne Streaming-Modellierung
 
@@ -400,4 +516,4 @@ Sprache
 - volle Runtime-Contract-Enforcement
 - Native-Code- oder Image-Builder-Integration
 
-Der erste Slice sollte klein bleiben: Records mit Field IDs, unary Services und `.proto`-Generation.
+Der erste implementierte Slice bleibt klein: Records mit Field IDs, unary Services im Parser/AST/Verifier und proto3-Ausgabe. Der naechste sinnvolle Implementierungsschritt sind Go-gRPC-Bindings auf Basis dieser stabilen `.proto`-Dateien.

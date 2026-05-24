@@ -20,7 +20,8 @@ RESERVED_NAMES = {
     "error", "exposing", "failure", "false", "function", "if", "import",
     "invariant", "is", "let", "module", "not", "ok", "or", "procedure",
     "record", "requires", "aborts", "return", "abort", "returns", "success", "then", "true",
-    "type", "value", "variant", "when", "while", "async", "await",
+    "type", "value", "variant", "when", "while", "async", "await", "scope", "spawn", "join", "result",
+    "service", "rpc", "proto",
 }
 
 @dataclass
@@ -30,6 +31,7 @@ class VerifiedProgram:
     records: dict[str, RecordDef]
     errors: set[str]
     routines: dict[str, RoutineDecl]
+    services: dict[str, ServiceDecl]
     proof_obligations: list[dict[str, str]]
     flow_summaries: dict[str, RoutineFlowSummary]
 
@@ -38,7 +40,7 @@ class Verifier:
         self.validate_imports(program)
         self.validate_qualified_name(program.module_name, program.pos)
         types = {name: TypeDef(name, name) for name in BUILTIN_TYPE_NAMES}
-        records, generic_records, errors, routines = {}, {}, set(), {}
+        records, generic_records, errors, routines, services = {}, {}, set(), {}, {}
         declared_names = {name: "builtin" for name in types}
         for d in program.declarations:
             if isinstance(d, TypeDecl):
@@ -58,11 +60,16 @@ class Verifier:
                     self.validate_identifier(f.name, f.pos)
                     if f.name in seen: raise TypeCheckError(f"{f.pos.text()}: duplicate record field: {f.name}")
                     seen.add(f.name); fields[f.name] = f.type_name
-                records[d.name] = RecordDef(d.name, fields)
+                proto_fields = self.validate_proto_fields(d)
+                records[d.name] = RecordDef(d.name, fields, proto_fields)
             elif isinstance(d, ErrorDecl):
                 self.validate_declaration_name(d.name, declared_names, d.pos, "error")
                 declared_names[d.name] = "error"
                 errors.add(d.name)
+            elif isinstance(d, ServiceDecl):
+                self.validate_declaration_name(d.name, declared_names, d.pos, "service")
+                declared_names[d.name] = "service"
+                services[d.name] = d
             elif isinstance(d, RoutineDecl):
                 self.validate_declaration_name(d.name, declared_names, d.pos, "routine")
                 if d.type_params:
@@ -80,8 +87,54 @@ class Verifier:
                 ctx.current_type_params = previous_type_params
         obs = []
         for r in routines.values(): self.routine(r, ctx, obs)
+        self.services(services, records)
         flow_summaries = ControlFlowAnalyzer(routines, program.module_name).analyze_routines()
-        return VerifiedProgram(program, types, records, errors, routines, obs, flow_summaries)
+        return VerifiedProgram(program, types, records, errors, routines, services, obs, flow_summaries)
+
+    def validate_proto_fields(self, declaration: RecordTypeDecl) -> dict[str, int]:
+        proto_fields: dict[str, int] = {}
+        seen_ids: dict[int, str] = {}
+        for field in declaration.fields:
+            if field.proto_id is None:
+                continue
+            if field.proto_id <= 0:
+                raise TypeCheckError(f"{field.pos.text()}: invalid proto field id: {field.proto_id}")
+            if field.proto_id in seen_ids:
+                raise TypeCheckError(f"{field.pos.text()}: duplicate proto field id: {field.proto_id}")
+            seen_ids[field.proto_id] = field.name
+            proto_fields[field.name] = field.proto_id
+        return proto_fields
+
+    def services(self, services: dict[str, ServiceDecl], records: dict[str, RecordDef]) -> None:
+        for service in services.values():
+            seen_rpc_names = set()
+            for rpc in service.rpcs:
+                self.validate_identifier(rpc.name, rpc.pos)
+                self.validate_identifier(rpc.request_name, rpc.pos)
+                if rpc.name in seen_rpc_names:
+                    raise TypeCheckError(f"{rpc.pos.text()}: duplicate rpc name: {rpc.name}")
+                seen_rpc_names.add(rpc.name)
+                self.require_grpc_record(rpc.request_type, records, rpc.pos, "request")
+                self.require_grpc_record(rpc.response_type, records, rpc.pos, "response")
+
+    def require_grpc_record(self, type_name: str, records: dict[str, RecordDef], pos: SourcePos, role: str) -> None:
+        if "<" in type_name or type_name not in records:
+            raise TypeCheckError(f"{pos.text()}: unknown rpc {role} type: {type_name}")
+        record = records[type_name]
+        proto_fields = record.proto_fields or {}
+        for field_name, field_type in record.fields.items():
+            if field_name not in proto_fields:
+                raise TypeCheckError(f"{pos.text()}: missing proto field id in grpc message: {type_name}.{field_name}")
+            self.require_grpc_proto_field_type(field_type, records, pos)
+
+    def require_grpc_proto_field_type(self, type_name: str, records: dict[str, RecordDef], pos: SourcePos) -> None:
+        array_match = re.fullmatch(r"Array<\s*([^<>]+?)\s*>", type_name)
+        if array_match:
+            self.require_grpc_proto_field_type(array_match.group(1).strip(), records, pos)
+            return
+        if type_name in {"String", "Integer", "Boolean", "Double"} or type_name in records:
+            return
+        raise TypeCheckError(f"{pos.text()}: unsupported grpc proto field type: {type_name}")
 
     def validate_imports(self, program: Program) -> None:
         seen = set()
@@ -211,8 +264,12 @@ class Verifier:
         ctx.current_routine = r
         previous_type_params = ctx.current_type_params
         previous_async = ctx.current_async
+        previous_scopes = ctx.scope_vars
+        previous_scope_handles = ctx.scope_handles
         ctx.current_type_params = set(r.type_params or [])
         ctx.current_async = r.is_async
+        ctx.scope_vars = set()
+        ctx.scope_handles = {}
         env = {}
         try:
             seen_params = set()
@@ -237,10 +294,13 @@ class Verifier:
                     self.contract_bool("aborts", clause.condition, env, ctx, False, None)
             for e in r.ensures: self.contract_bool("ensures", e, env, ctx, True, r.return_type)
             ret = self.block(r.body, r, env, ctx)
+            ctx.require_no_unjoined_scope_handles(r.pos)
             if r.kind == "function" and not ret: raise TypeCheckError(f"{r.pos.text()}: function {r.name} has no guaranteed return")
         finally:
             ctx.current_type_params = previous_type_params
             ctx.current_async = previous_async
+            ctx.scope_vars = previous_scopes
+            ctx.scope_handles = previous_scope_handles
 
     def abort_names(self, r):
         return {clause.error_name for clause in r.aborts}
@@ -257,7 +317,9 @@ class Verifier:
             if isinstance(s, LetStmt):
                 self.validate_identifier(s.name, s.pos)
                 ctx.require_return_type(s.type_ref, s.pos)
-                self.assign(self.infer(s.expr, env, ctx, False, None), s.type_ref, ctx, s.pos); env[s.name]=s.type_ref
+                actual = self.infer(s.expr, env, ctx, False, None)
+                self.assign(actual, s.type_ref, ctx, s.pos); env[s.name]=s.type_ref
+                ctx.note_let(s.name, s.type_ref, s.expr, s.pos)
             elif isinstance(s, AssignStmt):
                 if s.name not in env:
                     raise TypeCheckError(f"{s.pos.text()}: unknown assignment target: {s.name}")
@@ -266,6 +328,8 @@ class Verifier:
                 target_type = self.infer_field_path_obj(s.path, s.pos, env, ctx, False, None)
                 self.assign(self.infer(s.expr, env, ctx, False, None), target_type, ctx, s.pos)
             elif isinstance(s, ReturnStmt):
+                ctx.reject_scope_handle_escape(s.value)
+                ctx.require_no_unjoined_scope_handles(s.pos)
                 self.ret(s.value, r.return_type, env, ctx); saw = True
             elif isinstance(s, AbortStmt):
                 if s.error_name not in ctx.errors:
@@ -312,6 +376,18 @@ class Verifier:
                     branch_returns.append(self.block(br.body, r, dict(env), ctx))
                 default_returns = self.block(s.default_body, r, dict(env), ctx)
                 saw = saw or (all(branch_returns) and default_returns)
+            elif isinstance(s, ScopeStmt):
+                self.validate_identifier(s.name, s.pos)
+                scope_env = dict(env)
+                scope_env[s.name] = TypeName("Scope")
+                ctx.scope_vars.add(s.name)
+                try:
+                    self.block(s.spawn_body, r, scope_env, ctx)
+                    self.block(s.join_body, r, scope_env, ctx)
+                    saw = saw or self.block(s.result_body, r, scope_env, ctx)
+                    ctx.require_no_unjoined_scope_handles(s.pos, s.name)
+                finally:
+                    ctx.scope_vars.discard(s.name)
             elif isinstance(s, CallStmt):
                 if self.std_procedure_call(s.name, s.args, env, ctx, s.pos):
                     continue
@@ -453,6 +529,47 @@ class Verifier:
             item_type = require_builtin_type_arg()
             expect_count(1)
             expect_exact_type(0, f"Receiver<{item_type}>")
+            return AwaitableType(TypeName(item_type))
+        if e.name == "scope":
+            if e.type_args:
+                raise TypeCheckError(f"{e.pos.text()}: non-generic routine used with type arguments: {e.name}")
+            expect_count(0)
+            return TypeName("Scope")
+        if e.name == "scope_spawn":
+            item_type = require_builtin_type_arg()
+            expect_count(2)
+            expect_exact_type(0, "Scope")
+            expect_exact_type(1, f"JoinHandle<{item_type}>")
+            if not isinstance(e.args[0], VarExpr) or e.args[0].name not in ctx.scope_vars:
+                raise TypeCheckError(f"{e.args[0].pos.text()}: scope_spawn requires a local Scope created by scope(), got {type_to_string(self.infer(e.args[0], env, ctx, allow_result, result_type))}")
+            return TypeName(f"JoinHandle<{item_type}>")
+        if e.name == "scope_join":
+            item_type = require_builtin_type_arg()
+            expect_count(2)
+            expect_exact_type(0, "Scope")
+            expect_exact_type(1, f"JoinHandle<{item_type}>")
+            if isinstance(e.args[0], VarExpr) and isinstance(e.args[1], VarExpr):
+                ctx.mark_scope_handle_joined(e.args[0].name, e.args[1].name, e.args[1].pos)
+            return AwaitableType(TypeName(item_type))
+        method_owner, method_name = ctx.scope_method_name(e.name)
+        if method_name == "spawn":
+            item_type = require_builtin_type_arg()
+            expect_count(1)
+            if method_owner not in ctx.scope_vars:
+                raise TypeCheckError(f"{e.pos.text()}: scope spawn requires a local Scope created by scope block: {method_owner}")
+            task_type = infer_arg(0)
+            if not isinstance(task_type, AwaitableType):
+                raise TypeCheckError(f"{e.args[0].pos.text()}: scope spawn requires an awaitable expression, got {type_to_string(task_type)}")
+            self.assign(task_type.inner_type, TypeName(item_type), ctx, e.args[0].pos)
+            return TypeName(f"JoinHandle<{item_type}>")
+        if method_name == "join":
+            item_type = require_builtin_type_arg()
+            expect_count(1)
+            if method_owner not in ctx.scope_vars:
+                raise TypeCheckError(f"{e.pos.text()}: scope join requires a local Scope created by scope block: {method_owner}")
+            expect_exact_type(0, f"JoinHandle<{item_type}>")
+            if isinstance(e.args[0], VarExpr):
+                ctx.mark_scope_handle_joined(method_owner, e.args[0].name, e.args[0].pos)
             return AwaitableType(TypeName(item_type))
         if e.name == "String.concat":
             if len(e.args) != 2:
@@ -762,6 +879,51 @@ class Ctx:
     def __init__(self, module_name, types, records, generic_records, errors, routines):
         self.module_name=module_name; self.types=types; self.records=records; self.generic_records=generic_records; self.errors=errors; self.routines=routines
         self.current_routine=None; self.current_type_params=set(); self.current_async=False
+        self.scope_vars=set(); self.scope_handles={}
+
+    def note_let(self, name: str, type_ref, expr, pos: SourcePos) -> None:
+        if isinstance(expr, CallExpr) and expr.name == "scope" and isinstance(type_ref, TypeName) and type_ref.name == "Scope":
+            self.scope_vars.add(name)
+            return
+        if isinstance(expr, CallExpr) and expr.name == "scope_spawn":
+            scope_name = expr.args[0].name if expr.args and isinstance(expr.args[0], VarExpr) else "<unknown>"
+            self.scope_handles[name] = (scope_name, pos)
+            return
+        if isinstance(expr, CallExpr):
+            scope_name, method_name = self.scope_method_name(expr.name)
+            if method_name == "spawn" and scope_name in self.scope_vars:
+                self.scope_handles[name] = (scope_name, pos)
+
+    def reject_scope_handle_escape(self, return_value) -> None:
+        if isinstance(return_value, ReturnPlain) and isinstance(return_value.expr, VarExpr):
+            handle_name = return_value.expr.name
+            if handle_name in self.scope_handles:
+                scope_name, _ = self.scope_handles[handle_name]
+                raise TypeCheckError(f"{return_value.expr.pos.text()}: scope JoinHandle cannot escape its scope: {handle_name} from {scope_name}")
+
+    def require_no_unjoined_scope_handles(self, pos: SourcePos, scope_name: str | None = None) -> None:
+        open_handles = self.scope_handles
+        if scope_name is not None:
+            open_handles = {name: data for name, data in self.scope_handles.items() if data[0] == scope_name}
+        if open_handles:
+            handle_name = sorted(open_handles)[0]
+            scope_name, handle_pos = self.scope_handles[handle_name]
+            raise TypeCheckError(f"{handle_pos.text()}: scope JoinHandle must be joined before leaving scope: {handle_name} from {scope_name}")
+
+    def mark_scope_handle_joined(self, scope_name: str, handle_name: str, pos: SourcePos) -> None:
+        if handle_name not in self.scope_handles:
+            raise TypeCheckError(f"{pos.text()}: JoinHandle is not owned by this scope: {handle_name}")
+        owner_scope, _ = self.scope_handles[handle_name]
+        if owner_scope != scope_name:
+            raise TypeCheckError(f"{pos.text()}: JoinHandle is not owned by this scope: {handle_name}")
+        del self.scope_handles[handle_name]
+
+    def scope_method_name(self, name: str) -> tuple[str, str]:
+        if "." not in name:
+            return "", ""
+        owner, method = name.rsplit(".", 1)
+        return owner, method
+
     def require_type_or_record(self,n,pos):
         if n in self.current_type_params:
             return

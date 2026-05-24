@@ -741,7 +741,7 @@
     "go_parse_ok": false,
     "dhparser_parse_ok": false,
     "go_error": "FH-SYN-0019: Expected 'end' for a function declaration. | Location: line 5, column 14 | Expected: end | Found: EOF | Hint: Close the function body with 'end <function-name>'.",
-    "dhparser_error": "5:14: Error (1040): Parser postfix->`(` did not match: \u00bb\u00ab"
+    "dhparser_error": "5:14: Error (1040): Parser type_arg_list->`<` did not match: \u00bb\u00ab"
   },
   {
     "case": "08_routines/invalid_syntax/missing_end_procedure.json",
@@ -749,7 +749,7 @@
     "go_parse_ok": false,
     "dhparser_parse_ok": false,
     "go_error": "FH-SYN-0020: Expected 'end' for a procedure declaration. | Location: line 5, column 15 | Expected: end | Found: EOF | Hint: Close the procedure body with 'end <procedure-name>'.",
-    "dhparser_error": "5:15: Error (1040): Parser postfix->`(` did not match: \u00bb\u00ab"
+    "dhparser_error": "5:15: Error (1040): Parser type_arg_list->`<` did not match: \u00bb\u00ab"
   },
   {
     "case": "08_routines/invalid_syntax/missing_parameter_colon.json",
@@ -1493,7 +1493,7 @@
     "go_parse_ok": false,
     "dhparser_parse_ok": false,
     "go_error": "FH-SYN-0006: Expected requires clauses before ensures clauses. | Location: line 5, column 1 | Expected: is | Found: requires \"requires\" | Hint: Place all requires clauses before ensures clauses in a contract block.",
-    "dhparser_error": "5:1: Error (1040): Parser postfix->`(` did not match: \u00bbrequires true\nis\n    ...\u00ab"
+    "dhparser_error": "5:1: Error (1040): Parser type_arg_list->`<` did not match: \u00bbrequires true\nis\n    ...\u00ab"
   },
   {
     "case": "13_contract_blocks/valid/comma_requires_ensures.json",
@@ -1813,7 +1813,7 @@
     "go_parse_ok": false,
     "dhparser_parse_ok": false,
     "go_error": "FH-SYN-0008: Expected a default case branch. | Location: line 9, column 5 | Expected: default | Found: end \"end\" | Hint: Every case statement must include a default branch.",
-    "dhparser_error": "9:5: Error (1040): Parser postfix->`(` did not match: \u00bbend case\nend main\n\ne ...\u00ab"
+    "dhparser_error": "9:5: Error (1040): Parser type_arg_list->`<` did not match: \u00bbend case\nend main\n\ne ...\u00ab"
   },
   {
     "case": "16_control_flow_edges/invalid_syntax/error_inside_nested_block.json",
@@ -1829,7 +1829,7 @@
     "go_parse_ok": false,
     "dhparser_parse_ok": false,
     "go_error": "FH-SYN-0009: Expected a while invariant. | Location: line 7, column 5 | Expected: invariant | Found: do \"do\" | Hint: Every while loop must declare at least one invariant before do.",
-    "dhparser_error": "7:5: Error (1040): Parser postfix->`(` did not match: \u00bbdo\n        amount := ...\u00ab"
+    "dhparser_error": "7:5: Error (1040): Parser type_arg_list->`<` did not match: \u00bbdo\n        amount := ...\u00ab"
   },
   {
     "case": "16_control_flow_edges/valid/case_all_branches_return.json",
@@ -2242,10 +2242,10 @@
   {
     "case": "21_abort_handling/valid/main_declares_top_level_abort.json",
     "status": "match",
-    "go_parse_ok": true,
-    "dhparser_parse_ok": true,
-    "go_error": "",
-    "dhparser_error": ""
+    "go_parse_ok": false,
+    "dhparser_parse_ok": false,
+    "go_error": "FH-SYN-0002: Expected an identifier. | Location: line 5, column 11 | Expected: identifier | Found: service \"service\" | Hint: Use a non-keyword name here.",
+    "dhparser_error": "5:11: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... lse\\\\b|success\\\\b|failure\\\\b|value\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bbservice(id: Integer) ...\u00ab"
   },
   {
     "case": "22_generics/invalid_semantics/duplicate_type_parameter.json",
@@ -2400,6 +2400,38 @@
     "dhparser_error": ""
   },
   {
+    "case": "23_concurrency/invalid_semantics/scope_handle_escape.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/scope_handle_not_joined.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/structured_scope_handle_escape.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/structured_scope_handle_not_joined.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
     "case": "23_concurrency/valid/async_function_await.json",
     "status": "match",
     "go_parse_ok": true,
@@ -2433,6 +2465,78 @@
   },
   {
     "case": "23_concurrency/valid/runtime_core_types.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/valid/scope_join_handle_lifetime.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "23_concurrency/valid/structured_scope_blocks.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/duplicate_proto_field_id.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/duplicate_rpc_name.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/invalid_proto_field_id.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/missing_proto_field_id.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/unknown_rpc_type.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/unsupported_proto_field_type.json",
+    "status": "match",
+    "go_parse_ok": true,
+    "dhparser_parse_ok": true,
+    "go_error": "",
+    "dhparser_error": ""
+  },
+  {
+    "case": "24_grpc_idl/valid/unary_service_proto_fields.json",
     "status": "match",
     "go_parse_ok": true,
     "dhparser_parse_ok": true,

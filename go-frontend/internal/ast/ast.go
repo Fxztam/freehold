@@ -65,8 +65,24 @@ type AbortClause struct {
 }
 
 type Param struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	ProtoID *int   `json:"proto_id,omitempty"`
+}
+
+type ServiceDecl struct {
+	Kind    string    `json:"kind"`
+	Name    string    `json:"name"`
+	Rpcs    []RpcDecl `json:"rpcs"`
+	EndName string    `json:"end_name"`
+}
+
+type RpcDecl struct {
+	Kind         string `json:"kind"`
+	Name         string `json:"name"`
+	RequestName  string `json:"request_name"`
+	RequestType  string `json:"request_type"`
+	ResponseType string `json:"response_type"`
 }
 
 type Stmt interface{}
@@ -124,6 +140,14 @@ type CaseStmt struct {
 	Value   Expr         `json:"value"`
 	When    []CaseBranch `json:"when"`
 	Default []Stmt       `json:"default,omitempty"`
+}
+
+type ScopeStmt struct {
+	Kind       string `json:"kind"`
+	Name       string `json:"name"`
+	SpawnBody  []Stmt `json:"spawn_body"`
+	JoinBody   []Stmt `json:"join_body"`
+	ResultBody []Stmt `json:"result_body"`
 }
 
 type CaseBranch struct {

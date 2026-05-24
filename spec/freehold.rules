@@ -198,6 +198,35 @@ emit FH-CON-3112
     expected "matching Channel<T>, Sender<T>, Receiver<T>, or payload T"
 end
 
+rule scope_join_handle_escape
+when JoinHandle created by scope_spawn or Scope.spawn crosses scope_boundary
+emit FH-CON-3121
+    found handle_name
+    expected "scope-local JoinHandle joined before return or end scope"
+end
+
+rule scope_join_handle_not_joined
+when JoinHandle created by scope_spawn or Scope.spawn remains unjoined at return or scope_exit
+emit FH-CON-3122
+    found handle_name
+    expected "scope_join or scope.join before leaving Scope"
+end
+
+rule structured_scope_block_lifetime_boundary
+when ScopeStmt has spawn_body join_body result_body
+and JoinHandle created in spawn_body remains unjoined after result_body
+emit FH-CON-3122
+    found handle_name
+    expected "scope.join before end scope"
+end
+
+rule structured_scope_block_result_escape
+when ScopeStmt result_body returns JoinHandle created in spawn_body
+emit FH-CON-3121
+    found handle_name
+    expected "return joined result value, not scope-owned JoinHandle"
+end
+
 section imports_and_names
 
 rule module_self_import
@@ -597,6 +626,50 @@ end
 rule json_stringify_unsupported_type
 when Json.stringify record_field_type is not json_serializable_v1
 emit FH-JSON-4203
+    found record_field_type
+    expected "String, Integer, Boolean, Double, record, or Array of supported values"
+end
+
+section grpc_idl
+
+rule duplicate_proto_field_id
+when RecordTypeDecl proto_field_id appears more than once in same record
+emit FH-GRPC-4401
+    found proto_field_id
+    expected "unique proto field id in record"
+end
+
+rule invalid_proto_field_id
+when RecordField proto_field_id <= 0
+emit FH-GRPC-4402
+    found proto_field_id
+    expected "positive proto field id"
+end
+
+rule missing_proto_field_id
+when ServiceDecl rpc request_type or response_type uses RecordTypeDecl field without proto_field_id
+emit FH-GRPC-4403
+    found record_field
+    expected "field: Type proto N"
+end
+
+rule unknown_rpc_type
+when RpcDecl request_type or response_type is not declared record message type
+emit FH-GRPC-4404
+    found rpc_type
+    expected "declared record message type"
+end
+
+rule duplicate_rpc_name
+when ServiceDecl rpcs contains duplicate rpc name
+emit FH-GRPC-4405
+    found rpc_name
+    expected "unique rpc name in service"
+end
+
+rule unsupported_grpc_proto_field_type
+when ServiceDecl rpc request_type or response_type uses RecordTypeDecl field type outside grpc_proto_type_set
+emit FH-GRPC-4406
     found record_field_type
     expected "String, Integer, Boolean, Double, record, or Array of supported values"
 end

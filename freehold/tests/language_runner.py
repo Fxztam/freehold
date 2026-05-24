@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from freehold.core.diagnostics import diagnose_exception
+from freehold.core.grpc_codegen import generate_proto
 from freehold.core.module_resolver import ModuleResolver
 from freehold.core.parser import parse_source
 from freehold.core.verifier import verify_program
@@ -61,6 +62,19 @@ def run_case(module_dir: Path, case: dict, update: bool = False):
         if normalize(actual) != normalize(expected):
             return False, f"AST mismatch: {case['name']}"
         return True, f"valid OK: {case['name']}"
+
+    if kind == "valid_grpc_proto":
+        source = (module_dir / case["file"]).read_text(encoding="utf-8")
+        ast, verified = parse_and_verify(source)
+        actual = generate_proto(ast, verified)
+        expected_path = module_dir / case["expected_proto"]
+        if update or not expected_path.exists():
+            expected_path.parent.mkdir(parents=True, exist_ok=True)
+            expected_path.write_text(actual, encoding="utf-8")
+        expected = expected_path.read_text(encoding="utf-8")
+        if normalize(actual) != normalize(expected):
+            return False, f"gRPC proto mismatch: {case['name']}"
+        return True, f"valid_grpc_proto OK: {case['name']}"
 
     if kind in {"invalid_syntax", "invalid_semantics"}:
         source = (module_dir / case["file"]).read_text(encoding="utf-8")

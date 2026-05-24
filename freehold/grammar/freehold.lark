@@ -5,11 +5,12 @@ qualified_name: NAME ("." NAME)*
 import_decl: "import" qualified_name exposing_clause?
 exposing_clause: "exposing" exposing_list
 exposing_list: NAME ("," NAME)*
-declaration: record_type_decl | type_decl | error_decl | function_decl | procedure_decl
+declaration: record_type_decl | type_decl | error_decl | service_decl | function_decl | procedure_decl
 
 record_type_decl: "type" NAME type_param_list? "is" "record" record_field+ "end" "record"
 type_param_list: "<" NAME ("," NAME)* ">"
-record_field: NAME ":" type_ref
+record_field: NAME ":" type_ref proto_field_id?
+proto_field_id: "proto" INT_NUMBER
 
 type_decl: "type" NAME "is" base_type range_decl?
 error_decl: "error" NAME
@@ -19,6 +20,8 @@ range_decl: "range" SIGNED_NUMBER ".." SIGNED_NUMBER
 function_decl: async_marker? "function" NAME type_param_list? "(" param_list? ")" "returns" return_type contract_block? "is" stmt* "end" NAME
 async_marker: "async"
 procedure_decl: "procedure" NAME "(" param_list? ")" contract_block? "is" stmt* "end" NAME
+service_decl: "service" NAME "is" rpc_decl+ "end" NAME
+rpc_decl: "rpc" NAME "(" NAME ":" type_ref ")" ":" type_ref
 
 param_list: param ("," param)*
 param: NAME ":" type_ref
@@ -34,7 +37,7 @@ requires_clause: "requires" expr_list
 aborts_clause: "aborts" NAME ("when" expr)?
 ensures_clause: "ensures" expr_list
 
-stmt: let_stmt | field_assign_stmt | assign_stmt | return_stmt | abort_stmt | if_stmt | while_stmt | case_stmt | check_stmt | call_stmt
+stmt: let_stmt | field_assign_stmt | assign_stmt | return_stmt | abort_stmt | if_stmt | while_stmt | case_stmt | scope_stmt | check_stmt | call_stmt
 let_stmt: "let" NAME ":" return_type "=" expr
 field_assign_stmt: field_path ":=" expr
 assign_stmt: NAME ":=" expr
@@ -55,6 +58,10 @@ case_stmt: "case" expr "is" case_branch+ default_branch "end" "case"
 case_branch: "when" expr "=>" case_block
 default_branch: "default" "=>" case_block
 case_block: stmt*
+scope_stmt: "scope" NAME "do" scope_spawn_block scope_join_block scope_result_block "end" "scope"
+scope_spawn_block: "spawn" stmt*
+scope_join_block: "join" stmt*
+scope_result_block: "result" stmt*
 invariant_clause: "invariant" expr
 variant_clause: "variant" expr
 
@@ -86,6 +93,7 @@ named_arg: NAME ":" expr
      | type_ref "{" named_arg_list "}" -> record_literal
      | field_path -> field_access
      | NAME "[" expr "]" -> index_expr
+     | field_path type_arg_list "(" arg_list? ")" -> function_call
      | NAME type_arg_list "(" arg_list? ")" -> function_call
      | qualified_name "(" arg_list? ")" -> function_call
      | NAME -> var

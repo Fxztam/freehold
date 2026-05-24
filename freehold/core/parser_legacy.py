@@ -59,7 +59,12 @@ class AstBuilder:
             if len(tree.children) > 1 and isinstance(tree.children[1], Tree) and tree.children[1].data == "type_param_list":
                 type_params = [str(child) for child in tree.children[1].children]
                 field_start = 2
-            fields = [RecordField(str(f.children[0]), self.type_ref_name(f.children[1]), pos(f)) for f in tree.children[field_start:]]
+            fields = []
+            for f in tree.children[field_start:]:
+                proto_id = None
+                if len(f.children) > 2:
+                    proto_id = int(f.children[2].children[0])
+                fields.append(RecordField(str(f.children[0]), self.type_ref_name(f.children[1]), pos(f), proto_id))
             return RecordTypeDecl(name, fields, pos(tree), type_params)
         if tree.data == "type_decl":
             base_tree = tree.children[1]
@@ -70,9 +75,25 @@ class AstBuilder:
             return TypeDecl(str(tree.children[0]), base, lo, hi, pos(tree))
         if tree.data == "error_decl":
             return ErrorDecl(str(tree.children[0]), pos(tree))
+        if tree.data == "service_decl":
+            name = str(tree.children[0])
+            rpcs = [self.rpc_decl(child) for child in tree.children[1:-1]]
+            end_name = str(tree.children[-1])
+            if end_name != name:
+                raise TypeCheckError(f"{pos(tree).text()}: service end name mismatch: expected {name}, got {end_name}")
+            return ServiceDecl(name, rpcs, pos(tree))
         if tree.data in ("function_decl", "procedure_decl"):
             return self.routine(tree)
         raise TypeCheckError(f"{pos(tree).text()}: unknown declaration {tree.data}")
+
+    def rpc_decl(self, tree: Tree) -> RpcDecl:
+        return RpcDecl(
+            str(tree.children[0]),
+            str(tree.children[1]),
+            self.type_ref_name(tree.children[2]),
+            self.type_ref_name(tree.children[3]),
+            pos(tree),
+        )
 
     def routine(self, tree: Tree) -> RoutineDecl:
         kind = "function" if tree.data == "function_decl" else "procedure"
@@ -175,6 +196,11 @@ class AstBuilder:
                     block = c.children[0]
                     default_body = [self.stmt(x.children[0]) for x in block.children]
             return CaseStmt(self.expr(tree.children[0]), branches, default_body, pos(tree))
+        if tree.data == "scope_stmt":
+            spawn_body = [self.stmt(x.children[0]) for x in tree.children[1].children]
+            join_body = [self.stmt(x.children[0]) for x in tree.children[2].children]
+            result_body = [self.stmt(x.children[0]) for x in tree.children[3].children]
+            return ScopeStmt(str(tree.children[0]), spawn_body, join_body, result_body, pos(tree))
         raise TypeCheckError(f"{pos(tree).text()}: unsupported statement {tree.data}")
 
     def return_value(self, tree: Tree):

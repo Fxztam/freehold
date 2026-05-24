@@ -1,0 +1,308 @@
+{
+  "source_file": "..\\tests\\language_modules\\23_concurrency\\valid\\structured_scope_blocks.fh",
+  "source_snippet": "module Concurrency.StructuredScopeBlocks\r\n\r\ntype Invoice is record\r\n    id: Integer\r\nend record\r\n\r\ntype Customer is record\r\n    id: Integer\r\nend record\r\n\r\nasync function load_invoice(id: Integer) returns Invoice\r\nis\r\n    return Invoice { id: id }\r\nend load_invoice\r\n\r\nasync function load_customer(id: Integer) returns Customer\r\nis\r\n    return Customer { id: id }\r\nend load_customer\r\n\r\nfunction render_invoice(invoice: Invoice, customer: Customer) returns Integer\r\nis\r\n    return invoice.id + customer.id\r\nend render_invoice\r\n\r\nasync function handle(id: Integer) returns Integer\r\nis\r\n    scope request_scope do\r\n        spawn\r\n            let invoice_handle: JoinHandle\u003cInvoice\u003e = request_scope.spawn\u003cInvoice\u003e(load_invoice(id))\r\n            let customer_handle: JoinHandle\u003cCustomer\u003e = request_scope.spawn\u003cCustomer\u003e(load_customer(id))\r\n        join\r\n            let invoice: Invoice = await request_scope.join\u003cInvoice\u003e(invoice_handle)\r\n            let customer: Customer = await request_scope.join\u003cCustomer\u003e(customer_handle)\r\n        result\r\n            return render_invoice(invoice, customer)\r\n    end scope\r\nend handle\r\n\r\nend Concurrency.StructuredScopeBlocks\r\n",
+  "module_name": "23_concurrency",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Concurrency.StructuredScopeBlocks",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Invoice",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "Customer",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ]
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "load_invoice",
+        "is_async": true,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Invoice",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Invoice",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "id"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "load_invoice"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "load_customer",
+        "is_async": true,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Customer",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Customer",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "id"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "load_customer"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "render_invoice",
+        "params": [
+          {
+            "name": "invoice",
+            "type": "Invoice"
+          },
+          {
+            "name": "customer",
+            "type": "Customer"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "invoice"
+                },
+                "field": "id"
+              },
+              "right": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "customer"
+                },
+                "field": "id"
+              }
+            }
+          }
+        ],
+        "end_name": "render_invoice"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "handle",
+        "is_async": true,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "ScopeStmt",
+            "name": "request_scope",
+            "spawn_body": [
+              {
+                "kind": "LetStmt",
+                "name": "invoice_handle",
+                "type": "JoinHandle\u003cInvoice\u003e",
+                "value": {
+                  "kind": "CallExpr",
+                  "callee": {
+                    "kind": "FieldAccessExpr",
+                    "object": {
+                      "kind": "IdentifierExpr",
+                      "name": "request_scope"
+                    },
+                    "field": "spawn"
+                  },
+                  "type_args": [
+                    "Invoice"
+                  ],
+                  "arguments": [
+                    {
+                      "kind": "CallExpr",
+                      "callee": {
+                        "kind": "IdentifierExpr",
+                        "name": "load_invoice"
+                      },
+                      "arguments": [
+                        {
+                          "kind": "IdentifierExpr",
+                          "name": "id"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "customer_handle",
+                "type": "JoinHandle\u003cCustomer\u003e",
+                "value": {
+                  "kind": "CallExpr",
+                  "callee": {
+                    "kind": "FieldAccessExpr",
+                    "object": {
+                      "kind": "IdentifierExpr",
+                      "name": "request_scope"
+                    },
+                    "field": "spawn"
+                  },
+                  "type_args": [
+                    "Customer"
+                  ],
+                  "arguments": [
+                    {
+                      "kind": "CallExpr",
+                      "callee": {
+                        "kind": "IdentifierExpr",
+                        "name": "load_customer"
+                      },
+                      "arguments": [
+                        {
+                          "kind": "IdentifierExpr",
+                          "name": "id"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ],
+            "join_body": [
+              {
+                "kind": "LetStmt",
+                "name": "invoice",
+                "type": "Invoice",
+                "value": {
+                  "kind": "AwaitExpr",
+                  "value": {
+                    "kind": "CallExpr",
+                    "callee": {
+                      "kind": "FieldAccessExpr",
+                      "object": {
+                        "kind": "IdentifierExpr",
+                        "name": "request_scope"
+                      },
+                      "field": "join"
+                    },
+                    "type_args": [
+                      "Invoice"
+                    ],
+                    "arguments": [
+                      {
+                        "kind": "IdentifierExpr",
+                        "name": "invoice_handle"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "customer",
+                "type": "Customer",
+                "value": {
+                  "kind": "AwaitExpr",
+                  "value": {
+                    "kind": "CallExpr",
+                    "callee": {
+                      "kind": "FieldAccessExpr",
+                      "object": {
+                        "kind": "IdentifierExpr",
+                        "name": "request_scope"
+                      },
+                      "field": "join"
+                    },
+                    "type_args": [
+                      "Customer"
+                    ],
+                    "arguments": [
+                      {
+                        "kind": "IdentifierExpr",
+                        "name": "customer_handle"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "result_body": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "CallExpr",
+                  "callee": {
+                    "kind": "IdentifierExpr",
+                    "name": "render_invoice"
+                  },
+                  "arguments": [
+                    {
+                      "kind": "IdentifierExpr",
+                      "name": "invoice"
+                    },
+                    {
+                      "kind": "IdentifierExpr",
+                      "name": "customer"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "end_name": "handle"
+      }
+    ],
+    "end_name": "Concurrency.StructuredScopeBlocks"
+  }
+}

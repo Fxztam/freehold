@@ -1,0 +1,102 @@
+{
+  "source_file": "..\\tests\\language_modules\\23_concurrency\\valid\\scope_join_handle_lifetime.fh",
+  "source_snippet": "module Concurrency.ScopeJoinHandleLifetime\r\n\r\nasync function read(raw: JoinHandle\u003cInteger\u003e) returns Integer\r\nis\r\n    let active: Scope = scope()\r\n    let handle: JoinHandle\u003cInteger\u003e = scope_spawn\u003cInteger\u003e(active, raw)\r\n    let item: Integer = await scope_join\u003cInteger\u003e(active, handle)\r\n    return item\r\nend read\r\n\r\nend Concurrency.ScopeJoinHandleLifetime\r\n",
+  "module_name": "23_concurrency",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Concurrency.ScopeJoinHandleLifetime",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "read",
+        "is_async": true,
+        "params": [
+          {
+            "name": "raw",
+            "type": "JoinHandle\u003cInteger\u003e"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "active",
+            "type": "Scope",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "scope"
+              },
+              "arguments": null
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "handle",
+            "type": "JoinHandle\u003cInteger\u003e",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "scope_spawn"
+              },
+              "type_args": [
+                "Integer"
+              ],
+              "arguments": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "active"
+                },
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "raw"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "item",
+            "type": "Integer",
+            "value": {
+              "kind": "AwaitExpr",
+              "value": {
+                "kind": "CallExpr",
+                "callee": {
+                  "kind": "IdentifierExpr",
+                  "name": "scope_join"
+                },
+                "type_args": [
+                  "Integer"
+                ],
+                "arguments": [
+                  {
+                    "kind": "IdentifierExpr",
+                    "name": "active"
+                  },
+                  {
+                    "kind": "IdentifierExpr",
+                    "name": "handle"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "item"
+            }
+          }
+        ],
+        "end_name": "read"
+      }
+    ],
+    "end_name": "Concurrency.ScopeJoinHandleLifetime"
+  }
+}

@@ -1,10 +1,10 @@
 # Open: Async/Await, Structured Concurrency und Channels in Freehold
 
-Stand: 2026-05-23
+Stand: 2026-05-24
 
-Status: offen, Grundsatzentscheidung fuer offizielle Concurrency-Saeulen
+Status: V1 abgeschlossen; Runtime-Ausfuehrung, Cancellation, Scheduler-Qualitaet und Transport-Integration fuer V2/V3 geparkt
 
-Dieses Dokument haelt die erste Diskussion und Grundsatzentscheidung zur Concurrent-/Async-Runtime in Freehold fest. Ziel ist noch keine Implementierung, sondern eine klare Richtung fuer Sprachsyntax, Standardbibliothek, Executor, Tasks, Channels, Structured Concurrency und gRPC-Integration.
+Dieses Dokument haelt die erste Diskussion und Grundsatzentscheidung zur Concurrent-/Async-Runtime in Freehold fest. V1 ist als statische Sprach-/Verifier-Schicht abgeschlossen: async/await-Grundlagen, Runtime-Kerntypen, Channel-Typregeln und strukturierte Scope-Lifetime-Regeln sind testbar. Echte Runtime-Ausfuehrung, Cancellation, Scheduler-Qualitaet und Transport-Integration bleiben V2/V3.
 
 ## Ausgangsfrage
 
@@ -63,8 +63,11 @@ Freehold soll Concurrency nach aussen als `async`-faehige Sprache mit Runtime-Bi
 
 ```fh
 use runtime
+```
 
 ### Statische Typisierung, Sichtbarkeitsregeln und JoinHandle-Lifetime (V1d)
+
+Aktueller Pruefstand: V1d ist als statische Sprach-/Verifier-Schicht angelegt. Die vorlaeufige testbare API nutzt `scope()`, `scope_spawn<T>(scope, handle)` und `scope_join<T>(scope, handle)`, bis die spaetere `runtime::scope(async fn(...))`-/`Scope.spawn(...)`-Syntax festgelegt ist.
 
 Freehold führt ein statisches Scope-Modell als offizielle Structured-Concurrency-Säule ein, um verlorene Tasks und unsichere Lebensdauern zu vermeiden:
 
@@ -101,6 +104,65 @@ end process_files
 
 **Regel für den Verifier:**  
 Alle JoinHandles, die in einem Scope erzeugt werden, müssen vor Verlassen des Scopes gejoint werden. Handles dürfen nicht aus dem Scope herausgegeben werden.
+
+### Lesbare Scope-Block-Struktur
+
+Die spaetere Blocksyntax soll nicht nur eine Lifetime-Grenze setzen, sondern im Code sichtbar machen, welche nebenlaeufige Arbeit vorbereitet, gestartet, eingesammelt und abgeschlossen wird. Die bevorzugte Zielstruktur ist deshalb ein klarer Scope-Block mit gewoehnlichen Statements, aber einer empfohlenen inneren Ordnung:
+
+```fh
+async function handle_request(req: Request) returns Response
+is
+    scope request_scope do
+        let parse_handle: JoinHandle<Document> =
+            request_scope.spawn<Document>(parse_document(req.body))
+
+        let auth_handle: JoinHandle<User> =
+            request_scope.spawn<User>(authenticate(req.token))
+
+        let doc: Document = await request_scope.join<Document>(parse_handle)
+        let user: User = await request_scope.join<User>(auth_handle)
+
+        return build_response(user, doc)
+    end scope
+end handle_request
+```
+
+Pruefbare Struktur im Scope:
+
+- **Scope-Bindung:** `scope request_scope do` bindet genau einen lokalen Scope-Namen.
+- **Handle-Erzeugung:** Jeder `spawn` innerhalb des Blocks erzeugt einen `JoinHandle<T>`, der diesem Scope gehoert.
+- **Handle-Verbrauch:** Jeder Scope-Handle muss im selben Scope durch `join` verbraucht werden.
+- **Exit-Pruefung:** Vor `return`, `abort` und `end scope` muss der Scope keine offenen Handles mehr besitzen.
+- **Escape-Verbot:** Scope-Handles duerfen nicht zurueckgegeben, in aeussere Variablen geschrieben oder in einen anderen Scope verschoben werden.
+
+Fuer sehr grosse Scopes kann die Lesbarkeit durch lokale Namenskonventionen verbessert werden: Handles enden auf `_handle`, die gejointen Werte tragen den fachlichen Namen. Dadurch bleibt der Lebensweg im Code klar sichtbar:
+
+```fh
+let invoice_handle: JoinHandle<Invoice> = request_scope.spawn<Invoice>(load_invoice(id))
+let customer_handle: JoinHandle<Customer> = request_scope.spawn<Customer>(load_customer(id))
+
+let invoice: Invoice = await request_scope.join<Invoice>(invoice_handle)
+let customer: Customer = await request_scope.join<Customer>(customer_handle)
+```
+
+Eine spaetere strengere Syntax kann diese Ordnung als eigene Unterbloecke ausdruecken, falls die Sprache mehr Fuehrung geben soll:
+
+```fh
+scope request_scope do
+    spawn
+        let invoice_handle: JoinHandle<Invoice> = request_scope.spawn<Invoice>(load_invoice(id))
+        let customer_handle: JoinHandle<Customer> = request_scope.spawn<Customer>(load_customer(id))
+    join
+        let invoice: Invoice = await request_scope.join<Invoice>(invoice_handle)
+        let customer: Customer = await request_scope.join<Customer>(customer_handle)
+    result
+        return render_invoice(invoice, customer)
+end scope
+```
+
+Diese Unterblock-Variante waere besonders gut maschinell pruefbar, fuehrt aber neue Grammatik ein. Der naechste konservative Schritt bleibt daher: `scope <name> do ... end scope` als Lifetime-Grenze, mit Verifier-Regeln fuer offene Handles und Handle-Escape.
+
+```fh
     executor.block_on(async fn() {
         let handle = runtime::spawn(async fn() {
             return compute_answer()

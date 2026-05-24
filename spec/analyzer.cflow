@@ -97,6 +97,179 @@ when statement guaranteed_exit_for_current_path
 stop path_summary for following statements
 end
 
+section result_return_flow
+
+summary ResultReturnSummary
+field routine_name RoutineName
+field declared_return_type ReturnType
+field result_ok_type TypeName
+field result_error_type ErrorName
+field plain_return_paths Set<ReturnSite>
+field ok_return_paths Set<ReturnSite>
+field error_return_paths Set<ReturnSite>
+end
+
+meaning plain_return_paths
+when routine body contains return expression
+collect return_site
+end
+
+meaning ok_return_paths
+when routine body contains return ok expression
+collect return_site
+end
+
+meaning error_return_paths
+when routine body contains return error ErrorName
+collect return_site
+end
+
+fact plain_return_statement
+when ReturnStmt plain expression encountered
+effect normal_exit
+effect guaranteed_exit_for_current_path
+collect plain_return_paths return_site
+end
+
+fact result_ok_return_statement
+when ReturnOk value encountered
+effect normal_exit
+effect guaranteed_exit_for_current_path
+collect ok_return_paths return_site
+end
+
+fact result_error_return_statement
+when ReturnError error_name encountered
+effect normal_exit
+effect guaranteed_exit_for_current_path
+collect error_return_paths return_site
+does_not_collect emitted_aborts error_name
+end
+
+rule unknown_returned_error
+when ReturnError error_name is not declared error
+emit FH-SEM-1502
+    found error_name
+    expected "declared error"
+end
+
+rule wrong_result_error_return
+when ResultReturnSummary result_error_type differs from ReturnError error_name
+emit FH-SEM-1503
+    found error_name
+    expected result_error_type
+end
+
+rule result_function_requires_ok_or_error_return
+when RoutineDecl return_type is Result
+and ResultReturnSummary plain_return_paths is not empty
+emit FH-SEM-1504
+    found return_form
+    expected "return ok or return error"
+end
+
+rule plain_function_rejects_ok_or_error_return
+when RoutineDecl return_type is not Result
+and ResultReturnSummary ok_return_paths or error_return_paths is not empty
+emit FH-SEM-1505
+    found return_form
+    expected "plain return expression"
+end
+
+rule result_ok_type_mismatch
+when ReturnOk value_type differs from ResultReturnSummary result_ok_type
+emit FH-TYP-2501
+    found value_type
+    expected result_ok_type
+end
+
+limit result_error_is_normal_return
+reason "return error E returns a Result<T,E> value and is part of normal control flow; abort E is the abnormal control-flow exit."
+end
+
+non_goal implicit_result_propagation
+until language defines an explicit Result propagation operator
+end
+
+section structured_scope_blocks
+
+summary ScopeFlowSummary
+field scope_name ScopeName
+field spawned_handles Set<HandleName>
+field joined_handles Set<HandleName>
+field escaped_handles Set<HandleName>
+field result_normal_return_possible Boolean
+field result_guaranteed_exit Boolean
+end
+
+meaning spawned_handles
+when ScopeStmt spawn_body contains let handle_name = scope.spawn<T>(awaitable)
+collect handle_name
+when ScopeStmt spawn_body contains let handle_name = scope_spawn<T>(scope_name, awaitable)
+collect handle_name
+end
+
+meaning joined_handles
+when ScopeStmt join_body contains scope.join<T>(handle_name)
+collect handle_name
+when ScopeStmt join_body contains scope_join<T>(scope_name, handle_name)
+collect handle_name
+end
+
+meaning escaped_handles
+when ScopeStmt result_body returns handle_name from spawned_handles
+collect handle_name
+end
+
+fact scope_statement
+when ScopeStmt scope_name encountered
+analyze spawn_body before join_body before result_body
+introduce local Scope scope_name
+create ScopeFlowSummary scope_name
+end
+
+fact scope_spawn_section
+when ScopeStmt spawn_body creates JoinHandle handle_name
+collect spawned_handles handle_name
+own handle_name by scope_name
+end
+
+fact scope_join_section
+when ScopeStmt join_body joins JoinHandle handle_name owned by scope_name
+collect joined_handles handle_name
+consume handle_name
+end
+
+fact scope_result_section
+when ScopeStmt result_body encountered
+analyze result_body as nested block
+propagate normal_return_possible from result_body
+propagate guaranteed_exit from result_body
+end
+
+rule scope_join_handle_escape
+when ScopeFlowSummary escaped_handles contains handle_name
+emit FH-CON-3121
+    found handle_name
+    expected "scope-local JoinHandle joined before return or end scope"
+end
+
+rule scope_join_handle_not_joined
+when ScopeFlowSummary spawned_handles contains handle_name
+and ScopeFlowSummary joined_handles does not contain handle_name
+emit FH-CON-3122
+    found handle_name
+    expected "scope_join or scope.join before leaving Scope"
+end
+
+limit structured_scope_order
+reason "The structured block order is syntactic: spawn, join, result. The analyzer does not reorder statements across these sections."
+end
+
+non_goal cross_scope_handle_transfer
+until language defines explicit transferable task ownership
+end
+
 section abort_propagation_v2
 
 rule caller_does_not_handle_or_propagate_abort
@@ -137,4 +310,20 @@ policy main_top_level_aborts
 when RoutineFlowSummary routine_name is "main"
 allow propagated_aborts if declared_aborts contains same error_name
 reason "Until handler syntax exists, top-level program aborts must remain explicit on main."
+end
+
+section grpc_idl_boundary
+
+fact grpc_service_declaration
+when ServiceDecl encountered
+effect no_routine_control_flow
+reason "gRPC IDL services declare transport shape only. They do not execute statements and do not contribute returns, aborts, calls, or scope ownership to ControlFlowAnalyzer V1."
+end
+
+non_goal grpc_runtime_transport_flow
+until Freehold defines explicit service implementation bindings and generated runtime entry points
+end
+
+non_goal grpc_streaming_flow
+until language defines stream request/response syntax and cancellation/deadline semantics
 end

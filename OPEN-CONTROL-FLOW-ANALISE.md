@@ -4,7 +4,7 @@ This document captures the planned Control Flow Analyzer work after the current 
 
 ## Status
 
-Open. V0 is implemented as an internal routine-summary layer. Abort V3 main-specific requires rejection is implemented. Later path-aware diagnostics remain open.
+V1 foundation completed. V0 is implemented as an internal routine-summary layer; Abort V2 propagation, Abort V3 main-specific requires rejection, Result-return flow, structured scope flow, and the gRPC IDL no-control-flow boundary are recorded in `spec/analyzer.cflow`. Later path-aware diagnostics remain parked for V2/V3.
 
 The current completed foundation is:
 
@@ -124,6 +124,46 @@ call expression contributes a called routine
 if/else combines branch summaries conservatively
 sequential statements stop after a guaranteed exit for summary purposes
 ```
+
+## Structured Scope Blocks
+
+Structured concurrency adds a second, smaller flow boundary inside a routine:
+
+```text
+scope name do
+    spawn
+        ... create JoinHandle<T> values owned by name ...
+    join
+        ... await name.join<T>(handle) ...
+    result
+        ... normal routine result / return path ...
+end scope
+```
+
+This is implemented as verifier-controlled flow, not as a separate path-proof engine. The scope block introduces a local `Scope` value, verifies the `spawn`, `join`, and `result` sections in order, and treats `end scope` as an ownership boundary for all `JoinHandle<T>` values spawned in that scope.
+
+The control-flow meaning is:
+
+```text
+spawn section may create scope-owned JoinHandle<T> values
+join section may consume those handles through scope.join<T>(handle)
+result section contributes the scope block's visible normal return behavior
+return inside result is still a normal routine exit
+end scope requires no owned JoinHandle<T> to remain open
+returning a scope-owned JoinHandle<T> crosses the scope boundary and is rejected
+```
+
+The current verifier enforces this with stable diagnostics:
+
+```text
+FH-CON-3121 scope_join_handle_escape
+    A JoinHandle<T> created inside a Scope is returned or otherwise crosses the scope boundary.
+
+FH-CON-3122 scope_join_handle_not_joined
+    A JoinHandle<T> created inside a Scope remains unjoined at return or end scope.
+```
+
+This intentionally complements the routine summary analyzer. The routine analyzer reasons about whole-routine exits such as `return` and `abort`; the structured scope rule reasons about a nested lifetime boundary and must run before a routine can be considered semantically valid.
 
 V0 should not yet prove Boolean path conditions, check caller propagation, or reject programs. That keeps the first analyzer slice small and reviewable.
 

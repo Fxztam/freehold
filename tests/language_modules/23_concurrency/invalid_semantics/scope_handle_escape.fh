@@ -1,0 +1,10 @@
+module Concurrency.ScopeHandleEscape
+
+async function leak(raw: JoinHandle<Integer>) returns JoinHandle<Integer>
+is
+    let active: Scope = scope()
+    let handle: JoinHandle<Integer> = scope_spawn<Integer>(active, raw)
+    return handle
+end leak
+
+end Concurrency.ScopeHandleEscape

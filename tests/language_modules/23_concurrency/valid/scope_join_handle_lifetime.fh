@@ -1,0 +1,11 @@
+module Concurrency.ScopeJoinHandleLifetime
+
+async function read(raw: JoinHandle<Integer>) returns Integer
+is
+    let active: Scope = scope()
+    let handle: JoinHandle<Integer> = scope_spawn<Integer>(active, raw)
+    let item: Integer = await scope_join<Integer>(active, handle)
+    return item
+end read
+
+end Concurrency.ScopeJoinHandleLifetime

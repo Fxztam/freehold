@@ -2973,5 +2973,355 @@
       "expected": "generic type declaration",
       "found": "Executor"
     }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/scope_handle_escape.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3121",
+      "number": 3121,
+      "name": "scope_join_handle_escape",
+      "message": "scope JoinHandle cannot escape",
+      "location": {
+        "line": 7,
+        "column": 12
+      },
+      "expected": "scope-local JoinHandle joined inside active",
+      "found": "handle",
+      "hint": "A JoinHandle spawned inside a Scope is local to that Scope.\n\nJoin the handle inside the Scope before returning, storing it somewhere longer-lived, or passing it outside the scope boundary.\n",
+      "legacy_code": "VF-SC001"
+    },
+    "expected": {
+      "code": "FH-CON-3121",
+      "name": "scope_join_handle_escape",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-SC001",
+      "message": "scope JoinHandle cannot escape",
+      "location": {
+        "line": 7,
+        "column": 12
+      },
+      "expected": "scope-local JoinHandle joined inside active",
+      "found": "handle"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/scope_handle_not_joined.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3122",
+      "number": 3122,
+      "name": "scope_join_handle_not_joined",
+      "message": "scope JoinHandle must be joined",
+      "location": {
+        "line": 6,
+        "column": 5
+      },
+      "expected": "scope_join before leaving active",
+      "found": "handle",
+      "hint": "Every JoinHandle spawned inside a Scope must be joined before leaving that Scope.\n\nUse scope_join<T>(scope, handle) and await the result before returning from the routine or ending the scope block.\n",
+      "legacy_code": "VF-SC002"
+    },
+    "expected": {
+      "code": "FH-CON-3122",
+      "name": "scope_join_handle_not_joined",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-SC002",
+      "message": "scope JoinHandle must be joined",
+      "location": {
+        "line": 6,
+        "column": 5
+      },
+      "expected": "scope_join before leaving active",
+      "found": "handle"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/structured_scope_handle_escape.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3121",
+      "number": 3121,
+      "name": "scope_join_handle_escape",
+      "message": "scope JoinHandle cannot escape",
+      "location": {
+        "line": 19,
+        "column": 20
+      },
+      "expected": "scope-local JoinHandle joined inside request_scope",
+      "found": "invoice_handle",
+      "hint": "A JoinHandle spawned inside a Scope is local to that Scope.\n\nJoin the handle inside the Scope before returning, storing it somewhere longer-lived, or passing it outside the scope boundary.\n",
+      "legacy_code": "VF-SC001"
+    },
+    "expected": {
+      "code": "FH-CON-3121",
+      "name": "scope_join_handle_escape",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-SC001",
+      "message": "scope JoinHandle cannot escape",
+      "location": {
+        "line": 19,
+        "column": 20
+      },
+      "expected": "scope-local JoinHandle joined inside request_scope",
+      "found": "invoice_handle"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/structured_scope_handle_not_joined.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3122",
+      "number": 3122,
+      "name": "scope_join_handle_not_joined",
+      "message": "scope JoinHandle must be joined",
+      "location": {
+        "line": 16,
+        "column": 13
+      },
+      "expected": "scope_join before leaving request_scope",
+      "found": "invoice_handle",
+      "hint": "Every JoinHandle spawned inside a Scope must be joined before leaving that Scope.\n\nUse scope_join<T>(scope, handle) and await the result before returning from the routine or ending the scope block.\n",
+      "legacy_code": "VF-SC002"
+    },
+    "expected": {
+      "code": "FH-CON-3122",
+      "name": "scope_join_handle_not_joined",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-SC002",
+      "message": "scope JoinHandle must be joined",
+      "location": {
+        "line": 16,
+        "column": 13
+      },
+      "expected": "scope_join before leaving request_scope",
+      "found": "invoice_handle"
+    }
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/duplicate_proto_field_id.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "grpc",
+      "code": "FH-GRPC-4401",
+      "number": 4401,
+      "name": "duplicate_proto_field_id",
+      "message": "duplicate proto field id",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "unique proto field id in record",
+      "found": "1",
+      "hint": "Each gRPC/protobuf field id must be unique inside one record.\n\nUse stable positive numbers and never reuse a number for a different field.\n",
+      "legacy_code": "VF-GRPC001"
+    },
+    "expected": {
+      "code": "FH-GRPC-4401",
+      "name": "duplicate_proto_field_id",
+      "phase": "semantic",
+      "category": "grpc",
+      "legacy_code": "VF-GRPC001",
+      "message": "duplicate proto field id",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "unique proto field id in record",
+      "found": "1"
+    }
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/duplicate_rpc_name.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "grpc",
+      "code": "FH-GRPC-4405",
+      "number": 4405,
+      "name": "duplicate_rpc_name",
+      "message": "duplicate rpc name",
+      "location": {
+        "line": 13,
+        "column": 5
+      },
+      "expected": "unique rpc name in service",
+      "found": "GetUser",
+      "hint": "Each rpc name may appear only once inside a service.\n\nRename the duplicate rpc or merge the declarations.\n",
+      "legacy_code": "VF-GRPC005"
+    },
+    "expected": {
+      "code": "FH-GRPC-4405",
+      "name": "duplicate_rpc_name",
+      "phase": "semantic",
+      "category": "grpc",
+      "legacy_code": "VF-GRPC005",
+      "message": "duplicate rpc name",
+      "location": {
+        "line": 13,
+        "column": 5
+      },
+      "expected": "unique rpc name in service",
+      "found": "GetUser"
+    }
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/invalid_proto_field_id.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "grpc",
+      "code": "FH-GRPC-4402",
+      "number": 4402,
+      "name": "invalid_proto_field_id",
+      "message": "invalid proto field id",
+      "location": {
+        "line": 4,
+        "column": 5
+      },
+      "expected": "positive proto field id",
+      "found": "0",
+      "hint": "A protobuf field id must be a positive integer.\n\nUse `proto 1`, `proto 2`, and so on for fields that are used in gRPC messages.\n",
+      "legacy_code": "VF-GRPC002"
+    },
+    "expected": {
+      "code": "FH-GRPC-4402",
+      "name": "invalid_proto_field_id",
+      "phase": "semantic",
+      "category": "grpc",
+      "legacy_code": "VF-GRPC002",
+      "message": "invalid proto field id",
+      "location": {
+        "line": 4,
+        "column": 5
+      },
+      "expected": "positive proto field id",
+      "found": "0"
+    }
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/missing_proto_field_id.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "grpc",
+      "code": "FH-GRPC-4403",
+      "number": 4403,
+      "name": "missing_proto_field_id",
+      "message": "missing proto field id in grpc message",
+      "location": {
+        "line": 12,
+        "column": 5
+      },
+      "expected": "field: Type proto N",
+      "found": "UserRequest.id",
+      "hint": "Records used as gRPC request or response messages must assign stable proto ids to every field.\n\nExample:\n    id: String proto 1\n",
+      "legacy_code": "VF-GRPC003"
+    },
+    "expected": {
+      "code": "FH-GRPC-4403",
+      "name": "missing_proto_field_id",
+      "phase": "semantic",
+      "category": "grpc",
+      "legacy_code": "VF-GRPC003",
+      "message": "missing proto field id in grpc message",
+      "location": {
+        "line": 12,
+        "column": 5
+      },
+      "expected": "field: Type proto N",
+      "found": "UserRequest.id"
+    }
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/unknown_rpc_type.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "grpc",
+      "code": "FH-GRPC-4404",
+      "number": 4404,
+      "name": "unknown_rpc_type",
+      "message": "unknown rpc type",
+      "location": {
+        "line": 8,
+        "column": 5
+      },
+      "expected": "declared record message type",
+      "found": "request MissingRequest",
+      "hint": "Unary gRPC V1 rpc request and response types must name declared record messages.\n\nDeclare the record before the service and use that record type in the rpc signature.\n",
+      "legacy_code": "VF-GRPC004"
+    },
+    "expected": {
+      "code": "FH-GRPC-4404",
+      "name": "unknown_rpc_type",
+      "phase": "semantic",
+      "category": "grpc",
+      "legacy_code": "VF-GRPC004",
+      "message": "unknown rpc type",
+      "location": {
+        "line": 8,
+        "column": 5
+      },
+      "expected": "declared record message type",
+      "found": "request MissingRequest"
+    }
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/unsupported_proto_field_type.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "grpc",
+      "code": "FH-GRPC-4406",
+      "number": 4406,
+      "name": "unsupported_grpc_proto_field_type",
+      "message": "unsupported grpc proto field type",
+      "location": {
+        "line": 12,
+        "column": 5
+      },
+      "expected": "String, Integer, Boolean, Double, record, or Array of supported values",
+      "found": "BigInteger",
+      "hint": "gRPC/protobuf message fields must use protobuf-compatible Freehold types.\n\nSupported V1 field value types:\n    String, Integer, Boolean, Double, records, and arrays of supported values\n\nConvert or wrap BigInteger, BigFloat, Result, and other unsupported values before exposing them through gRPC.\n",
+      "legacy_code": "VF-GRPC006"
+    },
+    "expected": {
+      "code": "FH-GRPC-4406",
+      "name": "unsupported_grpc_proto_field_type",
+      "phase": "semantic",
+      "category": "grpc",
+      "legacy_code": "VF-GRPC006",
+      "message": "unsupported grpc proto field type",
+      "location": {
+        "line": 12,
+        "column": 5
+      },
+      "expected": "String, Integer, Boolean, Double, record, or Array of supported values",
+      "found": "BigInteger"
+    }
   }
 ]

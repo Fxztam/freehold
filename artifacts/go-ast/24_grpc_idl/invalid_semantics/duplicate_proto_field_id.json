@@ -1,0 +1,57 @@
+{
+  "source_file": "..\\tests\\language_modules\\24_grpc_idl\\invalid_semantics\\duplicate_proto_field_id.fh",
+  "source_snippet": "module GrpcIdl.DuplicateProtoFieldId\r\n\r\ntype UserRequest is record\r\n    id: String proto 1\r\n    email: String proto 1\r\nend record\r\n\r\ntype UserReply is record\r\n    name: String proto 1\r\nend record\r\n\r\nservice UserService is\r\n    rpc GetUser(request: UserRequest): UserReply\r\nend UserService\r\n\r\nend GrpcIdl.DuplicateProtoFieldId\r\n",
+  "module_name": "24_grpc_idl",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "GrpcIdl.DuplicateProtoFieldId",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "UserRequest",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "String",
+            "proto_id": 1
+          },
+          {
+            "name": "email",
+            "type": "String",
+            "proto_id": 1
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "UserReply",
+        "base": "record",
+        "fields": [
+          {
+            "name": "name",
+            "type": "String",
+            "proto_id": 1
+          }
+        ]
+      },
+      {
+        "kind": "ServiceDecl",
+        "name": "UserService",
+        "rpcs": [
+          {
+            "kind": "RpcDecl",
+            "name": "GetUser",
+            "request_name": "request",
+            "request_type": "UserRequest",
+            "response_type": "UserReply"
+          }
+        ],
+        "end_name": "UserService"
+      }
+    ],
+    "end_name": "GrpcIdl.DuplicateProtoFieldId"
+  }
+}

@@ -52,6 +52,13 @@ const (
 	Value     Kind = "value"
 	Async     Kind = "async"
 	Await     Kind = "await"
+	Scope     Kind = "scope"
+	Spawn     Kind = "spawn"
+	Join      Kind = "join"
+	Result    Kind = "result"
+	Service   Kind = "service"
+	Rpc       Kind = "rpc"
+	Proto     Kind = "proto"
 
 	Plus         Kind = "+"
 	Minus        Kind = "-"

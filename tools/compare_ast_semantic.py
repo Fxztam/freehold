@@ -99,6 +99,13 @@ def normalize_go_decl(decl: dict[str, Any]) -> dict[str, Any]:
         return item
     if kind == "ErrorDecl":
         return {"kind": kind, "name": decl.get("name", "")}
+    if kind == "ServiceDecl":
+        return {
+            "kind": kind,
+            "name": decl.get("name", ""),
+            "rpcs": [normalize_go_rpc(rpc) for rpc in decl.get("rpcs") or []],
+            "end_name": decl.get("end_name", ""),
+        }
     if kind in {"FunctionDecl", "ProcedureDecl"}:
         item = {
             "kind": kind,
@@ -119,7 +126,20 @@ def normalize_go_decl(decl: dict[str, Any]) -> dict[str, Any]:
 
 
 def normalize_go_param(param: dict[str, Any]) -> dict[str, str]:
-    return {"name": param.get("name", ""), "type": compact_type(param.get("type", ""))}
+    item: dict[str, Any] = {"name": param.get("name", ""), "type": compact_type(param.get("type", ""))}
+    if param.get("proto_id") is not None:
+        item["proto_id"] = param.get("proto_id")
+    return item
+
+
+def normalize_go_rpc(rpc: dict[str, Any]) -> dict[str, str]:
+    return {
+        "kind": rpc.get("kind", ""),
+        "name": rpc.get("name", ""),
+        "request_name": rpc.get("request_name", ""),
+        "request_type": compact_type(rpc.get("request_type", "")),
+        "response_type": compact_type(rpc.get("response_type", "")),
+    }
 
 
 def normalize_go_abort_clause(clause: dict[str, Any]) -> dict[str, Any]:
@@ -167,6 +187,14 @@ def normalize_go_stmt(stmt: dict[str, Any]) -> dict[str, Any]:
             ],
             "default": [normalize_go_stmt(child) for child in stmt.get("default") or []],
         }
+    if kind == "ScopeStmt":
+        return {
+            "kind": kind,
+            "name": stmt.get("name", ""),
+            "spawn_body": [normalize_go_stmt(child) for child in stmt.get("spawn_body") or []],
+            "join_body": [normalize_go_stmt(child) for child in stmt.get("join_body") or []],
+            "result_body": [normalize_go_stmt(child) for child in stmt.get("result_body") or []],
+        }
     return {"kind": kind or "UnknownStmt"}
 
 
@@ -191,7 +219,10 @@ def normalize_go_expr(expr: Any) -> dict[str, Any]:
     if kind == "ArrayLiteralExpr":
         return {"kind": kind, "elements": [normalize_go_expr(item) for item in expr.get("elements") or []]}
     if kind == "CallExpr":
-        return {"kind": kind, "callee": normalize_go_expr(expr.get("callee")), "arguments": [normalize_go_expr(item) for item in expr.get("arguments") or []]}
+        item = {"kind": kind, "callee": normalize_go_expr(expr.get("callee")), "arguments": [normalize_go_expr(arg) for arg in expr.get("arguments") or []]}
+        if expr.get("type_args"):
+            item["type_args"] = [compact_type(arg) for arg in expr.get("type_args") or []]
+        return item
     if kind == "AwaitExpr":
         return {"kind": kind, "value": normalize_go_expr(expr.get("value"))}
     if kind == "NamedArgumentExpr":
@@ -244,6 +275,13 @@ def normalize_dhparser_decl(node: dict[str, Any]) -> dict[str, Any]:
         return {"kind": "TypeDecl", "name": nth_ident(node, 0), "base": "record", "fields": [normalize_dhparser_param(field) for field in children(node, "record_field")]}
     if name == "error_decl":
         return {"kind": "ErrorDecl", "name": nth_ident(node, 0)}
+    if name == "service_decl":
+        return {
+            "kind": "ServiceDecl",
+            "name": nth_ident(node, 0),
+            "rpcs": [normalize_dhparser_rpc(rpc) for rpc in children(node, "rpc_decl")],
+            "end_name": nth_ident(node, -1),
+        }
     if name in {"function_decl", "procedure_decl"}:
         kind = "FunctionDecl" if name == "function_decl" else "ProcedureDecl"
         item = {
@@ -267,7 +305,22 @@ def normalize_dhparser_decl(node: dict[str, Any]) -> dict[str, Any]:
 def normalize_dhparser_param(node: dict[str, Any] | None) -> dict[str, str]:
     if not node:
         return {"name": "", "type": ""}
-    return {"name": nth_ident(node, 0), "type": type_text(first_child(node, "type_ref"))}
+    item: dict[str, Any] = {"name": nth_ident(node, 0), "type": type_text(first_child(node, "type_ref"))}
+    proto = first_child(node, "proto_field_id")
+    if proto:
+        item["proto_id"] = int(text_of(first_child(proto, "INTEGER_LITERAL")) or "0")
+    return item
+
+
+def normalize_dhparser_rpc(node: dict[str, Any]) -> dict[str, str]:
+    type_refs = children(node, "type_ref")
+    return {
+        "kind": "RpcDecl",
+        "name": nth_ident(node, 0),
+        "request_name": nth_ident(node, 1),
+        "request_type": type_text(type_refs[0] if type_refs else None),
+        "response_type": type_text(type_refs[1] if len(type_refs) > 1 else None),
+    }
 
 
 def normalize_dhparser_abort_clause(node: dict[str, Any]) -> dict[str, Any]:
@@ -319,6 +372,14 @@ def normalize_dhparser_stmt(stmt: dict[str, Any]) -> dict[str, Any]:
                 for branch in children(node, "case_branch")
             ],
             "default": [normalize_dhparser_stmt(child) for child in children(first_child(first_child(node, "default_branch"), "case_block"), "stmt")],
+        }
+    if name == "scope_stmt":
+        return {
+            "kind": "ScopeStmt",
+            "name": nth_ident(node, 0),
+            "spawn_body": [normalize_dhparser_stmt(child) for child in children(first_child(node, "scope_spawn_block"), "stmt")],
+            "join_body": [normalize_dhparser_stmt(child) for child in children(first_child(node, "scope_join_block"), "stmt")],
+            "result_body": [normalize_dhparser_stmt(child) for child in children(first_child(node, "scope_result_block"), "stmt")],
         }
     return {"kind": name}
 
@@ -376,12 +437,18 @@ def dh_postfix(node: dict[str, Any]) -> dict[str, Any]:
     for postfix in children(node, "postfix"):
         parts = children(postfix)
         marker = text_of(parts[0]) if parts else ""
-        if marker == "(":
-            expr = {"kind": "CallExpr", "callee": expr, "arguments": dh_arg_list(first_child(postfix, "arg_list"))}
+        type_args = first_child(postfix, "type_arg_list")
+        if marker == "(" or type_args:
+            item = {"kind": "CallExpr", "callee": expr, "arguments": dh_arg_list(first_child(postfix, "arg_list"))}
+            if type_args:
+                item["type_args"] = [type_text(child) for child in children(type_args, "type_ref")]
+            expr = item
         elif marker == "[":
             expr = {"kind": "IndexExpr", "array": expr, "index": dh_expr(first_child(postfix, "expr"))}
         elif marker == ".":
-            expr = {"kind": "FieldAccessExpr", "object": expr, "field": nth_ident(postfix, 0)}
+            member = first_child(postfix, "member_name")
+            field = canonical_expr_text(text_of(member)) if member else nth_ident(postfix, 0)
+            expr = {"kind": "FieldAccessExpr", "object": expr, "field": field}
     return expr
 
 
@@ -402,9 +469,16 @@ def dh_primary(node: dict[str, Any]) -> dict[str, Any]:
     array = first_child(node, "array_literal")
     if array:
         return {"kind": "ArrayLiteralExpr", "elements": dh_arg_list(first_child(array, "arg_list"))}
+    if canonical_expr_text(text_of(node)).startswith("scope("):
+        return {"kind": "CallExpr", "callee": ident_expr("scope"), "arguments": dh_arg_list(first_child(node, "arg_list"))}
     type_args = first_child(node, "type_arg_list")
     if type_args:
-        return {"kind": "CallExpr", "callee": ident_expr(nth_ident(node, 0)), "arguments": dh_arg_list(first_child(node, "arg_list"))}
+        return {
+            "kind": "CallExpr",
+            "callee": ident_expr(nth_ident(node, 0)),
+            "arguments": dh_arg_list(first_child(node, "arg_list")),
+            "type_args": [type_text(child) for child in children(type_args, "type_ref")],
+        }
     named_args = first_child(node, "named_arg_list")
     type_ref = first_child(node, "type_ref")
     if named_args and type_ref:

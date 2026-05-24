@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from freehold.core.diagnostics import diagnose_exception
+from freehold.core.grpc_codegen import generate_proto_file
 from freehold.core.pipeline import verify_file, run_file, print_ast
 
 DIAGNOSTIC_ERROR_NAMES = {"UnexpectedToken", "UnexpectedCharacters", "UnexpectedEOF", "TypeCheckError"}
@@ -24,6 +25,17 @@ def cmd_verify(args):
 
 def cmd_ast(args):
     print_ast(args.file)
+    return 0
+
+def cmd_grpc_proto(args):
+    proto = generate_proto_file(args.file)
+    if args.output:
+        out = Path(args.output)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(proto, encoding="utf-8")
+        print(f"[OK] gRPC proto generated: {out}")
+    else:
+        print(proto, end="")
     return 0
 
 def cmd_test(args):
@@ -96,6 +108,10 @@ def build_parser():
     p = sub.add_parser("run", help="Parse, verify, and run a .fh module"); p.add_argument("file"); p.set_defaults(func=cmd_run)
     p = sub.add_parser("verify", help="Parse and verify a .fh module"); p.add_argument("file"); p.set_defaults(func=cmd_verify)
     p = sub.add_parser("ast", help="Print parsed AST"); p.add_argument("file"); p.set_defaults(func=cmd_ast)
+    p = sub.add_parser("grpc-proto", help="Generate a proto3 file from Freehold gRPC IDL")
+    p.add_argument("file")
+    p.add_argument("--output", "-o", default=None)
+    p.set_defaults(func=cmd_grpc_proto)
     p = sub.add_parser("test", help="Run regression tests"); p.add_argument("--log", default=None); p.add_argument("--json-summary", default=None); p.add_argument("--no-console", action="store_true"); p.set_defaults(func=cmd_test)
     p = sub.add_parser("ebnf", help="Regenerate generated EBNF")
     p.add_argument("--dialects", action="store_true", help="Also generate Forge, RR/W3C, VS Code plugin, pyebnf, and parse-ebnf EBNF files")
@@ -112,7 +128,7 @@ def main(argv=None):
     parser = build_parser(); args = parser.parse_args(argv)
     if args.version:
         print("Freehold CLI: toolchain frontend")
-        print("Commands: run, verify, test, ebnf, ast")
+        print("Commands: run, verify, test, ebnf, ast, grpc-proto")
         return 0
     if not args.command:
         parser.print_help(); return 0

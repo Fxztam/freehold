@@ -1,0 +1,23 @@
+module Concurrency.StructuredScopeHandleNotJoined
+
+type Invoice is record
+    id: Integer
+end record
+
+async function load_invoice(id: Integer) returns Invoice
+is
+    return Invoice { id: id }
+end load_invoice
+
+async function handle(id: Integer) returns Integer
+is
+    scope request_scope do
+        spawn
+            let invoice_handle: JoinHandle<Invoice> = request_scope.spawn<Invoice>(load_invoice(id))
+        join
+        result
+            return id
+    end scope
+end handle
+
+end Concurrency.StructuredScopeHandleNotJoined

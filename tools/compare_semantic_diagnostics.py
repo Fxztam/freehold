@@ -91,6 +91,12 @@ CODE_MAP = {
     "VF-J001": ("FH-JSON-4201", 4201, "json_stringify_argument_count", "json"),
     "VF-J002": ("FH-JSON-4202", 4202, "json_stringify_requires_record", "json"),
     "VF-J003": ("FH-JSON-4203", 4203, "json_stringify_unsupported_type", "json"),
+    "VF-GRPC001": ("FH-GRPC-4401", 4401, "duplicate_proto_field_id", "grpc"),
+    "VF-GRPC002": ("FH-GRPC-4402", 4402, "invalid_proto_field_id", "grpc"),
+    "VF-GRPC003": ("FH-GRPC-4403", 4403, "missing_proto_field_id", "grpc"),
+    "VF-GRPC004": ("FH-GRPC-4404", 4404, "unknown_rpc_type", "grpc"),
+    "VF-GRPC005": ("FH-GRPC-4405", 4405, "duplicate_rpc_name", "grpc"),
+    "VF-GRPC006": ("FH-GRPC-4406", 4406, "unsupported_grpc_proto_field_type", "grpc"),
     "VF-GEN002": ("FH-GEN-5002", 5002, "duplicate_type_parameter", "generic"),
     "VF-GEN010": ("FH-GEN-5010", 5010, "missing_type_argument", "generic"),
     "VF-GEN011": ("FH-GEN-5011", 5011, "too_many_type_arguments", "generic"),
@@ -102,6 +108,8 @@ CODE_MAP = {
     "VF-ASY002": ("FH-CON-3102", 3102, "await_requires_awaitable_expression", "concurrency"),
     "VF-CH001": ("FH-CON-3111", 3111, "channel_argument_count_mismatch", "concurrency"),
     "VF-CH002": ("FH-CON-3112", 3112, "channel_argument_type_mismatch", "concurrency"),
+    "VF-SC001": ("FH-CON-3121", 3121, "scope_join_handle_escape", "concurrency"),
+    "VF-SC002": ("FH-CON-3122", 3122, "scope_join_handle_not_joined", "concurrency"),
 }
 
 

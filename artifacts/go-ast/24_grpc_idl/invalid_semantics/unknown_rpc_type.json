@@ -1,0 +1,40 @@
+{
+  "source_file": "..\\tests\\language_modules\\24_grpc_idl\\invalid_semantics\\unknown_rpc_type.fh",
+  "source_snippet": "module GrpcIdl.UnknownRpcType\r\n\r\ntype UserReply is record\r\n    name: String proto 1\r\nend record\r\n\r\nservice UserService is\r\n    rpc GetUser(request: MissingRequest): UserReply\r\nend UserService\r\n\r\nend GrpcIdl.UnknownRpcType\r\n",
+  "module_name": "24_grpc_idl",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "GrpcIdl.UnknownRpcType",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "UserReply",
+        "base": "record",
+        "fields": [
+          {
+            "name": "name",
+            "type": "String",
+            "proto_id": 1
+          }
+        ]
+      },
+      {
+        "kind": "ServiceDecl",
+        "name": "UserService",
+        "rpcs": [
+          {
+            "kind": "RpcDecl",
+            "name": "GetUser",
+            "request_name": "request",
+            "request_type": "MissingRequest",
+            "response_type": "UserReply"
+          }
+        ],
+        "end_name": "UserService"
+      }
+    ],
+    "end_name": "GrpcIdl.UnknownRpcType"
+  }
+}

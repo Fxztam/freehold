@@ -458,6 +458,40 @@ Supported field value types:
 Convert BigInteger, BigFloat, Result, and other unsupported values explicitly before serializing.
 """
 
+GRPC_PROTO_DUPLICATE_HINT = """Each gRPC/protobuf field id must be unique inside one record.
+
+Use stable positive numbers and never reuse a number for a different field.
+"""
+
+GRPC_PROTO_INVALID_HINT = """A protobuf field id must be a positive integer.
+
+Use `proto 1`, `proto 2`, and so on for fields that are used in gRPC messages.
+"""
+
+GRPC_PROTO_MISSING_HINT = """Records used as gRPC request or response messages must assign stable proto ids to every field.
+
+Example:
+    id: String proto 1
+"""
+
+GRPC_RPC_TYPE_HINT = """Unary gRPC V1 rpc request and response types must name declared record messages.
+
+Declare the record before the service and use that record type in the rpc signature.
+"""
+
+GRPC_RPC_DUPLICATE_HINT = """Each rpc name may appear only once inside a service.
+
+Rename the duplicate rpc or merge the declarations.
+"""
+
+GRPC_PROTO_UNSUPPORTED_TYPE_HINT = """gRPC/protobuf message fields must use protobuf-compatible Freehold types.
+
+Supported V1 field value types:
+    String, Integer, Boolean, Double, records, and arrays of supported values
+
+Convert or wrap BigInteger, BigFloat, Result, and other unsupported values before exposing them through gRPC.
+"""
+
 STATEMENT_UNKNOWN_ASSIGNMENT_HINT = """Assignment requires an existing local variable.
 
 Declare the variable with `let` before assigning to it.
@@ -620,6 +654,16 @@ Examples:
 CHANNEL_ARGUMENT_TYPE_HINT = """Channel built-in arguments must match the channel element type.
 
 Use Sender<T> with values of T, Receiver<T> for receive, and Channel<T> when splitting endpoints.
+"""
+
+SCOPE_HANDLE_ESCAPE_HINT = """A JoinHandle spawned inside a Scope is local to that Scope.
+
+Join the handle inside the Scope before returning, storing it somewhere longer-lived, or passing it outside the scope boundary.
+"""
+
+SCOPE_HANDLE_JOIN_HINT = """Every JoinHandle spawned inside a Scope must be joined before leaving that Scope.
+
+Use scope_join<T>(scope, handle) and await the result before returning from the routine or ending the scope block.
 """
 
 ERROR_UNKNOWN_RESULT_TYPE_HINT = """The error type in `Result<T, E>` must name a declared error.
@@ -908,6 +952,36 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         record_name, field_name = unknown_literal_field_match.groups()
         return Diagnostic("VF-R004", "unknown record literal field", line, column, field_name, f"declared field in {record_name}", RECORD_UNKNOWN_FIELD_HINT, phase="semantic")
+    duplicate_proto_match = re.search(r"duplicate proto field id: (\d+)", message)
+    if duplicate_proto_match:
+        line, column = _source_position_from_message(message)
+        proto_id = duplicate_proto_match.group(1)
+        return Diagnostic("VF-GRPC001", "duplicate proto field id", line, column, proto_id, "unique proto field id in record", GRPC_PROTO_DUPLICATE_HINT, phase="semantic")
+    invalid_proto_match = re.search(r"invalid proto field id: (\d+)", message)
+    if invalid_proto_match:
+        line, column = _source_position_from_message(message)
+        proto_id = invalid_proto_match.group(1)
+        return Diagnostic("VF-GRPC002", "invalid proto field id", line, column, proto_id, "positive proto field id", GRPC_PROTO_INVALID_HINT, phase="semantic")
+    missing_proto_match = re.search(r"missing proto field id in grpc message: ([A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*)", message)
+    if missing_proto_match:
+        line, column = _source_position_from_message(message)
+        field_name = missing_proto_match.group(1)
+        return Diagnostic("VF-GRPC003", "missing proto field id in grpc message", line, column, field_name, "field: Type proto N", GRPC_PROTO_MISSING_HINT, phase="semantic")
+    unknown_rpc_match = re.search(r"unknown rpc (request|response) type: ([A-Za-z_][A-Za-z0-9_<> ,]*)", message)
+    if unknown_rpc_match:
+        line, column = _source_position_from_message(message)
+        role, type_name = unknown_rpc_match.groups()
+        return Diagnostic("VF-GRPC004", "unknown rpc type", line, column, f"{role} {type_name}", "declared record message type", GRPC_RPC_TYPE_HINT, phase="semantic")
+    duplicate_rpc_match = re.search(r"duplicate rpc name: ([A-Za-z_][A-Za-z0-9_]*)", message)
+    if duplicate_rpc_match:
+        line, column = _source_position_from_message(message)
+        rpc_name = duplicate_rpc_match.group(1)
+        return Diagnostic("VF-GRPC005", "duplicate rpc name", line, column, rpc_name, "unique rpc name in service", GRPC_RPC_DUPLICATE_HINT, phase="semantic")
+    unsupported_grpc_type_match = re.search(r"unsupported grpc proto field type: ([A-Za-z_][A-Za-z0-9_<> ,]*)", message)
+    if unsupported_grpc_type_match:
+        line, column = _source_position_from_message(message)
+        type_name = unsupported_grpc_type_match.group(1)
+        return Diagnostic("VF-GRPC006", "unsupported grpc proto field type", line, column, type_name, "String, Integer, Boolean, Double, record, or Array of supported values", GRPC_PROTO_UNSUPPORTED_TYPE_HINT, phase="semantic")
     missing_record_field_match = re.search(r"missing record field\(s\) for ([A-Za-z_][A-Za-z0-9_]*): (.+)", message)
     if missing_record_field_match:
         line, column = _source_position_from_message(message)
@@ -1219,6 +1293,16 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         function_name, argument_index, expected_type, found_type = channel_arg_type_match.groups()
         return Diagnostic("VF-CH002", "Channel argument type mismatch", line, column, found_type, f"argument {argument_index} as {expected_type} for {function_name}", CHANNEL_ARGUMENT_TYPE_HINT, phase="semantic")
+    scope_handle_escape_match = re.search(r"scope JoinHandle cannot escape its scope: ([A-Za-z_][A-Za-z0-9_]*) from ([A-Za-z_][A-Za-z0-9_]*)", message)
+    if scope_handle_escape_match:
+        line, column = _source_position_from_message(message)
+        handle_name, scope_name = scope_handle_escape_match.groups()
+        return Diagnostic("VF-SC001", "scope JoinHandle cannot escape", line, column, handle_name, f"scope-local JoinHandle joined inside {scope_name}", SCOPE_HANDLE_ESCAPE_HINT, phase="semantic")
+    scope_handle_unjoined_match = re.search(r"scope JoinHandle must be joined before leaving scope: ([A-Za-z_][A-Za-z0-9_]*) from ([A-Za-z_][A-Za-z0-9_]*)", message)
+    if scope_handle_unjoined_match:
+        line, column = _source_position_from_message(message)
+        handle_name, scope_name = scope_handle_unjoined_match.groups()
+        return Diagnostic("VF-SC002", "scope JoinHandle must be joined", line, column, handle_name, f"scope_join before leaving {scope_name}", SCOPE_HANDLE_JOIN_HINT, phase="semantic")
     unknown_result_error_type_match = re.search(r"unknown result error type: ([A-Za-z_][A-Za-z0-9_]*)", message)
     if unknown_result_error_type_match:
         line, column = _source_position_from_message(message)

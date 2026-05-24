@@ -1,0 +1,313 @@
+{
+  "declarations": [
+    {
+      "fields": [
+        {
+          "name": "id",
+          "node": "RecordField",
+          "type_name": "Integer"
+        }
+      ],
+      "name": "Invoice",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "node": "RecordField",
+          "type_name": "Integer"
+        }
+      ],
+      "name": "Customer",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "args": [
+                {
+                  "expr": {
+                    "name": "id",
+                    "node": "VarExpr"
+                  },
+                  "name": "id",
+                  "node": "NamedArg"
+                }
+              ],
+              "node": "RecordLiteralExpr",
+              "type_name": "Invoice"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [],
+      "is_async": true,
+      "kind": "function",
+      "name": "load_invoice",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "id",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [],
+      "return_type": {
+        "name": "Invoice",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "args": [
+                {
+                  "expr": {
+                    "name": "id",
+                    "node": "VarExpr"
+                  },
+                  "name": "id",
+                  "node": "NamedArg"
+                }
+              ],
+              "node": "RecordLiteralExpr",
+              "type_name": "Customer"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [],
+      "is_async": true,
+      "kind": "function",
+      "name": "load_customer",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "id",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [],
+      "return_type": {
+        "name": "Customer",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "left": {
+                "node": "FieldAccessExpr",
+                "path": [
+                  "invoice",
+                  "id"
+                ]
+              },
+              "node": "BinaryExpr",
+              "op": "+",
+              "right": {
+                "node": "FieldAccessExpr",
+                "path": [
+                  "customer",
+                  "id"
+                ]
+              }
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [],
+      "kind": "function",
+      "name": "render_invoice",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "invoice",
+          "node": "Param",
+          "type_name": "Invoice"
+        },
+        {
+          "name": "customer",
+          "node": "Param",
+          "type_name": "Customer"
+        }
+      ],
+      "requires": [],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "join_body": [
+            {
+              "expr": {
+                "expr": {
+                  "args": [
+                    {
+                      "name": "invoice_handle",
+                      "node": "VarExpr"
+                    }
+                  ],
+                  "name": "request_scope.join",
+                  "node": "CallExpr",
+                  "type_args": [
+                    "Invoice"
+                  ]
+                },
+                "node": "AwaitExpr"
+              },
+              "name": "invoice",
+              "node": "LetStmt",
+              "type_ref": {
+                "name": "Invoice",
+                "node": "TypeName"
+              }
+            },
+            {
+              "expr": {
+                "expr": {
+                  "args": [
+                    {
+                      "name": "customer_handle",
+                      "node": "VarExpr"
+                    }
+                  ],
+                  "name": "request_scope.join",
+                  "node": "CallExpr",
+                  "type_args": [
+                    "Customer"
+                  ]
+                },
+                "node": "AwaitExpr"
+              },
+              "name": "customer",
+              "node": "LetStmt",
+              "type_ref": {
+                "name": "Customer",
+                "node": "TypeName"
+              }
+            }
+          ],
+          "name": "request_scope",
+          "node": "ScopeStmt",
+          "result_body": [
+            {
+              "node": "ReturnStmt",
+              "value": {
+                "expr": {
+                  "args": [
+                    {
+                      "name": "invoice",
+                      "node": "VarExpr"
+                    },
+                    {
+                      "name": "customer",
+                      "node": "VarExpr"
+                    }
+                  ],
+                  "name": "render_invoice",
+                  "node": "CallExpr"
+                },
+                "node": "ReturnPlain"
+              }
+            }
+          ],
+          "spawn_body": [
+            {
+              "expr": {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "name": "id",
+                        "node": "VarExpr"
+                      }
+                    ],
+                    "name": "load_invoice",
+                    "node": "CallExpr"
+                  }
+                ],
+                "name": "request_scope.spawn",
+                "node": "CallExpr",
+                "type_args": [
+                  "Invoice"
+                ]
+              },
+              "name": "invoice_handle",
+              "node": "LetStmt",
+              "type_ref": {
+                "name": "JoinHandle<Invoice>",
+                "node": "TypeName"
+              }
+            },
+            {
+              "expr": {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "name": "id",
+                        "node": "VarExpr"
+                      }
+                    ],
+                    "name": "load_customer",
+                    "node": "CallExpr"
+                  }
+                ],
+                "name": "request_scope.spawn",
+                "node": "CallExpr",
+                "type_args": [
+                  "Customer"
+                ]
+              },
+              "name": "customer_handle",
+              "node": "LetStmt",
+              "type_ref": {
+                "name": "JoinHandle<Customer>",
+                "node": "TypeName"
+              }
+            }
+          ]
+        }
+      ],
+      "ensures": [],
+      "is_async": true,
+      "kind": "function",
+      "name": "handle",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "id",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    }
+  ],
+  "imports": [],
+  "module_name": "Concurrency.StructuredScopeBlocks",
+  "node": "Program"
+}

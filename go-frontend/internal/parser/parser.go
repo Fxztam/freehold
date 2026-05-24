@@ -82,6 +82,9 @@ func (p *Parser) parseDeclaration() ast.Decl {
 	if p.at(token.Error) {
 		return p.parseErrorDecl()
 	}
+	if p.at(token.Service) {
+		return p.parseServiceDecl()
+	}
 	if p.at(token.Import) {
 		return p.parseImport()
 	}
@@ -134,7 +137,7 @@ func (p *Parser) parseRecordTypeDecl(name string, typeParams []string) ast.TypeD
 
 	var fields []ast.Param
 	for !p.at(token.End) && !p.at(token.EOF) {
-		fields = append(fields, p.parseParam())
+		fields = append(fields, p.parseRecordField())
 	}
 
 	p.expect(token.End)
@@ -147,6 +150,16 @@ func (p *Parser) parseRecordTypeDecl(name string, typeParams []string) ast.TypeD
 		Base:       "record",
 		Fields:     fields,
 	}
+}
+
+func (p *Parser) parseRecordField() ast.Param {
+	field := p.parseParam()
+	if p.at(token.Proto) {
+		p.expect(token.Proto)
+		protoID := p.parseIntLiteral()
+		field.ProtoID = &protoID
+	}
+	return field
 }
 
 func (p *Parser) parseOptionalTypeParams() []string {
@@ -196,6 +209,47 @@ func (p *Parser) parseImport() ast.ImportDecl {
 	}
 }
 
+func (p *Parser) parseServiceDecl() ast.ServiceDecl {
+	p.expect(token.Service)
+	name := p.parseName()
+	p.expect(token.Is)
+
+	var rpcs []ast.RpcDecl
+	for p.at(token.Rpc) {
+		rpcs = append(rpcs, p.parseRpcDecl())
+	}
+
+	p.expect(token.End)
+	endName := p.parseName()
+
+	return ast.ServiceDecl{
+		Kind:    "ServiceDecl",
+		Name:    name,
+		Rpcs:    rpcs,
+		EndName: endName,
+	}
+}
+
+func (p *Parser) parseRpcDecl() ast.RpcDecl {
+	p.expect(token.Rpc)
+	name := p.parseName()
+	p.expect(token.LParen)
+	requestName := p.parseName()
+	p.expect(token.Colon)
+	requestType := p.parseTypeName()
+	p.expect(token.RParen)
+	p.expect(token.Colon)
+	responseType := p.parseTypeName()
+
+	return ast.RpcDecl{
+		Kind:         "RpcDecl",
+		Name:         name,
+		RequestName:  requestName,
+		RequestType:  requestType,
+		ResponseType: responseType,
+	}
+}
+
 func (p *Parser) parseQualifiedName() string {
 	name := p.parseName()
 
@@ -209,7 +263,7 @@ func (p *Parser) parseQualifiedName() string {
 
 func (p *Parser) parseName() string {
 	tok := p.peek()
-	if tok.Kind == token.Ident {
+	if tok.Kind == token.Ident || tok.Kind == token.Scope || tok.Kind == token.Spawn || tok.Kind == token.Join || tok.Kind == token.Result {
 		p.pos++
 		return tok.Lexeme
 	}
@@ -392,6 +446,9 @@ func (p *Parser) parseStatement() ast.Stmt {
 	}
 	if p.at(token.Case) {
 		return p.parseCase()
+	}
+	if p.at(token.Scope) {
+		return p.parseScope()
 	}
 	if p.at(token.Ident) {
 		return p.parseIdentStatement()
@@ -620,6 +677,32 @@ func (p *Parser) parseCase() ast.CaseStmt {
 	}
 }
 
+func (p *Parser) parseScope() ast.ScopeStmt {
+	p.expect(token.Scope)
+	name := p.parseName()
+	p.expect(token.Do)
+
+	p.expect(token.Spawn)
+	spawnBody := p.parseStatements(func() bool { return p.at(token.Join) || p.at(token.End) || p.at(token.EOF) })
+
+	p.expect(token.Join)
+	joinBody := p.parseStatements(func() bool { return p.at(token.Result) || p.at(token.End) || p.at(token.EOF) })
+
+	p.expect(token.Result)
+	resultBody := p.parseStatements(func() bool { return p.at(token.End) || p.at(token.EOF) })
+
+	p.expect(token.End)
+	p.expect(token.Scope)
+
+	return ast.ScopeStmt{
+		Kind:       "ScopeStmt",
+		Name:       name,
+		SpawnBody:  spawnBody,
+		JoinBody:   joinBody,
+		ResultBody: resultBody,
+	}
+}
+
 func (p *Parser) parseAssignment() ast.AssignmentStmt {
 	target := p.parseFieldAccess()
 	p.expect(token.Assign)
@@ -809,6 +892,12 @@ func (p *Parser) parseAtom() ast.Expr {
 		})
 	}
 
+	if p.at(token.Scope) || p.at(token.Spawn) || p.at(token.Join) || p.at(token.Result) {
+		tok := p.parseName()
+		expr := ast.Expr(ast.IdentifierExpr{Kind: "IdentifierExpr", Name: tok})
+		return p.finishPostfix(expr)
+	}
+
 	if !p.at(token.Ident) {
 		panic(diagnostic.ExpectedExpression(p.peek()))
 	}
@@ -878,7 +967,13 @@ func (p *Parser) genericRecordLiteralAhead() bool {
 }
 
 func (p *Parser) finishPostfix(expr ast.Expr) ast.Expr {
-	for p.at(token.Dot) || p.at(token.LBracket) || p.at(token.LParen) {
+	for p.at(token.Dot) || p.at(token.LBracket) || p.at(token.LParen) || p.genericPostfixCallAhead() {
+		if p.genericPostfixCallAhead() {
+			typeArgs := p.parseTypeArgs()
+			expr = p.finishCallWithTypeArgs(expr, typeArgs)
+			continue
+		}
+
 		if p.at(token.LParen) {
 			expr = p.finishCall(expr)
 			continue
@@ -913,7 +1008,13 @@ func (p *Parser) parseFieldAccess() ast.Expr {
 		Name: p.parseName(),
 	})
 
-	for p.at(token.Dot) || p.at(token.LBracket) || p.at(token.LParen) {
+	for p.at(token.Dot) || p.at(token.LBracket) || p.at(token.LParen) || p.genericPostfixCallAhead() {
+		if p.genericPostfixCallAhead() {
+			typeArgs := p.parseTypeArgs()
+			expr = p.finishCallWithTypeArgs(expr, typeArgs)
+			continue
+		}
+
 		if p.at(token.LParen) {
 			expr = p.finishCall(expr)
 			continue
@@ -944,6 +1045,27 @@ func (p *Parser) parseFieldAccess() ast.Expr {
 
 func (p *Parser) finishCall(callee ast.Expr) ast.CallExpr {
 	return p.finishCallWithTypeArgs(callee, nil)
+}
+
+func (p *Parser) genericPostfixCallAhead() bool {
+	if !p.at(token.Less) {
+		return false
+	}
+	depth := 0
+	for i := p.pos; i < len(p.tokens); i++ {
+		switch p.tokens[i].Kind {
+		case token.Less:
+			depth++
+		case token.Greater:
+			depth--
+			if depth == 0 {
+				return i+1 < len(p.tokens) && p.tokens[i+1].Kind == token.LParen
+			}
+		case token.EOF:
+			return false
+		}
+	}
+	return false
 }
 
 func (p *Parser) finishCallWithTypeArgs(callee ast.Expr, typeArgs []string) ast.CallExpr {
@@ -1019,11 +1141,11 @@ func (p *Parser) parseRecordLiteral(typeName string) ast.RecordLiteralExpr {
 
 	var fields []ast.RecordField
 	if !p.at(token.RBrace) {
-		fields = append(fields, p.parseRecordField())
+		fields = append(fields, p.parseRecordLiteralField())
 
 		for p.at(token.Comma) {
 			p.expect(token.Comma)
-			fields = append(fields, p.parseRecordField())
+			fields = append(fields, p.parseRecordLiteralField())
 		}
 	}
 
@@ -1036,7 +1158,7 @@ func (p *Parser) parseRecordLiteral(typeName string) ast.RecordLiteralExpr {
 	}
 }
 
-func (p *Parser) parseRecordField() ast.RecordField {
+func (p *Parser) parseRecordLiteralField() ast.RecordField {
 	name := p.parseName()
 	p.expect(token.Colon)
 
@@ -1060,6 +1182,15 @@ func (p *Parser) parseSignedNumberLiteral() string {
 
 	tok := p.peek()
 	panic(diagnostic.ExpectedNumber(tok))
+}
+
+func (p *Parser) parseIntLiteral() int {
+	tok := p.expect(token.Int)
+	value := 0
+	for _, r := range tok.Lexeme {
+		value = value*10 + int(r-'0')
+	}
+	return value
 }
 
 func (p *Parser) parseTypeName() string {
@@ -1153,7 +1284,7 @@ func (p *Parser) synchronizeStatement(stop func() bool) {
 }
 
 func (p *Parser) atDeclarationBoundary() bool {
-	return p.at(token.Import) || p.at(token.Type) || p.at(token.Error) || p.at(token.Function) || p.at(token.Procedure) || p.atModuleEndBoundary()
+	return p.at(token.Import) || p.at(token.Type) || p.at(token.Error) || p.at(token.Service) || p.at(token.Function) || p.at(token.Procedure) || p.atModuleEndBoundary()
 }
 
 func (p *Parser) atStatementBoundary() bool {

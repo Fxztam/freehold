@@ -477,6 +477,20 @@ func (l *Lexer) lexIdentifier(pos token.Position) token.Token {
 		kind = token.Async
 	case "await":
 		kind = token.Await
+	case "scope":
+		kind = token.Scope
+	case "spawn":
+		kind = token.Spawn
+	case "join":
+		kind = token.Join
+	case "result":
+		kind = token.Result
+	case "service":
+		kind = token.Service
+	case "rpc":
+		kind = token.Rpc
+	case "proto":
+		kind = token.Proto
 	case "end":
 		kind = token.End
 	}
