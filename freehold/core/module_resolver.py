@@ -18,8 +18,9 @@ class ResolvedModule:
 
 
 class ModuleResolver:
-    def __init__(self, root: str | Path | None = None):
+    def __init__(self, root: str | Path | None = None, runtime_modules: dict[str, set[str]] | None = None):
         self.root = Path(root) if root is not None else None
+        self.runtime_modules = runtime_modules or {}
         self.resolved: dict[str, ResolvedModule] = {}
         self.entry: ResolvedModule | None = None
 
@@ -60,6 +61,9 @@ class ModuleResolver:
             if module_name in stack:
                 cycle = " -> ".join(stack + [module_name])
                 raise TypeCheckError(f"{import_decl.pos.text()}: cyclic import: {cycle}")
+            if module_name in self.runtime_modules:
+                self._check_runtime_exposing(import_decl)
+                continue
             if module_name not in self.resolved:
                 path = self.module_path(module_name)
                 if not path.exists():
@@ -79,6 +83,16 @@ class ModuleResolver:
                 self.resolved[module_name] = ResolvedModule(module_name, path, imported_program, imported_verified)
                 self._resolve_imports(imported_program, stack + [module_name])
             self._check_exposing(import_decl, self.resolved[module_name].ast)
+
+    def _check_runtime_exposing(self, import_decl) -> None:
+        if not import_decl.exposing:
+            return
+        symbols = self.runtime_modules[import_decl.module_name]
+        for symbol_name in import_decl.exposing:
+            if symbol_name not in symbols:
+                raise TypeCheckError(
+                    f"{import_decl.pos.text()}: exposed symbol not found: {symbol_name} in import {import_decl.module_name}"
+                )
 
     def _check_exposing(self, import_decl, imported_program: Program) -> None:
         if not import_decl.exposing:

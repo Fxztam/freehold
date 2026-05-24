@@ -2,11 +2,11 @@
 package app_main
 
 import (
-	math "freehold.local/math"
+	"math"
 )
 
 func Main() {
-	root := math.Sqrt(9.0)
+	root := math.Sqrt(float64(9.0))
 	if !(root == 3.0) {
 		panic("freehold check failed")
 	}

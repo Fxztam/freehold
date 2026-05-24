@@ -26,6 +26,7 @@ from freehold.core.ast import (
     ImportDecl,
     IndexExpr,
     LetStmt,
+    NamedArg,
     NumberExpr,
     Param,
     Program,
@@ -52,6 +53,12 @@ from freehold.core.verifier import verify_program
 
 class GoCodegenError(Exception):
     pass
+
+
+GO_RUNTIME_MODULE_EXPORTS: dict[str, set[str]] = {
+    "Math": {"sin", "cos", "tan", "sqrt", "pow", "abs", "min", "max", "floor", "ceil"},
+    "Std.IO": {"log", "logf", "log_int", "log_bool", "log_double"},
+}
 
 
 @dataclass(frozen=True)
@@ -112,8 +119,8 @@ def generate_go_file(path: str | Path) -> GoCodegenResult:
     source_path = Path(path)
     source = source_path.read_text(encoding="utf-8")
     program = parse_source(source)
-    if program.imports:
-        resolver = ModuleResolver()
+    if program.imports and any(import_decl.module_name not in GO_RUNTIME_MODULE_EXPORTS for import_decl in program.imports):
+        resolver = ModuleResolver(runtime_modules=GO_RUNTIME_MODULE_EXPORTS)
         resolved_modules = resolver.resolve_entry(source_path)
         if resolver.entry is None:
             raise GoCodegenError("module resolver did not produce an entry module")
@@ -125,7 +132,7 @@ def generate_go_file(path: str | Path) -> GoCodegenResult:
 
 
 def generate_go_project(entry_file: str | Path) -> list[GoProjectFile]:
-    resolver = ModuleResolver()
+    resolver = ModuleResolver(runtime_modules=GO_RUNTIME_MODULE_EXPORTS)
     resolved_modules = resolver.resolve_entry(entry_file)
     files: list[GoProjectFile] = []
     for module_name in sorted(resolved_modules):
@@ -168,6 +175,7 @@ class GoGenerator:
         self.imports_by_module = {import_decl.module_name: import_decl for import_decl in self.imports}
         self.exposed_symbols = self.build_exposed_symbols(self.imports)
         self.used_import_modules: set[str] = set()
+        self.used_runtime_modules: set[str] = set()
         self.std_imports: set[str] = set()
         self.result_types: dict[str, ResultTypeName] = {}
         self.current_return_type: Any = None
@@ -229,15 +237,18 @@ class GoGenerator:
         return lines
 
     def import_metadata(self) -> list[dict[str, Any]]:
-        return [
-            {
+        metadata = []
+        for import_decl in self.imports:
+            runtime_path = runtime_module_import_path(import_decl.module_name)
+            metadata.append({
                 "module": import_decl.module_name,
                 "alias": go_import_alias(import_decl.module_name),
-                "path": go_import_path(import_decl.module_name),
-                "used": import_decl.module_name in self.used_import_modules,
-            }
-            for import_decl in self.imports
-        ]
+                "path": runtime_path or go_import_path(import_decl.module_name),
+                "runtime": import_decl.module_name in GO_RUNTIME_MODULE_EXPORTS,
+                "used": import_decl.module_name in self.used_import_modules
+                or import_decl.module_name in self.used_runtime_modules,
+            })
+        return metadata
 
     def type_decl(self, declaration: TypeDecl) -> list[str]:
         return [f"type {go_exported_name(declaration.name)} {go_type_string(declaration.base)}", ""]
@@ -341,6 +352,9 @@ class GoGenerator:
         if isinstance(stmt, CheckStmt):
             return [f"if !({self.expr(stmt.expr)}) {{ panic(\"freehold check failed\") }}"]
         if isinstance(stmt, CallStmt):
+            builtin_stmt = self.runtime_call_statement(stmt)
+            if builtin_stmt is not None:
+                return builtin_stmt
             call_routine = self.local_called_routine(stmt.name)
             if call_routine is not None and call_routine.aborts:
                 return self.call_aborting_routine(stmt.name, stmt.args, call_routine)
@@ -429,6 +443,10 @@ class GoGenerator:
         if isinstance(expr, ArrayLiteralExpr) and isinstance(type_ref, ArrayTypeName):
             values = ", ".join(self.expr(item) for item in expr.items)
             return f"[{type_ref.size}]{go_type_string(type_ref.element_type)}{{{values}}}"
+        if isinstance(expr, CallExpr):
+            rendered = self.runtime_call_expr(expr, type_ref)
+            if rendered is not None:
+                return rendered
         return self.expr(expr)
 
     def go_type_ref(self, type_ref: Any) -> str:
@@ -470,6 +488,9 @@ class GoGenerator:
         if isinstance(expr, CallExpr):
             if expr.type_args:
                 self.unsupported(expr, "generic calls are not supported by Go codegen V1")
+            runtime_call = self.runtime_call_expr(expr, None)
+            if runtime_call is not None:
+                return runtime_call
             call_routine = self.local_called_routine(expr.name)
             if call_routine is not None and call_routine.aborts:
                 self.unsupported(expr, "aborting calls in expressions are not supported by Go codegen V1")
@@ -501,6 +522,65 @@ class GoGenerator:
             self.used_import_modules.add(exposed_module)
             return f"{go_import_alias(exposed_module)}.{go_exported_name(name)}"
         return go_exported_name(name)
+
+    def runtime_call_statement(self, stmt: CallStmt) -> list[str] | None:
+        if stmt.name == "Std.IO.log":
+            self.used_runtime_modules.add("Std.IO")
+            self.std_imports.add("fmt")
+            return [f"fmt.Println({self.expr(stmt.args[0])})"]
+        if stmt.name == "Std.IO.logf":
+            self.used_runtime_modules.add("Std.IO")
+            self.std_imports.add("fmt")
+            if len(stmt.args) == 1:
+                return [f"fmt.Println({self.expr(stmt.args[0])})"]
+            return [f"fmt.Println({self.render_string_template_call(stmt.args)})"]
+        if stmt.name in {"Std.IO.log_int", "Std.IO.log_bool", "Std.IO.log_double"}:
+            self.used_runtime_modules.add("Std.IO")
+            self.std_imports.add("fmt")
+            return [f"fmt.Println({self.expr(stmt.args[0])})"]
+        return None
+
+    def runtime_call_expr(self, expr: CallExpr, expected_type: Any) -> str | None:
+        if expr.name == "String.template":
+            self.std_imports.add("fmt")
+            return self.render_string_template_call(expr.args)
+        if not expr.name.startswith("Math."):
+            return None
+        self.used_runtime_modules.add("Math")
+        self.std_imports.add("math")
+        args = [self.expr(arg) for arg in expr.args]
+        if expr.name in {"Math.sin", "Math.cos", "Math.tan", "Math.sqrt"}:
+            go_name = {"Math.sin": "Sin", "Math.cos": "Cos", "Math.tan": "Tan", "Math.sqrt": "Sqrt"}[expr.name]
+            return f"math.{go_name}(float64({args[0]}))"
+        if expr.name == "Math.pow":
+            return f"math.Pow(float64({args[0]}), float64({args[1]}))"
+        if expr.name == "Math.floor":
+            return f"int64(math.Floor(float64({args[0]})))"
+        if expr.name == "Math.ceil":
+            return f"int64(math.Ceil(float64({args[0]})))"
+        if expr.name == "Math.abs":
+            rendered = f"math.Abs(float64({args[0]}))"
+            return f"int64({rendered})" if go_expected_base(expected_type) == "Integer" else rendered
+        if expr.name in {"Math.min", "Math.max"}:
+            go_name = "Min" if expr.name == "Math.min" else "Max"
+            rendered = f"math.{go_name}(float64({args[0]}), float64({args[1]}))"
+            return f"int64({rendered})" if go_expected_base(expected_type) == "Integer" else rendered
+        return None
+
+    def render_string_template_call(self, args: list[Any]) -> str:
+        if not args:
+            self.unsupported(self.program, "String.template requires a template argument")
+            return "\"\""
+        template_arg = args[0]
+        if not isinstance(template_arg, StringExpr):
+            if len(args) == 1:
+                return self.expr(template_arg)
+            self.unsupported(template_arg, "dynamic String.template format arguments are not supported by Go codegen V1")
+            return self.expr(template_arg)
+        format_text, ordered_args = go_template_format(template_arg.value, args[1:])
+        if not ordered_args:
+            return json.dumps(format_text)
+        return f"fmt.Sprintf({json.dumps(format_text)}, {', '.join(self.expr(arg) for arg in ordered_args)})"
 
     def unsupported(self, node: Any, message: str) -> None:
         pos = getattr(node, "pos", None)
@@ -608,6 +688,10 @@ def go_import_path(module_name: str) -> str:
     return f"freehold.local/{go_package_path(module_name)}"
 
 
+def runtime_module_import_path(module_name: str) -> str | None:
+    return {"Math": "math", "Std.IO": "fmt"}.get(module_name)
+
+
 def go_import_alias(module_name: str) -> str:
     return go_package_name(module_name)
 
@@ -617,6 +701,40 @@ def go_package_path_part(name: str) -> str:
     if not part or part[0].isdigit():
         return f"fh_{part}"
     return part
+
+
+def go_expected_base(type_ref: Any) -> str | None:
+    if isinstance(type_ref, TypeName):
+        return type_ref.name
+    if isinstance(type_ref, str):
+        return type_ref
+    return None
+
+
+def go_template_format(template: str, args: list[Any]) -> tuple[str, list[Any]]:
+    positional: list[Any] = []
+    named: dict[str, Any] = {}
+    for arg in args:
+        if isinstance(arg, NamedArg):
+            named[arg.name] = arg.expr
+        else:
+            positional.append(arg)
+    ordered: list[Any] = []
+    positional_index = 0
+
+    def replace(match: re.Match[str]) -> str:
+        nonlocal positional_index
+        placeholder = match.group(1).strip()
+        if placeholder:
+            if placeholder in named:
+                ordered.append(named[placeholder])
+            return "%v"
+        if positional_index < len(positional):
+            ordered.append(positional[positional_index])
+            positional_index += 1
+        return "%v"
+
+    return re.sub(r"\$\{([^}]*)\}", replace, template), ordered
 
 
 def go_exported_name(name: str) -> str:
