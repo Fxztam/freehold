@@ -1,5 +1,66 @@
 [
   {
+    "case": "03_import_resolution/App/Main.fh",
+    "name": "import existing module go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_existing_module/App/Main.fh",
+    "artifact_file": "artifacts/go-codegen/03_import_resolution/import_existing_module/App/Main.go",
+    "json_file": "artifacts/go-codegen/03_import_resolution/import_existing_module/App/Main.json",
+    "expected_go": "tests/language_modules/03_import_resolution/expected_go/import_existing_module.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "app/main",
+    "imports": [
+      {
+        "module": "Banking.Proofs",
+        "alias": "banking_proofs",
+        "path": "freehold.local/banking/proofs",
+        "runtime": false,
+        "used": false
+      }
+    ],
+    "error": null
+  },
+  {
+    "case": "03_import_resolution/fixtures/valid/import_existing_module/App/Main.fh",
+    "name": "import existing module project codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_existing_module/App/Main.fh",
+    "artifact_dir": "artifacts/go-codegen/03_import_resolution/import_existing_module/project",
+    "json_file": "artifacts/go-codegen/03_import_resolution/import_existing_module/project/_project.json",
+    "expected_go_dir": "tests/language_modules/03_import_resolution/expected_go_project/import_existing_module",
+    "supported": true,
+    "files": [
+      {
+        "module": "App.Main",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_existing_module/App/Main.fh",
+        "output_path": "app/main/main.go",
+        "supported": true,
+        "diagnostics": []
+      },
+      {
+        "module": "Banking.Proofs",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_existing_module/Banking/Proofs.fh",
+        "output_path": "banking/proofs/proofs.go",
+        "supported": true,
+        "diagnostics": []
+      }
+    ],
+    "build_files": [
+      {
+        "output_path": "go.mod",
+        "kind": "go_mod",
+        "content": "module freehold.local\n\ngo 1.22\n"
+      },
+      {
+        "output_path": "build.cmd",
+        "kind": "build_cmd",
+        "content": "@echo off\nsetlocal\ngo test ./...\n"
+      }
+    ],
+    "error": null
+  },
+  {
     "case": "04_types/valid/primitive_type_aliases.fh",
     "name": "primitive type aliases go codegen matches",
     "status": "match",
