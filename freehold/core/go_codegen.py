@@ -154,7 +154,7 @@ class GoGenerator:
 
     def statement(self, stmt: Any) -> list[str]:
         if isinstance(stmt, LetStmt):
-            return [f"{go_local_name(stmt.name)} := {self.expr(stmt.expr)}"]
+            return [f"{go_local_name(stmt.name)} := {self.expr_with_type(stmt.expr, stmt.type_ref)}"]
         if isinstance(stmt, AssignStmt):
             return [f"{go_local_name(stmt.name)} = {self.expr(stmt.expr)}"]
         if isinstance(stmt, FieldAssignStmt):
@@ -204,6 +204,15 @@ class GoGenerator:
         return lines or ["// empty"]
 
     def expr(self, expr: Any) -> str:
+        return self.expr_at(expr, 0)
+
+    def expr_with_type(self, expr: Any, type_ref: Any) -> str:
+        if isinstance(expr, ArrayLiteralExpr) and isinstance(type_ref, ArrayTypeName):
+            values = ", ".join(self.expr(item) for item in expr.items)
+            return f"[{type_ref.size}]{go_type_string(type_ref.element_type)}{{{values}}}"
+        return self.expr(expr)
+
+    def expr_at(self, expr: Any, parent_precedence: int, side: str = "") -> str:
         if isinstance(expr, NumberExpr):
             return str(expr.value)
         if isinstance(expr, DoubleExpr):
@@ -221,9 +230,13 @@ class GoGenerator:
         if isinstance(expr, IndexExpr):
             return f"{go_local_name(expr.name)}[{self.expr(expr.index)}]"
         if isinstance(expr, UnaryExpr):
-            return f"{go_operator(expr.op)}{self.expr(expr.expr)}"
+            precedence = unary_precedence(expr.op)
+            rendered = f"{go_operator(expr.op)}{self.expr_at(expr.expr, precedence)}"
+            return parenthesize_if_needed(rendered, precedence, parent_precedence, side, expr.op)
         if isinstance(expr, BinaryExpr):
-            return f"{self.expr(expr.left)} {go_operator(expr.op)} {self.expr(expr.right)}"
+            precedence = go_precedence(expr.op)
+            rendered = f"{self.expr_at(expr.left, precedence, 'left')} {go_operator(expr.op)} {self.expr_at(expr.right, precedence, 'right')}"
+            return parenthesize_if_needed(rendered, precedence, parent_precedence, side, expr.op)
         if isinstance(expr, RecordLiteralExpr):
             args = ", ".join(f"{go_exported_name(arg.name)}: {self.expr(arg.expr)}" for arg in expr.args)
             return f"{go_exported_name(expr.type_name)}{{{args}}}"
@@ -300,6 +313,36 @@ def go_qualified_name(name: str) -> str:
 
 def go_operator(op: str) -> str:
     return {"=": "==", "and": "&&", "or": "||", "not": "!"}.get(op, op)
+
+
+def go_precedence(op: str) -> int:
+    return {
+        "or": 1,
+        "and": 2,
+        "=": 3,
+        "!=": 3,
+        "<": 3,
+        "<=": 3,
+        ">": 3,
+        ">=": 3,
+        "+": 4,
+        "-": 4,
+        "*": 5,
+        "/": 5,
+        "not": 6,
+    }.get(op, 7)
+
+
+def unary_precedence(op: str) -> int:
+    return 6 if op in {"not", "-"} else go_precedence(op)
+
+
+def parenthesize_if_needed(rendered: str, precedence: int, parent_precedence: int, side: str, op: str) -> str:
+    if precedence < parent_precedence:
+        return f"({rendered})"
+    if side == "right" and precedence == parent_precedence and op in {"-", "/", "=", "!=", "<", "<=", ">", ">="}:
+        return f"({rendered})"
+    return rendered
 
 
 def indent_lines(lines: list[str]) -> list[str]:

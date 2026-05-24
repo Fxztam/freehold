@@ -19,6 +19,9 @@ def num(tok):
     s = str(tok)
     return float(s) if "." in s else int(s)
 
+def grammar_children(tree: Tree):
+    return [child for child in tree.children if not (isinstance(child, Token) and child.type == "TYPE_ARG_START")]
+
 class AstBuilder:
     def parse(self, source: str) -> Program:
         validate_comments(source)
@@ -57,7 +60,7 @@ class AstBuilder:
             type_params = None
             field_start = 1
             if len(tree.children) > 1 and isinstance(tree.children[1], Tree) and tree.children[1].data == "type_param_list":
-                type_params = [str(child) for child in tree.children[1].children]
+                type_params = [str(child) for child in grammar_children(tree.children[1])]
                 field_start = 2
             fields = []
             for f in tree.children[field_start:]:
@@ -105,7 +108,7 @@ class AstBuilder:
         name = str(tree.children[idx]); idx += 1
         type_params = None
         if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "type_param_list":
-            type_params = [str(child) for child in tree.children[idx].children]
+            type_params = [str(child) for child in grammar_children(tree.children[idx])]
             idx += 1
         params = []
         if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "param_list":
@@ -141,20 +144,22 @@ class AstBuilder:
         return [self.expr(tree)]
 
     def type_ref_tree(self, tree: Tree):
+        children = grammar_children(tree)
         if tree.data == "result_payload_type":
-            return self.type_ref_tree(tree.children[0])
+            return self.type_ref_tree(children[0])
         if tree.data == "type_ref": return TypeName(self.type_ref_name(tree))
-        if tree.data == "result_type": return ResultTypeName(self.type_ref_tree(tree.children[0]), self.type_ref_name(tree.children[1]))
-        if tree.data == "array_type": return ArrayTypeName(self.type_ref_name(tree.children[0]), int(tree.children[1]))
+        if tree.data == "result_type": return ResultTypeName(self.type_ref_tree(children[0]), self.type_ref_name(children[1]))
+        if tree.data == "array_type": return ArrayTypeName(self.type_ref_name(children[0]), int(children[1]))
         raise TypeCheckError(f"{pos(tree).text()}: invalid return type")
 
     def type_ref_name(self, tree: Tree) -> str:
+        children = grammar_children(tree)
         if tree.data in ("return_type", "result_payload_type"):
-            return self.type_ref_name(tree.children[0])
+            return self.type_ref_name(children[0])
         if tree.data == "type_ref":
-            name = str(tree.children[0])
-            if len(tree.children) > 1:
-                args = [self.type_ref_name(child) for child in tree.children[1].children]
+            name = str(children[0])
+            if len(children) > 1:
+                args = [self.type_ref_name(child) for child in grammar_children(children[1])]
                 return f"{name}<{', '.join(args)}>"
             return name
         raise TypeCheckError(f"{pos(tree).text()}: invalid type reference")
@@ -240,7 +245,7 @@ class AstBuilder:
             type_args = None
             arg_index = 1
             if len(tree.children) > 1 and isinstance(tree.children[1], Tree) and tree.children[1].data == "type_arg_list":
-                type_args = [self.type_ref_name(child) for child in tree.children[1].children]
+                type_args = [self.type_ref_name(child) for child in grammar_children(tree.children[1])]
                 arg_index = 2
             return CallExpr(fn_name, self.args(tree.children[arg_index]) if len(tree.children)>arg_index else [], pos(tree), type_args)
         if tree.data == "record_literal": return RecordLiteralExpr(self.type_ref_name(tree.children[0]), self.named_args(tree.children[1]), pos(tree))

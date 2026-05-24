@@ -62,7 +62,7 @@ verify-parser-conformance.cmd
 Total: 319
 OK:    274
 FAIL:  45
-Go codegen artifacts: 14/14 matching
+Go codegen artifacts: 24/24 matching
 AST shape:     274/274
 Semantic AST:  274/274
 Parser conformance verify passed.

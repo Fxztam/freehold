@@ -9,7 +9,7 @@ exposing_list: NAME ("," NAME)*
 declaration: record_type_decl | type_decl | error_decl | service_decl | function_decl | procedure_decl
 
 record_type_decl: "type" NAME type_param_list? "is" "record" record_field+ "end" "record"
-type_param_list: "<" NAME ("," NAME)* ">"
+type_param_list: TYPE_ARG_START NAME ("," NAME)* ">"
 record_field: NAME ":" type_ref proto_field_id?
 proto_field_id: "proto" INT_NUMBER
 
@@ -27,11 +27,11 @@ rpc_decl: "rpc" NAME "(" NAME ":" type_ref ")" ":" type_ref
 param_list: param ("," param)*
 param: NAME ":" type_ref
 type_ref: NAME type_arg_list?
-type_arg_list: "<" type_ref ("," type_ref)* ">"
+type_arg_list: TYPE_ARG_START type_ref ("," type_ref)* ">"
 return_type: array_type | result_type | type_ref
 result_payload_type: array_type | result_type | type_ref
-result_type: "Result" "<" result_payload_type "," type_ref ">"
-array_type: "Array" "<" type_ref "," INT_NUMBER ">"
+result_type: "Result" TYPE_ARG_START result_payload_type "," type_ref ">"
+array_type: "Array" TYPE_ARG_START type_ref "," INT_NUMBER ">"
 
 contract_block: requires_clause* aborts_clause* ensures_clause*
 requires_clause: "requires" expr_list
@@ -107,6 +107,7 @@ BASE_TYPE: "Integer" | "Boolean" | "Double" | "String" | "BigInteger" | "BigFloa
 SIGNED_FLOAT: /-?\d+\.\d+/
 SIGNED_NUMBER: /-?\d+(\.\d+)?/
 INT_NUMBER: /\d+/
+TYPE_ARG_START: /<(?=[A-Za-z_])/
 %import common.CNAME -> NAME
 %import common.ESCAPED_STRING
 %import common.WS
