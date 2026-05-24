@@ -43,7 +43,7 @@ Diese Themen sind absichtlich nicht Teil des aktuellen V1-Abschlusses:
 
 ## Current Gate Baseline
 
-Latest verified baseline after gRPC formalization:
+Latest verified baseline after before-Go-compiler gRPC/proto mapping finalization:
 
 ```text
 verify-spec-diagnostics.cmd
@@ -57,10 +57,10 @@ Matching semantic diagnostics: 95
 Mismatching semantic diagnostics: 0
 
 verify-parser-conformance.cmd
-Total: 318
-OK:    273
+Total: 319
+OK:    274
 FAIL:  45
-AST shape:     273/273
-Semantic AST:  273/273
+AST shape:     274/274
+Semantic AST:  274/274
 Parser conformance verify passed.
 ```

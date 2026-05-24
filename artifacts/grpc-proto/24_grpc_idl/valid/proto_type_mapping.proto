@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package grpcidl.prototypemapping;
+
+message NestedMessage {
+  string label = 1;
+}
+
+message MappingRequest {
+  string name = 1;
+  bool active = 2;
+  int64 count = 3;
+  double ratio = 4;
+  NestedMessage nested = 5;
+  repeated string tags = 6;
+  repeated NestedMessage children = 7;
+}
+
+message MappingReply {
+  bool accepted = 1;
+}
+
+service MappingService {
+  rpc Map (MappingRequest) returns (MappingReply);
+}

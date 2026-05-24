@@ -8,6 +8,7 @@ from freehold.core.string_templates import validate_template
 
 BUILTIN_TYPE_NAMES = {"Integer", "Boolean", "Double", "String", "BigInteger", "BigFloat", "Executor", "Scope"}
 BUILTIN_GENERIC_TYPE_ARITY = {
+    "Array": 1,
     "JoinHandle": 1,
     "Channel": 1,
     "Sender": 1,
@@ -114,25 +115,31 @@ class Verifier:
                 if rpc.name in seen_rpc_names:
                     raise TypeCheckError(f"{rpc.pos.text()}: duplicate rpc name: {rpc.name}")
                 seen_rpc_names.add(rpc.name)
-                self.require_grpc_record(rpc.request_type, records, rpc.pos, "request")
-                self.require_grpc_record(rpc.response_type, records, rpc.pos, "response")
+                self.require_grpc_record(rpc.request_type, records, rpc.pos, "request", set())
+                self.require_grpc_record(rpc.response_type, records, rpc.pos, "response", set())
 
-    def require_grpc_record(self, type_name: str, records: dict[str, RecordDef], pos: SourcePos, role: str) -> None:
+    def require_grpc_record(self, type_name: str, records: dict[str, RecordDef], pos: SourcePos, role: str, seen: set[str]) -> None:
         if "<" in type_name or type_name not in records:
             raise TypeCheckError(f"{pos.text()}: unknown rpc {role} type: {type_name}")
+        if type_name in seen:
+            return
+        seen.add(type_name)
         record = records[type_name]
         proto_fields = record.proto_fields or {}
         for field_name, field_type in record.fields.items():
             if field_name not in proto_fields:
                 raise TypeCheckError(f"{pos.text()}: missing proto field id in grpc message: {type_name}.{field_name}")
-            self.require_grpc_proto_field_type(field_type, records, pos)
+            self.require_grpc_proto_field_type(field_type, records, pos, seen)
 
-    def require_grpc_proto_field_type(self, type_name: str, records: dict[str, RecordDef], pos: SourcePos) -> None:
+    def require_grpc_proto_field_type(self, type_name: str, records: dict[str, RecordDef], pos: SourcePos, seen: set[str]) -> None:
         array_match = re.fullmatch(r"Array<\s*([^<>]+?)\s*>", type_name)
         if array_match:
-            self.require_grpc_proto_field_type(array_match.group(1).strip(), records, pos)
+            self.require_grpc_proto_field_type(array_match.group(1).strip(), records, pos, seen)
             return
-        if type_name in {"String", "Integer", "Boolean", "Double"} or type_name in records:
+        if type_name in {"String", "Integer", "Boolean", "Double"}:
+            return
+        if type_name in records:
+            self.require_grpc_record(type_name, records, pos, "field", seen)
             return
         raise TypeCheckError(f"{pos.text()}: unsupported grpc proto field type: {type_name}")
 

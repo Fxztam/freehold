@@ -1,0 +1,25 @@
+module GrpcIdl.ProtoTypeMapping
+
+type NestedMessage is record
+    label: String proto 1
+end record
+
+type MappingRequest is record
+    name: String proto 1
+    active: Boolean proto 2
+    count: Integer proto 3
+    ratio: Double proto 4
+    nested: NestedMessage proto 5
+    tags: Array<String> proto 6
+    children: Array<NestedMessage> proto 7
+end record
+
+type MappingReply is record
+    accepted: Boolean proto 1
+end record
+
+service MappingService is
+    rpc Map(request: MappingRequest): MappingReply
+end MappingService
+
+end GrpcIdl.ProtoTypeMapping

@@ -2,7 +2,7 @@
 
 Stand: 2026-05-24
 
-Status: Vorbereitende Abschlussliste vor Go-Compiler V1; V1-Policies festzurren, V2/V3-Themen parken
+Status: Vorbereitende Abschlussliste vor Go-Compiler V1; V1-Policies festgezurrt, gRPC/proto Mapping getestet, V2/V3-Themen geparkt
 
 Dieses Dokument sammelt die Punkte, die vor dem Start des Go-Compiler-Basis-Codegens abgeschlossen oder bewusst entschieden sein sollen. Ziel ist nicht, neue Sprachfeatures einzubauen, sondern die Compilergrundlage stabil zu machen: Syntax einfrieren, Typ- und Runtime-Policies festhalten, und spaetere Transport-/Runtime-Themen sauber aus V1 herausnehmen.
 
@@ -42,10 +42,14 @@ Entscheidung: `Integer -> int64` bleibt fuer V1 die erwartbare, einfache Abbildu
 
 Tests vor Compilerstart:
 
-- positiver Test fuer alle skalaren Mappings
-- positiver Test fuer Record-Referenz
-- positiver Test fuer `Array<T>` / `repeated`
-- negativer Test fuer nicht protofaehige Typen
+- erledigt: positiver Test fuer alle skalaren Mappings
+- erledigt: positiver Test fuer Record-Referenz
+- erledigt: positiver Test fuer `Array<T>` / `repeated`
+- erledigt: negativer Test fuer nicht protofaehige Typen
+
+Testfall: `tests/language_modules/24_grpc_idl/valid/proto_type_mapping.fh`.
+
+Artefakt: `artifacts/grpc-proto/24_grpc_idl/valid/proto_type_mapping.proto`.
 
 ### Schema-Evolution Minimalregel
 
@@ -178,3 +182,18 @@ Vor dem Start der breiten Go-Compiler-Implementierung sollte gelten:
 - Result und Abort sind fuer Go-Codegen semantisch getrennt.
 - Runtime-Builtins haben eine supported/stub/rejected-Einordnung.
 - Source-Level Syntax ist fuer Compiler V1 eingefroren.
+
+## Abgearbeitet am 2026-05-24
+
+| Punkt | Ergebnis |
+| --- | --- |
+| Source-Level Syntax Freeze | Dokumentiert als Compiler-V1-Leitplanke. |
+| gRPC/proto Typ-Mapping | Dokumentiert und mit `proto_type_mapping` getestet. |
+| `Integer -> int64` | Als V1-Policy festgelegt und durch erwartetes `.proto` abgedeckt. |
+| Record-Referenz in proto | Codegen erzeugt transitive Message-Typen. |
+| `Array<T> -> repeated T` | Verifier und Codegen akzeptieren gRPC-IDL-Arrays. |
+| Schema-Evolution Minimalregel | Positiv/eindeutig/vollstaendig bleibt V1; `reserved proto` V2 geparkt. |
+| gRPC Go-Binding | Nach Basis-Go-Codegen geparkt. |
+| Generics-Codegen-Policy | User-Generics im ersten Codegen ablehnen, Builtins gezielt behandeln. |
+| Result/Abort/Contracts | Semantik fuer Go V1 eingefroren; Runtime-Enforcement geparkt. |
+| Runtime-Builtins-Grenze | supported/stub/rejected-Tabelle dokumentiert. |
