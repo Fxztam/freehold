@@ -10,7 +10,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from freehold.core.go_codegen import generate_go_source
+from freehold.core.go_codegen import generate_go_file, generate_go_source
 
 
 DEFAULT_ROOT = Path("tests/language_modules")
@@ -56,14 +56,17 @@ def main() -> int:
 
 
 def run_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> dict[str, Any]:
-    source_path = module_dir / case["file"]
+    source_path = case_source_path(module_dir, case)
     expected_path = module_dir / case["expected_go"]
-    source = source_path.read_text(encoding="utf-8")
-    artifact_path = out_root / module_dir.name / source_path.parent.name / f"{source_path.stem}.go"
-    json_path = out_root / module_dir.name / source_path.parent.name / f"{source_path.stem}.json"
+    artifact_path = artifact_file_path(out_root, module_dir, case, source_path, ".go")
+    json_path = artifact_file_path(out_root, module_dir, case, source_path, ".json")
     artifact_path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        result = generate_go_source(source)
+        if "root" in case:
+            result = generate_go_file(source_path)
+        else:
+            source = source_path.read_text(encoding="utf-8")
+            result = generate_go_source(source)
         actual = result.go_source
         error = None
     except Exception as exc:
@@ -83,6 +86,8 @@ def run_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> dict[str
         "expected_go": display_path(expected_path),
         "supported": bool(result.supported) if result is not None else False,
         "diagnostics": result.diagnostics if result is not None else [],
+        "package_path": result.package_path if result is not None else "",
+        "imports": result.imports if result is not None else [],
         "error": error,
     }
     write_json(json_path, row | {"go_source": actual})
@@ -90,6 +95,20 @@ def run_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> dict[str
     print("WRITE", artifact_path)
     print("JSON ", json_path)
     return row
+
+
+def case_source_path(module_dir: Path, case: dict[str, Any]) -> Path:
+    if "root" in case:
+        return module_dir / case["root"] / case["entry"]
+    return module_dir / case["file"]
+
+
+def artifact_file_path(out_root: Path, module_dir: Path, case: dict[str, Any], source_path: Path, suffix: str) -> Path:
+    if "root" in case:
+        root = module_dir / case["root"]
+        relative_entry = source_path.relative_to(root).with_suffix(suffix)
+        return out_root / module_dir.name / Path(case["root"]).name / relative_entry
+    return out_root / module_dir.name / source_path.parent.name / f"{source_path.stem}{suffix}"
 
 
 def normalize(text: str) -> str:

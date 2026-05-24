@@ -2,7 +2,7 @@
 
 Stand: 2026-05-24
 
-Status: Compiler V1 Start-Slice implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
+Status: Compiler V1 Start-Slice plus import-aware Codegen-Slice implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
 
 Dieses Dokument legt die Leitplanken fuer die naechste Implementierungsphase fest: einen Go-Compiler fuer Freehold, der auf dem bestehenden Parser/AST/Verifier/Spec-Fundament aufsetzt. Wichtigste Vorgabe: Der Compiler darf das Freehold-Modularitaetskonzept nicht aufweichen. Codegen muss Modulgrenzen, Imports, Exposing-Regeln und qualifizierte Namen respektieren.
 
@@ -19,7 +19,7 @@ Der erste Go-Compiler-Slice ist vorhanden:
 - `valid_go_codegen`-Manifestfaelle verankern Golden-Vergleiche in den Language-Modulen.
 - `verify-parser-conformance.cmd` fuehrt den Go-Codegen-Artefaktcheck als eigenen Gate-Schritt aus.
 
-Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Nicht unterstuetzte AST-Formen werden im Result als Diagnostics markiert.
+Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Der Import-Slice nutzt `ModuleResolver` fuer dateibasierte Entry-Module, erzeugt deterministische Go-Importpfade fuer benutzte Freehold-Imports und spiegelt Package-/Import-Metadaten in JSON-Artefakten. Nicht unterstuetzte AST-Formen werden im Result als Diagnostics markiert.
 
 ## Ziel
 
@@ -221,11 +221,11 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 ## Empfohlene naechste Schritte
 
 1. Go-Package-Pfadkonvention fuer Freehold-Module festlegen.
-2. Compiler-Artefaktstruktur definieren, z.B. `artifacts/go-codegen/<module>/...`.
-3. Minimalen Codegen fuer ein einzelnes Modul ohne Imports bauen.
-4. Danach Import-/Exposing-Aufloesung in Codegen integrieren.
-5. Feature-Matrix pro Language-Modul pflegen: supported, rejected, deferred.
-6. Erst danach Runtime-/Stdlib-Packages systematisch anbinden.
+1. Go-Package-Pfadkonvention fuer Freehold-Module weiter haerten, sobald echte Go-Moduldateien gebaut werden.
+2. Feature-Matrix pro Language-Modul pflegen: supported, rejected, deferred.
+3. Runtime-/Stdlib-Packages systematisch anbinden.
+4. Result-/Abort-Codegen explizit entscheiden und implementieren.
+5. Danach Multi-File-Emission mehrerer Freehold-Module in einem Compilerlauf ausbauen.
 
 ## Akzeptanzkriterien fuer Compiler V1 Start
 

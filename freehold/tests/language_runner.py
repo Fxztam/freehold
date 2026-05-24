@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from freehold.core.diagnostics import diagnose_exception
-from freehold.core.go_codegen import generate_go_source
+from freehold.core.go_codegen import generate_go_file, generate_go_source
 from freehold.core.grpc_codegen import generate_proto
 from freehold.core.module_resolver import ModuleResolver
 from freehold.core.parser import parse_source
@@ -80,8 +80,11 @@ def run_case(module_dir: Path, case: dict, update: bool = False):
         return True, f"valid_grpc_proto OK: {case['name']}"
 
     if kind == "valid_go_codegen":
-        source = (module_dir / case["file"]).read_text(encoding="utf-8")
-        actual = generate_go_source(source).go_source
+        if "root" in case:
+            actual = generate_go_file(module_dir / case["root"] / case["entry"]).go_source
+        else:
+            source = (module_dir / case["file"]).read_text(encoding="utf-8")
+            actual = generate_go_source(source).go_source
         expected_path = module_dir / case["expected_go"]
         if update or not expected_path.exists():
             expected_path.parent.mkdir(parents=True, exist_ok=True)
