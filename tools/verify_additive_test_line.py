@@ -64,6 +64,16 @@ def main() -> int:
 
 
 def git_status_entries() -> list[StatusEntry]:
+    refresh = subprocess.run(
+        ["git", "update-index", "--refresh"],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if refresh.returncode not in (0, 1):
+        print(refresh.stderr, file=sys.stderr, end="")
+        raise SystemExit(refresh.returncode)
     result = subprocess.run(
         ["git", "status", "--porcelain=v1", "--untracked-files=all"],
         text=True,

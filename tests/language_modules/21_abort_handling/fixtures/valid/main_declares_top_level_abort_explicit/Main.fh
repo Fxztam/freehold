@@ -1,0 +1,19 @@
+module AbortMainTopLevelExplicit
+
+error NotFound
+
+procedure service_proc(id: Integer)
+aborts NotFound when id = 0
+is
+    if id = 0 then
+        abort NotFound
+    end if
+end service_proc
+
+procedure main()
+aborts NotFound
+is
+    call service_proc(0)
+end main
+
+end AbortMainTopLevelExplicit
