@@ -329,11 +329,24 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 - Generics Bounds/Inference/volle Monomorphisierung
 - Native/Image Builder
 
+Reihenfolge fuer die Weiterarbeit:
+
+1. Zuerst policy-only/rejected V1-Pfade beweisen: V1 soll diese Pfade bewusst ablehnen und nicht halb uebersetzen. Primaere Kandidaten sind `12_type_conflicts`, `13_contract_blocks` und `22_generics` mit klaren Rejection-/Unsupported-Smokes statt positiven Go-Codegen-Goldens.
+2. Danach kleine deferred Codegen-Slices angehen:
+    - `11_errors_results`: Result-value-field-access.
+    - `18_string_templates`: dynamische Formatargumente.
+    - `04_types`: breitere User-Type-Alias-Kombinationen.
+3. Grosse deferred Slices spaeter angehen:
+    - `23_concurrency`: echte Runtime/Channels/Scope-Ausfuehrung.
+    - `24_grpc_idl`: Go-gRPC bindings, status mapping, streaming.
+    - `21_abort_handling`: breitere abort implication und Handler-Syntax.
+
 ## Empfohlene naechste Schritte
 
-1. BigNumber-/Runtime-Builtins oder weitere V1-Codegen-Luecken priorisieren.
-2. Danach Record-/Result-/Abort-Interaktionen ueber Modulgrenzen haerten.
-3. Feature-Matrix bei jedem neuen Go-Codegen-Slice mitpflegen.
+1. Policy-only/rejected V1-Pfade mit Rejection-/Unsupported-Smokes beweisen.
+2. Kleine deferred Codegen-Slices priorisieren: Result-value-field-access, dynamische String-Template-Argumente, breitere Type-Alias-Kombinationen.
+3. Grosse deferred Runtime-/Transport-/Abort-Slices erst danach angehen.
+4. Feature-Matrix bei jedem neuen Go-Codegen-Slice mitpflegen.
 
 ## Akzeptanzkriterien fuer Compiler V1 Start
 
