@@ -78,7 +78,7 @@ Bewusst geparkt fuer V2/V3:
 
 - Generics-Codegen, Monomorphisierung, Bounds und Inference.
 - Async Runtime, Channels, Scheduler und Scope/JoinHandle-Ausfuehrung. Ein Unsupported-Smoke `unsupported_async_scope_runtime` dokumentiert die aktuelle Go-Codegen-Grenze.
-- gRPC Go server/client bindings.
+- gRPC Go server/client bindings; `unsupported_grpc_binding` dokumentiert die aktuelle Go-Codegen-V1-Grenze.
 - REST/WebSocket/SSE Transport-Libs.
 - Runtime-Contract-Enforcement.
 - path-aware Control-Flow-Proofs.
@@ -281,7 +281,7 @@ Der vorhandene gRPC-V1-Pfad bleibt getrennt vom allgemeinen Go-Compiler:
 Freehold gRPC IDL -> proto3 file
 ```
 
-Go-gRPC-Bindings sind der naechste Transport-Slice, aber nicht Voraussetzung fuer den ersten allgemeinen Go-Codegen.
+Go-gRPC-Bindings sind ein eigener V2/V3-Codegen-Pfad, aber kein Teil des Compiler-V1-Kerns. Der Compiler-Example-Smoke `unsupported_grpc_binding` haelt fest, dass der allgemeine Go-Codegen diesen Pfad aktuell mit `FH-GOCODEGEN-0001` ablehnt.
 
 Compiler V1 muss dennoch die Modulpolitik respektieren:
 
