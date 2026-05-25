@@ -21,6 +21,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Generate and compare gRPC proto artifacts for Freehold language modules")
     parser.add_argument("root", nargs="?", default=str(DEFAULT_ROOT), help="language_modules root")
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="artifact output directory")
+    parser.add_argument("--additive", action="store_true", help="write only missing artifacts; never update existing artifact files")
     args = parser.parse_args()
 
     root = Path(args.root)
@@ -36,7 +37,7 @@ def main() -> int:
         for case in manifest.get("cases", []):
             if case.get("kind") != "valid_grpc_proto":
                 continue
-            row = run_case(module_dir, case, out_root)
+            row = run_case(module_dir, case, out_root, additive=args.additive)
             rows.append(row)
             if row["status"] != "match":
                 mismatches.append(row)
@@ -48,23 +49,26 @@ def main() -> int:
         "mismatches": mismatches,
     }
     out_root.mkdir(parents=True, exist_ok=True)
-    write_json(out_root / "_all.json", rows)
-    write_json(out_root / "_summary.json", summary)
-    write_text_report(out_root / "_mismatches.txt", summary)
+    write_json(out_root / "_all.json", rows, additive=args.additive)
+    write_json(out_root / "_summary.json", summary, additive=args.additive)
+    write_text_report(out_root / "_mismatches.txt", summary, additive=args.additive)
     print_summary(summary)
     return 1 if mismatches else 0
 
 
-def run_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> dict[str, Any]:
+def run_case(module_dir: Path, case: dict[str, Any], out_root: Path, *, additive: bool) -> dict[str, Any]:
     source_path = module_dir / case["file"]
     expected_path = module_dir / case["expected_proto"]
     actual = generate_proto_source(source_path.read_text(encoding="utf-8"))
     expected = expected_path.read_text(encoding="utf-8") if expected_path.exists() else ""
     artifact_path = out_root / module_dir.name / source_path.parent.name / f"{source_path.stem}.proto"
+    artifact_action = "KEEP " if additive and artifact_path.exists() else "WRITE"
     artifact_path.parent.mkdir(parents=True, exist_ok=True)
-    artifact_path.write_text(actual, encoding="utf-8")
+    frozen_mismatch = write_artifact(artifact_path, actual, additive=additive)
 
     status = "match" if normalize(actual) == normalize(expected) else "mismatch"
+    if frozen_mismatch:
+        status = "frozen_mismatch"
     row = {
         "case": f"{module_dir.name}/{source_path.parent.name}/{source_path.name}",
         "name": case.get("name", source_path.stem),
@@ -74,7 +78,7 @@ def run_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> dict[str
         "expected_proto": display_path(expected_path),
     }
     print("OK   " if status == "match" else "FAIL ", row["case"])
-    print("WRITE", artifact_path)
+    print(artifact_action, artifact_path)
     return row
 
 
@@ -82,11 +86,11 @@ def normalize(text: str) -> str:
     return text.strip().replace("\r\n", "\n")
 
 
-def write_json(path: Path, value: Any) -> None:
-    path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+def write_json(path: Path, value: Any, *, additive: bool = False) -> bool:
+    return write_artifact(path, json.dumps(value, indent=2) + "\n", additive=additive)
 
 
-def write_text_report(path: Path, summary: dict[str, Any]) -> None:
+def write_text_report(path: Path, summary: dict[str, Any], *, additive: bool = False) -> bool:
     lines = [
         f"Total cases:       {summary['total_cases']}",
         f"Matching proto:    {summary['matching_proto']}",
@@ -96,7 +100,14 @@ def write_text_report(path: Path, summary: dict[str, Any]) -> None:
         lines.extend(["", "Mismatches", "----------"])
         for mismatch in summary["mismatches"]:
             lines.append(f"{mismatch['case']} => {mismatch['artifact_file']} != {mismatch['expected_proto']}")
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return write_artifact(path, "\n".join(lines) + "\n", additive=additive)
+
+
+def write_artifact(path: Path, content: str, *, additive: bool) -> bool:
+    if additive and path.exists():
+        return normalize(path.read_text(encoding="utf-8")) != normalize(content)
+    path.write_text(content, encoding="utf-8")
+    return False
 
 
 def print_summary(summary: dict[str, Any]) -> None:

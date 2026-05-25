@@ -64,6 +64,7 @@ OK:    274
 FAIL:  45
 Go codegen generator gate: 60/60 matching
 Go feature matrix: 24/24 modules covered; supported 15, rejected 3, deferred 6
+Additive test-line gate: existing `.fh` cases and existing `artifacts/` files are frozen; new cases/artifacts are additions only.
 AST shape:     274/274
 Semantic AST:  274/274
 Parser conformance verify passed.

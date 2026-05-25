@@ -103,6 +103,18 @@ Ziel: Der Compiler soll nicht kryptisch scheitern, sondern klar sagen, dass das 
 - Unsupported-Beispiele liefern nachvollziehbare Diagnostics.
 - Der neue Testpfad ist dokumentiert und reproduzierbar.
 
+## Additive Testlinie
+
+Bestehende `.fh`-Faelle und vorhandene Dateien unter `artifacts/` sind eingefrorene Verifikationsbaselines. Neue Compiler-Erkenntnisse werden als neue `.fh`-Faelle plus neue Goldens/Artefakte ergaenzt; vorhandene Artefakte werden nicht aktualisiert.
+
+Der Standardablauf nutzt additive Artifact-Generatoren und prueft die Regel mit:
+
+```text
+verify-additive-test-line.cmd
+```
+
+`verify-parser-conformance.cmd` fuehrt dieses Gate vor den Go-Tests aus. Erlaubt sind neue Dateien; verboten sind Modifikationen, Loeschungen oder Renames bestehender `.fh`-Faelle und bestehender Artefakte.
+
 ## Danach
 
 Wenn dieser Testmodul-Spielplatz steht, koennen wir neue Compiler-Slices sehr viel greifbarer pruefen:

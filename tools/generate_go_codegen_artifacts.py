@@ -22,6 +22,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Generate and compare Go codegen artifacts for Freehold language modules")
     parser.add_argument("root", nargs="?", default=str(DEFAULT_ROOT), help="language_modules root")
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="artifact output directory")
+    parser.add_argument("--additive", action="store_true", help="write only missing artifacts; never update existing artifact files")
     args = parser.parse_args()
 
     root = Path(args.root)
@@ -36,14 +37,14 @@ def main() -> int:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         for case in manifest.get("cases", []):
             if case.get("kind") == "valid_go_project_codegen":
-                row = run_project_case(module_dir, case, out_root)
+                row = run_project_case(module_dir, case, out_root, additive=args.additive)
                 rows.append(row)
                 if row["status"] != "match":
                     mismatches.append(row)
                 continue
             if case.get("kind") != "valid_go_codegen":
                 continue
-            row = run_case(module_dir, case, out_root)
+            row = run_case(module_dir, case, out_root, additive=args.additive)
             rows.append(row)
             if row["status"] != "match":
                 mismatches.append(row)
@@ -55,18 +56,20 @@ def main() -> int:
         "mismatches": mismatches,
     }
     out_root.mkdir(parents=True, exist_ok=True)
-    write_json(out_root / "_all.json", rows)
-    write_json(out_root / "_summary.json", summary)
-    write_text_report(out_root / "_mismatches.txt", summary)
+    write_json(out_root / "_all.json", rows, additive=args.additive)
+    write_json(out_root / "_summary.json", summary, additive=args.additive)
+    write_text_report(out_root / "_mismatches.txt", summary, additive=args.additive)
     print_summary(summary)
     return 1 if mismatches else 0
 
 
-def run_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> dict[str, Any]:
+def run_case(module_dir: Path, case: dict[str, Any], out_root: Path, *, additive: bool) -> dict[str, Any]:
     source_path = case_source_path(module_dir, case)
     expected_path = module_dir / case["expected_go"]
     artifact_path = artifact_file_path(out_root, module_dir, case, source_path, ".go")
     json_path = artifact_file_path(out_root, module_dir, case, source_path, ".json")
+    artifact_action = "KEEP " if additive and artifact_path.exists() else "WRITE"
+    json_action = "KEEP " if additive and json_path.exists() else "JSON "
     artifact_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         if "root" in case:
@@ -81,8 +84,10 @@ def run_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> dict[str
         error = {"type": type(exc).__name__, "message": str(exc)}
         result = None
     expected = expected_path.read_text(encoding="utf-8") if expected_path.exists() else ""
-    artifact_path.write_text(actual, encoding="utf-8")
+    frozen_mismatch = write_artifact(artifact_path, actual, additive=additive)
     status = "match" if error is None and normalize(actual) == normalize(expected) else "mismatch"
+    if frozen_mismatch:
+        status = "frozen_mismatch"
     row = {
         "case": f"{module_dir.name}/{source_path.parent.name}/{source_path.name}",
         "name": case.get("name", source_path.stem),
@@ -97,19 +102,24 @@ def run_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> dict[str
         "imports": result.imports if result is not None else [],
         "error": error,
     }
-    write_json(json_path, row | {"go_source": actual})
+    json_frozen_mismatch = write_json(json_path, row | {"go_source": actual}, additive=additive)
+    if json_frozen_mismatch and status == "match":
+        status = "frozen_mismatch"
+        row["status"] = status
     print("OK   " if status == "match" else "FAIL ", row["case"])
-    print("WRITE", artifact_path)
-    print("JSON ", json_path)
+    print(artifact_action, artifact_path)
+    print(json_action, json_path)
     return row
 
 
-def run_project_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> dict[str, Any]:
+def run_project_case(module_dir: Path, case: dict[str, Any], out_root: Path, *, additive: bool) -> dict[str, Any]:
     entry_path = module_dir / case["root"] / case["entry"]
     expected_root = module_dir / case["expected_go_dir"]
     artifact_root = out_root / module_dir.name / Path(case["root"]).name / "project"
     json_path = artifact_root / "_project.json"
-    if artifact_root.exists():
+    artifact_action = "KEEP " if additive and artifact_root.exists() else "WRITE"
+    json_action = "KEEP " if additive and json_path.exists() else "JSON "
+    if artifact_root.exists() and not additive:
         shutil.rmtree(artifact_root)
     try:
         files = generate_go_project(entry_path)
@@ -126,11 +136,14 @@ def run_project_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> 
         path.relative_to(expected_root).as_posix(): path.read_text(encoding="utf-8")
         for path in sorted(path for path in expected_root.rglob("*") if path.is_file())
     } if expected_root.exists() else {}
+    frozen_mismatch = False
     for output_path, source in actual.items():
         artifact_path = artifact_root / output_path
         artifact_path.parent.mkdir(parents=True, exist_ok=True)
-        artifact_path.write_text(source, encoding="utf-8")
+        frozen_mismatch = write_artifact(artifact_path, source, additive=additive) or frozen_mismatch
     status = "match" if error is None and normalize_project(actual) == normalize_project(expected) else "mismatch"
+    if frozen_mismatch:
+        status = "frozen_mismatch"
     row = {
         "case": f"{module_dir.name}/{case['root']}/{case['entry']}",
         "name": case.get("name", entry_path.stem),
@@ -154,10 +167,13 @@ def run_project_case(module_dir: Path, case: dict[str, Any], out_root: Path) -> 
         "error": error,
     }
     json_path.parent.mkdir(parents=True, exist_ok=True)
-    write_json(json_path, row)
+    json_frozen_mismatch = write_json(json_path, row, additive=additive)
+    if json_frozen_mismatch and status == "match":
+        status = "frozen_mismatch"
+        row["status"] = status
     print("OK   " if status == "match" else "FAIL ", row["case"])
-    print("WRITE", artifact_root)
-    print("JSON ", json_path)
+    print(artifact_action, artifact_root)
+    print(json_action, json_path)
     return row
 
 
@@ -183,11 +199,11 @@ def normalize(text: str) -> str:
     return text.strip().replace("\r\n", "\n")
 
 
-def write_json(path: Path, value: Any) -> None:
-    path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+def write_json(path: Path, value: Any, *, additive: bool = False) -> bool:
+    return write_artifact(path, json.dumps(value, indent=2) + "\n", additive=additive)
 
 
-def write_text_report(path: Path, summary: dict[str, Any]) -> None:
+def write_text_report(path: Path, summary: dict[str, Any], *, additive: bool = False) -> bool:
     lines = [
         f"Total cases:    {summary['total_cases']}",
         f"Matching Go:    {summary['matching_go']}",
@@ -199,7 +215,14 @@ def write_text_report(path: Path, summary: dict[str, Any]) -> None:
             actual = mismatch.get("artifact_file") or mismatch.get("artifact_dir") or "<no artifact>"
             expected = mismatch.get("expected_go") or mismatch.get("expected_go_dir") or "<no expected>"
             lines.append(f"{mismatch['case']} => {actual} != {expected}")
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return write_artifact(path, "\n".join(lines) + "\n", additive=additive)
+
+
+def write_artifact(path: Path, content: str, *, additive: bool) -> bool:
+    if additive and path.exists():
+        return normalize(path.read_text(encoding="utf-8")) != normalize(content)
+    path.write_text(content, encoding="utf-8")
+    return False
 
 
 def print_summary(summary: dict[str, Any]) -> None:
