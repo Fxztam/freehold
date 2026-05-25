@@ -1,0 +1,16 @@
+module App.Main
+
+import Domain.Orders exposing NotFound, load_order
+import Domain.Types exposing Order
+
+type Address is record
+    postal_code: Integer
+end record
+
+function checked_order(id: Integer) returns Result<Order, NotFound>
+ensures value.customer.address.postal_code = 1000
+is
+    return load_order(id)
+end checked_order
+
+end App.Main

@@ -992,7 +992,7 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         field_name, found_type = field_access_record_match.groups()
         return Diagnostic("VF-R006", "field access requires record", line, column, found_type, f"record before .{field_name}", RECORD_FIELD_ACCESS_HINT, phase="semantic")
-    unknown_field_access_match = re.search(r"unknown field ([A-Za-z_][A-Za-z0-9_]*) for record ([A-Za-z_][A-Za-z0-9_]*)", message)
+    unknown_field_access_match = re.search(r"unknown field ([A-Za-z_][A-Za-z0-9_]*) for record ([A-Za-z_][A-Za-z0-9_.]*)", message)
     if unknown_field_access_match:
         line, column = _source_position_from_message(message)
         field_name, record_name = unknown_field_access_match.groups()

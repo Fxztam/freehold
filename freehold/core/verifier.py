@@ -940,13 +940,37 @@ class Ctx:
                     self.errors.add(symbol_name)
 
     def add_imported_record_with_dependencies(self, name: str, imported: VerifiedProgram, seen: set[str]) -> None:
-        if name in seen or name not in imported.records:
+        seen_key = f"{imported.ast.module_name}.{name}"
+        if seen_key in seen or name not in imported.records:
             return
-        seen.add(name)
-        if name not in self.records:
-            self.records[name] = imported.records[name]
+        seen.add(seen_key)
+        record_name = self.imported_record_context_name(name, imported)
+        if record_name not in self.records:
+            record = imported.records[name]
+            fields = {
+                field_name: self.imported_type_context_name(field_type, imported, seen)
+                for field_name, field_type in record.fields.items()
+            }
+            self.records[record_name] = RecordDef(record_name, fields, record.proto_fields)
         for field_type in imported.records[name].fields.values():
             self.add_imported_type_dependencies(field_type, imported, seen)
+
+    def imported_record_context_name(self, name: str, imported: VerifiedProgram) -> str:
+        if name not in self.records or self.records.get(name) == imported.records.get(name):
+            return name
+        return f"{imported.ast.module_name}.{name}"
+
+    def imported_type_context_name(self, type_name: str, imported: VerifiedProgram, seen: set[str]) -> str:
+        generic = self.parse_generic_instance(type_name)
+        if generic is not None:
+            base, args = generic
+            rewritten = [self.imported_type_context_name(arg, imported, seen) for arg in args]
+            return f"{base}<{', '.join(rewritten)}>"
+        if type_name in imported.records:
+            record_name = self.imported_record_context_name(type_name, imported)
+            self.add_imported_record_with_dependencies(type_name, imported, seen)
+            return record_name
+        return type_name
 
     def add_imported_type_dependencies(self, type_name: str, imported: VerifiedProgram, seen: set[str]) -> None:
         generic = self.parse_generic_instance(type_name)

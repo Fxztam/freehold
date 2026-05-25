@@ -1,0 +1,15 @@
+module ResultValueFieldUnknownField
+
+type Customer is record
+    id: Integer
+end record
+
+error NotFound
+
+function load() returns Result<Customer, NotFound>
+ensures value.active = true
+is
+    return ok Customer { id: 1 }
+end load
+
+end ResultValueFieldUnknownField
