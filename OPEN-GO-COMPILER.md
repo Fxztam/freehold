@@ -316,7 +316,8 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
     - `21_abort_handling`: breitere abort contract implication, Handler-Syntax.
     - `23_concurrency`: echte async/runtime/channels/scope execution.
     - `24_grpc_idl`: Go-gRPC bindings, status mapping, streaming.
-    - `12_type_conflicts`, `22_generics`: policy-only/rejected fuer V1, also absichtlich keine positiven Go-Codegen-Goldens.
+    - `12_type_conflicts`: policy-only/rejected fuer V1, also absichtlich keine positiven Go-Codegen-Goldens.
+    - `22_generics`: frontend-gueltige Generics sind fuer Go-Codegen V1 bewusst unsupported (`FH-GOCODEGEN-0001`); ungueltige Generic-Fixtures bleiben als Go-Codegen-Rejection-Cases abgesichert.
     - `13_contract_blocks`: gueltige V1-Contract-Formen haben Go-Runtime-Checks; ungueltige Contract-Fixtures bleiben als Go-Codegen-Rejection-Cases abgesichert.
 - echte async Runtime-Ausfuehrung
 - Scheduler, Work-Stealing, Blocking-Pool, CancellationToken
@@ -332,7 +333,7 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 
 Reihenfolge fuer die Weiterarbeit:
 
-1. Zuerst policy-only/rejected V1-Pfade beweisen: V1 soll diese Pfade bewusst ablehnen und nicht halb uebersetzen. `12_type_conflicts` ist mit Go-Codegen-Rejection-Cases fuer alle negativen Konflikt-Fixtures abgedeckt. `13_contract_blocks` ist fuer gueltige V1-Contracts positiv supported und fuer ungueltige Contract-Fixtures mit Go-Codegen-Rejection-Cases abgesichert. Weiterer primaerer Kandidat ist `22_generics` mit klaren Rejection-/Unsupported-Smokes statt positiven Go-Codegen-Goldens.
+1. Zuerst policy-only/rejected V1-Pfade beweisen: V1 soll diese Pfade bewusst ablehnen und nicht halb uebersetzen. `12_type_conflicts` ist mit Go-Codegen-Rejection-Cases fuer alle negativen Konflikt-Fixtures abgedeckt. `13_contract_blocks` ist fuer gueltige V1-Contracts positiv supported und fuer ungueltige Contract-Fixtures mit Go-Codegen-Rejection-Cases abgesichert. `22_generics` ist mit Unsupported-Cases fuer frontend-gueltige Generics und Rejection-Cases fuer ungueltige Generics abgedeckt.
 2. Danach kleine deferred Codegen-Slices angehen:
     - `11_errors_results`: Result-value-field-access.
     - `18_string_templates`: dynamische Formatargumente.
@@ -344,10 +345,9 @@ Reihenfolge fuer die Weiterarbeit:
 
 ## Empfohlene naechste Schritte
 
-1. Policy-only/rejected V1-Pfade mit Rejection-/Unsupported-Smokes beweisen; nach `12_type_conflicts` und `13_contract_blocks` bleibt hier primaer `22_generics`.
-2. Kleine deferred Codegen-Slices priorisieren: Result-value-field-access, dynamische String-Template-Argumente, breitere Type-Alias-Kombinationen.
-3. Grosse deferred Runtime-/Transport-/Abort-Slices erst danach angehen.
-4. Feature-Matrix bei jedem neuen Go-Codegen-Slice mitpflegen.
+1. Kleine deferred Codegen-Slices priorisieren: Result-value-field-access, dynamische String-Template-Argumente, breitere Type-Alias-Kombinationen.
+2. Grosse deferred Runtime-/Transport-/Abort-Slices erst danach angehen.
+3. Feature-Matrix bei jedem neuen Go-Codegen-Slice mitpflegen.
 
 ## Akzeptanzkriterien fuer Compiler V1 Start
 

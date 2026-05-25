@@ -129,6 +129,21 @@ def run_case(module_dir: Path, case: dict, update: bool = False):
             return True, f"invalid_go_codegen OK: {case['name']}"
         return False, f"Expected Go codegen failure but generated output: {case['name']}\n{result}"
 
+    if kind == "unsupported_go_codegen":
+        source = (module_dir / case["file"]).read_text(encoding="utf-8")
+        try:
+            result = generate_go_source(source)
+        except Exception as exc:
+            diag = diagnose_exception(source, exc).format()
+            return False, f"Expected unsupported Go codegen result but got exception: {case['name']}\n{diag}"
+        expected_code = case["expected_diagnostic"]
+        diagnostics = result.diagnostics
+        if result.supported:
+            return False, f"Expected unsupported Go codegen but result was supported: {case['name']}"
+        if not any(diag.get("code") == expected_code for diag in diagnostics):
+            return False, f"Expected diagnostic {expected_code} not found: {case['name']}\n{diagnostics}"
+        return True, f"unsupported_go_codegen OK: {case['name']}"
+
     if kind in {"invalid_syntax", "invalid_semantics"}:
         source = (module_dir / case["file"]).read_text(encoding="utf-8")
         try:
