@@ -322,6 +322,8 @@ class Verifier:
     def block(self, body, r, env, ctx):
         saw = False
         for s in body:
+            if saw:
+                raise TypeCheckError(f"{s.pos.text()}: unreachable statement after guaranteed exit")
             if isinstance(s, LetStmt):
                 self.validate_identifier(s.name, s.pos)
                 ctx.require_return_type(s.type_ref, s.pos)

@@ -312,6 +312,20 @@ allow propagated_aborts if declared_aborts contains same error_name
 reason "Until handler syntax exists, top-level program aborts must remain explicit on main."
 end
 
+section abort_reachability_v4
+
+rule unreachable_statement_after_guaranteed_exit
+when BlockFlow previous_statement guaranteed_exit is true
+and next_statement exists
+emit FH-ABT-3010
+    found next_statement
+    expected "reachable statement"
+end
+
+limit simple_block_reachability
+reason "Abort V4a rejects statements after syntactically guaranteed exits in the same block. It does not prove symbolic path infeasibility or condition implication."
+end
+
 section grpc_idl_boundary
 
 fact grpc_service_declaration

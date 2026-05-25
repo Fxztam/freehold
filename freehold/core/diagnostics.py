@@ -597,6 +597,11 @@ ABORT_MAIN_REQUIRES_HINT = """`main` has no ordinary Freehold caller, so `requir
 Use an explicit top-level `aborts ErrorName when condition` path, or introduce a future environment-assumption construct instead of `requires`.
 """
 
+ABORT_UNREACHABLE_HINT = """Statements after a guaranteed exit cannot execute.
+
+Remove the unreachable statement or move it before the `return`/`abort` path. This check is intentionally simple: a previous `return`, `abort`, or branch shape that exits on all paths ends the current block.
+"""
+
 EXPRESSION_UNKNOWN_VARIABLE_HINT = """An expression may only reference variables that are in scope.
 
 Declare the variable with `let` or as a routine parameter before using it.
@@ -1254,6 +1259,10 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
     if main_requires_match:
         line, column = _source_position_from_message(message)
         return Diagnostic("VF-ABT009", "main requires clause is not allowed", line, column, "requires", "explicit top-level aborts clause or environment assumption", ABORT_MAIN_REQUIRES_HINT, phase="semantic")
+    abort_unreachable_match = re.search(r"unreachable statement after guaranteed exit", message)
+    if abort_unreachable_match:
+        line, column = _source_position_from_message(message)
+        return Diagnostic("VF-ABT010", "unreachable statement after guaranteed exit", line, column, "statement after guaranteed exit", "reachable statement", ABORT_UNREACHABLE_HINT, phase="semantic")
     unknown_variable_match = re.search(r"unknown variable: ([A-Za-z_][A-Za-z0-9_]*)", message)
     if unknown_variable_match:
         line, column = _source_position_from_message(message)

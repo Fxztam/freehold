@@ -14,17 +14,18 @@ aborts ErrorName when condition
 abort ErrorName
 ```
 
-V1 verifies declared errors, duplicate abort declarations, abort statements declared by the enclosing routine, and Boolean abort conditions. V2 adds same-error-name call propagation. V3 adds main-specific requires rejection while keeping explicit top-level main aborts valid. Path-condition coverage, reachability, condition implication, handler syntax, and proof obligations remain future slices.
+V1 verifies declared errors, duplicate abort declarations, abort statements declared by the enclosing routine, and Boolean abort conditions. V2 adds same-error-name call propagation. V3 adds main-specific requires rejection while keeping explicit top-level main aborts valid. V4a rejects statements after syntactically guaranteed exits such as `abort`, `return`, and exhaustive aborting branches. Path-condition coverage, condition implication, handler syntax, and proof obligations remain future slices.
 
-Current validation baseline after V2:
+Current validation baseline after V4a:
 
 ```text
-21_abort_handling module:       9/9
-Semantic diagnostics:           69/69
-Spec diagnostics:               92/92 emits, 65 semantic codes, 69 CODE_MAP entries
-Parser status parity:           281/281
-AST shape parity:               238/238
-Semantic AST parity:            238/238
+21_abort_handling module:       13/13
+Language module gate:           456/456
+Semantic diagnostics:           97/97
+Spec diagnostics:               113 specs, 114 emits, 84 semantic codes, 90 CODE_MAP entries
+Parser status parity:           322/322
+AST shape parity:               277/277
+Semantic AST parity:            277/277
 ```
 
 V1 is intentionally a clean, green anchor. Parser/AST support, basic verifier rules, stable diagnostics, positive and negative language tests, Go/DHParser artifacts, comparison artifacts, rules, and diagnostic specs are complete for this slice.
@@ -51,7 +52,11 @@ Implemented on 2026-05-23 for rejecting normal `requires` clauses on `main`. Exp
 
 3. Abort V4: Reachability And Simple Path Checks
 
+V4a implemented on 2026-05-25 for statements after guaranteed exits in the same block. Covered shapes include a direct `abort` followed by another statement and an exhaustive `if/else` whose branches both abort before a later statement.
+
 Reject obviously unreachable abort statements and simple inconsistent control-flow shapes. Initial examples include `abort` after a guaranteed `return`, `return` after an unconditional `abort`, and abort conditions that are plainly incompatible with routine preconditions.
+
+Remaining V4 work: condition implication and broader contract/path consistency.
 
 4. Abort V5: Path Coverage And Proof Obligations
 

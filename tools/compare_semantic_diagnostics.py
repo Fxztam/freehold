@@ -80,6 +80,7 @@ CODE_MAP = {
     "VF-ABT003": ("FH-ABT-3003", 3003, "duplicate_abort_declaration", "abort"),
     "VF-ABT005": ("FH-ABT-3005", 3005, "caller_does_not_handle_or_propagate_abort", "abort"),
     "VF-ABT009": ("FH-ABT-3009", 3009, "main_requires_clause_not_allowed", "abort"),
+    "VF-ABT010": ("FH-ABT-3010", 3010, "unreachable_statement_after_guaranteed_exit", "abort"),
     "VF-TPL001": ("FH-TPL-4001", 4001, "template_placeholder_count_mismatch", "template"),
     "VF-TPL002": ("FH-TPL-4002", 4002, "template_old_placeholder_rejected", "template"),
     "VF-TPL003": ("FH-TPL-4003", 4003, "template_invalid_named_placeholder", "template"),

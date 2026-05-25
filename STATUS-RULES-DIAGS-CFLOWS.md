@@ -12,26 +12,26 @@ Dieser Status trennt drei Ebenen, die leicht verwechselt werden koennen:
 
 Direkt im Go-Code sind aktuell 23 Diagnostics/Parser-Regeln umgesetzt. Die komplette Spec ist groesser und wird ueber Python-Verifier, Expected-Manifests, Normalizer und Gates vollstaendig abgeglichen.
 
-Der Go-Parser ist bei Syntax/AST-Paritaet sehr weit: alle 322 Language-Module-Faelle haben denselben Parser-Status wie DHParser; alle 277 parse-ok Faelle haben passende AST-Shape- und Semantic-AST-Artefakte.
+Der Go-Parser ist bei Syntax/AST-Paritaet sehr weit: alle 322 Parser/AST-Vergleichsfaelle haben denselben Parser-Status wie DHParser; alle 277 parse-ok Faelle haben passende AST-Shape- und Semantic-AST-Artefakte. Der vollstaendige Language-Module-Gate steht aktuell bei 456/456.
 
 ## Aktuelle Spec-Zahlen
 
 `spec/freehold.diag`:
 
-- Diagnostic-Specs: `112`
+- Diagnostic-Specs: `113`
 
 `spec/freehold.rules`:
 
-- Rules: `113`
-- Emits: `113`
+- Rules: `114`
+- Emits: `114`
 
 `spec/analyzer.cflow`:
 
 - Summaries: `3`
 - Meanings: `12`
 - Facts: `15`
-- Rules: `9`
-- Limits: `3`
+- Rules: `10`
+- Limits: `4`
 - Non-goals: `7`
 
 ## Direkt im Go-Frontend umgesetzt
@@ -50,8 +50,8 @@ Damit sind im Go-Code direkt vor allem Syntax-/Parserdiagnostics umgesetzt. Das 
 
 Einordnung gegen die Spec:
 
-- `23/112` Diagnostic-Specs direkt im Go-Catalog.
-- grob die `parse_syntax`-Schicht aus `freehold.rules`, also `23/113` Rules/Emits direkt im Go-Frontend.
+- `23/113` Diagnostic-Specs direkt im Go-Catalog.
+- grob die `parse_syntax`-Schicht aus `freehold.rules`, also `23/114` Rules/Emits direkt im Go-Frontend.
 - Semantik-, Typ-, Contract-, Abort-, Concurrency-, Generic-, JSON-, Record- und gRPC-Diagnostics sind aktuell nicht als kompletter Go-Verifier umgesetzt.
 
 ## Go-Parser- und AST-Abdeckung
@@ -117,11 +117,11 @@ Offizieller Spec-Diagnostic-Check:
 ```text
 verify-spec-diagnostics.cmd
 
-Diagnostic specs:        112
-Rule emits:              113
+Diagnostic specs:        113
+Rule emits:              114
 Expected syntax codes:   19
-Expected semantic codes: 83
-CODE_MAP entries:        89
+Expected semantic codes: 84
+CODE_MAP entries:        90
 Failures:                0
 ```
 
@@ -130,8 +130,8 @@ Semantik-Diagnostic-Vergleich:
 ```text
 compare-semantic-diagnostics.cmd
 
-Expected semantic diagnostics:    95
-Matching semantic diagnostics:    95
+Expected semantic diagnostics:    97
+Matching semantic diagnostics:    97
 Mismatching semantic diagnostics: 0
 ```
 
@@ -143,8 +143,9 @@ Go-Codegen-Rejection-Beweise:
 - `13_contract_blocks` ist nicht mehr pauschal policy-only/rejected: gueltige V1-Contract-Formen werden als Go-Runtime-Checks emittiert, ungueltige Contract-Fixtures laufen zusaetzlich durch den Go-Codegen-Einstieg und muessen mit derselben Syntax-/Semantik-Diagnostic abbrechen, bevor Go-Output akzeptiert wird.
 - `22_generics` ist als policy-only/rejected V1-Pfad abgesichert: frontend-gueltige Generic-Fixtures muessen mit `FH-GOCODEGEN-0001` unsupported bleiben, ungueltige Generic-Fixtures muessen mit derselben Semantik-Diagnostic abbrechen, bevor Go-Output akzeptiert wird.
 - `04_types`, `11_errors_results` und `18_string_templates` sind fuer die kleinen deferred Go-Codegen-Slices positiv abgedeckt: breitere Alias-Kombinationen, Result-`value.field` und dynamische String-Template-Formate laufen ohne neue Spec-Diagnostics.
-- Dafuer waren keine neuen `spec/freehold.diag`-, `spec/freehold.rules`- oder `spec/analyzer.cflow`-Eintraege noetig; die bestehenden Diagnostics wie `VF-N001`, `VF-ST002`, `VF-U008`, `VF-U009`, `VF-CT001`, `VF-CT002`, `VF-E001`, `VF-E002` und die `VF-GEN*`-Diagnostics bleiben die Quelle.
-- Aktueller Language-Module-Gate nach dieser Erweiterung: `454/454`.
+- `21_abort_handling` hat mit V4a eine neue Python-Semantik-/CFlow-Regel: Statements nach garantiertem Exit werden ueber `VF-ABT010` / `FH-ABT-3010` abgelehnt.
+- Fuer die Go-Codegen-Slices waren keine neuen `spec/freehold.diag`-, `spec/freehold.rules`- oder `spec/analyzer.cflow`-Eintraege noetig; die bestehenden Diagnostics wie `VF-N001`, `VF-ST002`, `VF-U008`, `VF-U009`, `VF-CT001`, `VF-CT002`, `VF-E001`, `VF-E002` und die `VF-GEN*`-Diagnostics bleiben die Quelle.
+- Aktueller Language-Module-Gate nach dieser Erweiterung: `456/456`.
 
 ## Control Flow
 
@@ -168,6 +169,7 @@ Der Python-V0-Kern implementiert aktuell:
 - `called_routines`
 - `propagated_aborts`
 - Block-Flow fuer `return`, `abort`, `call`, `let`, assignment, field assignment, `check`, `if`, `while` und `case`
+- V4a-Reachability im Python-Verifier: ein Statement nach einem garantiert beendenden Statement im selben Block ist unzulaessig.
 
 Noch nicht als eigener Go-Analyzer umgesetzt:
 
@@ -181,9 +183,9 @@ Der neue Unsupported-Smoke fuer Async/Scope aendert diese Einordnung nicht: Er b
 
 ## Aktuelle Einschaetzung
 
-- Go Parser / AST / Syntax-Diagnostics: sehr weit, gruen gegen die 319 Language-Module-Faelle.
-- Go Diagnostic Catalog: `23/112` Diagnostic-Specs direkt in Go, alle Syntax.
-- `freehold.rules` direkt in Go: grob `23/113` Rules/Emits, also die Parser-/Syntax-Schicht.
+- Go Parser / AST / Syntax-Diagnostics: sehr weit, gruen gegen die 322 Parser/AST-Vergleichsfaelle.
+- Go Diagnostic Catalog: `23/113` Diagnostic-Specs direkt in Go, alle Syntax.
+- `freehold.rules` direkt in Go: grob `23/114` Rules/Emits, also die Parser-/Syntax-Schicht.
 - Semantik-Regeln: Python-seitig gruen abgeglichen, noch nicht Go-native.
 - Control Flow: Python V0 vorhanden, Go-native Control Flow noch offen.
 
