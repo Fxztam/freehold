@@ -113,6 +113,22 @@ def run_case(module_dir: Path, case: dict, update: bool = False):
             return False, f"Go project codegen mismatch: {case['name']}"
         return True, f"valid_go_project_codegen OK: {case['name']}"
 
+    if kind == "invalid_go_codegen":
+        source = (module_dir / case["file"]).read_text(encoding="utf-8")
+        try:
+            result = generate_go_source(source).go_source
+        except Exception as exc:
+            diag = diagnose_exception(source, exc).format()
+            expected_path = module_dir / case["expected_error"]
+            if update or not expected_path.exists():
+                expected_path.parent.mkdir(parents=True, exist_ok=True)
+                expected_path.write_text(diag + "\n", encoding="utf-8")
+            expected = expected_path.read_text(encoding="utf-8")
+            if normalize(diag) != normalize(expected):
+                return False, f"Diagnostic mismatch: {case['name']}\n--- actual ---\n{diag}\n--- expected ---\n{expected}"
+            return True, f"invalid_go_codegen OK: {case['name']}"
+        return False, f"Expected Go codegen failure but generated output: {case['name']}\n{result}"
+
     if kind in {"invalid_syntax", "invalid_semantics"}:
         source = (module_dir / case["file"]).read_text(encoding="utf-8")
         try:

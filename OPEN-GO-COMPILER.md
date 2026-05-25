@@ -331,7 +331,7 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 
 Reihenfolge fuer die Weiterarbeit:
 
-1. Zuerst policy-only/rejected V1-Pfade beweisen: V1 soll diese Pfade bewusst ablehnen und nicht halb uebersetzen. Primaere Kandidaten sind `12_type_conflicts`, `13_contract_blocks` und `22_generics` mit klaren Rejection-/Unsupported-Smokes statt positiven Go-Codegen-Goldens.
+1. Zuerst policy-only/rejected V1-Pfade beweisen: V1 soll diese Pfade bewusst ablehnen und nicht halb uebersetzen. `12_type_conflicts` ist mit Go-Codegen-Rejection-Cases fuer alle negativen Konflikt-Fixtures abgedeckt. Weitere primaere Kandidaten sind `13_contract_blocks` und `22_generics` mit klaren Rejection-/Unsupported-Smokes statt positiven Go-Codegen-Goldens.
 2. Danach kleine deferred Codegen-Slices angehen:
     - `11_errors_results`: Result-value-field-access.
     - `18_string_templates`: dynamische Formatargumente.

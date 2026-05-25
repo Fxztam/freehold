@@ -148,8 +148,22 @@
       "module": "12_type_conflicts",
       "title": "Cross-cutting type and declaration conflicts",
       "status": "rejected",
-      "summary": "This module is a frontend diagnostics module; invalid conflict cases must not reach Go codegen.",
-      "rejected_reason": "conflict examples are negative verifier coverage"
+      "summary": "This module is a frontend diagnostics module; invalid conflict cases are also exercised through the Go codegen entry point to prove V1 rejects before emitting Go.",
+      "rejected_reason": "conflict examples are negative verifier coverage and must not be partially translated by Go codegen V1",
+      "rejected_cases": [
+        "type and record name collision rejected by go codegen",
+        "record and function name collision rejected by go codegen",
+        "error and type name collision rejected by go codegen",
+        "procedure and function name collision rejected by go codegen",
+        "alias assignment mismatch rejected by go codegen",
+        "record assignment mismatch rejected by go codegen",
+        "array assignment element mismatch rejected by go codegen",
+        "array assignment size mismatch rejected by go codegen",
+        "Result assignment ok type mismatch rejected by go codegen",
+        "Result assignment error type mismatch rejected by go codegen",
+        "parameter alias mismatch rejected by go codegen",
+        "return alias mismatch rejected by go codegen"
+      ]
     },
     {
       "module": "13_contract_blocks",
