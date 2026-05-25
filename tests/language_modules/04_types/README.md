@@ -3,8 +3,9 @@
 Local type declaration and type reference diagnostics live here.
 
 This section starts after module/import resolution. It covers scalar type aliases,
-ranged scalar types, duplicate type names, built-in type redefinition, and unknown
-type references in routine signatures or local declarations.
+ranged scalar types, aliases used in Array, Record, Result, and routine return
+positions, duplicate type names, built-in type redefinition, and unknown type
+references in routine signatures or local declarations.
 
 Initial diagnostics:
 
@@ -19,5 +20,4 @@ VF-T005 range requires numeric base type
 VF-T006 integer range bounds must be integers
 ```
 
-Records, arrays, result types, and expression-level assignment errors can be added
-as later type-focused sections.
+Expression-level assignment errors live in later type-focused sections.

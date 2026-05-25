@@ -1,0 +1,25 @@
+module AliasRecordResultUsage
+
+type AccountId is String
+type Money is Integer
+
+type Account is record
+    id: AccountId
+    balance: Money
+end record
+
+error MissingAccount
+
+function load(id: AccountId) returns Result<Account, MissingAccount>
+is
+    return ok Account { id: id, balance: 10 }
+end load
+
+procedure main()
+is
+    let account: Result<Account, MissingAccount> = load("acct-1")
+    check account.value.id = "acct-1"
+    check account.value.balance = 10
+end main
+
+end AliasRecordResultUsage

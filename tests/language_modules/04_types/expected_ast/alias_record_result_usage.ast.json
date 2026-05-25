@@ -1,0 +1,166 @@
+{
+  "declarations": [
+    {
+      "base": "String",
+      "max_value": null,
+      "min_value": null,
+      "name": "AccountId",
+      "node": "TypeDecl"
+    },
+    {
+      "base": "Integer",
+      "max_value": null,
+      "min_value": null,
+      "name": "Money",
+      "node": "TypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "AccountId"
+        },
+        {
+          "name": "balance",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Money"
+        }
+      ],
+      "name": "Account",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "name": "MissingAccount",
+      "node": "ErrorDecl"
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "args": [
+                {
+                  "expr": {
+                    "name": "id",
+                    "node": "VarExpr"
+                  },
+                  "name": "id",
+                  "node": "NamedArg"
+                },
+                {
+                  "expr": {
+                    "node": "NumberExpr",
+                    "value": 10
+                  },
+                  "name": "balance",
+                  "node": "NamedArg"
+                }
+              ],
+              "node": "RecordLiteralExpr",
+              "type_name": "Account"
+            },
+            "node": "ReturnOk"
+          }
+        }
+      ],
+      "ensures": [],
+      "kind": "function",
+      "name": "load",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "id",
+          "node": "Param",
+          "type_name": "AccountId"
+        }
+      ],
+      "requires": [],
+      "return_type": {
+        "error_type": "MissingAccount",
+        "node": "ResultTypeName",
+        "ok_type": {
+          "name": "Account",
+          "node": "TypeName"
+        }
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "args": [
+              {
+                "node": "StringExpr",
+                "value": "acct-1"
+              }
+            ],
+            "name": "load",
+            "node": "CallExpr"
+          },
+          "name": "account",
+          "node": "LetStmt",
+          "type_ref": {
+            "error_type": "MissingAccount",
+            "node": "ResultTypeName",
+            "ok_type": {
+              "name": "Account",
+              "node": "TypeName"
+            }
+          }
+        },
+        {
+          "expr": {
+            "left": {
+              "node": "FieldAccessExpr",
+              "path": [
+                "account",
+                "value",
+                "id"
+              ]
+            },
+            "node": "BinaryExpr",
+            "op": "=",
+            "right": {
+              "node": "StringExpr",
+              "value": "acct-1"
+            }
+          },
+          "node": "CheckStmt"
+        },
+        {
+          "expr": {
+            "left": {
+              "node": "FieldAccessExpr",
+              "path": [
+                "account",
+                "value",
+                "balance"
+              ]
+            },
+            "node": "BinaryExpr",
+            "op": "=",
+            "right": {
+              "node": "NumberExpr",
+              "value": 10
+            }
+          },
+          "node": "CheckStmt"
+        }
+      ],
+      "ensures": [],
+      "kind": "procedure",
+      "name": "main",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": null
+    }
+  ],
+  "imports": [],
+  "module_name": "AliasRecordResultUsage",
+  "node": "Program"
+}

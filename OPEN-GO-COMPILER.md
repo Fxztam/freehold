@@ -308,7 +308,6 @@ Geparkt fuer V2/V3:
 Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 
 - Restpunkte aus `tests/language_modules/go_codegen_feature_matrix.json`, die keine vergessenen V1-Luecken sind, sondern spaetere Slices oder Policy-Grenzen:
-    - `04_types`: breitere User-Type-Alias-Kombinationen.
     - `08_routines`: async routines, generic routines.
     - `21_abort_handling`: breitere abort contract implication, Handler-Syntax.
     - `23_concurrency`: echte async/runtime/channels/scope execution.
@@ -333,7 +332,7 @@ Reihenfolge fuer die Weiterarbeit:
 2. Danach kleine deferred Codegen-Slices angehen:
     - Erledigt fuer V1: `11_errors_results` Result-value-field-access ist als Go-Golden abgedeckt.
     - Erledigt fuer V1: `18_string_templates` dynamische Formatargumente sind als Go-Goldens fuer positional, named und `Std.IO.logf` abgedeckt.
-    - `04_types`: breitere User-Type-Alias-Kombinationen.
+    - Erledigt fuer V1: `04_types` breitere User-Type-Alias-Kombinationen sind als Go-Goldens fuer Ranges, Arrays, Records und Results abgedeckt.
 3. Grosse deferred Slices spaeter angehen:
     - `23_concurrency`: echte Runtime/Channels/Scope-Ausfuehrung.
     - `24_grpc_idl`: Go-gRPC bindings, status mapping, streaming.
@@ -341,9 +340,8 @@ Reihenfolge fuer die Weiterarbeit:
 
 ## Empfohlene naechste Schritte
 
-1. Kleine deferred Codegen-Slices priorisieren: breitere Type-Alias-Kombinationen.
-2. Grosse deferred Runtime-/Transport-/Abort-Slices erst danach angehen.
-3. Feature-Matrix bei jedem neuen Go-Codegen-Slice mitpflegen.
+1. Grosse deferred Runtime-/Transport-/Abort-Slices erst danach angehen.
+2. Feature-Matrix bei jedem neuen Go-Codegen-Slice mitpflegen.
 
 ## Akzeptanzkriterien fuer Compiler V1 Start
 
