@@ -1,0 +1,22 @@
+module Domain.Results
+
+error NotFound
+
+function load(id: Integer) returns Result<Integer, NotFound>
+is
+    if id = 0 then
+        return error NotFound
+    end if
+    return ok id
+end load
+
+function read(id: Integer) returns Integer
+aborts NotFound
+is
+    if id = 0 then
+        abort NotFound
+    end if
+    return id
+end read
+
+end Domain.Results

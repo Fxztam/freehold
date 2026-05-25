@@ -1,0 +1,21 @@
+module App.Main
+
+import Domain.Results exposing NotFound, load, read
+
+function load_app(id: Integer) returns Result<Integer, NotFound>
+is
+    return load(id)
+end load_app
+
+function fail_app() returns Result<Integer, NotFound>
+is
+    return error NotFound
+end fail_app
+
+function read_app(id: Integer) returns Integer
+aborts NotFound
+is
+    return read(id)
+end read_app
+
+end App.Main

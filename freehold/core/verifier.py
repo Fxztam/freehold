@@ -430,6 +430,11 @@ class Verifier:
                     raise TypeCheckError(f"{rv.pos.text()}: unknown error: {rv.error_name}")
                 if rv.error_name != expected.error_type:
                     raise TypeCheckError(f"{rv.pos.text()}: Function returns {type_to_string(expected)}, cannot return error {rv.error_name}")
+            elif isinstance(rv, ReturnPlain):
+                actual = self.infer(rv.expr, env, ctx, False, None)
+                if not isinstance(actual, ResultTypeName):
+                    raise TypeCheckError(f"{rv.pos.text()}: Result function must return ok or error")
+                self.assign(actual, expected, ctx, rv.pos)
             else: raise TypeCheckError(f"{rv.pos.text()}: Result function must return ok or error")
         else:
             if not isinstance(rv, ReturnPlain): raise TypeCheckError(f"{rv.pos.text()}: plain function must return expression")

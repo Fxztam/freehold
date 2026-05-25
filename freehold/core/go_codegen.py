@@ -327,7 +327,9 @@ class GoGenerator:
     def result_type_decls(self) -> list[str]:
         lines: list[str] = []
         for result_type in self.result_types.values():
-            lines.append(f"type {go_result_type_name(result_type)} struct {{")
+            if self.imported_type_module(result_type.error_type) is not None:
+                continue
+            lines.append(f"type {self.go_result_type_name(result_type)} struct {{")
             lines.append("\tOk bool")
             lines.append(f"\tValue {self.go_type_ref(result_type.ok_type)}")
             lines.append("\tError string")
@@ -435,7 +437,7 @@ class GoGenerator:
         if isinstance(stmt, ReturnStmt):
             if isinstance(stmt.value, ReturnPlain):
                 if isinstance(stmt.value.expr, CallExpr):
-                    call_routine = self.local_called_routine(stmt.value.expr.name)
+                    call_routine = self.called_routine(stmt.value.expr.name)
                     if call_routine is not None and call_routine.aborts:
                         return self.return_aborting_call(stmt.value.expr, call_routine)
                 rendered = self.expr_with_type(stmt.value.expr, self.current_return_type)
@@ -448,18 +450,18 @@ class GoGenerator:
                     return ["// unsupported result return"]
                 if self.current_aborts:
                     return [
-                        f"return {go_result_type_name(self.current_return_type)}{{Ok: true, Value: {self.expr_with_type(stmt.value.expr, self.current_return_type.ok_type)}}}, nil"
+                        f"return {self.go_result_type_name(self.current_return_type)}{{Ok: true, Value: {self.expr_with_type(stmt.value.expr, self.current_return_type.ok_type)}}}, nil"
                     ]
                 return [
-                    f"return {go_result_type_name(self.current_return_type)}{{Ok: true, Value: {self.expr_with_type(stmt.value.expr, self.current_return_type.ok_type)}}}"
+                    f"return {self.go_result_type_name(self.current_return_type)}{{Ok: true, Value: {self.expr_with_type(stmt.value.expr, self.current_return_type.ok_type)}}}"
                 ]
             if isinstance(stmt.value, ReturnError):
                 if not isinstance(self.current_return_type, ResultTypeName):
                     self.unsupported(stmt, "return error requires a Result return type")
                     return ["// unsupported result return"]
                 if self.current_aborts:
-                    return [f"return {go_result_type_name(self.current_return_type)}{{Ok: false, Error: {self.go_error_name(stmt.value.error_name)}}}, nil"]
-                return [f"return {go_result_type_name(self.current_return_type)}{{Ok: false, Error: {self.go_error_name(stmt.value.error_name)}}}"]
+                    return [f"return {self.go_result_type_name(self.current_return_type)}{{Ok: false, Error: {self.go_error_name(stmt.value.error_name)}}}, nil"]
+                return [f"return {self.go_result_type_name(self.current_return_type)}{{Ok: false, Error: {self.go_error_name(stmt.value.error_name)}}}"]
             self.unsupported(stmt, "return form is not supported by Go codegen V1")
             return ["// unsupported return"]
         if isinstance(stmt, AbortStmt):
@@ -470,7 +472,7 @@ class GoGenerator:
             builtin_stmt = self.runtime_call_statement(stmt)
             if builtin_stmt is not None:
                 return builtin_stmt
-            call_routine = self.local_called_routine(stmt.name)
+            call_routine = self.called_routine(stmt.name)
             if call_routine is not None and call_routine.aborts:
                 return self.call_aborting_routine(stmt.name, stmt.args, call_routine)
             args = ", ".join(self.expr(arg) for arg in stmt.args)
@@ -551,6 +553,31 @@ class GoGenerator:
             return None
         return self.routines_by_name.get(local_name)
 
+    def called_routine(self, name: str) -> RoutineDecl | None:
+        local = self.local_called_routine(name)
+        if local is not None:
+            return local
+        return self.imported_called_routine(name)
+
+    def imported_called_routine(self, name: str) -> RoutineDecl | None:
+        if "." in name:
+            for module_name, resolved in sorted(self.resolved_modules.items(), key=lambda item: len(item[0]), reverse=True):
+                prefix = f"{module_name}."
+                if not name.startswith(prefix):
+                    continue
+                routine_name = name[len(prefix):]
+                if "." in routine_name or resolved.verified is None:
+                    return None
+                return resolved.verified.routines.get(routine_name)
+            return None
+        exposed_module = self.exposed_symbols.get(name)
+        if exposed_module is None:
+            return None
+        resolved = self.resolved_modules.get(exposed_module)
+        if resolved is None or resolved.verified is None:
+            return None
+        return resolved.verified.routines.get(name)
+
     def expr(self, expr: Any) -> str:
         return self.expr_at(expr, 0)
 
@@ -575,7 +602,7 @@ class GoGenerator:
         if isinstance(type_ref, ArrayTypeName):
             return f"[{type_ref.size}]{self.go_type_string(type_ref.element_type)}"
         if isinstance(type_ref, ResultTypeName):
-            return go_result_type_name(type_ref)
+            return self.go_result_type_name(type_ref)
         raise GoCodegenError(f"unsupported Go type reference: {type_to_string(type_ref)}")
 
     def go_type_string(self, type_name: str) -> str:
@@ -585,7 +612,7 @@ class GoGenerator:
             if base == "Array" and len(args) == 2 and args[1].isdigit():
                 return f"[{args[1]}]{self.go_type_string(args[0])}"
             if base == "Result" and len(args) == 2:
-                return go_result_type_name(ResultTypeName(TypeName(args[0]), args[1]))
+                return self.go_result_type_name(ResultTypeName(TypeName(args[0]), args[1]))
         imported = self.imported_type_module(type_name)
         if imported is not None:
             self.used_import_modules.add(imported)
@@ -600,7 +627,7 @@ class GoGenerator:
         if isinstance(type_ref, ArrayTypeName):
             return f"[{type_ref.size}]{self.go_type_string(type_ref.element_type)}{{}}"
         if isinstance(type_ref, ResultTypeName):
-            return f"{go_result_type_name(type_ref)}{{}}"
+            return f"{self.go_result_type_name(type_ref)}{{}}"
         return "nil"
 
     def go_zero_value_for_type_name(self, type_name: str) -> str:
@@ -621,6 +648,14 @@ class GoGenerator:
             self.used_import_modules.add(imported)
             return f"{go_import_alias(imported)}.{go_exported_name(error_name)}"
         return go_exported_name(error_name)
+
+    def go_result_type_name(self, type_ref: ResultTypeName) -> str:
+        imported = self.imported_type_module(type_ref.error_type)
+        result_name = go_result_type_name(type_ref)
+        if imported is None:
+            return result_name
+        self.used_import_modules.add(imported)
+        return f"{go_import_alias(imported)}.{result_name}"
 
     def imported_type_module(self, type_name: str) -> str | None:
         if type_name in self.local_types:
@@ -664,7 +699,7 @@ class GoGenerator:
             runtime_call = self.runtime_call_expr(expr, None)
             if runtime_call is not None:
                 return runtime_call
-            call_routine = self.local_called_routine(expr.name)
+            call_routine = self.called_routine(expr.name)
             if call_routine is not None and call_routine.aborts:
                 self.unsupported(expr, "aborting calls in expressions are not supported by Go codegen V1")
             args = ", ".join(self.expr(arg) for arg in expr.args)

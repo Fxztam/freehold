@@ -33,7 +33,7 @@ Bereits erledigt:
 
 - Go-Codegen-Grundpfad: `go-codegen`, `go-codegen-project`, JSON-Spiegel, Goldens und Artefakt-Gate.
 - Multi-File-/Projekt-Codegen mit `go.mod` und `build.cmd`.
-- Importaufloesung, `exposing`, qualifizierte Namen, Cross-Module-Calls auf importierte Freehold-Routinen und exposed importierte Record-Typen in Signaturen.
+- Importaufloesung, `exposing`, qualifizierte Namen, Cross-Module-Calls auf importierte Freehold-Routinen, exposed importierte Record-Typen in Signaturen sowie importierte Result-/Error-/Abort-Paketgrenzen.
 - Primitive Typen, Records, einfache Routinen, Statements und Expressions.
 - Result-Wertmodell.
 - Abort als Go-`error`-Return fuer abgedeckte V1-Faelle.
@@ -44,8 +44,8 @@ Bereits erledigt:
 Direkt offen fuer die naechsten Compiler-Slices:
 
 1. Record-/Result-/Abort-Interaktionen ueber Modulgrenzen
-    - Cross-Module-Routine-Calls und exposed importierte Record-Typen in Signaturen sind vorhanden.
-    - Noch zu haerten sind Result-Typen, Abort-Fehler, Fehlernamen und weitere Package-Typnamen ueber Modulgrenzen.
+    - Cross-Module-Routine-Calls, exposed importierte Record-Typen in Signaturen sowie Result-/Error-/Abort-Basisfaelle ueber Paketgrenzen sind vorhanden.
+    - Noch zu haerten sind breitere Kombinationen aus Records, Results, Abort-Fehlern, Fehlernamen und Package-Typnamen ueber Modulgrenzen.
 
 2. Result value field access
     - Feature-Matrix: `11_errors_results` fuehrt `Result value field access` als deferred.
