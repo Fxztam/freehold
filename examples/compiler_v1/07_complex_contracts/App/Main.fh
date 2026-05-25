@@ -1,0 +1,33 @@
+module App.Main
+
+import Std.IO
+
+type Customer is record
+    id: Integer
+    score: Integer
+    active: Boolean
+end record
+
+type Approval is record
+    customer_id: Integer
+    approved: Boolean
+    limit: Integer
+end record
+
+function approve(customer: Customer, requested: Integer, cap: Integer) returns Approval
+requires customer.id > 0, customer.active = true, requested > 0, cap >= requested
+ensures result.customer_id = customer.id, result.approved = true, result.limit >= requested
+is
+    return Approval { customer_id: customer.id, approved: true, limit: cap }
+end approve
+
+procedure main()
+is
+    let customer: Customer = Customer { id: 1007, score: 91, active: true }
+    let decision: Approval = approve(customer, 250, 400)
+    call Std.IO.logf("approved customer = ${}", decision.customer_id)
+    call Std.IO.logf("approved limit = ${}", decision.limit)
+    check decision.approved
+end main
+
+end App.Main

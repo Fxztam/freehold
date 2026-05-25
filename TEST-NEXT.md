@@ -23,6 +23,7 @@ Der Wrapper prueft pro positivem Beispiel:
 1. `python -m freehold verify <entry>`
 2. `python -m freehold go-codegen-project <entry> --output-dir .tmp/compiler_examples/<name> --json ...`
 3. das generierte `build.cmd` im Output-Projekt
+4. fuer alte buildbare Examples einen Runtime-Testlauf mit `<module-name>.log` gegen `examples/expected_logs/<module-name>.expected.log`
 
 Fuer bewusst nicht unterstuetzte Beispiele prueft der Wrapper:
 
@@ -66,13 +67,17 @@ Fuer bewusst nicht unterstuetzte Beispiele prueft der Wrapper:
    - lokale Integer-Laufvariablen gegen Integer-Parameter
    - `Big.fromInteger(...)` mit berechneten Integer-Werten
 
+7. `07_complex_contracts`
+   - komplexe `requires` mit mehreren kommaseparierten Bedingungen
+   - komplexe `ensures` mit mehreren kommaseparierten Bedingungen
+   - Runtime-Smoke fuehrt `main()` aus und vergleicht die Ausgabe
+
 ## Unsupported-Smokes
 
 Bewusst nicht unterstuetzte Go-Codegen-V1-Faelle bleiben als Smoke-Test wichtig. Aktuell abgedeckt:
 
 - User-Generics im Go-Codegen.
 - gRPC Go-Bindings.
-- Alte Beispielmodule mit runtime contracts.
 - Alte Concurrency/gRPC-Demo mit async/channel/runtime gaps.
 
 Weiterhin geparkt fuer spaetere Unsupported- oder Positiv-Smokes:
@@ -104,7 +109,7 @@ verify-additive-test-line.cmd
 
 ## Naechste sinnvolle Erweiterungen
 
-- Testmodus fuer Ausgabe-Regression: `Std.IO.log` / `Std.IO.logf` koennen im Testlauf automatisch in eine `<module-name>.log`-Datei schreiben. Der Smoke vergleicht diese Ausgabe dann gegen eine Referenzdatei, z.B. `<module-name>.expected.log`. Damit waeren Beispiele nicht nur buildbar, sondern auch beobachtbar lauffaehig.
+- Testmodus fuer Ausgabe-Regression ausweiten: Der Compiler-Example-Smoke schreibt fuer alte buildbare Examples und das neue `07_complex_contracts`-Beispiel bereits `<module-name>.log` und vergleicht gegen `examples/expected_logs/<module-name>.expected.log`. Durch einfache Go-Runtime-Checks fuer `requires`/`ensures` sind nun auch die alten Contract-Beispiele Teil dieser Runtime-Flotte. Naechster Schritt ist, weitere neue `compiler_v1`-Examples mit bewusster Ausgabe in diesen Mechanismus aufzunehmen.
 - Weitere Cross-Module-Typkompositionen: direkte `Array<imported Record>`-Signaturen, verschachtelte importierte Records/Results und Namenskonflikte.
 - Async/Channels/Scope Runtime als Unsupported-Smoke oder spaeterer Positiv-Slice.
 - gRPC server/client bindings als eigener V2/V3-Codegen-Pfad.

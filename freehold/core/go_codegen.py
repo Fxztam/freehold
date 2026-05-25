@@ -37,6 +37,7 @@ from freehold.core.ast import (
     ReturnError,
     ReturnStmt,
     RoutineDecl,
+    SpecialResultExpr,
     ResultTypeName,
     StringExpr,
     TypeDecl,
@@ -213,6 +214,7 @@ class GoGenerator:
         self.imports = program.imports or []
         self.local_routines = {declaration.name for declaration in program.declarations if isinstance(declaration, RoutineDecl)}
         self.local_types = {declaration.name for declaration in program.declarations if isinstance(declaration, (TypeDecl, RecordTypeDecl, ErrorDecl))}
+        self.local_errors = {declaration.name for declaration in program.declarations if isinstance(declaration, ErrorDecl)}
         self.routines_by_name = {declaration.name: declaration for declaration in program.declarations if isinstance(declaration, RoutineDecl)}
         self.imports_by_module = {import_decl.module_name: import_decl for import_decl in self.imports}
         self.exposed_symbols = self.build_exposed_symbols(self.imports)
@@ -225,8 +227,10 @@ class GoGenerator:
         self.needs_big_helpers = False
         self.current_return_type: Any = None
         self.current_aborts: list[Any] = []
+        self.current_routine_decl: RoutineDecl | None = None
         self.current_local_types: dict[str, Any] = {}
         self.inferred_int_locals: set[str] = set()
+        self.contract_bindings: dict[str, str] = {}
 
     def generate(self) -> GoCodegenResult:
         package_name = go_package_name(self.program.module_name)
@@ -404,22 +408,27 @@ class GoGenerator:
         params = ", ".join(self.param(param) for param in routine.params)
         result_type = self.routine_result_type(routine)
         lines = [f"func {go_exported_name(routine.name)}({params}){result_type} {{"]
-        if routine.requires or routine.ensures:
-            self.unsupported(routine, "runtime contracts are not supported by Go codegen V1")
         previous_return_type = self.current_return_type
         previous_aborts = self.current_aborts
+        previous_routine_decl = self.current_routine_decl
         previous_local_types = self.current_local_types
         previous_inferred_int_locals = self.inferred_int_locals
+        previous_contract_bindings = self.contract_bindings
         self.current_return_type = routine.return_type
         self.current_aborts = routine.aborts or []
+        self.current_routine_decl = routine
         self.current_local_types = {param.name: param.type_name for param in routine.params}
         self.inferred_int_locals = set()
+        self.contract_bindings = {}
+        lines.extend(f"\t{line}" for line in self.contract_checks(routine.requires, "requires"))
         for stmt in routine.body:
             lines.extend(f"\t{line}" for line in self.statement(stmt))
         self.current_return_type = previous_return_type
         self.current_aborts = previous_aborts
+        self.current_routine_decl = previous_routine_decl
         self.current_local_types = previous_local_types
         self.inferred_int_locals = previous_inferred_int_locals
+        self.contract_bindings = previous_contract_bindings
         lines.extend(["}", ""])
         return lines
 
@@ -435,12 +444,14 @@ class GoGenerator:
 
     def statement(self, stmt: Any) -> list[str]:
         if isinstance(stmt, LetStmt):
+            already_declared = stmt.name in self.current_local_types
             self.current_local_types[stmt.name] = stmt.type_ref
             if self.integer_expr_kind(stmt.expr) == "inferred_int" or (
                 isinstance(stmt.expr, NumberExpr) and self.go_declared_base(stmt.type_ref) == "Integer"
             ):
                 self.inferred_int_locals.add(stmt.name)
-            return [f"{go_local_name(stmt.name)} := {self.expr_with_type(stmt.expr, stmt.type_ref)}"]
+            operator = "=" if already_declared else ":="
+            return [f"{go_local_name(stmt.name)} {operator} {self.expr_with_type(stmt.expr, stmt.type_ref)}"]
         if isinstance(stmt, AssignStmt):
             type_ref = self.current_local_types.get(stmt.name)
             return [f"{go_local_name(stmt.name)} = {self.expr_with_type(stmt.expr, type_ref)}"]
@@ -455,6 +466,15 @@ class GoGenerator:
                     if call_routine is not None and call_routine.aborts:
                         return self.return_aborting_call(stmt.value.expr, call_routine)
                 rendered = self.expr_with_type(stmt.value.expr, self.current_return_type)
+                if self.current_ensures():
+                    result_name = self.fresh_local_name("result")
+                    lines = [f"var {result_name} {self.go_type_ref(self.current_return_type)} = {rendered}"]
+                    lines.extend(self.ensure_checks_for_value(result_name))
+                    if self.current_aborts:
+                        lines.append(f"return {result_name}, nil")
+                    else:
+                        lines.append(f"return {result_name}")
+                    return lines
                 if self.current_aborts:
                     return [f"return {rendered}, nil"]
                 return [f"return {rendered}"]
@@ -462,20 +482,30 @@ class GoGenerator:
                 if not isinstance(self.current_return_type, ResultTypeName):
                     self.unsupported(stmt, "return ok requires a Result return type")
                     return ["// unsupported result return"]
+                result_expr = f"{self.go_result_type_name(self.current_return_type)}{{Ok: true, Value: {self.expr_with_type(stmt.value.expr, self.current_return_type.ok_type)}}}"
+                if self.current_ensures():
+                    result_name = self.fresh_local_name("result")
+                    lines = [f"{result_name} := {result_expr}"]
+                    lines.extend(self.ensure_checks_for_result(result_name))
+                    lines.append(f"return {result_name}, nil" if self.current_aborts else f"return {result_name}")
+                    return lines
                 if self.current_aborts:
-                    return [
-                        f"return {self.go_result_type_name(self.current_return_type)}{{Ok: true, Value: {self.expr_with_type(stmt.value.expr, self.current_return_type.ok_type)}}}, nil"
-                    ]
-                return [
-                    f"return {self.go_result_type_name(self.current_return_type)}{{Ok: true, Value: {self.expr_with_type(stmt.value.expr, self.current_return_type.ok_type)}}}"
-                ]
+                    return [f"return {result_expr}, nil"]
+                return [f"return {result_expr}"]
             if isinstance(stmt.value, ReturnError):
                 if not isinstance(self.current_return_type, ResultTypeName):
                     self.unsupported(stmt, "return error requires a Result return type")
                     return ["// unsupported result return"]
+                result_expr = f"{self.go_result_type_name(self.current_return_type)}{{Ok: false, Error: {self.go_error_name(stmt.value.error_name)}}}"
+                if self.current_ensures():
+                    result_name = self.fresh_local_name("result")
+                    lines = [f"{result_name} := {result_expr}"]
+                    lines.extend(self.ensure_checks_for_result(result_name))
+                    lines.append(f"return {result_name}, nil" if self.current_aborts else f"return {result_name}")
+                    return lines
                 if self.current_aborts:
-                    return [f"return {self.go_result_type_name(self.current_return_type)}{{Ok: false, Error: {self.go_error_name(stmt.value.error_name)}}}, nil"]
-                return [f"return {self.go_result_type_name(self.current_return_type)}{{Ok: false, Error: {self.go_error_name(stmt.value.error_name)}}}"]
+                    return [f"return {result_expr}, nil"]
+                return [f"return {result_expr}"]
             self.unsupported(stmt, "return form is not supported by Go codegen V1")
             return ["// unsupported return"]
         if isinstance(stmt, AbortStmt):
@@ -549,6 +579,8 @@ class GoGenerator:
         lines = [f"value, err := {call_text}", "if err != nil {"]
         lines.extend(indent_lines(self.propagate_abort_return()))
         lines.append("}")
+        if self.current_ensures():
+            lines.extend(self.ensure_checks_for_value("value"))
         lines.append("return value, nil" if self.current_aborts else "return value")
         return lines
 
@@ -686,11 +718,21 @@ class GoGenerator:
         if isinstance(expr, StringExpr):
             return json.dumps(expr.value)
         if isinstance(expr, VarExpr):
+            if expr.name in self.contract_bindings:
+                return self.contract_bindings[expr.name]
+            if expr.name in self.local_errors:
+                return self.go_error_name(expr.name)
             return go_local_name(expr.name)
+        if isinstance(expr, SpecialResultExpr):
+            if expr.name in self.contract_bindings:
+                return self.contract_bindings[expr.name]
+            self.unsupported(expr, f"contract token is not available in this Go codegen context: {expr.name}")
+            return "false"
         if isinstance(expr, FieldAccessExpr):
             head, *tail = expr.path
-            parts = [go_local_name(head)] + [go_exported_name(part) for part in tail]
-            return ".".join(parts)
+            if head in self.contract_bindings:
+                return ".".join([self.contract_bindings[head]] + [go_exported_name(part) for part in tail])
+            return ".".join([go_local_name(head)] + [go_exported_name(part) for part in tail])
         if isinstance(expr, IndexExpr):
             return f"{go_local_name(expr.name)}[{self.expr(expr.index)}]"
         if isinstance(expr, UnaryExpr):
@@ -936,6 +978,49 @@ class GoGenerator:
         if not ordered_args:
             return json.dumps(format_text)
         return f"fmt.Sprintf({json.dumps(format_text)}, {', '.join(self.expr(arg) for arg in ordered_args)})"
+
+    def contract_checks(self, contracts: list[Any], label: str) -> list[str]:
+        lines: list[str] = []
+        for contract in contracts:
+            lines.extend(self.contract_check(contract, label))
+        return lines
+
+    def contract_check(self, contract: Any, label: str) -> list[str]:
+        return [f"if !({self.expr(contract)}) {{ panic(\"freehold {label} contract failed\") }}"]
+
+    def current_ensures(self) -> list[Any]:
+        return self.current_routine_decl.ensures if self.current_routine_decl is not None else []
+
+    def ensure_checks_for_value(self, result_expr: str) -> list[str]:
+        previous = self.contract_bindings
+        self.contract_bindings = {**previous, "result": result_expr}
+        lines = self.contract_checks(self.current_ensures(), "ensures")
+        self.contract_bindings = previous
+        return lines
+
+    def ensure_checks_for_result(self, result_expr: str) -> list[str]:
+        previous = self.contract_bindings
+        self.contract_bindings = {
+            **previous,
+            "result": result_expr,
+            "success": f"{result_expr}.Ok",
+            "failure": f"!{result_expr}.Ok",
+            "value": f"{result_expr}.Value",
+            "error": f"{result_expr}.Error",
+        }
+        lines = self.contract_checks(self.current_ensures(), "ensures")
+        self.contract_bindings = previous
+        return lines
+
+    def fresh_local_name(self, base: str) -> str:
+        candidate = f"freehold{go_exported_name(base)}"
+        local_names = {go_local_name(name) for name in self.current_local_types}
+        if candidate not in local_names:
+            return candidate
+        index = 2
+        while f"{candidate}{index}" in local_names:
+            index += 1
+        return f"{candidate}{index}"
 
     def unsupported(self, node: Any, message: str) -> None:
         pos = getattr(node, "pos", None)
