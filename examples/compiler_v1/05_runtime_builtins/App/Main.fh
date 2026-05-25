@@ -1,0 +1,25 @@
+module App.Main
+
+import Big
+import Std.IO
+
+type Person is record
+    name: String
+    age: Integer
+    active: Boolean
+end record
+
+procedure main()
+is
+    let person: Person = Person { name: "Ada", age: 37, active: true }
+    let encoded: String = Json.stringify(person)
+    let message: String = String.template("name=${}, score=${}", person.name, Math.floor(Math.sqrt(81.0)))
+    let huge: BigInteger = Big.mulInt(Big.int("640320"), Big.fromInteger(24))
+    let text: String = Big.toString(huge)
+    call Std.IO.log(message)
+    call Std.IO.logf("json=${}", encoded)
+    check String.instr(encoded, "Ada") >= 0
+    check String.instr(text, "15367680") >= 0
+end main
+
+end App.Main

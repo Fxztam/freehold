@@ -225,6 +225,8 @@ class GoGenerator:
         self.needs_big_helpers = False
         self.current_return_type: Any = None
         self.current_aborts: list[Any] = []
+        self.current_local_types: dict[str, Any] = {}
+        self.inferred_int_locals: set[str] = set()
 
     def generate(self) -> GoCodegenResult:
         package_name = go_package_name(self.program.module_name)
@@ -406,12 +408,18 @@ class GoGenerator:
             self.unsupported(routine, "runtime contracts are not supported by Go codegen V1")
         previous_return_type = self.current_return_type
         previous_aborts = self.current_aborts
+        previous_local_types = self.current_local_types
+        previous_inferred_int_locals = self.inferred_int_locals
         self.current_return_type = routine.return_type
         self.current_aborts = routine.aborts or []
+        self.current_local_types = {param.name: param.type_name for param in routine.params}
+        self.inferred_int_locals = set()
         for stmt in routine.body:
             lines.extend(f"\t{line}" for line in self.statement(stmt))
         self.current_return_type = previous_return_type
         self.current_aborts = previous_aborts
+        self.current_local_types = previous_local_types
+        self.inferred_int_locals = previous_inferred_int_locals
         lines.extend(["}", ""])
         return lines
 
@@ -427,9 +435,15 @@ class GoGenerator:
 
     def statement(self, stmt: Any) -> list[str]:
         if isinstance(stmt, LetStmt):
+            self.current_local_types[stmt.name] = stmt.type_ref
+            if self.integer_expr_kind(stmt.expr) == "inferred_int" or (
+                isinstance(stmt.expr, NumberExpr) and self.go_declared_base(stmt.type_ref) == "Integer"
+            ):
+                self.inferred_int_locals.add(stmt.name)
             return [f"{go_local_name(stmt.name)} := {self.expr_with_type(stmt.expr, stmt.type_ref)}"]
         if isinstance(stmt, AssignStmt):
-            return [f"{go_local_name(stmt.name)} = {self.expr(stmt.expr)}"]
+            type_ref = self.current_local_types.get(stmt.name)
+            return [f"{go_local_name(stmt.name)} = {self.expr_with_type(stmt.expr, type_ref)}"]
         if isinstance(stmt, FieldAssignStmt):
             head, *tail = stmt.path
             target = ".".join([go_local_name(head)] + [go_exported_name(part) for part in tail])
@@ -475,7 +489,7 @@ class GoGenerator:
             call_routine = self.called_routine(stmt.name)
             if call_routine is not None and call_routine.aborts:
                 return self.call_aborting_routine(stmt.name, stmt.args, call_routine)
-            args = ", ".join(self.expr(arg) for arg in stmt.args)
+            args = self.render_call_args(stmt.args, call_routine)
             return [f"{self.callable_name(stmt.name, stmt)}({args})"]
         if isinstance(stmt, IfStmt):
             lines = [f"if {self.expr(stmt.condition)} {{"]
@@ -516,7 +530,7 @@ class GoGenerator:
         return [f"return {self.go_zero_value(self.current_return_type)}, errors.New({self.go_error_name(error_name)})"]
 
     def call_aborting_routine(self, name: str, args: list[Any], routine: RoutineDecl) -> list[str]:
-        args_text = ", ".join(self.expr(arg) for arg in args)
+        args_text = self.render_call_args(args, routine)
         call_text = f"{self.callable_name(name, routine)}({args_text})"
         if routine.return_type is None:
             lines = [f"if err := {call_text}; err != nil {{"]
@@ -530,7 +544,7 @@ class GoGenerator:
         if routine.return_type is None:
             self.unsupported(call, "aborting procedure call cannot be returned as a value")
             return ["// unsupported aborting procedure return"]
-        args_text = ", ".join(self.expr(arg) for arg in call.args)
+        args_text = self.render_call_args(call.args, routine)
         call_text = f"{self.callable_name(call.name, call)}({args_text})"
         lines = [f"value, err := {call_text}", "if err != nil {"]
         lines.extend(indent_lines(self.propagate_abort_return()))
@@ -685,7 +699,10 @@ class GoGenerator:
             return parenthesize_if_needed(rendered, precedence, parent_precedence, side, expr.op)
         if isinstance(expr, BinaryExpr):
             precedence = go_precedence(expr.op)
-            rendered = f"{self.expr_at(expr.left, precedence, 'left')} {go_operator(expr.op)} {self.expr_at(expr.right, precedence, 'right')}"
+            if expr.op in {"=", "!=", "<", "<=", ">", ">="}:
+                rendered = f"{self.expr_for_integer_comparison(expr.left, expr.right)} {go_operator(expr.op)} {self.expr_for_integer_comparison(expr.right, expr.left)}"
+            else:
+                rendered = f"{self.expr_at(expr.left, precedence, 'left')} {go_operator(expr.op)} {self.expr_at(expr.right, precedence, 'right')}"
             return parenthesize_if_needed(rendered, precedence, parent_precedence, side, expr.op)
         if isinstance(expr, RecordLiteralExpr):
             args = ", ".join(f"{go_exported_name(arg.name)}: {self.expr(arg.expr)}" for arg in expr.args)
@@ -702,7 +719,7 @@ class GoGenerator:
             call_routine = self.called_routine(expr.name)
             if call_routine is not None and call_routine.aborts:
                 self.unsupported(expr, "aborting calls in expressions are not supported by Go codegen V1")
-            args = ", ".join(self.expr(arg) for arg in expr.args)
+            args = self.render_call_args(expr.args, call_routine)
             return f"{self.callable_name(expr.name, expr)}({args})"
         self.unsupported(expr, "expression not supported by Go codegen V1")
         return "nil"
@@ -795,11 +812,11 @@ class GoGenerator:
         if expr.name in {"Big.int", "Big.integer"}:
             return f"freeholdBigInt({args[0]})"
         if expr.name == "Big.fromInteger":
-            return f"big.NewInt({args[0]})"
+            return f"big.NewInt({self.expr_as_int64(expr.args[0])})"
         if expr.name == "Big.float":
-            return f"freeholdBigFloat({args[0]}, {args[1]})"
+            return f"freeholdBigFloat({args[0]}, {self.expr_as_int64(expr.args[1])})"
         if expr.name == "Big.floatFromInteger":
-            return f"freeholdBigFloatFromInteger({args[0]}, {args[1]})"
+            return f"freeholdBigFloatFromInteger({args[0]}, {self.expr_as_int64(expr.args[1])})"
         int_ops = {
             "Big.addInt": "Add",
             "Big.subInt": "Sub",
@@ -850,6 +867,59 @@ class GoGenerator:
             self.std_imports.add("strings")
             args = [self.expr(arg) for arg in expr.args]
             return f"int64(strings.Index({args[0]}, {args[1]}))"
+        return None
+
+    def render_call_args(self, args: list[Any], routine: RoutineDecl | None) -> str:
+        if routine is None:
+            return ", ".join(self.expr(arg) for arg in args)
+        rendered: list[str] = []
+        for index, arg in enumerate(args):
+            if index < len(routine.params) and routine.params[index].type_name == "Integer":
+                rendered.append(self.expr_as_int64(arg))
+            else:
+                rendered.append(self.expr(arg))
+        return ", ".join(rendered)
+
+    def expr_as_int64(self, expr: Any) -> str:
+        rendered = self.expr(expr)
+        return f"int64({rendered})" if self.integer_expr_kind(expr) == "inferred_int" else rendered
+
+    def expr_for_integer_comparison(self, expr: Any, other: Any) -> str:
+        if self.integer_expr_kind(expr) == "inferred_int" and self.integer_expr_kind(other) == "int64":
+            return f"int64({self.expr(expr)})"
+        return self.expr(expr)
+
+    def integer_expr_kind(self, expr: Any) -> str | None:
+        if isinstance(expr, NumberExpr):
+            return "untyped"
+        if isinstance(expr, VarExpr):
+            if expr.name in self.inferred_int_locals:
+                return "inferred_int"
+            if self.go_declared_base(self.current_local_types.get(expr.name)) == "Integer":
+                return "int64"
+            return None
+        if isinstance(expr, BinaryExpr) and expr.op in {"+", "-", "*", "/"}:
+            left = self.integer_expr_kind(expr.left)
+            right = self.integer_expr_kind(expr.right)
+            if "int64" in {left, right}:
+                return "int64"
+            if "inferred_int" in {left, right}:
+                return "inferred_int"
+            if left == "untyped" and right == "untyped":
+                return "untyped"
+        if isinstance(expr, CallExpr):
+            routine = self.called_routine(expr.name)
+            if routine is not None and self.go_declared_base(routine.return_type) == "Integer":
+                return "int64"
+            if expr.name in {"Math.floor", "Math.ceil", "String.instr", "Big.signInt", "Big.signFloat"}:
+                return "int64"
+        return None
+
+    def go_declared_base(self, type_ref: Any) -> str | None:
+        if isinstance(type_ref, TypeName):
+            return type_ref.name
+        if isinstance(type_ref, str):
+            return type_ref
         return None
 
     def render_string_template_call(self, args: list[Any]) -> str:

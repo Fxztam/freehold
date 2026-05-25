@@ -1,0 +1,24 @@
+module App.Main
+
+type Account is record
+    id: Integer
+    active: Boolean
+end record
+
+function make_account(id: Integer) returns Account
+is
+    return Account { id: id, active: true }
+end make_account
+
+function account_ok(account: Account) returns Boolean
+is
+    return account.active and account.id > 0
+end account_ok
+
+procedure main()
+is
+    let account: Account = make_account(7)
+    check account_ok(account)
+end main
+
+end App.Main

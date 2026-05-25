@@ -1,0 +1,24 @@
+module Domain.Accounts
+
+import Domain.Types exposing Account, make_account
+
+error NotFound
+
+function load_accounts(id: Integer) returns Result<Array<Account, 2>, NotFound>
+is
+    if id = 0 then
+        return error NotFound
+    end if
+    return ok [make_account(id), make_account(id + 1)]
+end load_accounts
+
+function read_account(id: Integer) returns Account
+aborts NotFound
+is
+    if id = 0 then
+        abort NotFound
+    end if
+    return make_account(id)
+end read_account
+
+end Domain.Accounts

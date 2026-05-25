@@ -1,107 +1,94 @@
-# Test Next: Freehold Compiler Test Modules
+# Test Next: Freehold Compiler V1 Examples
 
-Stand: 2026-05-24
+Stand: 2026-05-25
 
-Ziel fuer den naechsten Arbeitsschritt: einen kleinen Freehold-Testmodul-Spielplatz schaffen, mit dem echte Freehold-Beispielmodule verifiziert, nach Go kompiliert und als Go-Projekt gebaut werden koennen.
+Ziel dieses Testpfads: echte Freehold-Beispielprojekte als Mini-Projekte anfassen, verifizieren, nach Go kompilieren und als generierte Go-Projekte bauen. Dieser Pfad ergaenzt die Language-Module und Goldens; er ist ein pragmatischer Smoke-Test fuer den Compiler-V1-Alltag.
 
-## Zielbild
+## Aktueller Stand
 
-Wir wollen nicht nur Language-Module testen, sondern echte Beispielmodule als Mini-Projekte anfassen koennen:
-
-- Freehold-Quellmodule schreiben.
-- Importierte Freehold-Module verwenden.
-- Verifier laufen lassen.
-- `go-codegen-project` laufen lassen.
-- generiertes Go-Projekt mit `build.cmd` bauen.
-- Unsupported-Features sauber als Diagnostics sehen.
-
-## Vorgeschlagene Struktur
-
-Ein neuer Beispielbereich, z.B.:
+Der Beispielprojekt-Spielplatz steht unter:
 
 ```text
 examples/compiler_v1/
-    App/Main.fh
-    Domain/Rules.fh
-    Domain/Types.fh
-    Runtime/Demo.fh
 ```
 
-Moegliche Alternative:
-
-```text
-samples/compiler_v1/
-```
-
-Entscheidung morgen: `examples/` oder `samples/`, je nachdem was besser zum Repo passt.
-
-## Standard-Command
-
-Ein einzelner Wrapper soll alle Beispielmodule pruefen, z.B.:
+Der Standard-Command ist:
 
 ```text
 verify-compiler-examples.cmd
 ```
 
-Der Wrapper soll pro Beispielprojekt ausfuehren:
+Der Wrapper prueft pro positivem Beispiel:
 
-1. Freehold-Verifikation.
-2. `python -m freehold go-codegen-project <entry> --output-dir <out>`.
-3. optional JSON-Artefakt-Ausgabe.
-4. generiertes `build.cmd` im Output-Projekt.
-5. klare Fehlerausgabe bei unsupported Go-Codegen-Features.
+1. `python -m freehold verify <entry>`
+2. `python -m freehold go-codegen-project <entry> --output-dir .tmp/compiler_examples/<name> --json ...`
+3. das generierte `build.cmd` im Output-Projekt
 
-## Erste Testmodule
+Fuer bewusst nicht unterstuetzte Beispiele prueft der Wrapper:
 
-Start mit 3 bis 5 kleinen Freehold-Projekten:
+1. Frontend-Verifikation ist erfolgreich.
+2. Go-Projekt-Codegen schlaegt erwartbar fehl.
+3. Das JSON enthaelt eine Go-Codegen-Diagnostic (`FH-GOCODEGEN-0001`).
 
-1. Minimal-App
-   - ein `App.Main` ohne Imports
+## Positive Beispiele
+
+1. `01_minimal_app`
+   - `App.Main` ohne Imports
    - primitive Werte
    - `check`
 
-2. Records + Functions
+2. `02_records_functions`
    - Record-Typen
    - Record-Literale
    - Feldzugriffe
    - einfache Funktionen
 
-3. Cross-Module Calls
+3. `03_cross_module_calls`
    - `App.Main` importiert ein Domain-Modul
-   - exposed Call, z.B. `is_valid()`
-   - qualifizierter Call, z.B. `Domain.Rules.is_valid()`
+   - exposed Call: `is_valid(...)`
+   - qualifizierter Call: `Domain.Rules.is_valid(...)`
 
-4. Result/Abort
-   - `Result<T,E>` ok/error Returns
-   - deklarierter Abort
-   - propagierender abortender Call, soweit V1-Codegen abgedeckt ist
+4. `04_result_abort`
+   - importierter Record-Typ
+   - `Result<Array<imported Record>, imported Error>`
+   - importierter abortender Call mit Go-`err`-Propagation
 
-5. Runtime-Builtins
+5. `05_runtime_builtins`
    - `String.*`
    - `String.template`
    - `Math.*`
    - `Json.stringify`
    - `Std.IO.log` / `Std.IO.logf`
+   - `Big.*`
 
-## Unsupported-Feature-Smoke-Tests
+6. `06_integer_big_loop`
+   - Freehold-`Integer` in `while`-Schleifen
+   - lokale Integer-Laufvariablen gegen Integer-Parameter
+   - `Big.fromInteger(...)` mit berechneten Integer-Werten
 
-Zusaetzlich zu gruenen Beispielen sollten ein paar bewusst nicht unterstuetzte Beispiele sauber diagnostiziert werden:
+## Unsupported-Smokes
 
-- `Big.*`, solange BigNumber-Codegen noch deferred ist.
+Bewusst nicht unterstuetzte Go-Codegen-V1-Faelle bleiben als Smoke-Test wichtig. Aktuell abgedeckt:
+
 - User-Generics im Go-Codegen.
-- Async/Channels/Scope Runtime.
 - gRPC Go-Bindings.
+- Alte Beispielmodule mit runtime contracts.
+- Alte Concurrency/gRPC-Demo mit async/channel/runtime gaps.
 
-Ziel: Der Compiler soll nicht kryptisch scheitern, sondern klar sagen, dass das Feature fuer Go-Codegen V1 noch nicht unterstuetzt ist.
+Weiterhin geparkt fuer spaetere Unsupported- oder Positiv-Smokes:
 
-## Akzeptanzkriterien fuer morgen
+- Async/Channels/Scope Runtime.
+- Generics-Monomorphisierung, falls sie in V2/V3 angegangen wird.
+- gRPC server/client bindings, sobald `.proto`-Codegen nicht mehr das Ende der V1-Linie ist.
+
+## Akzeptanzkriterien
 
 - Es gibt einen Beispielordner mit echten Freehold-Modulen.
 - Mindestens ein Multi-Modul-Beispiel kompiliert nach Go.
 - Das generierte Go-Projekt baut mit `go test ./...`.
 - Ein einziger Smoke-Test-Command prueft alle Beispiele.
 - Unsupported-Beispiele liefern nachvollziehbare Diagnostics.
-- Der neue Testpfad ist dokumentiert und reproduzierbar.
+- Der Testpfad ist dokumentiert und reproduzierbar.
 
 ## Additive Testlinie
 
@@ -113,13 +100,12 @@ Der Standardablauf nutzt additive Artifact-Generatoren und prueft die Regel mit:
 verify-additive-test-line.cmd
 ```
 
-`verify-parser-conformance.cmd` fuehrt dieses Gate vor den Go-Tests aus. Erlaubt sind neue Dateien; verboten sind Modifikationen, Loeschungen oder Renames bestehender `.fh`-Faelle und bestehender Artefakte.
+`verify-parser-conformance.cmd` fuehrt dieses Gate vor den Go-Tests aus. Erlaubt sind neue Dateien; verboten sind Modifikationen, Loeschungen oder Renames bestehender `.fh`-Faelle und bestehender Artefakte. Der Guard refreshed den Git-Index vor der Statusauswertung, damit content-identische EOL/Stat-Aenderungen nicht als Frozen-Verletzungen zaehlen.
 
-## Danach
+## Naechste sinnvolle Erweiterungen
 
-Wenn dieser Testmodul-Spielplatz steht, koennen wir neue Compiler-Slices sehr viel greifbarer pruefen:
-
-- BigNumber-/Runtime-Builtins
-- Arrays
-- Cross-Module Records/Results/Aborts
-- Go-native Semantik-/CFlow-Slices Richtung Bootstrap
+- Testmodus fuer Ausgabe-Regression: `Std.IO.log` / `Std.IO.logf` koennen im Testlauf automatisch in eine `<module-name>.log`-Datei schreiben. Der Smoke vergleicht diese Ausgabe dann gegen eine Referenzdatei, z.B. `<module-name>.expected.log`. Damit waeren Beispiele nicht nur buildbar, sondern auch beobachtbar lauffaehig.
+- Weitere Cross-Module-Typkompositionen: direkte `Array<imported Record>`-Signaturen, verschachtelte importierte Records/Results und Namenskonflikte.
+- Async/Channels/Scope Runtime als Unsupported-Smoke oder spaeterer Positiv-Slice.
+- gRPC server/client bindings als eigener V2/V3-Codegen-Pfad.
+- Go-native Semantik-/CFlow-Slices Richtung Bootstrap.
