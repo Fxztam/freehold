@@ -1,0 +1,44 @@
+module Partner.Orders
+
+type Address is record
+    city_id: Integer
+    label: String
+end record
+
+type Order is record
+    id: Integer
+    address: Address
+end record
+
+error NotFound
+
+function make_address(city_id: Integer, label: String) returns Address
+is
+    return Address { city_id: city_id, label: label }
+end make_address
+
+function make_order(id: Integer, address: Address) returns Order
+is
+    return Order { id: id, address: address }
+end make_order
+
+function load_order(seed: Integer) returns Result<Order, NotFound>
+requires seed > 0
+ensures value.address.city_id = 7
+is
+    return ok make_order(seed + 100, make_address(7, "Hamburg"))
+end load_order
+
+function order_id(seed: Integer) returns Integer
+is
+    let outcome: Result<Order, NotFound> = load_order(seed)
+    return outcome.value.id
+end order_id
+
+function city_label(seed: Integer) returns String
+is
+    let outcome: Result<Order, NotFound> = load_order(seed)
+    return outcome.value.address.label
+end city_label
+
+end Partner.Orders
