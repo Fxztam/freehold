@@ -212,9 +212,11 @@ class GoGenerator:
         self.diagnostics: list[dict[str, str]] = []
         self.imports = program.imports or []
         self.local_routines = {declaration.name for declaration in program.declarations if isinstance(declaration, RoutineDecl)}
+        self.local_types = {declaration.name for declaration in program.declarations if isinstance(declaration, (TypeDecl, RecordTypeDecl, ErrorDecl))}
         self.routines_by_name = {declaration.name: declaration for declaration in program.declarations if isinstance(declaration, RoutineDecl)}
         self.imports_by_module = {import_decl.module_name: import_decl for import_decl in self.imports}
         self.exposed_symbols = self.build_exposed_symbols(self.imports)
+        self.exposed_type_modules = self.build_exposed_type_modules(self.imports)
         self.used_import_modules: set[str] = set()
         self.used_runtime_modules: set[str] = set()
         self.std_imports: set[str] = set()
@@ -270,6 +272,26 @@ class GoGenerator:
                     symbols[symbol] = import_decl.module_name
         return symbols
 
+    def build_exposed_type_modules(self, imports: list[ImportDecl]) -> dict[str, str | None]:
+        symbols: dict[str, str | None] = {}
+        for import_decl in imports:
+            resolved = self.resolved_modules.get(import_decl.module_name)
+            if resolved is None:
+                continue
+            exported_types = {
+                declaration.name
+                for declaration in resolved.ast.declarations
+                if isinstance(declaration, (TypeDecl, RecordTypeDecl, ErrorDecl))
+            }
+            for symbol in import_decl.exposing:
+                if symbol not in exported_types:
+                    continue
+                if symbol in symbols and symbols[symbol] != import_decl.module_name:
+                    symbols[symbol] = None
+                else:
+                    symbols[symbol] = import_decl.module_name
+        return symbols
+
     def import_block(self) -> list[str]:
         used_imports = [import_decl for import_decl in self.imports if import_decl.module_name in self.used_import_modules]
         if not used_imports and not self.std_imports:
@@ -297,7 +319,7 @@ class GoGenerator:
         return metadata
 
     def type_decl(self, declaration: TypeDecl) -> list[str]:
-        return [f"type {go_exported_name(declaration.name)} {go_type_string(declaration.base)}", ""]
+        return [f"type {go_exported_name(declaration.name)} {self.go_type_string(declaration.base)}", ""]
 
     def error_decl(self, declaration: ErrorDecl) -> list[str]:
         return [f"const {go_exported_name(declaration.name)} = {json.dumps(declaration.name)}", ""]
@@ -364,7 +386,7 @@ class GoGenerator:
             return []
         lines = [f"type {go_exported_name(declaration.name)} struct {{"]
         for field in declaration.fields:
-            lines.append(f"\t{go_exported_name(field.name)} {go_type_string(field.type_name)} `json:\"{field.name}\"`")
+            lines.append(f"\t{go_exported_name(field.name)} {self.go_type_string(field.type_name)} `json:\"{field.name}\"`")
         lines.extend(["}", ""])
         return lines
 
@@ -399,7 +421,7 @@ class GoGenerator:
         return f" ({result_type}, error)" if has_aborts else f" {result_type}"
 
     def param(self, param: Param) -> str:
-        return f"{go_local_name(param.name)} {go_type_string(param.type_name)}"
+        return f"{go_local_name(param.name)} {self.go_type_string(param.type_name)}"
 
     def statement(self, stmt: Any) -> list[str]:
         if isinstance(stmt, LetStmt):
@@ -436,8 +458,8 @@ class GoGenerator:
                     self.unsupported(stmt, "return error requires a Result return type")
                     return ["// unsupported result return"]
                 if self.current_aborts:
-                    return [f"return {go_result_type_name(self.current_return_type)}{{Ok: false, Error: {go_exported_name(stmt.value.error_name)}}}, nil"]
-                return [f"return {go_result_type_name(self.current_return_type)}{{Ok: false, Error: {go_exported_name(stmt.value.error_name)}}}"]
+                    return [f"return {go_result_type_name(self.current_return_type)}{{Ok: false, Error: {self.go_error_name(stmt.value.error_name)}}}, nil"]
+                return [f"return {go_result_type_name(self.current_return_type)}{{Ok: false, Error: {self.go_error_name(stmt.value.error_name)}}}"]
             self.unsupported(stmt, "return form is not supported by Go codegen V1")
             return ["// unsupported return"]
         if isinstance(stmt, AbortStmt):
@@ -488,8 +510,8 @@ class GoGenerator:
     def abort_return(self, error_name: str) -> list[str]:
         self.std_imports.add("errors")
         if self.current_return_type is None:
-            return [f"return errors.New({go_exported_name(error_name)})"]
-        return [f"return {go_zero_value(self.current_return_type)}, errors.New({go_exported_name(error_name)})"]
+            return [f"return errors.New({self.go_error_name(error_name)})"]
+        return [f"return {self.go_zero_value(self.current_return_type)}, errors.New({self.go_error_name(error_name)})"]
 
     def call_aborting_routine(self, name: str, args: list[Any], routine: RoutineDecl) -> list[str]:
         args_text = ", ".join(self.expr(arg) for arg in args)
@@ -520,7 +542,7 @@ class GoGenerator:
             return ["// unsupported abort propagation"]
         if self.current_return_type is None:
             return ["return err"]
-        return [f"return {go_zero_value(self.current_return_type)}, err"]
+        return [f"return {self.go_zero_value(self.current_return_type)}, err"]
 
     def local_called_routine(self, name: str) -> RoutineDecl | None:
         current_prefix = f"{self.program.module_name}."
@@ -535,7 +557,7 @@ class GoGenerator:
     def expr_with_type(self, expr: Any, type_ref: Any) -> str:
         if isinstance(expr, ArrayLiteralExpr) and isinstance(type_ref, ArrayTypeName):
             values = ", ".join(self.expr(item) for item in expr.items)
-            return f"[{type_ref.size}]{go_type_string(type_ref.element_type)}{{{values}}}"
+            return f"[{type_ref.size}]{self.go_type_string(type_ref.element_type)}{{{values}}}"
         if isinstance(expr, CallExpr):
             rendered = self.runtime_call_expr(expr, type_ref)
             if rendered is not None:
@@ -545,7 +567,65 @@ class GoGenerator:
     def go_type_ref(self, type_ref: Any) -> str:
         if isinstance(type_ref, ResultTypeName):
             self.result_types.setdefault(type_to_string(type_ref), type_ref)
-        return go_type_ref(type_ref)
+        return self.go_type_ref_text(type_ref)
+
+    def go_type_ref_text(self, type_ref: Any) -> str:
+        if isinstance(type_ref, TypeName):
+            return self.go_type_string(type_ref.name)
+        if isinstance(type_ref, ArrayTypeName):
+            return f"[{type_ref.size}]{self.go_type_string(type_ref.element_type)}"
+        if isinstance(type_ref, ResultTypeName):
+            return go_result_type_name(type_ref)
+        raise GoCodegenError(f"unsupported Go type reference: {type_to_string(type_ref)}")
+
+    def go_type_string(self, type_name: str) -> str:
+        generic = parse_generic(type_name)
+        if generic is not None:
+            base, args = generic
+            if base == "Array" and len(args) == 2 and args[1].isdigit():
+                return f"[{args[1]}]{self.go_type_string(args[0])}"
+            if base == "Result" and len(args) == 2:
+                return go_result_type_name(ResultTypeName(TypeName(args[0]), args[1]))
+        imported = self.imported_type_module(type_name)
+        if imported is not None:
+            self.used_import_modules.add(imported)
+            return f"{go_import_alias(imported)}.{go_exported_name(type_name)}"
+        return go_type_string(type_name)
+
+    def go_zero_value(self, type_ref: Any) -> str:
+        if isinstance(type_ref, str):
+            return self.go_zero_value_for_type_name(type_ref)
+        if isinstance(type_ref, TypeName):
+            return self.go_zero_value_for_type_name(type_ref.name)
+        if isinstance(type_ref, ArrayTypeName):
+            return f"[{type_ref.size}]{self.go_type_string(type_ref.element_type)}{{}}"
+        if isinstance(type_ref, ResultTypeName):
+            return f"{go_result_type_name(type_ref)}{{}}"
+        return "nil"
+
+    def go_zero_value_for_type_name(self, type_name: str) -> str:
+        imported = self.imported_type_module(type_name)
+        if imported is not None:
+            self.used_import_modules.add(imported)
+            return f"{go_import_alias(imported)}.{go_exported_name(type_name)}{{}}"
+        generic = parse_generic(type_name)
+        if generic is not None:
+            base, args = generic
+            if base == "Array" and len(args) == 2 and args[1].isdigit():
+                return f"[{args[1]}]{self.go_type_string(args[0])}{{}}"
+        return go_zero_value_for_type_name(type_name)
+
+    def go_error_name(self, error_name: str) -> str:
+        imported = self.imported_type_module(error_name)
+        if imported is not None:
+            self.used_import_modules.add(imported)
+            return f"{go_import_alias(imported)}.{go_exported_name(error_name)}"
+        return go_exported_name(error_name)
+
+    def imported_type_module(self, type_name: str) -> str | None:
+        if type_name in self.local_types:
+            return None
+        return self.exposed_type_modules.get(type_name)
 
     def expr_at(self, expr: Any, parent_precedence: int, side: str = "") -> str:
         if isinstance(expr, NumberExpr):
@@ -574,7 +654,7 @@ class GoGenerator:
             return parenthesize_if_needed(rendered, precedence, parent_precedence, side, expr.op)
         if isinstance(expr, RecordLiteralExpr):
             args = ", ".join(f"{go_exported_name(arg.name)}: {self.expr(arg.expr)}" for arg in expr.args)
-            return f"{go_exported_name(expr.type_name)}{{{args}}}"
+            return f"{self.go_type_string(expr.type_name)}{{{args}}}"
         if isinstance(expr, ArrayLiteralExpr):
             values = ", ".join(self.expr(item) for item in expr.items)
             return f"[]any{{{values}}}"

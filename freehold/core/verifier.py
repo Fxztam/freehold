@@ -887,6 +887,7 @@ class Ctx:
     def __init__(self, module_name, types, records, generic_records, errors, routines, imports=None, imported_modules=None):
         self.module_name=module_name; self.types=types; self.records=records; self.generic_records=generic_records; self.errors=errors; self.routines=routines
         self.imports=imports or []; self.imported_modules=imported_modules or {}; self.exposed_routines=self.build_exposed_routines()
+        self.add_exposed_types_records_and_errors()
         self.current_routine=None; self.current_type_params=set(); self.current_async=False
         self.scope_vars=set(); self.scope_handles={}
 
@@ -905,6 +906,19 @@ class Ctx:
                 else:
                     exposed[symbol_name] = routine
         return exposed
+
+    def add_exposed_types_records_and_errors(self) -> None:
+        for import_decl in self.imports:
+            imported = self.imported_modules.get(import_decl.module_name)
+            if imported is None:
+                continue
+            for symbol_name in import_decl.exposing:
+                if symbol_name in imported.types and symbol_name not in self.types:
+                    self.types[symbol_name] = imported.types[symbol_name]
+                if symbol_name in imported.records and symbol_name not in self.records:
+                    self.records[symbol_name] = imported.records[symbol_name]
+                if symbol_name in imported.errors:
+                    self.errors.add(symbol_name)
 
     def note_let(self, name: str, type_ref, expr, pos: SourcePos) -> None:
         if isinstance(expr, CallExpr) and expr.name == "scope" and isinstance(type_ref, TypeName) and type_ref.name == "Scope":
