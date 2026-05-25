@@ -143,4 +143,5 @@ verify-additive-test-line.cmd
 - gRPC server/client bindings als eigener V2/V3-Codegen-Pfad; der V1-Kern endet bei IDL-Verifikation, `.proto`-Output und Unsupported-Smoke fuer Go-Bindings.
 - Dynamische `String.template`-Formatargumente als spaeterer Codegen-Slice; statische Template-Literale sind in `05_runtime_builtins` und `18_string_templates` abgedeckt.
 - Abort breiter machen als spaeterer CFlow-/Proof-Slice: `21_abort_handling` deckt V1/V2-Propagation ab, breitere abort contract implication und Handler-Syntax bleiben geparkt.
+- Kleinere Goldens/Policies fuer `01_core`, `02_import`, `14_comments_whitespace` und `16_control_flow_edges` sind fuer V1 abgedeckt; bei `16_control_flow_edges` bleibt nur path-aware proof integration als spaeterer CFlow-Slice.
 - Go-native Semantik-/CFlow-Slices Richtung Bootstrap.

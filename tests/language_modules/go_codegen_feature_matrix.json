@@ -14,16 +14,16 @@
     {
       "module": "01_core",
       "title": "Core module structure and top-level diagnostics",
-      "status": "deferred",
-      "summary": "Core parsing diagnostics are covered by parser/verifier gates; no dedicated Go codegen slice is needed yet.",
-      "deferred_items": ["standalone empty/minimal-module Go golden policy"]
+      "status": "supported",
+      "summary": "Minimal valid modules are emitted as standalone Go packages; invalid top-level diagnostics remain parser/verifier coverage.",
+      "supported_cases": ["minimal module go codegen matches"]
     },
     {
       "module": "02_import",
       "title": "Import declarations and import diagnostics",
-      "status": "deferred",
-      "summary": "Import declaration syntax is frontend-covered; Go project import resolution is tracked in 03_import_resolution.",
-      "deferred_items": ["single-file import declaration codegen policy"]
+      "status": "supported",
+      "summary": "Import declarations are generated through project codegen, where imported modules are resolved as files in the module graph; local import diagnostics remain frontend coverage.",
+      "supported_cases": ["plain import project codegen"]
     },
     {
       "module": "03_import_resolution",
@@ -161,9 +161,14 @@
     {
       "module": "14_comments_whitespace",
       "title": "Comments and whitespace",
-      "status": "deferred",
-      "summary": "Comments are parser-neutral and have no dedicated Go codegen behavior beyond successful parsing.",
-      "deferred_items": ["optional formatter/comment preservation policy"]
+      "status": "supported",
+      "summary": "Comments and source whitespace are parser-neutral for Go codegen V1; generated Go is formatted from the AST and does not preserve Freehold comments.",
+      "supported_cases": [
+        "line comments go codegen ignores comments",
+        "comment markers inside strings go codegen",
+        "tabs and blank lines go codegen normalizes formatting"
+      ],
+      "deferred_items": ["optional comment-preserving formatter policy"]
     },
     {
       "module": "15_qualified_names_calls",
@@ -178,9 +183,18 @@
     {
       "module": "16_control_flow_edges",
       "title": "Control-flow edge cases",
-      "status": "deferred",
-      "summary": "Core control-flow statements are covered in 09_statements; edge-case path analysis has no Go codegen slice yet.",
-      "deferred_items": ["control-flow edge Go goldens", "path-aware proof integration"]
+      "status": "supported",
+      "summary": "Control-flow edge shapes that are valid for V1 are backed by Go goldens; deeper path-aware proof integration remains deferred.",
+      "supported_cases": [
+        "if else both return go codegen",
+        "case all branches return go codegen",
+        "return after if without else go codegen",
+        "while zero iteration edge go codegen",
+        "while multiple invariants no variant go codegen",
+        "nested if case while go codegen",
+        "case Boolean branches go codegen"
+      ],
+      "deferred_items": ["path-aware proof integration"]
     },
     {
       "module": "17_math_module",

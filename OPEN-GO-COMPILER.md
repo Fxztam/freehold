@@ -69,10 +69,10 @@ Direkt offen fuer die naechsten Compiler-Slices:
     - Feature-Matrix: `18_string_templates`.
 
 5. Core-/Import-/Whitespace-/Control-Flow-Goldens
-    - `01_core`: minimal/empty module Go-Golden-Policy.
-    - `02_import`: single-file import declaration codegen policy.
-    - `14_comments_whitespace`: optionale Formatter-/Comment-Preservation-Policy.
-    - `16_control_flow_edges`: Edge-Goldens und path-aware proof integration.
+    - Erledigt fuer V1: `01_core` hat einen Minimal-Modul-Go-Golden.
+    - Erledigt fuer V1: `02_import` hat eine Projekt-Codegen-Policy fuer Import-Deklarationen; Single-file-Import-Codegen bleibt bewusst kein eigener Pfad.
+    - Erledigt fuer V1: `14_comments_whitespace` dokumentiert per Go-Goldens, dass Kommentare/Whitespace parser-neutral sind und Go aus dem AST formatiert wird.
+    - Erledigt fuer V1: `16_control_flow_edges` hat Go-Goldens fuer die manifestierten gueltigen Edge-Cases; path-aware proof integration bleibt deferred.
 
 Bewusst geparkt fuer V2/V3:
 
