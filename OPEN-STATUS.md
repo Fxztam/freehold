@@ -62,7 +62,7 @@ verify-parser-conformance.cmd
 Total: 319
 OK:    274
 FAIL:  45
-Go codegen artifacts: 60/60 matching
+Go codegen generator gate: 60/60 matching
 Go feature matrix: 24/24 modules covered; supported 15, rejected 3, deferred 6
 AST shape:     274/274
 Semantic AST:  274/274

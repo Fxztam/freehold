@@ -39,7 +39,7 @@ Bereits erledigt:
 - Abort als Go-`error`-Return fuer abgedeckte V1-Faelle.
 - Runtime-Builtins fuer `Math`, `Std.IO`, `String.*`, `String.template`, `Json.stringify` und `Big.*`.
 - Feature-Matrix-Gate mit `24/24` Language-Modulen.
-- Go-Codegen-Artefakte mit aktuell `60/60` matching.
+- Go-Codegen-Generator-Gate mit aktuell `60/60` matching; eingefrorene Artefakt-Snapshots bleiben separat kontrolliert.
 
 Direkt offen fuer die naechsten Compiler-Slices:
 
