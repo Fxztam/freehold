@@ -59,8 +59,8 @@ Direkt offen fuer die naechsten Compiler-Slices:
     - Importierte verschachtelte Record-Payloads verwenden dieselbe transitive Typkontext-Regel wie normale importierte Record-Feldzugriffe.
 
 3. Abort breiter machen
-    - Breitere abort contract implication.
-    - Handler-Syntax bleibt offen/geparkt.
+    - Breitere abort contract implication bleibt deferred; V1/V2 prueft same-error-name propagation, aber keine Bedingungsimplikation.
+    - Handler-Syntax bleibt offen/geparkt und ist kein Compiler-V1-Kern.
     - Feature-Matrix: `21_abort_handling` hat entsprechende deferred items.
 
 4. Dynamische `String.template`-Formate
@@ -309,6 +309,7 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 - REST/WebSocket/SSE Transport-Libs
 - Runtime-Contract-Enforcement
 - path-aware control-flow proofs
+- breitere abort contract implication und Handler-Syntax; abgedeckte V1-Aborts bleiben explizite Go-`error`-Returns
 - dynamische `String.template`-Formatargumente; statische Template-Literale bleiben V1-supported
 - Generics Bounds/Inference/volle Monomorphisierung
 - Native/Image Builder

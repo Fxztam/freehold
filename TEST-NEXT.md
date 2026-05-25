@@ -53,6 +53,7 @@ Fuer bewusst nicht unterstuetzte Beispiele prueft der Wrapper:
    - importierter Record-Typ
    - `Result<Array<imported Record>, imported Error>`
    - importierter abortender Call mit Go-`err`-Propagation
+   - abgedeckte V1-Aborts bleiben same-error-name propagation; breitere abort contract implication und Handler-Syntax sind deferred
 
 5. `05_runtime_builtins`
    - `String.*`
@@ -141,4 +142,5 @@ verify-additive-test-line.cmd
 - Async/Channels/Scope Runtime als spaeterer Positiv-Slice; ein Unsupported-Smoke dokumentiert die aktuelle Go-Codegen-Grenze.
 - gRPC server/client bindings als eigener V2/V3-Codegen-Pfad; der V1-Kern endet bei IDL-Verifikation, `.proto`-Output und Unsupported-Smoke fuer Go-Bindings.
 - Dynamische `String.template`-Formatargumente als spaeterer Codegen-Slice; statische Template-Literale sind in `05_runtime_builtins` und `18_string_templates` abgedeckt.
+- Abort breiter machen als spaeterer CFlow-/Proof-Slice: `21_abort_handling` deckt V1/V2-Propagation ab, breitere abort contract implication und Handler-Syntax bleiben geparkt.
 - Go-native Semantik-/CFlow-Slices Richtung Bootstrap.
