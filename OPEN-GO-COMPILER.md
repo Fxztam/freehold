@@ -74,6 +74,12 @@ Direkt offen fuer die naechsten Compiler-Slices:
     - Erledigt fuer V1: `14_comments_whitespace` dokumentiert per Go-Goldens, dass Kommentare/Whitespace parser-neutral sind und Go aus dem AST formatiert wird.
     - Erledigt fuer V1: `16_control_flow_edges` hat Go-Goldens fuer die manifestierten gueltigen Edge-Cases; path-aware proof integration bleibt deferred.
 
+Die verbleibenden Punkte aus diesem Slice sind keine Compiler-V1-Blocker, sondern bewusst festgezurrte spaetere Slices oder reine Policy-Grenzen:
+
+- `02_import`: kein Single-file-Import-Codegen. Imports werden ueber Projekt-Codegen getestet, weil Importaufloesung Modulgraph und Projektlayout braucht.
+- `14_comments_whitespace`: V1 ist fertig. Kommentare und Whitespace sind parser-neutral; Go wird aus dem AST formatiert. Nur ein optionaler comment-preserving formatter bleibt spaeter.
+- `16_control_flow_edges`: V1-Go-Goldens sind fertig. Nur path-aware proof integration bleibt ein spaeterer CFlow-/Proof-Slice.
+
 Bewusst geparkt fuer V2/V3:
 
 - Generics-Codegen, Monomorphisierung, Bounds und Inference.
@@ -302,6 +308,15 @@ Geparkt fuer V2/V3:
 
 Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 
+- Restpunkte aus `tests/language_modules/go_codegen_feature_matrix.json`, die keine vergessenen V1-Luecken sind, sondern spaetere Slices oder Policy-Grenzen:
+    - `04_types`: breitere User-Type-Alias-Kombinationen.
+    - `08_routines`: async routines, generic routines.
+    - `11_errors_results`: Result-value-field-access.
+    - `18_string_templates`: dynamische Formatargumente.
+    - `21_abort_handling`: breitere abort contract implication, Handler-Syntax.
+    - `23_concurrency`: echte async/runtime/channels/scope execution.
+    - `24_grpc_idl`: Go-gRPC bindings, status mapping, streaming.
+    - `12_type_conflicts`, `13_contract_blocks`, `22_generics`: policy-only/rejected fuer V1, also absichtlich keine positiven Go-Codegen-Goldens.
 - echte async Runtime-Ausfuehrung
 - Scheduler, Work-Stealing, Blocking-Pool, CancellationToken
 - Channel-Laufzeitverhalten, Close/Backpressure/select
