@@ -1,0 +1,40 @@
+module App.Main
+
+type Invoice is record
+    id: Integer
+end record
+
+type Customer is record
+    id: Integer
+end record
+
+async function load_invoice(id: Integer) returns Invoice
+is
+    return Invoice { id: id }
+end load_invoice
+
+async function load_customer(id: Integer) returns Customer
+is
+    return Customer { id: id }
+end load_customer
+
+function render_invoice(invoice: Invoice, customer: Customer) returns Integer
+is
+    return invoice.id + customer.id
+end render_invoice
+
+async function handle(id: Integer) returns Integer
+is
+    scope request_scope do
+        spawn
+            let invoice_handle: JoinHandle<Invoice> = request_scope.spawn<Invoice>(load_invoice(id))
+            let customer_handle: JoinHandle<Customer> = request_scope.spawn<Customer>(load_customer(id))
+        join
+            let invoice: Invoice = await request_scope.join<Invoice>(invoice_handle)
+            let customer: Customer = await request_scope.join<Customer>(customer_handle)
+        result
+            return render_invoice(invoice, customer)
+    end scope
+end handle
+
+end App.Main

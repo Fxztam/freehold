@@ -77,7 +77,7 @@ Direkt offen fuer die naechsten Compiler-Slices:
 Bewusst geparkt fuer V2/V3:
 
 - Generics-Codegen, Monomorphisierung, Bounds und Inference.
-- Async Runtime, Channels, Scheduler und Scope/JoinHandle-Ausfuehrung.
+- Async Runtime, Channels, Scheduler und Scope/JoinHandle-Ausfuehrung. Ein Unsupported-Smoke `unsupported_async_scope_runtime` dokumentiert die aktuelle Go-Codegen-Grenze.
 - gRPC Go server/client bindings.
 - REST/WebSocket/SSE Transport-Libs.
 - Runtime-Contract-Enforcement.

@@ -52,6 +52,7 @@ SUPPORTED_EXAMPLES = [
 UNSUPPORTED_EXAMPLES = [
     UnsupportedExample("unsupported_generic_function", "examples/compiler_v1/unsupported/generic_function/App/Main.fh", "FH-GOCODEGEN-0001"),
     UnsupportedExample("unsupported_grpc_binding", "examples/compiler_v1/unsupported/grpc_binding/App/Main.fh", "FH-GOCODEGEN-0001"),
+    UnsupportedExample("unsupported_async_scope_runtime", "examples/compiler_v1/unsupported/async_scope_runtime/App/Main.fh", "FH-GOCODEGEN-0001"),
     UnsupportedExample("old_concurrent_grpc_channel_demo", "examples/concurrent_grpc_channel_demo.fh", "FH-GOCODEGEN-0001"),
 ]
 
