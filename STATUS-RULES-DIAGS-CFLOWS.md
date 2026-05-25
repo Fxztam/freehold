@@ -12,7 +12,7 @@ Dieser Status trennt drei Ebenen, die leicht verwechselt werden koennen:
 
 Direkt im Go-Code sind aktuell 23 Diagnostics/Parser-Regeln umgesetzt. Die komplette Spec ist groesser und wird ueber Python-Verifier, Expected-Manifests, Normalizer und Gates vollstaendig abgeglichen.
 
-Der Go-Parser ist bei Syntax/AST-Paritaet sehr weit: alle 319 Language-Module-Faelle haben denselben Parser-Status wie DHParser; alle 274 parse-ok Faelle haben passende AST-Shape- und Semantic-AST-Artefakte.
+Der Go-Parser ist bei Syntax/AST-Paritaet sehr weit: alle 322 Language-Module-Faelle haben denselben Parser-Status wie DHParser; alle 277 parse-ok Faelle haben passende AST-Shape- und Semantic-AST-Artefakte.
 
 ## Aktuelle Spec-Zahlen
 
@@ -61,13 +61,13 @@ Aktueller Parser-Status-Vergleich:
 ```text
 compare-parser-status.cmd
 
-Total cases:        319
-Matching status:    319
+Total cases:        322
+Matching status:    322
 Mismatching status: 0
 Missing Go:         0
 Missing DHParser:   0
-Go:                 OK 274 / FAIL 45
-DHParser:           OK 274 / FAIL 45
+Go:                 OK 277 / FAIL 45
+DHParser:           OK 277 / FAIL 45
 ```
 
 Aktuelle AST-Vergleiche:
@@ -75,14 +75,14 @@ Aktuelle AST-Vergleiche:
 ```text
 compare-ast-shape.cmd
 
-Comparable parse-ok cases: 274
-Matching shape:            274
+Comparable parse-ok cases: 277
+Matching shape:            277
 Mismatching shape:         0
 
 compare-ast-semantic.cmd
 
-Comparable parse-ok cases:    274
-Matching semantic AST:        274
+Comparable parse-ok cases:    277
+Matching semantic AST:        277
 Mismatching semantic AST:     0
 ```
 
@@ -142,8 +142,9 @@ Go-Codegen-Rejection-Beweise:
 - `12_type_conflicts` ist als policy-only/rejected V1-Pfad abgesichert: alle negativen Konflikt-Fixtures laufen zusaetzlich durch den Go-Codegen-Einstieg und muessen mit derselben Verifier-Diagnostic abbrechen, bevor Go-Output akzeptiert wird.
 - `13_contract_blocks` ist nicht mehr pauschal policy-only/rejected: gueltige V1-Contract-Formen werden als Go-Runtime-Checks emittiert, ungueltige Contract-Fixtures laufen zusaetzlich durch den Go-Codegen-Einstieg und muessen mit derselben Syntax-/Semantik-Diagnostic abbrechen, bevor Go-Output akzeptiert wird.
 - `22_generics` ist als policy-only/rejected V1-Pfad abgesichert: frontend-gueltige Generic-Fixtures muessen mit `FH-GOCODEGEN-0001` unsupported bleiben, ungueltige Generic-Fixtures muessen mit derselben Semantik-Diagnostic abbrechen, bevor Go-Output akzeptiert wird.
+- `04_types`, `11_errors_results` und `18_string_templates` sind fuer die kleinen deferred Go-Codegen-Slices positiv abgedeckt: breitere Alias-Kombinationen, Result-`value.field` und dynamische String-Template-Formate laufen ohne neue Spec-Diagnostics.
 - Dafuer waren keine neuen `spec/freehold.diag`-, `spec/freehold.rules`- oder `spec/analyzer.cflow`-Eintraege noetig; die bestehenden Diagnostics wie `VF-N001`, `VF-ST002`, `VF-U008`, `VF-U009`, `VF-CT001`, `VF-CT002`, `VF-E001`, `VF-E002` und die `VF-GEN*`-Diagnostics bleiben die Quelle.
-- Aktueller Language-Module-Gate nach dieser Erweiterung: `441/441`.
+- Aktueller Language-Module-Gate nach dieser Erweiterung: `454/454`.
 
 ## Control Flow
 
