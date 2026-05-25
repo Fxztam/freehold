@@ -333,7 +333,7 @@ class GoGenerator:
     def result_type_decls(self) -> list[str]:
         lines: list[str] = []
         for result_type in self.result_types.values():
-            if self.imported_type_module(result_type.error_type) is not None:
+            if self.imported_result_type_module(result_type) is not None:
                 continue
             lines.append(f"type {self.go_result_type_name(result_type)} struct {{")
             lines.append("\tOk bool")
@@ -696,12 +696,27 @@ class GoGenerator:
         return go_exported_name(error_name)
 
     def go_result_type_name(self, type_ref: ResultTypeName) -> str:
-        imported = self.imported_type_module(type_ref.error_type)
+        imported = self.imported_result_type_module(type_ref)
         result_name = go_result_type_name(type_ref)
         if imported is None:
             return result_name
         self.used_import_modules.add(imported)
         return f"{go_import_alias(imported)}.{result_name}"
+
+    def imported_result_type_module(self, type_ref: ResultTypeName) -> str | None:
+        error_module = self.imported_type_module(type_ref.error_type)
+        if error_module is None:
+            return None
+        if self.type_ref_has_local_type(type_ref.ok_type):
+            return None
+        return error_module
+
+    def type_ref_has_local_type(self, type_ref: Any) -> bool:
+        if isinstance(type_ref, TypeName):
+            return type_ref.name in self.local_types
+        if isinstance(type_ref, ArrayTypeName):
+            return type_ref.element_type in self.local_types
+        return False
 
     def imported_type_module(self, type_name: str) -> str | None:
         if type_name in self.local_types:

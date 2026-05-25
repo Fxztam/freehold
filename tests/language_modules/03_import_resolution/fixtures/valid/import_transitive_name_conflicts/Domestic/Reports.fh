@@ -1,0 +1,26 @@
+module Domestic.Reports
+
+import Domestic.Shared exposing Address, Order, NotFound, make_address, make_order
+
+type DomesticReport is record
+    order: Order
+    depot: Address
+end record
+
+function find_domestic(seed: Integer) returns Result<DomesticReport, NotFound>
+requires seed > 0
+ensures value.order.address.city_id = 42
+is
+    let depot: Address = make_address(42, "Berlin")
+    let order: Order = make_order(seed, depot)
+    return ok DomesticReport { order: order, depot: depot }
+end find_domestic
+
+function load_domestic(seed: Integer) returns DomesticReport
+requires seed > 0
+is
+    let outcome: Result<DomesticReport, NotFound> = find_domestic(seed)
+    return outcome.value
+end load_domestic
+
+end Domestic.Reports

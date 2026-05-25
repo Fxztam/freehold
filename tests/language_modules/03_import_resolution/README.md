@@ -47,6 +47,7 @@ Fixture layout:
 ```text
 fixtures/
   valid/import_existing_module/
+  valid/import_transitive_name_conflicts/
   invalid/imported_module_not_found/
   invalid/imported_module_not_sibling/
   invalid/imported_module_name_mismatch/
