@@ -1,0 +1,40 @@
+module App.Main
+
+import Std.IO
+
+procedure main()
+is
+    let limit: Integer = 4
+    let total: Integer = 0
+    let i: Integer = 0
+
+    while i < limit
+        invariant i >= 0
+        invariant i <= limit
+        invariant limit >= 0
+        variant limit - i
+    do
+        let next_i: Integer = i + 1
+        total := total + next_i
+        i := next_i
+    end while
+
+    if total > 6 then
+        call Std.IO.log("control-flow branch = high")
+    else
+        call Std.IO.log("control-flow branch = low")
+    end if
+
+    call Std.IO.logf("sum = ${}", total)
+
+    case total is
+        when 6 =>
+            call Std.IO.log("class = triangular-six")
+        when 10 =>
+            call Std.IO.log("class = triangular-ten")
+        default =>
+            call Std.IO.log("class = other")
+    end case
+end main
+
+end App.Main
