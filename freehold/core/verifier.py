@@ -921,9 +921,32 @@ class Ctx:
                 if symbol_name in imported.types and symbol_name not in self.types:
                     self.types[symbol_name] = imported.types[symbol_name]
                 if symbol_name in imported.records and symbol_name not in self.records:
-                    self.records[symbol_name] = imported.records[symbol_name]
+                    self.add_imported_record_with_dependencies(symbol_name, imported, set())
                 if symbol_name in imported.errors:
                     self.errors.add(symbol_name)
+
+    def add_imported_record_with_dependencies(self, name: str, imported: VerifiedProgram, seen: set[str]) -> None:
+        if name in seen or name not in imported.records:
+            return
+        seen.add(name)
+        if name not in self.records:
+            self.records[name] = imported.records[name]
+        for field_type in imported.records[name].fields.values():
+            self.add_imported_type_dependencies(field_type, imported, seen)
+
+    def add_imported_type_dependencies(self, type_name: str, imported: VerifiedProgram, seen: set[str]) -> None:
+        generic = self.parse_generic_instance(type_name)
+        if generic is not None:
+            _, args = generic
+            for arg in args:
+                self.add_imported_type_dependencies(arg, imported, seen)
+            return
+        if type_name in imported.types and type_name not in self.types:
+            self.types[type_name] = imported.types[type_name]
+        if type_name in imported.records:
+            self.add_imported_record_with_dependencies(type_name, imported, seen)
+        if type_name in imported.errors:
+            self.errors.add(type_name)
 
     def note_let(self, name: str, type_ref, expr, pos: SourcePos) -> None:
         if isinstance(expr, CallExpr) and expr.name == "scope" and isinstance(type_ref, TypeName) and type_ref.name == "Scope":

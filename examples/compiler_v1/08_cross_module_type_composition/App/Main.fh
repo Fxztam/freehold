@@ -1,0 +1,18 @@
+module App.Main
+
+import Std.IO
+import Domain.Shipments exposing Shipment, daily_shipments
+
+procedure main()
+is
+    let shipments: Array<Shipment, 2> = daily_shipments()
+    let first: Shipment = shipments[0]
+    let second: Shipment = shipments[1]
+    call Std.IO.logf("first customer = ${}", first.customer.name)
+    call Std.IO.logf("first city = ${}", first.customer.address.city_id)
+    call Std.IO.logf("second city = ${}", second.destination.city_id)
+    check first.customer.address.city_id = first.destination.city_id
+    check second.customer.id = 1002
+end main
+
+end App.Main

@@ -72,6 +72,12 @@ Fuer bewusst nicht unterstuetzte Beispiele prueft der Wrapper:
    - komplexe `ensures` mit mehreren kommaseparierten Bedingungen
    - Runtime-Smoke fuehrt `main()` aus und vergleicht die Ausgabe
 
+8. `08_cross_module_type_composition`
+   - importierte Records als Felder in einem Record eines zweiten Domain-Moduls
+   - direkte `Array<imported/composed Record>`-Signatur zwischen Domain und App
+   - verschachtelte Feldzugriffe und Array-Indexzugriffe in `App.Main`
+   - Runtime-Smoke fuehrt `main()` aus und vergleicht die Ausgabe
+
 ## Unsupported-Smokes
 
 Bewusst nicht unterstuetzte Go-Codegen-V1-Faelle bleiben als Smoke-Test wichtig. Aktuell abgedeckt:
@@ -109,8 +115,8 @@ verify-additive-test-line.cmd
 
 ## Naechste sinnvolle Erweiterungen
 
-- Testmodus fuer Ausgabe-Regression ausweiten: Der Compiler-Example-Smoke schreibt fuer alte buildbare Examples und das neue `07_complex_contracts`-Beispiel bereits `<module-name>.log` und vergleicht gegen `examples/expected_logs/<module-name>.expected.log`. Durch einfache Go-Runtime-Checks fuer `requires`/`ensures` sind nun auch die alten Contract-Beispiele Teil dieser Runtime-Flotte. Naechster Schritt ist, weitere neue `compiler_v1`-Examples mit bewusster Ausgabe in diesen Mechanismus aufzunehmen.
-- Weitere Cross-Module-Typkompositionen: direkte `Array<imported Record>`-Signaturen, verschachtelte importierte Records/Results und Namenskonflikte.
+- Testmodus fuer Ausgabe-Regression ausweiten: Der Compiler-Example-Smoke schreibt fuer alte buildbare Examples sowie `07_complex_contracts` und `08_cross_module_type_composition` bereits `<module-name>.log` und vergleicht gegen `examples/expected_logs/<module-name>.expected.log`. Durch einfache Go-Runtime-Checks fuer `requires`/`ensures` sind nun auch die alten Contract-Beispiele Teil dieser Runtime-Flotte. Naechster Schritt ist, weitere neue `compiler_v1`-Examples mit bewusster Ausgabe in diesen Mechanismus aufzunehmen.
+- Weitere Cross-Module-Typkompositionen: verschachtelte importierte `Result`-Records und Namenskonflikte.
 - Async/Channels/Scope Runtime als Unsupported-Smoke oder spaeterer Positiv-Slice.
 - gRPC server/client bindings als eigener V2/V3-Codegen-Pfad.
 - Go-native Semantik-/CFlow-Slices Richtung Bootstrap.

@@ -1,0 +1,17 @@
+module Domain.Shipments
+
+import Domain.Types exposing Address, Customer, make_address, make_customer
+
+type Shipment is record
+    customer: Customer
+    destination: Address
+end record
+
+function make_shipment(id: Integer, city_id: Integer) returns Shipment
+is
+    let destination: Address = make_address(city_id)
+    let customer: Customer = make_customer(id, destination)
+    return Shipment { customer: customer, destination: destination }
+end make_shipment
+
+end Domain.Shipments

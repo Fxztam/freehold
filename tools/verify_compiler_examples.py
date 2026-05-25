@@ -30,6 +30,7 @@ SUPPORTED_EXAMPLES = [
     SupportedExample("05_runtime_builtins", "examples/compiler_v1/05_runtime_builtins/App/Main.fh"),
     SupportedExample("06_integer_big_loop", "examples/compiler_v1/06_integer_big_loop/App/Main.fh"),
     SupportedExample("07_complex_contracts", "examples/compiler_v1/07_complex_contracts/App/Main.fh", "examples/expected_logs/compiler_v1_complex_contracts.expected.log"),
+    SupportedExample("08_cross_module_type_composition", "examples/compiler_v1/08_cross_module_type_composition/App/Main.fh", "examples/expected_logs/compiler_v1_cross_module_type_composition.expected.log"),
     SupportedExample("old_BigNumbers", "examples/BigNumbers.fh", "examples/expected_logs/BigNumbers.expected.log"),
     SupportedExample("old_ChudnovskyFeynmanPoint", "examples/ChudnovskyFeynmanPoint.fh", "examples/expected_logs/ChudnovskyFeynmanPoint.expected.log"),
     SupportedExample("old_ChudnovskyPi", "examples/ChudnovskyPi.fh", "examples/expected_logs/ChudnovskyPi.expected.log"),
