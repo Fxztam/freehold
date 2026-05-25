@@ -39,33 +39,28 @@ Bereits erledigt:
 - Abort als Go-`error`-Return fuer abgedeckte V1-Faelle.
 - Runtime-Builtins fuer `Math`, `Std.IO`, `String.*`, `String.template`, `Json.stringify` und `Big.*`.
 - Feature-Matrix-Gate mit `24/24` Language-Modulen.
-- Go-Codegen-Artefakte mit aktuell `56/56` matching.
+- Go-Codegen-Artefakte mit aktuell `60/60` matching.
 
 Direkt offen fuer die naechsten Compiler-Slices:
 
-1. Arrays weiter haerten
-    - Eigene Go-Goldens im Array-Modul fehlen noch.
-    - Finale Array-Repraesentation sauber entscheiden und absichern.
-    - Feature-Matrix: `06_arrays` ist `deferred`, obwohl Arrays schon in anderen Slices vorkommen.
-
-2. Record-/Result-/Abort-Interaktionen ueber Modulgrenzen
+1. Record-/Result-/Abort-Interaktionen ueber Modulgrenzen
     - Cross-Module-Routine-Calls sind vorhanden.
     - Noch zu haerten sind importierte Records, Result-Typen, Abort-Fehler, Signaturtypen, Fehlernamen und Package-Typnamen ueber Modulgrenzen.
 
-3. Result value field access
+2. Result value field access
     - Feature-Matrix: `11_errors_results` fuehrt `Result value field access` als deferred.
 
-4. Abort breiter machen
+3. Abort breiter machen
     - Breitere abort contract implication.
     - Handler-Syntax bleibt offen/geparkt.
     - Feature-Matrix: `21_abort_handling` hat entsprechende deferred items.
 
-5. Dynamische `String.template`-Formate
+4. Dynamische `String.template`-Formate
     - Statische Templates sind implementiert.
     - Dynamische Formatargumente sind noch deferred.
     - Feature-Matrix: `18_string_templates`.
 
-6. Core-/Import-/Whitespace-/Control-Flow-Goldens
+5. Core-/Import-/Whitespace-/Control-Flow-Goldens
     - `01_core`: minimal/empty module Go-Golden-Policy.
     - `02_import`: single-file import declaration codegen policy.
     - `14_comments_whitespace`: optionale Formatter-/Comment-Preservation-Policy.
@@ -84,7 +79,7 @@ Bewusst geparkt fuer V2/V3:
 Empfohlene Reihenfolge aus heutiger Sicht:
 
 1. Cross-Module Typ-/Result-/Abort-Signaturen haerten, weil das architektonisch wichtiger ist als kosmetische Goldens.
-2. Danach Array-Goldens und kleinere Matrix-Luecken schliessen.
+2. Danach kleinere Matrix-Luecken schliessen.
 3. Danach weitere Runtime- und Bootstrap-nahe Slices priorisieren.
 
 ## Ziel

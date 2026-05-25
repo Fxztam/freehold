@@ -416,9 +416,10 @@ class GoGenerator:
                     call_routine = self.local_called_routine(stmt.value.expr.name)
                     if call_routine is not None and call_routine.aborts:
                         return self.return_aborting_call(stmt.value.expr, call_routine)
+                rendered = self.expr_with_type(stmt.value.expr, self.current_return_type)
                 if self.current_aborts:
-                    return [f"return {self.expr(stmt.value.expr)}, nil"]
-                return [f"return {self.expr(stmt.value.expr)}"]
+                    return [f"return {rendered}, nil"]
+                return [f"return {rendered}"]
             if isinstance(stmt.value, ReturnOk):
                 if not isinstance(self.current_return_type, ResultTypeName):
                     self.unsupported(stmt, "return ok requires a Result return type")
