@@ -83,7 +83,7 @@ Bewusst geparkt fuer V2/V3:
 
 - Generics-Codegen, Monomorphisierung, Bounds und Inference.
 - Async Runtime, Channels, Scheduler und Scope/JoinHandle-Ausfuehrung. Ein Unsupported-Smoke `unsupported_async_scope_runtime` dokumentiert die aktuelle Go-Codegen-Grenze.
-- gRPC Go server/client bindings; `unsupported_grpc_binding` dokumentiert die aktuelle Go-Codegen-V1-Grenze.
+- gRPC Service-Deklarationen im allgemeinen Go-Codegen; `unsupported_grpc_binding` dokumentiert diese Go-Codegen-V1-Grenze, waehrend unary Server-Bindings ueber `grpc-go-bindings` laufen.
 - REST/WebSocket/SSE Transport-Libs.
 - Runtime-Contract-Enforcement.
 - path-aware Control-Flow-Proofs.
@@ -203,7 +203,7 @@ Vorlaeufige Einordnung:
 | Json.stringify | Go `encoding/json` fuer verifierseitig begrenzte V1-Recordformen. |
 | Std.IO | Go `fmt` fuer `log`/`logf` V1-Standardfaelle. |
 | Channel/Scope/JoinHandle | Typen koennen existieren; echte Runtime-Ausfuehrung geparkt. |
-| gRPC IDL | `.proto`-Generator vorhanden; Go-Bindings spaeter. |
+| gRPC IDL | `.proto`-Generator und unary `grpc-go-bindings` vorhanden; client/implements/custom status/streaming spaeter. |
 
 Regel: Runtime-Abhaengigkeiten werden als explizite Go-Imports sichtbar. Der Compiler soll nicht so tun, als waeren sie globale magische Funktionen.
 
@@ -286,7 +286,7 @@ Der vorhandene gRPC-V1-Pfad bleibt getrennt vom allgemeinen Go-Compiler:
 Freehold gRPC IDL -> proto3 file
 ```
 
-Go-gRPC-Bindings sind ein eigener V2/V3-Codegen-Pfad, aber kein Teil des Compiler-V1-Kerns. Der Compiler-Example-Smoke `unsupported_grpc_binding` haelt fest, dass der allgemeine Go-Codegen diesen Pfad aktuell mit `FH-GOCODEGEN-0001` ablehnt.
+Go-gRPC-Bindings bleiben getrennt vom allgemeinen Freehold-Go-Codegen. Der V1a-Pfad `freehold grpc-go-bindings` erzeugt unary Server-Adapter aus Service-IDL und `.proto`-Package-Konventionen; der Compiler-Example-Smoke `unsupported_grpc_binding` haelt weiter fest, dass der allgemeine `go-codegen-project`-Pfad Service-Deklarationen mit `FH-GOCODEGEN-0001` ablehnt.
 
 Compiler V1 muss dennoch die Modulpolitik respektieren:
 
@@ -296,9 +296,9 @@ Compiler V1 muss dennoch die Modulpolitik respektieren:
 
 Geparkt fuer V2/V3:
 
-- Go server/client stubs
+- Go client stubs
 - `implements Service.Rpc`
-- gRPC Status-Code Mapping
+- Custom gRPC Status-Code Mapping fuer Freehold-Fehler
 - streaming
 - deadlines/cancellation/metadata/auth
 - schema evolution wie `reserved proto`
@@ -311,14 +311,14 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
     - `08_routines`: async routines, generic routines.
     - `21_abort_handling`: breitere abort contract implication, Handler-Syntax.
     - `23_concurrency`: echte async/runtime/channels/scope execution.
-    - `24_grpc_idl`: Go-gRPC bindings, status mapping, streaming.
+    - `24_grpc_idl`: client bindings, explizite Implementierungsbindung, custom status mapping, streaming.
     - `12_type_conflicts`: policy-only/rejected fuer V1, also absichtlich keine positiven Go-Codegen-Goldens.
     - `22_generics`: frontend-gueltige Generics sind fuer Go-Codegen V1 bewusst unsupported (`FH-GOCODEGEN-0001`); ungueltige Generic-Fixtures bleiben als Go-Codegen-Rejection-Cases abgesichert.
     - `13_contract_blocks`: gueltige V1-Contract-Formen haben Go-Runtime-Checks; ungueltige Contract-Fixtures bleiben als Go-Codegen-Rejection-Cases abgesichert.
 - echte async Runtime-Ausfuehrung
 - Scheduler, Work-Stealing, Blocking-Pool, CancellationToken
 - Channel-Laufzeitverhalten, Close/Backpressure/select
-- gRPC Go-Bindings und Transportserver
+- gRPC Client-Bindings und vollstaendiger Transportserver
 - REST/WebSocket/SSE Transport-Libs
 - Runtime-Contract-Enforcement
 - path-aware control-flow proofs
@@ -335,7 +335,7 @@ Reihenfolge fuer die Weiterarbeit:
     - Erledigt fuer V1: `04_types` breitere User-Type-Alias-Kombinationen sind als Go-Goldens fuer Ranges, Arrays, Records und Results abgedeckt.
 3. Grosse deferred Slices spaeter angehen:
     - `23_concurrency`: echte Runtime/Channels/Scope-Ausfuehrung.
-    - `24_grpc_idl`: Go-gRPC bindings, status mapping, streaming.
+    - `24_grpc_idl`: client bindings, explizite Implementierungsbindung, custom status mapping, streaming.
     - `21_abort_handling`: breitere abort implication und Handler-Syntax.
 
 ## Empfohlene naechste Schritte

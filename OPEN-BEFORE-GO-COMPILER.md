@@ -72,22 +72,22 @@ Geparkt fuer V2:
 - Reservierung geloeschter Feldnamen
 - Compatibility-Checks zwischen Versionen
 
-### gRPC Go-Binding noch nicht starten
+### gRPC Go-Binding getrennt vom Basis-Codegen halten
 
 Der aktuelle V1-Stand ist:
 
 ```text
 Freehold gRPC IDL -> proto3 output
+Freehold gRPC IDL -> unary Go server binding output
 ```
 
-Go-gRPC-Server/Client-Stubs sind kein Teil des Compiler-Basis-Codegens. Sie sollen nach dem allgemeinen Go-Codegen als eigener Block auf dem vorhandenen `.proto`-Output aufbauen.
+Go-gRPC-Bindings sind kein Teil des allgemeinen Compiler-Basis-Codegens. Der unary Server-Binding-Pfad ist als eigener `grpc-go-bindings`-Generator gestartet und baut auf dem vorhandenen `.proto`-Output auf.
 
-Geparkt bis nach Basis-Codegen:
+Weiter geparkt:
 
-- Go server stubs
 - Go client stubs
 - Service-Implementierungsbindung
-- gRPC Status/Error Mapping
+- Custom gRPC Status/Error Mapping fuer Freehold-Fehler
 - Deadlines, cancellation, metadata, auth
 - Streaming
 

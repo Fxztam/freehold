@@ -8,6 +8,7 @@ from pathlib import Path
 from freehold.core.diagnostics import diagnose_exception
 from freehold.core.go_codegen import generate_go_file, generate_go_project, generate_go_project_build_files, project_result_json, result_json
 from freehold.core.grpc_codegen import generate_proto_file
+from freehold.core.grpc_go_codegen import generate_grpc_go_bindings_file
 from freehold.core.pipeline import verify_file, run_file, print_ast
 
 DIAGNOSTIC_ERROR_NAMES = {"UnexpectedToken", "UnexpectedCharacters", "UnexpectedEOF", "TypeCheckError"}
@@ -37,6 +38,17 @@ def cmd_grpc_proto(args):
         print(f"[OK] gRPC proto generated: {out}")
     else:
         print(proto, end="")
+    return 0
+
+def cmd_grpc_go_bindings(args):
+    source = generate_grpc_go_bindings_file(args.file)
+    if args.output:
+        out = Path(args.output)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(source, encoding="utf-8")
+        print(f"[OK] gRPC Go bindings generated: {out}")
+    else:
+        print(source, end="")
     return 0
 
 def cmd_go_codegen(args):
@@ -166,6 +178,10 @@ def build_parser():
     p.add_argument("file")
     p.add_argument("--output", "-o", default=None)
     p.set_defaults(func=cmd_grpc_proto)
+    p = sub.add_parser("grpc-go-bindings", help="Generate Go gRPC unary server bindings from Freehold gRPC IDL")
+    p.add_argument("file")
+    p.add_argument("--output", "-o", default=None)
+    p.set_defaults(func=cmd_grpc_go_bindings)
     p = sub.add_parser("go-codegen", help="Generate Go code from a Freehold module")
     p.add_argument("file")
     p.add_argument("--output", "-o", default=None)
@@ -193,7 +209,7 @@ def main(argv=None):
     parser = build_parser(); args = parser.parse_args(argv)
     if args.version:
         print("Freehold CLI: toolchain frontend")
-        print("Commands: run, verify, test, ebnf, ast, grpc-proto, go-codegen, go-codegen-project")
+        print("Commands: run, verify, test, ebnf, ast, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project")
         return 0
     if not args.command:
         parser.print_help(); return 0

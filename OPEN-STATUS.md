@@ -17,7 +17,7 @@ Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V
 | Abort Handling | `OPEN-ABORT_HANDLING.md` | V1/V2/V3 implemented for declared aborts, propagation, and main rules. |
 | Control Flow Analyzer | `OPEN-CONTROL-FLOW-ANALISE.md` | V0 routine summaries plus abort/main formalization implemented; path-aware analysis parked. |
 | Structured Concurrency | `OPEN-CONCURRENT.md` | V1 async/await core, runtime types, channels, and structured scope lifetime rules implemented. |
-| gRPC IDL | `OPEN-GRPC.md` | V1 parser/AST/semantics, diagnostics, proto3 codegen, and artifacts implemented. |
+| gRPC IDL | `OPEN-GRPC.md` | V1 parser/AST/semantics, diagnostics, proto3 codegen, artifacts, and unary Go server binding generation implemented. |
 | Transport Scope Architecture | `OPEN-CONRURRENT-GRPC-WEBSOCKET-REST.md` | V1 architecture decision recorded: transport libs reuse common Concurrent.Scope. |
 | Generics | `OPEN-GENERICS.md` | V1b record and function generics implemented; codegen/inference/bounds parked. |
 
@@ -33,8 +33,8 @@ Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V
 
 Diese Themen sind absichtlich nicht Teil des aktuellen V1-Abschlusses:
 
-- gRPC Go server/client bindings from generated `.proto` files.
-- gRPC error/status-code mapping and schema-evolution rules such as `reserved proto`.
+- gRPC client bindings and explicit service implementation binding from generated `.proto` files.
+- gRPC custom error/status-code mapping and schema-evolution rules such as `reserved proto`.
 - gRPC streaming, cancellation, deadlines, metadata, and auth annotations.
 - Runtime execution for async tasks, executor scheduling, cancellation tokens, and channel runtime behavior.
 - Transport libraries for REST, WebSocket, SSE, and their ergonomic request/connection scopes.

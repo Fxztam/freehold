@@ -104,7 +104,7 @@ Fuer bewusst nicht unterstuetzte Beispiele prueft der Wrapper:
 Bewusst nicht unterstuetzte Go-Codegen-V1-Faelle bleiben als Smoke-Test wichtig. Aktuell abgedeckt:
 
 - User-Generics im Go-Codegen.
-- gRPC server/client Go-Bindings im allgemeinen Go-Codegen.
+- gRPC Service-Deklarationen im allgemeinen Go-Codegen; unary Server-Bindings laufen ueber den separaten `grpc-go-bindings`-Pfad.
 - Async/Scope Runtime im Go-Codegen.
 - Alte Concurrency/gRPC-Demo mit async/channel/runtime gaps.
 
@@ -112,7 +112,7 @@ Weiterhin geparkt fuer spaetere Unsupported- oder Positiv-Smokes:
 
 - Async/Channels/Scope Runtime als Positiv-Slice.
 - Generics-Monomorphisierung, falls sie in V2/V3 angegangen wird.
-- gRPC server/client bindings als V2/V3-Codegen-Pfad, sobald `.proto`-Codegen nicht mehr das Ende der V1-Linie ist.
+- gRPC client bindings, explizite Implementierungsbindung, custom status mapping und streaming als V2/V3-Codegen-Pfade.
 
 ## Akzeptanzkriterien
 
@@ -139,11 +139,11 @@ verify-additive-test-line.cmd
 
 - Policy-only/rejected V1-Pfade sind vor echten deferred Features abgesichert: `12_type_conflicts` hat Go-Codegen-Rejection-Cases fuer alle negativen Konflikt-Fixtures; `13_contract_blocks` ist fuer gueltige V1-Contracts positiv supported und fuer ungueltige Contract-Fixtures mit Go-Codegen-Rejection-Cases abgesichert; `22_generics` hat Unsupported-Cases fuer frontend-gueltige Generics und Rejection-Cases fuer ungueltige Generics.
 - Kleine deferred Codegen-Slices sind fuer V1 abgedeckt: `11_errors_results` Result-value-field-access, `18_string_templates` dynamische Formatargumente und `04_types` breitere User-Type-Alias-Kombinationen.
-- Grosse deferred Slices spaeter: `23_concurrency` Runtime/Channels/Scope, `24_grpc_idl` Go-gRPC bindings/status mapping/streaming, `21_abort_handling` breitere implication/Handler.
+- Grosse deferred Slices spaeter: `23_concurrency` Runtime/Channels/Scope, `24_grpc_idl` client bindings/implements/custom status mapping/streaming, `21_abort_handling` breitere implication/Handler.
 - Testmodus fuer Ausgabe-Regression ausweiten: Der Compiler-Example-Smoke schreibt fuer alte buildbare Examples sowie `05_runtime_builtins`, `07_complex_contracts`, `08_cross_module_type_composition`, `09_result_record_type_composition`, `10_result_record_contract_demo`, `11_result_array_record_payload`, `12_qualified_name_conflicts` und `13_control_flow_runtime_log` bereits `<module-name>.log` und vergleicht gegen `examples/expected_logs/<module-name>.expected.log`. Durch einfache Go-Runtime-Checks fuer `requires`/`ensures` sind nun auch die alten Contract-Beispiele Teil dieser Runtime-Flotte. Naechster Schritt ist, weitere neue `compiler_v1`-Examples mit bewusster Ausgabe in diesen Mechanismus aufzunehmen.
 - Weitere Cross-Module-Typkompositionen: Namenskonflikte und negative Result-/Import-Kontraktfaelle. Erste negative Result-`value.field`-Faelle sind in `13_contract_blocks` und `03_import_resolution` als additive Artefakte verankert; `Result<Array<Order, 2>, Error>` und qualifizierte gleichnamige Module sind als Compiler-V1-Smokes abgedeckt; doppelt exponierte Routinen, Records und Errors werden in `03_import_resolution` negativ abgesichert. Transitive gleichnamige Records/Errors in getrennten Importgraph-Aesten sind positiv in `import_transitive_name_conflicts` abgedeckt. Offen bleiben weitere komplexe Alias-Konflikte.
 - Async/Channels/Scope Runtime als spaeterer Positiv-Slice; ein Unsupported-Smoke dokumentiert die aktuelle Go-Codegen-Grenze.
-- gRPC server/client bindings als eigener V2/V3-Codegen-Pfad; der V1-Kern endet bei IDL-Verifikation, `.proto`-Output und Unsupported-Smoke fuer Go-Bindings.
+- gRPC server bindings haben einen ersten separaten unary `grpc-go-bindings`-Pfad; client bindings, explizite Implementierungsbindung, custom status mapping und streaming bleiben V2/V3.
 - Dynamische `String.template`-Formatargumente sind in `18_string_templates` fuer positionale, benannte und `Std.IO.logf`-Codegen-Pfade abgedeckt.
 - Abort breiter machen als spaeterer CFlow-/Proof-Slice: `21_abort_handling` deckt V1/V2-Propagation ab, breitere abort contract implication und Handler-Syntax bleiben geparkt.
 - Kleinere Goldens/Policies fuer `01_core`, `02_import`, `14_comments_whitespace` und `16_control_flow_edges` sind fuer V1 abgedeckt; bei `16_control_flow_edges` bleibt nur path-aware proof integration als spaeterer CFlow-Slice.

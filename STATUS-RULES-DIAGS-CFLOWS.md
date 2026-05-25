@@ -12,7 +12,7 @@ Dieser Status trennt drei Ebenen, die leicht verwechselt werden koennen:
 
 Direkt im Go-Code sind aktuell 23 Diagnostics/Parser-Regeln umgesetzt. Die komplette Spec ist groesser und wird ueber Python-Verifier, Expected-Manifests, Normalizer und Gates vollstaendig abgeglichen.
 
-Der Go-Parser ist bei Syntax/AST-Paritaet sehr weit: alle 322 Parser/AST-Vergleichsfaelle haben denselben Parser-Status wie DHParser; alle 277 parse-ok Faelle haben passende AST-Shape- und Semantic-AST-Artefakte. Der vollstaendige Language-Module-Gate steht aktuell bei 456/456.
+Der Go-Parser ist bei Syntax/AST-Paritaet sehr weit: alle 322 Parser/AST-Vergleichsfaelle haben denselben Parser-Status wie DHParser; alle 277 parse-ok Faelle haben passende AST-Shape- und Semantic-AST-Artefakte. Der vollstaendige Language-Module-Gate steht aktuell bei 457/457.
 
 ## Aktuelle Spec-Zahlen
 
@@ -144,8 +144,9 @@ Go-Codegen-Rejection-Beweise:
 - `22_generics` ist als policy-only/rejected V1-Pfad abgesichert: frontend-gueltige Generic-Fixtures muessen mit `FH-GOCODEGEN-0001` unsupported bleiben, ungueltige Generic-Fixtures muessen mit derselben Semantik-Diagnostic abbrechen, bevor Go-Output akzeptiert wird.
 - `04_types`, `11_errors_results` und `18_string_templates` sind fuer die kleinen deferred Go-Codegen-Slices positiv abgedeckt: breitere Alias-Kombinationen, Result-`value.field` und dynamische String-Template-Formate laufen ohne neue Spec-Diagnostics.
 - `21_abort_handling` hat mit V4a eine neue Python-Semantik-/CFlow-Regel: Statements nach garantiertem Exit werden ueber `VF-ABT010` / `FH-ABT-3010` abgelehnt.
+- `24_grpc_idl` hat einen separaten `grpc-go-bindings`-Codegen fuer unary Go-Server-Adapter und konservatives Status-Mapping. Der allgemeine `go-codegen-project`-Pfad lehnt Service-Deklarationen weiterhin als `FH-GOCODEGEN-0001` ab.
 - Fuer die Go-Codegen-Slices waren keine neuen `spec/freehold.diag`-, `spec/freehold.rules`- oder `spec/analyzer.cflow`-Eintraege noetig; die bestehenden Diagnostics wie `VF-N001`, `VF-ST002`, `VF-U008`, `VF-U009`, `VF-CT001`, `VF-CT002`, `VF-E001`, `VF-E002` und die `VF-GEN*`-Diagnostics bleiben die Quelle.
-- Aktueller Language-Module-Gate nach dieser Erweiterung: `456/456`.
+- Aktueller Language-Module-Gate nach dieser Erweiterung: `457/457`.
 
 ## Control Flow
 

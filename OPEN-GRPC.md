@@ -2,9 +2,9 @@
 
 Stand: 2026-05-24
 
-Status: V1 abgeschlossen; Go-Bindings, Streaming, Error-Mapping und Versionierung fuer V2/V3 geparkt
+Status: V1 IDL abgeschlossen; unary Go-Server-Bindings mit konservativem Status-Mapping gestartet; Client-Bindings, Streaming, explizite Implementierungsbindung, Custom Error-Mapping und Versionierung fuer V2/V3 geparkt
 
-Dieses Dokument haelt die erste Richtung zur Aufnahme von gRPC in Freehold fest. V1 ist bewusst klein: Records koennen stabile Protobuf-Field-IDs tragen, Services koennen unary RPC-Signaturen deklarieren, der Verifier prueft die IDL-Grundregeln, und ein erster Generator kann daraus proto3 ausgeben. Streaming, Error-Mapping, Versionierung und Go-Bindings bleiben vorbereitete Ausbauschritte.
+Dieses Dokument haelt die erste Richtung zur Aufnahme von gRPC in Freehold fest. V1 ist bewusst klein: Records koennen stabile Protobuf-Field-IDs tragen, Services koennen unary RPC-Signaturen deklarieren, der Verifier prueft die IDL-Grundregeln, und ein erster Generator kann daraus proto3 ausgeben. Ein V1a-Slice erzeugt zusaetzlich unary Go-Server-Bindings aus dem Service-AST. Streaming, explizite Implementierungsbindung, Custom Error-Mapping, Client-Bindings und Versionierung bleiben vorbereitete Ausbauschritte.
 
 ## Ausgangsfrage
 
@@ -50,12 +50,15 @@ V1 umfasst:
 - Python-, Go- und DHParser-Parsing fuer dieselbe Struktur
 - Semantik-Diagnostics fuer doppelte/ungueltige/fehlende Proto-IDs, unbekannte RPC-Typen und doppelte RPC-Namen
 - proto3-Codegen per `freehold grpc-proto <file>`
+- unary Go-Server-Binding-Codegen per `freehold grpc-go-bindings <file>`
+- konservatives Go-gRPC-Status-Mapping: vorhandene `status.Error` bleiben erhalten, `context.Canceled` wird `Canceled`, `context.DeadlineExceeded` wird `DeadlineExceeded`, sonst `Unknown`
 
 V1 umfasst ausdruecklich noch nicht:
 
-- Go-gRPC-Server- oder Client-Bindings
+- Go-gRPC-Client-Bindings
+- explizite Bindung von Service-RPCs an Freehold-Routinen
 - Streaming
-- Error-/Statuscode-Mapping
+- Custom Error-/Statuscode-Mapping fuer Freehold-`error`, `aborts` oder `Result<T, E>`
 - Import-/Package-Codegen ueber Modulgrenzen
 - Schema-Evolution-Diagnostics wie reservierte Field Numbers
 
@@ -92,7 +95,7 @@ Importierte Freehold-Records sollten spaeter als `.proto` imports erscheinen koe
 
 ### Freehold-zu-Go-Bindings
 
-V1 beschreibt nur die IDL. Spaeter braucht Freehold eine explizite Bindung von RPCs an Implementierungen, zum Beispiel als noch offene Designrichtung:
+V1 beschreibt die IDL; V1a erzeugt daraus einen Go-Server-Adapter, dessen Handler-Interface von handgeschriebenem oder spaeter generiertem Go-Code implementiert wird. Spaeter braucht Freehold eine explizite Bindung von RPCs an Implementierungen, zum Beispiel als noch offene Designrichtung:
 
 ```fh
 procedure get_user(request: UserRequest) returns UserReply
