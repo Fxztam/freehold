@@ -4,6 +4,8 @@ Stand: 2026-05-25
 
 Status: Compiler V1 Start-Slice plus Import-, Cross-Module-Call-, Cross-Module-Record-Type-, Cross-Module-Result-Error-Abort-, Cross-Module-Typkompositions-, Result-, Abort-, Multi-File-, Runtime-Builtin-, BigNumber-, Array- und Go-Projekt-Build-Slices implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
 
+Zusaetzlich ist der erste Go-native Semantikanker vorhanden: `go-frontend/internal/semantic` baut single-module Record-Symboltabellen aus dem Go-AST und validiert lokale Record-FieldAccess-Ausdruecke mit `FH-TYP-2101` und `FH-SEM-1105`. Importaufloesung, vollstaendige Typinferenz und positionsgenaue semantische Go-Diagnostics bleiben Folgeslices.
+
 Dieses Dokument legt die Leitplanken fuer die naechste Implementierungsphase fest: einen Go-Compiler fuer Freehold, der auf dem bestehenden Parser/AST/Verifier/Spec-Fundament aufsetzt. Wichtigste Vorgabe: Der Compiler darf das Freehold-Modularitaetskonzept nicht aufweichen. Codegen muss Modulgrenzen, Imports, Exposing-Regeln und qualifizierte Namen respektieren.
 
 Die konkrete Abschlussliste vor dem Compilerstart steht in `OPEN-BEFORE-GO-COMPILER.md`: proto Typ-Mapping, Schema-Evolution-Minimalregel, Generics-Codegen-Policy, Result/Abort-Semantik, Runtime-Builtins-Grenze und Syntax-Freeze.

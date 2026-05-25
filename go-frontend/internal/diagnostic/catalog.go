@@ -269,6 +269,26 @@ var catalog = map[string]Definition{
 		Message:  "Expected 'end case'.",
 		Hint:     "Close the case statement with 'end case'.",
 	},
+	"field_access_requires_record": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "type",
+		Code:     "FH-TYP-2101",
+		Number:   2101,
+		Name:     "field_access_requires_record",
+		Message:  "field access requires record",
+		Hint:     "Field access requires the value before the dot to be a record.",
+	},
+	"unknown_record_field": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1105",
+		Number:   1105,
+		Name:     "unknown_record_field",
+		Message:  "unknown record field",
+		Hint:     "A record literal or field access may only use fields declared by the record type.",
+	},
 	"expected_token": {
 		Severity: "error",
 		Phase:    "parse",
@@ -352,6 +372,14 @@ func MissingCaseEnd(found token.Token) *Diagnostic {
 	return fromCatalog("missing_end_case", found, []string{"end", "end case"})
 }
 
+func FieldAccessRequiresRecord(location Location, foundType string, field string) *Diagnostic {
+	return fromDefinition("field_access_requires_record", location, foundType, []string{"record before ." + field})
+}
+
+func UnknownRecordField(location Location, recordName string, field string) *Diagnostic {
+	return fromDefinition("unknown_record_field", location, field, []string{"declared field in " + recordName})
+}
+
 func MissingWhileInvariant(found token.Token) *Diagnostic {
 	return fromCatalog("missing_while_invariant", found, []string{"invariant"})
 }
@@ -422,6 +450,23 @@ func fromCatalog(name string, found token.Token, expected []string) *Diagnostic 
 		Location: Location{Line: found.Pos.Line, Column: found.Pos.Column, Offset: found.Pos.Offset},
 		Expected: expected,
 		Found:    foundText,
+		Hint:     def.Hint,
+	}
+}
+
+func fromDefinition(name string, location Location, found string, expected []string) *Diagnostic {
+	def := catalog[name]
+	return &Diagnostic{
+		Severity: def.Severity,
+		Phase:    def.Phase,
+		Category: def.Category,
+		Code:     def.Code,
+		Number:   def.Number,
+		Name:     def.Name,
+		Message:  def.Message,
+		Location: location,
+		Expected: expected,
+		Found:    found,
 		Hint:     def.Hint,
 	}
 }

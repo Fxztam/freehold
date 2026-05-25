@@ -10,7 +10,7 @@ Dieser Status trennt drei Ebenen, die leicht verwechselt werden koennen:
 
 ## Kurzfassung
 
-Direkt im Go-Code sind aktuell 23 Diagnostics/Parser-Regeln umgesetzt. Die komplette Spec ist groesser und wird ueber Python-Verifier, Expected-Manifests, Normalizer und Gates vollstaendig abgeglichen.
+Direkt im Go-Code sind aktuell 25 Diagnostics umgesetzt: 23 Syntax-/Parserdiagnostics und 2 semantische Record-FieldAccess-Diagnostics. Die komplette Spec ist groesser und wird ueber Python-Verifier, Expected-Manifests, Normalizer und Gates vollstaendig abgeglichen.
 
 Der Go-Parser ist bei Syntax/AST-Paritaet sehr weit: alle 322 Parser/AST-Vergleichsfaelle haben denselben Parser-Status wie DHParser; alle 277 parse-ok Faelle haben passende AST-Shape- und Semantic-AST-Artefakte. Der vollstaendige Language-Module-Gate steht aktuell bei 461/461.
 
@@ -43,16 +43,18 @@ Go-Datei:
 
 Aktueller Go-Diagnostic-Catalog:
 
-- Catalog-Eintraege: `23`
+- Catalog-Eintraege: `25`
 - davon `FH-SYN-*`: `23`
-- davon alle `FH-*`: `23`
+- davon `FH-TYP-*`: `1`
+- davon `FH-SEM-*`: `1`
+- davon alle `FH-*`: `25`
 
-Damit sind im Go-Code direkt vor allem Syntax-/Parserdiagnostics umgesetzt. Das entspricht dem Go-Parser/Go-AST-Frontend, nicht dem kompletten Semantiksystem.
+Damit sind im Go-Code direkt vor allem Syntax-/Parserdiagnostics umgesetzt. Neu ist ein erster Go-native Semantikanker fuer single-module Record-FieldAccess; das ist noch kein komplettes Semantiksystem.
 
 Einordnung gegen die Spec:
 
-- `23/114` Diagnostic-Specs direkt im Go-Catalog.
-- grob die `parse_syntax`-Schicht aus `freehold.rules`, also `23/115` Rules/Emits direkt im Go-Frontend.
+- `25/114` Diagnostic-Specs direkt im Go-Catalog.
+- grob die `parse_syntax`-Schicht aus `freehold.rules` plus zwei Record-FieldAccess-Semantikdiagnostics, also `25/115` Rules/Emits direkt im Go-Frontend.
 - Semantik-, Typ-, Contract-, Abort-, Concurrency-, Generic-, JSON-, Record- und gRPC-Diagnostics sind aktuell nicht als kompletter Go-Verifier umgesetzt.
 
 ## Go-Parser- und AST-Abdeckung
@@ -149,6 +151,16 @@ Go-Codegen-Rejection-Beweise:
 - Fuer die Go-Codegen-Slices waren keine neuen `spec/freehold.diag`-, `spec/freehold.rules`- oder `spec/analyzer.cflow`-Eintraege noetig; die bestehenden Diagnostics wie `VF-N001`, `VF-ST002`, `VF-U008`, `VF-U009`, `VF-CT001`, `VF-CT002`, `VF-E001`, `VF-E002` und die `VF-GEN*`-Diagnostics bleiben die Quelle.
 - Aktueller Language-Module-Gate nach dieser Erweiterung: `461/461`.
 
+## Go-Native Semantik V0
+
+Erster Go-native Semantikanker:
+
+- Paket: `go-frontend/internal/semantic`
+- SymbolTable V0 sammelt single-module Record-Typen und deren Felder aus dem Go-AST.
+- `ValidateModule` prueft lokale Routine-Parameter, `let`-Bindings und verschachtelte FieldAccess-Ausdruecke.
+- Abgedeckte Diagnostics: `FH-TYP-2101 field_access_requires_record` und `FH-SEM-1105 unknown_record_field`.
+- Bewusste Grenze: keine Importaufloesung, keine vollstaendige Typinferenz, keine AST-Source-Positionen fuer semantische Diagnostics.
+
 ## Control Flow
 
 Direkter Go-Control-Flow-Analyzer:
@@ -187,9 +199,9 @@ Der neue Unsupported-Smoke fuer Async/Scope aendert diese Einordnung nicht: Er b
 ## Aktuelle Einschaetzung
 
 - Go Parser / AST / Syntax-Diagnostics: sehr weit, gruen gegen die 322 Parser/AST-Vergleichsfaelle.
-- Go Diagnostic Catalog: `23/114` Diagnostic-Specs direkt in Go, alle Syntax.
-- `freehold.rules` direkt in Go: grob `23/115` Rules/Emits, also die Parser-/Syntax-Schicht.
-- Semantik-Regeln: Python-seitig gruen abgeglichen, noch nicht Go-native.
+- Go Diagnostic Catalog: `25/114` Diagnostic-Specs direkt in Go, davon 23 Syntax und 2 Record-FieldAccess-Semantik.
+- `freehold.rules` direkt in Go: grob `25/115` Rules/Emits, also die Parser-/Syntax-Schicht plus erster Record-FieldAccess-Semantikanker.
+- Semantik-Regeln: Python-seitig gruen abgeglichen; Go-native V0 existiert fuer single-module Record-FieldAccess, der Rest ist noch nicht Go-native.
 - Control Flow: Python V0 vorhanden, Go-native Control Flow noch offen.
 
 ## Praktische Konsequenz
@@ -197,7 +209,7 @@ Der neue Unsupported-Smoke fuer Async/Scope aendert diese Einordnung nicht: Er b
 Wenn der Go-Frontend-Pfad Richtung Bootstrap wachsen soll, sind die naechsten grossen Portierungsbloecke:
 
 1. Semantic-Diagnostic/Rule-Engine oder gezielte Go-Verifier-Slices.
-2. Go-native Symboltabellen und Typkontext.
+2. Go-native Symboltabellen und Typkontext ueber Record-FieldAccess V0 hinaus.
 3. Go-native Routine-/Call-/Import-Semantik.
 4. Go-native Control-Flow-V0 analog `freehold/core/control_flow.py`.
 5. Danach Result-/Scope-/Abort-CFlow-Erweiterungen.
