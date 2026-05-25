@@ -84,6 +84,16 @@ Example:
     import Banking.Proofs exposing balance_never_negative, transfer_preserves_total
 """
 
+IMPORT_AMBIGUOUS_EXPOSING_HINT = """A symbol exposed into the local namespace must come from exactly one imported module.
+
+Use qualified imports when two modules intentionally export the same name.
+
+Example:
+    import Domestic.Orders
+    import Partner.Orders
+    call Domestic.Orders.load_order(1)
+"""
+
 IMPORT_NAME_HINT = """An import declaration must name the module to import.
 
 Example:
@@ -831,6 +841,11 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         symbol_name, module_name = duplicate_exposing_match.groups()
         return Diagnostic("VF-I003", "duplicate exposing symbol", line, column, symbol_name, f"unique symbol in import {module_name}", IMPORT_DUPLICATE_EXPOSING_HINT, phase="semantic")
+    ambiguous_exposing_match = re.search(r"ambiguous exposed symbol ([A-Za-z_][A-Za-z0-9_]*): ([A-Za-z_][A-Za-z0-9_.]*) and ([A-Za-z_][A-Za-z0-9_.]*)", message)
+    if ambiguous_exposing_match:
+        line, column = _source_position_from_message(message)
+        symbol_name, first_module, second_module = ambiguous_exposing_match.groups()
+        return Diagnostic("VF-I006", "ambiguous exposed symbol", line, column, symbol_name, f"unique symbol from either {first_module} or {second_module}", IMPORT_AMBIGUOUS_EXPOSING_HINT, phase="semantic")
     module_not_found_match = re.search(r"imported module not found: ([A-Za-z_][A-Za-z0-9_.]*)", message)
     if module_not_found_match:
         line, column = _source_position_from_message(message)

@@ -905,10 +905,25 @@ class Verifier:
 class Ctx:
     def __init__(self, module_name, types, records, generic_records, errors, routines, imports=None, imported_modules=None):
         self.module_name=module_name; self.types=types; self.records=records; self.generic_records=generic_records; self.errors=errors; self.routines=routines
-        self.imports=imports or []; self.imported_modules=imported_modules or {}; self.exposed_routines=self.build_exposed_routines()
+        self.imports=imports or []; self.imported_modules=imported_modules or {}; self.validate_exposing_conflicts(); self.exposed_routines=self.build_exposed_routines()
         self.add_exposed_types_records_and_errors()
         self.current_routine=None; self.current_type_params=set(); self.current_async=False
         self.scope_vars=set(); self.scope_handles={}
+
+    def validate_exposing_conflicts(self) -> None:
+        exposed_modules: dict[str, str] = {}
+        for import_decl in self.imports:
+            imported = self.imported_modules.get(import_decl.module_name)
+            if imported is None:
+                continue
+            exported = set(imported.routines) | set(imported.types) | set(imported.records) | set(imported.errors)
+            for symbol_name in import_decl.exposing:
+                if symbol_name not in exported:
+                    continue
+                previous_module = exposed_modules.get(symbol_name)
+                if previous_module is not None and previous_module != import_decl.module_name:
+                    raise TypeCheckError(f"{import_decl.pos.text()}: ambiguous exposed symbol {symbol_name}: {previous_module} and {import_decl.module_name}")
+                exposed_modules[symbol_name] = import_decl.module_name
 
     def build_exposed_routines(self):
         exposed = {}

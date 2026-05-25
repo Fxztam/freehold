@@ -25,6 +25,7 @@ CODE_MAP = {
     "VF-I001": ("FH-SEM-1001", 1001, "module_self_import", "semantic"),
     "VF-I002": ("FH-SEM-1002", 1002, "duplicate_import", "semantic"),
     "VF-I003": ("FH-SEM-1003", 1003, "duplicate_exposing_symbol", "semantic"),
+    "VF-I006": ("FH-SEM-1005", 1005, "ambiguous_exposed_symbol", "semantic"),
     "VF-N002": ("FH-SEM-1004", 1004, "reserved_keyword_name", "semantic"),
     "VF-T001": ("FH-TYP-2001", 2001, "duplicate_type_declaration", "type"),
     "VF-T002": ("FH-TYP-2002", 2002, "builtin_type_redefinition", "type"),

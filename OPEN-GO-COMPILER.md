@@ -49,7 +49,8 @@ Direkt offen fuer die naechsten Compiler-Slices:
     - Der natuerliche Cross-Module-Typen-Slice fuer V1 ist erledigt: Records, Errors, Results und Aborts stehen ueber Paketgrenzen.
     - Der erste Kombinationsfall `Result<Array<imported Record>, imported Error>` plus importierter Abort-Call ist vorhanden; `11_result_array_record_payload` sichert den `Result<Array<Order, 2>, Error>`-Payload als Compiler-Smoke mit Runtime-Log ab.
     - `12_qualified_name_conflicts` sichert gleichnamige Records, Errors und Routinen in zwei importierten Modulen als qualifizierten Compiler-Smoke ab.
-    - Noch zu haerten sind weitere kombinierte Faelle wie `Array<imported Record>` als direkte Signatur, verschachtelte importierte Typen in Records/Results sowie negative/exposing-Konflikt-Kombinationen.
+    - Doppelt exponierte Routinen, Records und Errors werden als negative Import-Konfliktfaelle mit `VF-I006` abgesichert.
+    - Noch zu haerten sind weitere kombinierte Faelle wie `Array<imported Record>` als direkte Signatur, verschachtelte importierte Typen in Records/Results sowie komplexere Alias-/Transitiv-Konflikte.
     - Spaetere Domain-Bloecke wie JSON/gRPC muessen diese Cross-Module-Typen gezielt wiederverwenden statt eigene Sonderpfade einzufuehren.
 
 2. Result value field access

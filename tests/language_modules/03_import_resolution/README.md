@@ -27,6 +27,7 @@ VF-M002 imported file module name mismatch
 VF-M003 imported module has syntax error
 VF-M004 exposed symbol not found
 VF-M005 cyclic import
+VF-I006 ambiguous exposed symbol
 ```
 
 Planned resolver responsibilities:
@@ -38,6 +39,7 @@ Verify imported module file envelope
 Compare declared module name with expected import name
 Check exposing symbols
 Detect import cycles
+Reject ambiguous symbols exposed from multiple imports
 ```
 
 Fixture layout:
@@ -51,6 +53,9 @@ fixtures/
   invalid/imported_module_syntax_error/
   invalid/exposed_symbol_not_found/
   invalid/cyclic_import/
+  invalid/ambiguous_exposed_routine/
+  invalid/ambiguous_exposed_record/
+  invalid/ambiguous_exposed_error/
 ```
 
 Run this module with:
