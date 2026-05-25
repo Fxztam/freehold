@@ -168,9 +168,27 @@
     {
       "module": "13_contract_blocks",
       "title": "Routine contract blocks",
-      "status": "rejected",
-      "summary": "Runtime contract enforcement is not part of Go codegen V1.",
-      "rejected_reason": "requires/ensures are verifier-side for V1"
+      "status": "supported",
+      "summary": "Valid routine contracts are emitted as Go runtime checks for covered V1 shapes, while invalid contract fixtures are exercised through the Go codegen entry point and must fail before Go output is accepted.",
+      "supported_cases": [
+        "function requires go codegen",
+        "function ensures result go codegen",
+        "procedure contracts go codegen",
+        "Result value ensures go codegen",
+        "Result value field ensures go codegen"
+      ],
+      "rejected_cases": [
+        "requires must be Boolean rejected by go codegen",
+        "ensures must be Boolean rejected by go codegen",
+        "requires cannot use result rejected by go codegen",
+        "requires cannot use success rejected by go codegen",
+        "comma requires points at failing item rejected by go codegen",
+        "non-Result ensures cannot use success rejected by go codegen",
+        "Result value contract type mismatch rejected by go codegen",
+        "Result value field on scalar rejected by go codegen",
+        "Result value field unknown field rejected by go codegen",
+        "ensures before requires rejected by go codegen"
+      ]
     },
     {
       "module": "14_comments_whitespace",

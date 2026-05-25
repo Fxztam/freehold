@@ -140,8 +140,9 @@ Das bedeutet: Die volle Diagnostic-/Rule-Spec ist aktuell gruen abgeglichen, abe
 Go-Codegen-Rejection-Beweise:
 
 - `12_type_conflicts` ist als policy-only/rejected V1-Pfad abgesichert: alle negativen Konflikt-Fixtures laufen zusaetzlich durch den Go-Codegen-Einstieg und muessen mit derselben Verifier-Diagnostic abbrechen, bevor Go-Output akzeptiert wird.
-- Dafuer waren keine neuen `spec/freehold.diag`-, `spec/freehold.rules`- oder `spec/analyzer.cflow`-Eintraege noetig; die bestehenden Diagnostics wie `VF-N001`, `VF-ST002`, `VF-U008` und `VF-U009` bleiben die Quelle.
-- Aktueller Language-Module-Gate nach dieser Erweiterung: `421/421`.
+- `13_contract_blocks` ist nicht mehr pauschal policy-only/rejected: gueltige V1-Contract-Formen werden als Go-Runtime-Checks emittiert, ungueltige Contract-Fixtures laufen zusaetzlich durch den Go-Codegen-Einstieg und muessen mit derselben Syntax-/Semantik-Diagnostic abbrechen, bevor Go-Output akzeptiert wird.
+- Dafuer waren keine neuen `spec/freehold.diag`-, `spec/freehold.rules`- oder `spec/analyzer.cflow`-Eintraege noetig; die bestehenden Diagnostics wie `VF-N001`, `VF-ST002`, `VF-U008`, `VF-U009`, `VF-CT001`, `VF-CT002`, `VF-E001` und `VF-E002` bleiben die Quelle.
+- Aktueller Language-Module-Gate nach dieser Erweiterung: `431/431`.
 
 ## Control Flow
 

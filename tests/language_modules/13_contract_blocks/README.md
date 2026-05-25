@@ -14,3 +14,11 @@ VF-CT002 Result contract expression outside Result ensures
 VF-E001 unknown variable
 VF-E002 comparison type mismatch
 ```
+
+Go codegen V1 policy:
+
+```text
+valid covered contract shapes are emitted as Go runtime checks
+invalid contract fixtures are also run through the Go codegen entry point
+the expected outcome for invalid fixtures is the same syntax/semantic diagnostic before any Go output is accepted
+```
