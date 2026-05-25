@@ -1,0 +1,18 @@
+module App.Main
+
+import Std.IO
+import Domain.Shipments exposing MissingShipment, load_shipment
+import Domain.Types exposing Shipment
+
+procedure main()
+is
+    let outcome: Result<Shipment, MissingShipment> = load_shipment(77)
+    let shipment: Shipment = outcome.value
+    check shipment.recipient.address.zone_id = shipment.destination.zone_id
+    call Std.IO.logf("shipment id = ${}", shipment.id)
+    call Std.IO.logf("recipient = ${}", shipment.recipient.name)
+    call Std.IO.logf("zone = ${}", shipment.destination.zone_id)
+    call Std.IO.logf("destination = ${}", shipment.destination.label)
+end main
+
+end App.Main

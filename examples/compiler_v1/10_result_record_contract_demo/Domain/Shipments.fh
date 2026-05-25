@@ -1,0 +1,21 @@
+module Domain.Shipments
+
+import Domain.Types exposing Place, Recipient, Shipment, make_place, make_recipient, make_shipment
+
+error MissingShipment
+
+function build_shipment(id: Integer) returns Shipment
+is
+    let destination: Place = make_place(42, "Berlin")
+    let recipient: Recipient = make_recipient(501, "Mira", destination)
+    return make_shipment(id, recipient, destination)
+end build_shipment
+
+function load_shipment(id: Integer) returns Result<Shipment, MissingShipment>
+requires id > 0
+ensures success, value.id = id, value.recipient.address.zone_id = value.destination.zone_id
+is
+    return ok build_shipment(id)
+end load_shipment
+
+end Domain.Shipments

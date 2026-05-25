@@ -1,0 +1,35 @@
+module Domain.Types
+
+type Place is record
+    zone_id: Integer
+    label: String
+end record
+
+type Recipient is record
+    id: Integer
+    name: String
+    address: Place
+end record
+
+type Shipment is record
+    id: Integer
+    recipient: Recipient
+    destination: Place
+end record
+
+function make_place(zone_id: Integer, label: String) returns Place
+is
+    return Place { zone_id: zone_id, label: label }
+end make_place
+
+function make_recipient(id: Integer, name: String, address: Place) returns Recipient
+is
+    return Recipient { id: id, name: name, address: address }
+end make_recipient
+
+function make_shipment(id: Integer, recipient: Recipient, destination: Place) returns Shipment
+is
+    return Shipment { id: id, recipient: recipient, destination: destination }
+end make_shipment
+
+end Domain.Types
