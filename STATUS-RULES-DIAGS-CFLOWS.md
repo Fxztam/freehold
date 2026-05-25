@@ -137,6 +137,12 @@ Mismatching semantic diagnostics: 0
 
 Das bedeutet: Die volle Diagnostic-/Rule-Spec ist aktuell gruen abgeglichen, aber nicht vollstaendig in Go implementiert. Der vollstaendige Semantikpfad laeuft noch ueber den Python-Verifier plus Normalizer/Manifests.
 
+Go-Codegen-Rejection-Beweise:
+
+- `12_type_conflicts` ist als policy-only/rejected V1-Pfad abgesichert: alle negativen Konflikt-Fixtures laufen zusaetzlich durch den Go-Codegen-Einstieg und muessen mit derselben Verifier-Diagnostic abbrechen, bevor Go-Output akzeptiert wird.
+- Dafuer waren keine neuen `spec/freehold.diag`-, `spec/freehold.rules`- oder `spec/analyzer.cflow`-Eintraege noetig; die bestehenden Diagnostics wie `VF-N001`, `VF-ST002`, `VF-U008` und `VF-U009` bleiben die Quelle.
+- Aktueller Language-Module-Gate nach dieser Erweiterung: `421/421`.
+
 ## Control Flow
 
 Direkter Go-Control-Flow-Analyzer:
@@ -173,7 +179,7 @@ Der neue Unsupported-Smoke fuer Async/Scope aendert diese Einordnung nicht: Er b
 ## Aktuelle Einschaetzung
 
 - Go Parser / AST / Syntax-Diagnostics: sehr weit, gruen gegen die 319 Language-Module-Faelle.
-- Go Diagnostic Catalog: `23/111` Diagnostic-Specs direkt in Go, alle Syntax.
+- Go Diagnostic Catalog: `23/112` Diagnostic-Specs direkt in Go, alle Syntax.
 - `freehold.rules` direkt in Go: grob `23/113` Rules/Emits, also die Parser-/Syntax-Schicht.
 - Semantik-Regeln: Python-seitig gruen abgeglichen, noch nicht Go-native.
 - Control Flow: Python V0 vorhanden, Go-native Control Flow noch offen.
