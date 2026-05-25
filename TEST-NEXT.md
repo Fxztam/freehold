@@ -78,6 +78,11 @@ Fuer bewusst nicht unterstuetzte Beispiele prueft der Wrapper:
    - verschachtelte Feldzugriffe und Array-Indexzugriffe in `App.Main`
    - Runtime-Smoke fuehrt `main()` aus und vergleicht die Ausgabe
 
+9. `09_result_record_type_composition`
+   - importierte verschachtelte Records als `Result<Order, Error>`-Payload
+   - `ensures value...` ueber verschachtelte Record-Felder
+   - Runtime-Smoke fuehrt `main()` aus und vergleicht die Ausgabe
+
 ## Unsupported-Smokes
 
 Bewusst nicht unterstuetzte Go-Codegen-V1-Faelle bleiben als Smoke-Test wichtig. Aktuell abgedeckt:
@@ -115,8 +120,8 @@ verify-additive-test-line.cmd
 
 ## Naechste sinnvolle Erweiterungen
 
-- Testmodus fuer Ausgabe-Regression ausweiten: Der Compiler-Example-Smoke schreibt fuer alte buildbare Examples sowie `07_complex_contracts` und `08_cross_module_type_composition` bereits `<module-name>.log` und vergleicht gegen `examples/expected_logs/<module-name>.expected.log`. Durch einfache Go-Runtime-Checks fuer `requires`/`ensures` sind nun auch die alten Contract-Beispiele Teil dieser Runtime-Flotte. Naechster Schritt ist, weitere neue `compiler_v1`-Examples mit bewusster Ausgabe in diesen Mechanismus aufzunehmen.
-- Weitere Cross-Module-Typkompositionen: verschachtelte importierte `Result`-Records und Namenskonflikte.
+- Testmodus fuer Ausgabe-Regression ausweiten: Der Compiler-Example-Smoke schreibt fuer alte buildbare Examples sowie `07_complex_contracts`, `08_cross_module_type_composition` und `09_result_record_type_composition` bereits `<module-name>.log` und vergleicht gegen `examples/expected_logs/<module-name>.expected.log`. Durch einfache Go-Runtime-Checks fuer `requires`/`ensures` sind nun auch die alten Contract-Beispiele Teil dieser Runtime-Flotte. Naechster Schritt ist, weitere neue `compiler_v1`-Examples mit bewusster Ausgabe in diesen Mechanismus aufzunehmen.
+- Weitere Cross-Module-Typkompositionen: Namenskonflikte und negative Result-/Import-Kontraktfaelle.
 - Async/Channels/Scope Runtime als Unsupported-Smoke oder spaeterer Positiv-Slice.
 - gRPC server/client bindings als eigener V2/V3-Codegen-Pfad.
 - Go-native Semantik-/CFlow-Slices Richtung Bootstrap.

@@ -1,0 +1,133 @@
+{
+  "declarations": [
+    {
+      "fields": [
+        {
+          "name": "city_id",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Integer"
+        }
+      ],
+      "name": "Address",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Integer"
+        },
+        {
+          "name": "address",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Address"
+        }
+      ],
+      "name": "Customer",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "name": "NotFound",
+      "node": "ErrorDecl"
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "args": [
+                {
+                  "expr": {
+                    "node": "NumberExpr",
+                    "value": 1
+                  },
+                  "name": "id",
+                  "node": "NamedArg"
+                },
+                {
+                  "expr": {
+                    "args": [
+                      {
+                        "expr": {
+                          "node": "NumberExpr",
+                          "value": 42
+                        },
+                        "name": "city_id",
+                        "node": "NamedArg"
+                      }
+                    ],
+                    "node": "RecordLiteralExpr",
+                    "type_name": "Address"
+                  },
+                  "name": "address",
+                  "node": "NamedArg"
+                }
+              ],
+              "node": "RecordLiteralExpr",
+              "type_name": "Customer"
+            },
+            "node": "ReturnOk"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "name": "success",
+          "node": "SpecialResultExpr"
+        },
+        {
+          "left": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "value",
+              "id"
+            ]
+          },
+          "node": "BinaryExpr",
+          "op": "=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 1
+          }
+        },
+        {
+          "left": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "value",
+              "address",
+              "city_id"
+            ]
+          },
+          "node": "BinaryExpr",
+          "op": "=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 42
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "load",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": {
+        "error_type": "NotFound",
+        "node": "ResultTypeName",
+        "ok_type": {
+          "name": "Customer",
+          "node": "TypeName"
+        }
+      }
+    }
+  ],
+  "imports": [],
+  "module_name": "ResultValueFieldEnsures",
+  "node": "Program"
+}

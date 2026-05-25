@@ -1,0 +1,18 @@
+module App.Main
+
+import Std.IO
+import Domain.Orders exposing NotFound, build_order, load_order
+import Domain.Types exposing Order
+
+procedure main()
+is
+    let outcome: Result<Order, NotFound> = load_order(9001)
+    let order: Order = build_order(9001)
+    check outcome.value.customer.address.city_id = outcome.value.destination.city_id
+    call Std.IO.logf("order id = ${}", order.id)
+    call Std.IO.logf("customer city = ${}", order.customer.address.city_id)
+    call Std.IO.logf("destination = ${}", order.destination.label)
+    check order.customer.address.city_id = order.destination.city_id
+end main
+
+end App.Main

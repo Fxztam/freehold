@@ -1,0 +1,22 @@
+module ResultValueFieldEnsures
+
+type Address is record
+    city_id: Integer
+end record
+
+type Customer is record
+    id: Integer
+    address: Address
+end record
+
+error NotFound
+
+function load() returns Result<Customer, NotFound>
+ensures success
+ensures value.id = 1
+ensures value.address.city_id = 42
+is
+    return ok Customer { id: 1, address: Address { city_id: 42 } }
+end load
+
+end ResultValueFieldEnsures

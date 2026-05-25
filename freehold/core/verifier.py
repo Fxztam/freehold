@@ -447,10 +447,24 @@ class Verifier:
         root = path[0]
         if root == "result" and allow_result and result_type is not None:
             t = result_type
+        elif root == "value" and allow_result and isinstance(result_type, ResultTypeName):
+            t = result_type.ok_type
+        elif root == "error" and allow_result and isinstance(result_type, ResultTypeName):
+            t = TypeName(result_type.error_type)
+        elif root in {"result", "value", "error"}:
+            raise TypeCheckError(f"{pos.text()}: Result contract expression {root} is only available in ensures")
         else:
             if root not in env: raise TypeCheckError(f"{pos.text()}: unknown record variable: {root}")
             t = env[root]
         for field in path[1:]:
+            if isinstance(t, ResultTypeName):
+                if field == "value":
+                    t = t.ok_type
+                    continue
+                if field == "error":
+                    t = TypeName(t.error_type)
+                    continue
+                raise TypeCheckError(f"{pos.text()}: unknown Result field {field}")
             if not isinstance(t, TypeName) or t.name not in ctx.records:
                 raise TypeCheckError(f"{pos.text()}: field access requires record before .{field}, got {type_to_string(t)}")
             rec = ctx.records[t.name]

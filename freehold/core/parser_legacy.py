@@ -235,11 +235,15 @@ class AstBuilder:
         if tree.data == "false": return BoolExpr(False, pos(tree))
         if tree.data in ("success","failure","result_value","result_error_value"):
             return SpecialResultExpr({"success":"success","failure":"failure","result_value":"value","result_error_value":"error"}[tree.data], pos(tree))
+        if tree.data == "result_var": return VarExpr("result", pos(tree))
         if tree.data == "var": return VarExpr(str(tree.children[0]), pos(tree))
         if tree.data == "field_access":
             # child is field_path, which contains all NAME tokens in order
             p = tree.children[0]
             return FieldAccessExpr([str(x) for x in p.children], pos(tree))
+        if tree.data in ("result_field_access", "result_value_field_access", "result_error_field_access"):
+            root = {"result_field_access": "result", "result_value_field_access": "value", "result_error_field_access": "error"}[tree.data]
+            return FieldAccessExpr([root] + [str(x) for x in tree.children], pos(tree))
         if tree.data == "function_call":
             fn_name = self.qualified_name(tree.children[0]) if isinstance(tree.children[0], Tree) else str(tree.children[0])
             type_args = None
