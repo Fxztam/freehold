@@ -160,6 +160,7 @@ Erster Go-native Semantikanker:
 - `ValidateModule` prueft lokale Routine-Parameter, `let`-Bindings und verschachtelte FieldAccess-Ausdruecke.
 - Abgedeckte Diagnostics: `FH-TYP-2101 field_access_requires_record` und `FH-SEM-1105 unknown_record_field`.
 - Relevante Go-AST-Decl-/Stmt-/Expr-Knoten tragen interne Source-Positionen (`json:"-"`), sodass Go-native Semantic-Diagnostics positionsgenau sein koennen, ohne AST-JSON-Goldens zu veraendern.
+- Der Parser-CLI `go-parse-tests-language-modules` kann den Analyzer optional mit `--semantic` nach erfolgreichem Parse ausfuehren. `verify-go-semantic-diagnostics.cmd` schreibt temporaere Artefakte nach `.tmp/go-semantic` und vergleicht nur die zwei V0-Diagnostics gegen `tests/language_modules/expected_go_semantic_diagnostics.json`.
 - Bewusste Grenze: keine Importaufloesung und keine vollstaendige Typinferenz.
 
 ## Control Flow

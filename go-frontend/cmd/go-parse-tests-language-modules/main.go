@@ -12,19 +12,23 @@ import (
 	"freehold-go-frontend/internal/diagnostic"
 	"freehold-go-frontend/internal/lexer"
 	"freehold-go-frontend/internal/parser"
+	"freehold-go-frontend/internal/semantic"
 	"freehold-go-frontend/internal/token"
 )
 
 type ParseResult struct {
-	SourceFile    string                   `json:"source_file"`
-	SourceSnippet string                   `json:"source_snippet"`
-	ModuleName    string                   `json:"module_name"`
-	CaseKind      string                   `json:"case_kind"`
-	ParseOK       bool                     `json:"parse_ok"`
-	AST           interface{}              `json:"ast,omitempty"`
-	Error         string                   `json:"error,omitempty"`
-	Diagnostic    *diagnostic.Diagnostic   `json:"diagnostic,omitempty"`
-	Diagnostics   []*diagnostic.Diagnostic `json:"diagnostics,omitempty"`
+	SourceFile          string                   `json:"source_file"`
+	SourceSnippet       string                   `json:"source_snippet"`
+	ModuleName          string                   `json:"module_name"`
+	CaseKind            string                   `json:"case_kind"`
+	ParseOK             bool                     `json:"parse_ok"`
+	SemanticRun         bool                     `json:"semantic_run,omitempty"`
+	SemanticOK          *bool                    `json:"semantic_ok,omitempty"`
+	AST                 interface{}              `json:"ast,omitempty"`
+	Error               string                   `json:"error,omitempty"`
+	Diagnostic          *diagnostic.Diagnostic   `json:"diagnostic,omitempty"`
+	Diagnostics         []*diagnostic.Diagnostic `json:"diagnostics,omitempty"`
+	SemanticDiagnostics []*diagnostic.Diagnostic `json:"semantic_diagnostics,omitempty"`
 }
 
 type RunSummary struct {
@@ -47,6 +51,7 @@ type ParseFailure struct {
 func main() {
 	stopAfterFirst := flag.Bool("stop-after-first", false, "stop after the first parsed test case")
 	outRoot := flag.String("out", "", "write JSON results under this directory instead of next to the language module tests")
+	runSemantic := flag.Bool("semantic", false, "run the narrow Go-native semantic analyzer after successful parse")
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -105,14 +110,14 @@ func main() {
 			for _, file := range files {
 				total++
 
-				result := parseFile(file, moduleName, caseKind)
+				result := parseFile(file, moduleName, caseKind, *runSemantic)
 
 				base := strings.TrimSuffix(filepath.Base(file), filepath.Ext(file))
 				outFile := filepath.Join(outDir, base+".json")
 
 				writeJSON(outFile, result)
 
-				if result.ParseOK {
+				if result.ParseOK && (!result.SemanticRun || (result.SemanticOK != nil && *result.SemanticOK)) {
 					okCount++
 					fmt.Println("OK   ", moduleName, caseKind, filepath.Base(file))
 				} else {
@@ -154,11 +159,12 @@ func outputDir(outRoot string, modulePath string, moduleName string, caseKind st
 	return filepath.Join(modulePath, "go-generated-ast", caseKind)
 }
 
-func parseFile(file string, moduleName string, caseKind string) (result ParseResult) {
+func parseFile(file string, moduleName string, caseKind string, runSemantic bool) (result ParseResult) {
 	result = ParseResult{
-		SourceFile: file,
-		ModuleName: moduleName,
-		CaseKind:   caseKind,
+		SourceFile:  file,
+		ModuleName:  moduleName,
+		CaseKind:    caseKind,
+		SemanticRun: runSemantic,
 	}
 
 	defer func() {
@@ -223,6 +229,16 @@ func parseFile(file string, moduleName string, caseKind string) (result ParseRes
 
 	result.ParseOK = true
 	result.AST = mod
+	if runSemantic {
+		result.SemanticDiagnostics = semantic.ValidateModule(mod)
+		semanticOK := len(result.SemanticDiagnostics) == 0
+		result.SemanticOK = &semanticOK
+		if !semanticOK {
+			result.Diagnostic = result.SemanticDiagnostics[0]
+			result.Diagnostics = result.SemanticDiagnostics
+			result.Error = result.SemanticDiagnostics[0].Error()
+		}
+	}
 
 	return result
 }
