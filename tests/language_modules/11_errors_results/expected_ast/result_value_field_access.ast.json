@@ -1,0 +1,164 @@
+{
+  "declarations": [
+    {
+      "fields": [
+        {
+          "name": "city_id",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Integer"
+        }
+      ],
+      "name": "Address",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Integer"
+        },
+        {
+          "name": "address",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Address"
+        }
+      ],
+      "name": "Customer",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "name": "NotFound",
+      "node": "ErrorDecl"
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "args": [
+                {
+                  "expr": {
+                    "node": "NumberExpr",
+                    "value": 1
+                  },
+                  "name": "id",
+                  "node": "NamedArg"
+                },
+                {
+                  "expr": {
+                    "args": [
+                      {
+                        "expr": {
+                          "node": "NumberExpr",
+                          "value": 42
+                        },
+                        "name": "city_id",
+                        "node": "NamedArg"
+                      }
+                    ],
+                    "node": "RecordLiteralExpr",
+                    "type_name": "Address"
+                  },
+                  "name": "address",
+                  "node": "NamedArg"
+                }
+              ],
+              "node": "RecordLiteralExpr",
+              "type_name": "Customer"
+            },
+            "node": "ReturnOk"
+          }
+        }
+      ],
+      "ensures": [],
+      "kind": "function",
+      "name": "load",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": {
+        "error_type": "NotFound",
+        "node": "ResultTypeName",
+        "ok_type": {
+          "name": "Customer",
+          "node": "TypeName"
+        }
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "args": [],
+            "name": "load",
+            "node": "CallExpr"
+          },
+          "name": "loaded",
+          "node": "LetStmt",
+          "type_ref": {
+            "error_type": "NotFound",
+            "node": "ResultTypeName",
+            "ok_type": {
+              "name": "Customer",
+              "node": "TypeName"
+            }
+          }
+        },
+        {
+          "expr": {
+            "left": {
+              "node": "FieldAccessExpr",
+              "path": [
+                "loaded",
+                "value",
+                "id"
+              ]
+            },
+            "node": "BinaryExpr",
+            "op": "=",
+            "right": {
+              "node": "NumberExpr",
+              "value": 1
+            }
+          },
+          "node": "CheckStmt"
+        },
+        {
+          "expr": {
+            "left": {
+              "node": "FieldAccessExpr",
+              "path": [
+                "loaded",
+                "value",
+                "address",
+                "city_id"
+              ]
+            },
+            "node": "BinaryExpr",
+            "op": "=",
+            "right": {
+              "node": "NumberExpr",
+              "value": 42
+            }
+          },
+          "node": "CheckStmt"
+        }
+      ],
+      "ensures": [],
+      "kind": "procedure",
+      "name": "main",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": null
+    }
+  ],
+  "imports": [],
+  "module_name": "ResultValueFieldAccess",
+  "node": "Program"
+}

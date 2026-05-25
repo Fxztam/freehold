@@ -1,0 +1,26 @@
+module ResultValueFieldAccess
+
+type Address is record
+    city_id: Integer
+end record
+
+type Customer is record
+    id: Integer
+    address: Address
+end record
+
+error NotFound
+
+function load() returns Result<Customer, NotFound>
+is
+    return ok Customer { id: 1, address: Address { city_id: 42 } }
+end load
+
+procedure main()
+is
+    let loaded: Result<Customer, NotFound> = load()
+    check loaded.value.id = 1
+    check loaded.value.address.city_id = 42
+end main
+
+end ResultValueFieldAccess

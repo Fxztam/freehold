@@ -335,7 +335,7 @@ Reihenfolge fuer die Weiterarbeit:
 
 1. Zuerst policy-only/rejected V1-Pfade beweisen: V1 soll diese Pfade bewusst ablehnen und nicht halb uebersetzen. `12_type_conflicts` ist mit Go-Codegen-Rejection-Cases fuer alle negativen Konflikt-Fixtures abgedeckt. `13_contract_blocks` ist fuer gueltige V1-Contracts positiv supported und fuer ungueltige Contract-Fixtures mit Go-Codegen-Rejection-Cases abgesichert. `22_generics` ist mit Unsupported-Cases fuer frontend-gueltige Generics und Rejection-Cases fuer ungueltige Generics abgedeckt.
 2. Danach kleine deferred Codegen-Slices angehen:
-    - `11_errors_results`: Result-value-field-access.
+    - Erledigt fuer V1: `11_errors_results` Result-value-field-access ist als Go-Golden abgedeckt.
     - `18_string_templates`: dynamische Formatargumente.
     - `04_types`: breitere User-Type-Alias-Kombinationen.
 3. Grosse deferred Slices spaeter angehen:
@@ -345,7 +345,7 @@ Reihenfolge fuer die Weiterarbeit:
 
 ## Empfohlene naechste Schritte
 
-1. Kleine deferred Codegen-Slices priorisieren: Result-value-field-access, dynamische String-Template-Argumente, breitere Type-Alias-Kombinationen.
+1. Kleine deferred Codegen-Slices priorisieren: dynamische String-Template-Argumente, breitere Type-Alias-Kombinationen.
 2. Grosse deferred Runtime-/Transport-/Abort-Slices erst danach angehen.
 3. Feature-Matrix bei jedem neuen Go-Codegen-Slice mitpflegen.
 
