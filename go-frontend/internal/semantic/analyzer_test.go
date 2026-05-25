@@ -79,6 +79,9 @@ end FieldAccessOnScalar`)
 	if diag.Found != "Integer" {
 		t.Fatalf("diagnostic Found = %q, want Integer", diag.Found)
 	}
+	if diag.Location.Line != 6 || diag.Location.Column != 11 {
+		t.Fatalf("diagnostic Location = line %d, column %d, want line 6, column 11", diag.Location.Line, diag.Location.Column)
+	}
 	if len(diag.Expected) != 1 || diag.Expected[0] != "record before .id" {
 		t.Fatalf("diagnostic Expected = %#v, want record before .id", diag.Expected)
 	}
@@ -109,6 +112,9 @@ end UnknownFieldAccess`)
 	}
 	if diag.Found != "active" {
 		t.Fatalf("diagnostic Found = %q, want active", diag.Found)
+	}
+	if diag.Location.Line != 10 || diag.Location.Column != 11 {
+		t.Fatalf("diagnostic Location = line %d, column %d, want line 10, column 11", diag.Location.Line, diag.Location.Column)
 	}
 	if len(diag.Expected) != 1 || diag.Expected[0] != "declared field in Account" {
 		t.Fatalf("diagnostic Expected = %#v, want declared field in Account", diag.Expected)

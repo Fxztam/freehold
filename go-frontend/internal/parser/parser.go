@@ -30,7 +30,7 @@ func (p *Parser) ParseModule() (module *ast.Module, err error) {
 		}
 	}()
 
-	p.expect(token.Module)
+	start := p.expect(token.Module)
 
 	name := p.parseQualifiedName()
 	p.moduleName = name
@@ -49,6 +49,7 @@ func (p *Parser) ParseModule() (module *ast.Module, err error) {
 
 	module = &ast.Module{
 		Kind:         "Module",
+		Pos:          start.Pos,
 		Name:         name,
 		Declarations: decls,
 		EndName:      endName,
@@ -102,14 +103,14 @@ func (p *Parser) parseDeclaration() ast.Decl {
 }
 
 func (p *Parser) parseTypeDecl() ast.TypeDecl {
-	p.expect(token.Type)
+	start := p.expect(token.Type)
 
 	name := p.parseName()
 	typeParams := p.parseOptionalTypeParams()
 	p.expect(token.Is)
 
 	if p.at(token.Record) {
-		return p.parseRecordTypeDecl(name, typeParams)
+		return p.parseRecordTypeDecl(name, typeParams, start.Pos)
 	}
 
 	base := p.parseTypeName()
@@ -125,6 +126,7 @@ func (p *Parser) parseTypeDecl() ast.TypeDecl {
 
 	return ast.TypeDecl{
 		Kind:       "TypeDecl",
+		Pos:        start.Pos,
 		Name:       name,
 		TypeParams: typeParams,
 		Base:       base,
@@ -132,7 +134,7 @@ func (p *Parser) parseTypeDecl() ast.TypeDecl {
 	}
 }
 
-func (p *Parser) parseRecordTypeDecl(name string, typeParams []string) ast.TypeDecl {
+func (p *Parser) parseRecordTypeDecl(name string, typeParams []string, pos token.Position) ast.TypeDecl {
 	p.expect(token.Record)
 
 	var fields []ast.Param
@@ -145,6 +147,7 @@ func (p *Parser) parseRecordTypeDecl(name string, typeParams []string) ast.TypeD
 
 	return ast.TypeDecl{
 		Kind:       "TypeDecl",
+		Pos:        pos,
 		Name:       name,
 		TypeParams: typeParams,
 		Base:       "record",
@@ -178,16 +181,17 @@ func (p *Parser) parseOptionalTypeParams() []string {
 }
 
 func (p *Parser) parseErrorDecl() ast.ErrorDecl {
-	p.expect(token.Error)
+	start := p.expect(token.Error)
 
 	return ast.ErrorDecl{
 		Kind: "ErrorDecl",
+		Pos:  start.Pos,
 		Name: p.parseName(),
 	}
 }
 
 func (p *Parser) parseImport() ast.ImportDecl {
-	p.expect(token.Import)
+	start := p.expect(token.Import)
 
 	moduleName := p.parseQualifiedName()
 	var exposing []string
@@ -204,13 +208,14 @@ func (p *Parser) parseImport() ast.ImportDecl {
 
 	return ast.ImportDecl{
 		Kind:     "ImportDecl",
+		Pos:      start.Pos,
 		Module:   moduleName,
 		Exposing: exposing,
 	}
 }
 
 func (p *Parser) parseServiceDecl() ast.ServiceDecl {
-	p.expect(token.Service)
+	start := p.expect(token.Service)
 	name := p.parseName()
 	p.expect(token.Is)
 
@@ -224,6 +229,7 @@ func (p *Parser) parseServiceDecl() ast.ServiceDecl {
 
 	return ast.ServiceDecl{
 		Kind:    "ServiceDecl",
+		Pos:     start.Pos,
 		Name:    name,
 		Rpcs:    rpcs,
 		EndName: endName,
@@ -231,7 +237,7 @@ func (p *Parser) parseServiceDecl() ast.ServiceDecl {
 }
 
 func (p *Parser) parseRpcDecl() ast.RpcDecl {
-	p.expect(token.Rpc)
+	start := p.expect(token.Rpc)
 	name := p.parseName()
 	p.expect(token.LParen)
 	requestName := p.parseName()
@@ -243,6 +249,7 @@ func (p *Parser) parseRpcDecl() ast.RpcDecl {
 
 	return ast.RpcDecl{
 		Kind:         "RpcDecl",
+		Pos:          start.Pos,
 		Name:         name,
 		RequestName:  requestName,
 		RequestType:  requestType,
@@ -262,10 +269,14 @@ func (p *Parser) parseQualifiedName() string {
 }
 
 func (p *Parser) parseName() string {
+	return p.parseNameToken().Lexeme
+}
+
+func (p *Parser) parseNameToken() token.Token {
 	tok := p.peek()
 	if tok.Kind == token.Ident || tok.Kind == token.Scope || tok.Kind == token.Spawn || tok.Kind == token.Join || tok.Kind == token.Result {
 		p.pos++
-		return tok.Lexeme
+		return tok
 	}
 
 	panic(diagnostic.ExpectedIdentifier(tok))
@@ -273,11 +284,15 @@ func (p *Parser) parseName() string {
 
 func (p *Parser) parseFunction() ast.FunctionDecl {
 	isAsync := false
+	start := p.peek()
 	if p.at(token.Async) {
-		p.expect(token.Async)
+		start = p.expect(token.Async)
 		isAsync = true
 	}
-	p.expect(token.Function)
+	functionTok := p.expect(token.Function)
+	if !isAsync {
+		start = functionTok
+	}
 
 	name := p.parseName()
 	typeParams := p.parseOptionalTypeParams()
@@ -306,6 +321,7 @@ func (p *Parser) parseFunction() ast.FunctionDecl {
 
 	return ast.FunctionDecl{
 		Kind:       "FunctionDecl",
+		Pos:        start.Pos,
 		Name:       name,
 		IsAsync:    isAsync,
 		TypeParams: typeParams,
@@ -320,7 +336,7 @@ func (p *Parser) parseFunction() ast.FunctionDecl {
 }
 
 func (p *Parser) parseProcedure() ast.ProcedureDecl {
-	p.expect(token.Procedure)
+	start := p.expect(token.Procedure)
 
 	name := p.parseName()
 
@@ -342,6 +358,7 @@ func (p *Parser) parseProcedure() ast.ProcedureDecl {
 
 	return ast.ProcedureDecl{
 		Kind:     "ProcedureDecl",
+		Pos:      start.Pos,
 		Name:     name,
 		Params:   params,
 		Requires: requires,
@@ -376,7 +393,8 @@ func (p *Parser) parseContracts() ([]ast.Expr, []ast.AbortClause, []ast.Expr) {
 }
 
 func (p *Parser) parseAbortClause() ast.AbortClause {
-	clause := ast.AbortClause{Error: p.parseName()}
+	errorTok := p.parseNameToken()
+	clause := ast.AbortClause{Pos: errorTok.Pos, Error: errorTok.Lexeme}
 	if p.at(token.When) {
 		p.expect(token.When)
 		clause.Condition = p.parseExpr()
@@ -459,10 +477,11 @@ func (p *Parser) parseStatement() ast.Stmt {
 }
 
 func (p *Parser) parseAbort() ast.AbortStmt {
-	p.expect(token.Abort)
+	start := p.expect(token.Abort)
 
 	return ast.AbortStmt{
 		Kind:  "AbortStmt",
+		Pos:   start.Pos,
 		Error: p.parseName(),
 	}
 }
@@ -485,7 +504,7 @@ func (p *Parser) parseParams() []ast.Param {
 }
 
 func (p *Parser) parseParam() ast.Param {
-	name := p.parseName()
+	nameTok := p.parseNameToken()
 	if !p.at(token.Colon) {
 		panic(diagnostic.ExpectedParameterColon(p.peek()))
 	}
@@ -493,31 +512,34 @@ func (p *Parser) parseParam() ast.Param {
 	typ := p.parseTypeName()
 
 	return ast.Param{
-		Name: name,
+		Pos:  nameTok.Pos,
+		Name: nameTok.Lexeme,
 		Type: typ,
 	}
 }
 
 func (p *Parser) parseReturn() ast.ReturnStmt {
-	p.expect(token.Return)
+	start := p.expect(token.Return)
 
 	return ast.ReturnStmt{
 		Kind:  "ReturnStmt",
+		Pos:   start.Pos,
 		Value: p.parseExpr(),
 	}
 }
 
 func (p *Parser) parseCheck() ast.CheckStmt {
-	p.expect(token.Check)
+	start := p.expect(token.Check)
 
 	return ast.CheckStmt{
 		Kind:      "CheckStmt",
+		Pos:       start.Pos,
 		Condition: p.parseExpr(),
 	}
 }
 
 func (p *Parser) parseLet() ast.LetStmt {
-	p.expect(token.Let)
+	start := p.expect(token.Let)
 
 	name := p.parseName()
 	p.expect(token.Colon)
@@ -526,6 +548,7 @@ func (p *Parser) parseLet() ast.LetStmt {
 
 	return ast.LetStmt{
 		Kind:  "LetStmt",
+		Pos:   start.Pos,
 		Name:  name,
 		Type:  typ,
 		Value: p.parseExpr(),
@@ -533,10 +556,11 @@ func (p *Parser) parseLet() ast.LetStmt {
 }
 
 func (p *Parser) parseCallStmt() ast.CallStmt {
-	p.expect(token.Call)
+	start := p.expect(token.Call)
 
 	return ast.CallStmt{
 		Kind: "CallStmt",
+		Pos:  start.Pos,
 		Call: p.parseAtom(),
 	}
 }
@@ -545,9 +569,11 @@ func (p *Parser) parseIdentStatement() ast.Stmt {
 	target := p.parseAtom()
 
 	if p.at(token.Assign) {
+		pos := exprPos(target)
 		p.expect(token.Assign)
 		return ast.AssignmentStmt{
 			Kind:   "AssignmentStmt",
+			Pos:    pos,
 			Target: target,
 			Value:  p.parseExpr(),
 		}
@@ -556,6 +582,7 @@ func (p *Parser) parseIdentStatement() ast.Stmt {
 	if call, ok := target.(ast.CallExpr); ok {
 		return ast.CallStmt{
 			Kind: "CallStmt",
+			Pos:  call.Pos,
 			Call: call,
 		}
 	}
@@ -565,7 +592,7 @@ func (p *Parser) parseIdentStatement() ast.Stmt {
 }
 
 func (p *Parser) parseIf() ast.IfStmt {
-	p.expect(token.If)
+	start := p.expect(token.If)
 	condition := p.parseExpr()
 	p.expect(token.Then)
 
@@ -588,6 +615,7 @@ func (p *Parser) parseIf() ast.IfStmt {
 
 	return ast.IfStmt{
 		Kind:      "IfStmt",
+		Pos:       start.Pos,
 		Condition: condition,
 		ThenBody:  thenBody,
 		ElseBody:  elseBody,
@@ -595,7 +623,7 @@ func (p *Parser) parseIf() ast.IfStmt {
 }
 
 func (p *Parser) parseWhile() ast.WhileStmt {
-	p.expect(token.While)
+	start := p.expect(token.While)
 	condition := p.parseExpr()
 
 	var invariants []ast.Expr
@@ -627,6 +655,7 @@ func (p *Parser) parseWhile() ast.WhileStmt {
 
 	return ast.WhileStmt{
 		Kind:       "WhileStmt",
+		Pos:        start.Pos,
 		Condition:  condition,
 		Invariants: invariants,
 		Variant:    variant,
@@ -635,19 +664,19 @@ func (p *Parser) parseWhile() ast.WhileStmt {
 }
 
 func (p *Parser) parseCase() ast.CaseStmt {
-	p.expect(token.Case)
+	start := p.expect(token.Case)
 	value := p.parseExpr()
 	p.expect(token.Is)
 
 	var branches []ast.CaseBranch
 	for p.at(token.When) {
-		p.expect(token.When)
+		whenTok := p.expect(token.When)
 		branchValue := p.parseExpr()
 		p.expect(token.Arrow)
 		branchBody := p.parseStatements(func() bool {
 			return p.at(token.When) || p.at(token.Default) || p.at(token.End) || p.at(token.EOF)
 		})
-		branches = append(branches, ast.CaseBranch{Value: branchValue, Body: branchBody})
+		branches = append(branches, ast.CaseBranch{Pos: whenTok.Pos, Value: branchValue, Body: branchBody})
 	}
 
 	var defaultBody []ast.Stmt
@@ -671,6 +700,7 @@ func (p *Parser) parseCase() ast.CaseStmt {
 
 	return ast.CaseStmt{
 		Kind:    "CaseStmt",
+		Pos:     start.Pos,
 		Value:   value,
 		When:    branches,
 		Default: defaultBody,
@@ -678,7 +708,7 @@ func (p *Parser) parseCase() ast.CaseStmt {
 }
 
 func (p *Parser) parseScope() ast.ScopeStmt {
-	p.expect(token.Scope)
+	start := p.expect(token.Scope)
 	name := p.parseName()
 	p.expect(token.Do)
 
@@ -696,6 +726,7 @@ func (p *Parser) parseScope() ast.ScopeStmt {
 
 	return ast.ScopeStmt{
 		Kind:       "ScopeStmt",
+		Pos:        start.Pos,
 		Name:       name,
 		SpawnBody:  spawnBody,
 		JoinBody:   joinBody,
@@ -705,10 +736,12 @@ func (p *Parser) parseScope() ast.ScopeStmt {
 
 func (p *Parser) parseAssignment() ast.AssignmentStmt {
 	target := p.parseFieldAccess()
+	pos := exprPos(target)
 	p.expect(token.Assign)
 
 	return ast.AssignmentStmt{
 		Kind:   "AssignmentStmt",
+		Pos:    pos,
 		Target: target,
 		Value:  p.parseExpr(),
 	}
@@ -724,7 +757,7 @@ func (p *Parser) parseOr() ast.Expr {
 	for p.at(token.Or) {
 		op := p.expect(token.Or).Lexeme
 		right := p.parseAnd()
-		left = ast.BinaryExpr{Kind: "BinaryExpr", Op: op, Left: left, Right: right}
+		left = ast.BinaryExpr{Kind: "BinaryExpr", Pos: exprPos(left), Op: op, Left: left, Right: right}
 	}
 
 	return left
@@ -736,7 +769,7 @@ func (p *Parser) parseAnd() ast.Expr {
 	for p.at(token.And) {
 		op := p.expect(token.And).Lexeme
 		right := p.parseComparison()
-		left = ast.BinaryExpr{Kind: "BinaryExpr", Op: op, Left: left, Right: right}
+		left = ast.BinaryExpr{Kind: "BinaryExpr", Pos: exprPos(left), Op: op, Left: left, Right: right}
 	}
 
 	return left
@@ -749,7 +782,7 @@ func (p *Parser) parseComparison() ast.Expr {
 		tok := p.peek()
 		p.pos++
 		right := p.parseSum()
-		left = ast.BinaryExpr{Kind: "BinaryExpr", Op: tok.Lexeme, Left: left, Right: right}
+		left = ast.BinaryExpr{Kind: "BinaryExpr", Pos: exprPos(left), Op: tok.Lexeme, Left: left, Right: right}
 	}
 
 	return left
@@ -764,6 +797,7 @@ func (p *Parser) parseEquality() ast.Expr {
 
 		left = ast.BinaryExpr{
 			Kind:  "BinaryExpr",
+			Pos:   exprPos(left),
 			Op:    op,
 			Left:  left,
 			Right: right,
@@ -783,6 +817,7 @@ func (p *Parser) parseSum() ast.Expr {
 
 		left = ast.BinaryExpr{
 			Kind:  "BinaryExpr",
+			Pos:   exprPos(left),
 			Op:    tok.Lexeme,
 			Left:  left,
 			Right: right,
@@ -801,6 +836,7 @@ func (p *Parser) parseProduct() ast.Expr {
 
 		left = ast.BinaryExpr{
 			Kind:  "BinaryExpr",
+			Pos:   exprPos(left),
 			Op:    op,
 			Left:  left,
 			Right: right,
@@ -812,9 +848,10 @@ func (p *Parser) parseProduct() ast.Expr {
 
 func (p *Parser) parseUnary() ast.Expr {
 	if p.at(token.Await) {
-		p.expect(token.Await)
+		start := p.expect(token.Await)
 		return ast.AwaitExpr{
 			Kind:  "AwaitExpr",
+			Pos:   start.Pos,
 			Value: p.parseUnary(),
 		}
 	}
@@ -824,6 +861,7 @@ func (p *Parser) parseUnary() ast.Expr {
 		p.pos++
 		return ast.UnaryExpr{
 			Kind:  "UnaryExpr",
+			Pos:   tok.Pos,
 			Op:    tok.Lexeme,
 			Value: p.parseUnary(),
 		}
@@ -838,6 +876,7 @@ func (p *Parser) parseAtom() ast.Expr {
 		p.pos++
 		return ast.NumberExpr{
 			Kind:  "NumberExpr",
+			Pos:   tok.Pos,
 			Value: tok.Lexeme,
 		}
 	}
@@ -850,6 +889,7 @@ func (p *Parser) parseAtom() ast.Expr {
 		tok := p.expect(token.String)
 		return ast.StringExpr{
 			Kind:  "StringExpr",
+			Pos:   tok.Pos,
 			Value: tok.Lexeme,
 		}
 	}
@@ -862,23 +902,26 @@ func (p *Parser) parseAtom() ast.Expr {
 	}
 
 	if p.at(token.Ok) {
-		p.expect(token.Ok)
+		start := p.expect(token.Ok)
 		return ast.OkExpr{
 			Kind:  "OkExpr",
+			Pos:   start.Pos,
 			Value: p.parseExpr(),
 		}
 	}
 
 	if p.at(token.Error) {
-		p.expect(token.Error)
+		start := p.expect(token.Error)
 		if !p.at(token.Ident) {
 			return p.finishPostfix(ast.IdentifierExpr{
 				Kind: "IdentifierExpr",
+				Pos:  start.Pos,
 				Name: "error",
 			})
 		}
 		return ast.ErrorExpr{
 			Kind: "ErrorExpr",
+			Pos:  start.Pos,
 			Name: p.parseName(),
 		}
 	}
@@ -888,13 +931,14 @@ func (p *Parser) parseAtom() ast.Expr {
 		p.pos++
 		return p.finishPostfix(ast.IdentifierExpr{
 			Kind: "IdentifierExpr",
+			Pos:  tok.Pos,
 			Name: tok.Lexeme,
 		})
 	}
 
 	if p.at(token.Scope) || p.at(token.Spawn) || p.at(token.Join) || p.at(token.Result) {
-		tok := p.parseName()
-		expr := ast.Expr(ast.IdentifierExpr{Kind: "IdentifierExpr", Name: tok})
+		tok := p.parseNameToken()
+		expr := ast.Expr(ast.IdentifierExpr{Kind: "IdentifierExpr", Pos: tok.Pos, Name: tok.Lexeme})
 		return p.finishPostfix(expr)
 	}
 
@@ -903,26 +947,28 @@ func (p *Parser) parseAtom() ast.Expr {
 	}
 
 	if p.genericFunctionCallAhead() {
-		name := p.parseName()
+		nameTok := p.parseNameToken()
 		typeArgs := p.parseTypeArgs()
-		callee := ast.IdentifierExpr{Kind: "IdentifierExpr", Name: name}
+		callee := ast.IdentifierExpr{Kind: "IdentifierExpr", Pos: nameTok.Pos, Name: nameTok.Lexeme}
 		return p.finishCallWithTypeArgs(callee, typeArgs)
 	}
 
 	if p.genericRecordLiteralAhead() {
+		pos := p.peek().Pos
 		typeName := p.parseTypeName()
-		return p.parseRecordLiteral(typeName)
+		return p.parseRecordLiteral(typeName, pos)
 	}
 
-	tok := p.parseName()
+	tok := p.parseNameToken()
 
 	if p.at(token.LBrace) {
-		return p.parseRecordLiteral(tok)
+		return p.parseRecordLiteral(tok.Lexeme, tok.Pos)
 	}
 
 	expr := ast.Expr(ast.IdentifierExpr{
 		Kind: "IdentifierExpr",
-		Name: tok,
+		Pos:  tok.Pos,
+		Name: tok.Lexeme,
 	})
 
 	return p.finishPostfix(expr)
@@ -985,6 +1031,7 @@ func (p *Parser) finishPostfix(expr ast.Expr) ast.Expr {
 			p.expect(token.RBracket)
 			expr = ast.IndexExpr{
 				Kind:  "IndexExpr",
+				Pos:   exprPos(expr),
 				Array: expr,
 				Index: index,
 			}
@@ -994,6 +1041,7 @@ func (p *Parser) finishPostfix(expr ast.Expr) ast.Expr {
 		p.expect(token.Dot)
 		expr = ast.FieldAccessExpr{
 			Kind:   "FieldAccessExpr",
+			Pos:    exprPos(expr),
 			Object: expr,
 			Field:  p.parseName(),
 		}
@@ -1003,9 +1051,11 @@ func (p *Parser) finishPostfix(expr ast.Expr) ast.Expr {
 }
 
 func (p *Parser) parseFieldAccess() ast.Expr {
+	nameTok := p.parseNameToken()
 	expr := ast.Expr(ast.IdentifierExpr{
 		Kind: "IdentifierExpr",
-		Name: p.parseName(),
+		Pos:  nameTok.Pos,
+		Name: nameTok.Lexeme,
 	})
 
 	for p.at(token.Dot) || p.at(token.LBracket) || p.at(token.LParen) || p.genericPostfixCallAhead() {
@@ -1026,6 +1076,7 @@ func (p *Parser) parseFieldAccess() ast.Expr {
 			p.expect(token.RBracket)
 			expr = ast.IndexExpr{
 				Kind:  "IndexExpr",
+				Pos:   exprPos(expr),
 				Array: expr,
 				Index: index,
 			}
@@ -1035,6 +1086,7 @@ func (p *Parser) parseFieldAccess() ast.Expr {
 		p.expect(token.Dot)
 		expr = ast.FieldAccessExpr{
 			Kind:   "FieldAccessExpr",
+			Pos:    exprPos(expr),
 			Object: expr,
 			Field:  p.parseName(),
 		}
@@ -1085,6 +1137,7 @@ func (p *Parser) finishCallWithTypeArgs(callee ast.Expr, typeArgs []string) ast.
 
 	return ast.CallExpr{
 		Kind:      "CallExpr",
+		Pos:       exprPos(callee),
 		Callee:    callee,
 		TypeArgs:  typeArgs,
 		Arguments: args,
@@ -1104,11 +1157,12 @@ func (p *Parser) parseTypeArgs() []string {
 
 func (p *Parser) parseCallArg() ast.Expr {
 	if p.at(token.Ident) && p.peekAhead(1).Kind == token.Colon {
-		name := p.parseName()
+		nameTok := p.parseNameToken()
 		p.expect(token.Colon)
 		return ast.NamedArgumentExpr{
 			Kind:  "NamedArgumentExpr",
-			Name:  name,
+			Pos:   nameTok.Pos,
+			Name:  nameTok.Lexeme,
 			Value: p.parseExpr(),
 		}
 	}
@@ -1116,7 +1170,7 @@ func (p *Parser) parseCallArg() ast.Expr {
 }
 
 func (p *Parser) parseArrayLiteral() ast.ArrayLiteralExpr {
-	p.expect(token.LBracket)
+	start := p.expect(token.LBracket)
 
 	var elements []ast.Expr
 	if !p.at(token.RBracket) {
@@ -1132,11 +1186,12 @@ func (p *Parser) parseArrayLiteral() ast.ArrayLiteralExpr {
 
 	return ast.ArrayLiteralExpr{
 		Kind:     "ArrayLiteralExpr",
+		Pos:      start.Pos,
 		Elements: elements,
 	}
 }
 
-func (p *Parser) parseRecordLiteral(typeName string) ast.RecordLiteralExpr {
+func (p *Parser) parseRecordLiteral(typeName string, pos token.Position) ast.RecordLiteralExpr {
 	p.expect(token.LBrace)
 
 	var fields []ast.RecordField
@@ -1153,18 +1208,55 @@ func (p *Parser) parseRecordLiteral(typeName string) ast.RecordLiteralExpr {
 
 	return ast.RecordLiteralExpr{
 		Kind:   "RecordLiteralExpr",
+		Pos:    pos,
 		Type:   typeName,
 		Fields: fields,
 	}
 }
 
 func (p *Parser) parseRecordLiteralField() ast.RecordField {
-	name := p.parseName()
+	nameTok := p.parseNameToken()
 	p.expect(token.Colon)
 
 	return ast.RecordField{
-		Name:  name,
+		Pos:   nameTok.Pos,
+		Name:  nameTok.Lexeme,
 		Value: p.parseExpr(),
+	}
+}
+
+func exprPos(expr ast.Expr) token.Position {
+	switch value := expr.(type) {
+	case ast.IdentifierExpr:
+		return value.Pos
+	case ast.FieldAccessExpr:
+		return value.Pos
+	case ast.IndexExpr:
+		return value.Pos
+	case ast.ArrayLiteralExpr:
+		return value.Pos
+	case ast.CallExpr:
+		return value.Pos
+	case ast.AwaitExpr:
+		return value.Pos
+	case ast.NamedArgumentExpr:
+		return value.Pos
+	case ast.RecordLiteralExpr:
+		return value.Pos
+	case ast.NumberExpr:
+		return value.Pos
+	case ast.StringExpr:
+		return value.Pos
+	case ast.OkExpr:
+		return value.Pos
+	case ast.ErrorExpr:
+		return value.Pos
+	case ast.UnaryExpr:
+		return value.Pos
+	case ast.BinaryExpr:
+		return value.Pos
+	default:
+		return token.Position{}
 	}
 }
 

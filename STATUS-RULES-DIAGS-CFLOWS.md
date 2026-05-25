@@ -159,7 +159,8 @@ Erster Go-native Semantikanker:
 - SymbolTable V0 sammelt single-module Record-Typen und deren Felder aus dem Go-AST.
 - `ValidateModule` prueft lokale Routine-Parameter, `let`-Bindings und verschachtelte FieldAccess-Ausdruecke.
 - Abgedeckte Diagnostics: `FH-TYP-2101 field_access_requires_record` und `FH-SEM-1105 unknown_record_field`.
-- Bewusste Grenze: keine Importaufloesung, keine vollstaendige Typinferenz, keine AST-Source-Positionen fuer semantische Diagnostics.
+- Relevante Go-AST-Decl-/Stmt-/Expr-Knoten tragen interne Source-Positionen (`json:"-"`), sodass Go-native Semantic-Diagnostics positionsgenau sein koennen, ohne AST-JSON-Goldens zu veraendern.
+- Bewusste Grenze: keine Importaufloesung und keine vollstaendige Typinferenz.
 
 ## Control Flow
 

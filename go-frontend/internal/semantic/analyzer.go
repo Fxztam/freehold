@@ -3,6 +3,7 @@ package semantic
 import (
 	"freehold-go-frontend/internal/ast"
 	"freehold-go-frontend/internal/diagnostic"
+	"freehold-go-frontend/internal/token"
 )
 
 type RecordType struct {
@@ -158,12 +159,12 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 		}
 		record, ok := a.symbols.Records[objectType]
 		if !ok {
-			a.diagnostics = append(a.diagnostics, diagnostic.FieldAccessRequiresRecord(diagnostic.Location{}, objectType, value.Field))
+			a.diagnostics = append(a.diagnostics, diagnostic.FieldAccessRequiresRecord(locationFromPosition(value.Pos), objectType, value.Field))
 			return "", false
 		}
 		fieldType, ok := record.Fields[value.Field]
 		if !ok {
-			a.diagnostics = append(a.diagnostics, diagnostic.UnknownRecordField(diagnostic.Location{}, record.Name, value.Field))
+			a.diagnostics = append(a.diagnostics, diagnostic.UnknownRecordField(locationFromPosition(value.Pos), record.Name, value.Field))
 			return "", false
 		}
 		return fieldType, true
@@ -207,4 +208,8 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 		return value.Name, true
 	}
 	return "", false
+}
+
+func locationFromPosition(pos token.Position) diagnostic.Location {
+	return diagnostic.Location{Line: pos.Line, Column: pos.Column, Offset: pos.Offset}
 }
