@@ -2,7 +2,7 @@
 
 Stand: 2026-05-25
 
-Status: Compiler V1 Start-Slice plus Import-, Cross-Module-Call-, Cross-Module-Record-Type-, Cross-Module-Result-Error-Abort-, Result-, Abort-, Multi-File-, Runtime-Builtin-, BigNumber-, Array- und Go-Projekt-Build-Slices implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
+Status: Compiler V1 Start-Slice plus Import-, Cross-Module-Call-, Cross-Module-Record-Type-, Cross-Module-Result-Error-Abort-, Cross-Module-Typkompositions-, Result-, Abort-, Multi-File-, Runtime-Builtin-, BigNumber-, Array- und Go-Projekt-Build-Slices implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
 
 Dieses Dokument legt die Leitplanken fuer die naechste Implementierungsphase fest: einen Go-Compiler fuer Freehold, der auf dem bestehenden Parser/AST/Verifier/Spec-Fundament aufsetzt. Wichtigste Vorgabe: Der Compiler darf das Freehold-Modularitaetskonzept nicht aufweichen. Codegen muss Modulgrenzen, Imports, Exposing-Regeln und qualifizierte Namen respektieren.
 
@@ -23,11 +23,11 @@ Der erste Go-Compiler-Slice ist vorhanden:
 - Runtime-Builtins fuer `Math`, `Std.IO`, `String.*` und `Json.stringify` werden als explizite Go-Stdlib-Imports generiert.
 - `verify-parser-conformance.cmd` fuehrt den Go-Codegen-Artefaktcheck als eigenen Gate-Schritt aus.
 
-Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Der Import-Slice nutzt `ModuleResolver` fuer dateibasierte Entry-Module, erzeugt deterministische Go-Importpfade fuer benutzte Freehold-Imports und spiegelt Package-/Import-Metadaten in JSON-Artefakten. Der Cross-Module-Call-Slice verifiziert importierte Freehold-Routinen im Modulgraphen und generiert Go-Aufrufe ueber das importierte Package, sowohl fuer `exposing`-Namen als auch fuer qualifizierte Modulnamen. Der Cross-Module-Typen-Slice qualifiziert exposed importierte Record-Typen in Signaturen, importierte Error-Namen, `Result<T,E>` ueber Paketgrenzen und importierte abortende Routinen mit Go-`err`-Propagation. Der Result-Slice bildet `Result<T,E>` als modul-lokalen oder error-modul-eigenen Go-Struct-Typ ab und generiert `return ok`, `return error` und Result-wertige Weitergaben als normale Wert-Returns. Der Abort-Slice bildet `aborts` als expliziten Go-`error`-Rückgabewert ab und propagiert lokale sowie importierte abortende Calls ueber `err`. Der Multi-File-Slice schreibt aufgeloeste Modulgraphen deterministisch nach `go_package_path/module_file.go`, z.B. `App.Main -> app/main/main.go` und `Banking.Proofs -> banking/proofs/proofs.go`; bekannte Runtime-Module werden nicht als Freehold-Stubs emittiert. Der Go-Projekt-Slice erzeugt fuer Projekt-Codegen deterministisch ein `freehold.local`-`go.mod`, ein `build.cmd` mit `go test ./...` und JSON-Metadaten zu Build-Dateien. Die Feature-Matrix deckt alle 24 Language-Module ab und wird im offiziellen Gate validiert. Der Runtime-Builtin-Slice bildet `Math.*` auf Go `math`, `Std.IO.log`/`logf` auf Go `fmt`, `String.concat` auf `+`, `String.substr` auf Slicing, `String.replace`/`String.instr` auf Go `strings`, `String.template` auf `fmt.Sprintf` und `Json.stringify` auf `encoding/json` ab. Record-Felder erhalten JSON-Tags mit Freehold-Feldnamen. Nicht unterstuetzte AST-Formen werden im Codegen-Result als Diagnostics markiert.
+Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Der Import-Slice nutzt `ModuleResolver` fuer dateibasierte Entry-Module, erzeugt deterministische Go-Importpfade fuer benutzte Freehold-Imports und spiegelt Package-/Import-Metadaten in JSON-Artefakten. Der Cross-Module-Call-Slice verifiziert importierte Freehold-Routinen im Modulgraphen und generiert Go-Aufrufe ueber das importierte Package, sowohl fuer `exposing`-Namen als auch fuer qualifizierte Modulnamen. Der Cross-Module-Typen-Slice qualifiziert exposed importierte Record-Typen in Signaturen, importierte Error-Namen, `Result<T,E>` ueber Paketgrenzen und importierte abortende Routinen mit Go-`err`-Propagation. Der Cross-Module-Typkompositions-Slice deckt `Result<Array<imported Record>, imported Error>` plus importierten Abort-Call ueber einen mehrmoduligen Graphen ab. Der Result-Slice bildet `Result<T,E>` als modul-lokalen oder error-modul-eigenen Go-Struct-Typ ab und generiert `return ok`, `return error` und Result-wertige Weitergaben als normale Wert-Returns. Der Abort-Slice bildet `aborts` als expliziten Go-`error`-Rückgabewert ab und propagiert lokale sowie importierte abortende Calls ueber `err`. Der Multi-File-Slice schreibt aufgeloeste Modulgraphen deterministisch nach `go_package_path/module_file.go`, z.B. `App.Main -> app/main/main.go` und `Banking.Proofs -> banking/proofs/proofs.go`; bekannte Runtime-Module werden nicht als Freehold-Stubs emittiert. Der Go-Projekt-Slice erzeugt fuer Projekt-Codegen deterministisch ein `freehold.local`-`go.mod`, ein `build.cmd` mit `go test ./...` und JSON-Metadaten zu Build-Dateien. Die Feature-Matrix deckt alle 24 Language-Module ab und wird im offiziellen Gate validiert. Der Runtime-Builtin-Slice bildet `Math.*` auf Go `math`, `Std.IO.log`/`logf` auf Go `fmt`, `String.concat` auf `+`, `String.substr` auf Slicing, `String.replace`/`String.instr` auf Go `strings`, `String.template` auf `fmt.Sprintf` und `Json.stringify` auf `encoding/json` ab. Record-Felder erhalten JSON-Tags mit Freehold-Feldnamen. Nicht unterstuetzte AST-Formen werden im Codegen-Result als Diagnostics markiert.
 
 ## Aktueller Compiler-TODO
 
-Der Compiler-TODO ist nach den abgeschlossenen Start-, Projekt-, Feature-Matrix-, Cross-Module-Call- und Cross-Module-Typen-Slices deutlich kleiner. Dieser Abschnitt ist der aktuelle operative Blick auf das, was fuer den Compiler noch offen ist.
+Der Compiler-TODO ist nach den abgeschlossenen Start-, Projekt-, Feature-Matrix-, Cross-Module-Call-, Cross-Module-Typen- und Cross-Module-Typkompositions-Slices deutlich kleiner. Dieser Abschnitt ist der aktuelle operative Blick auf das, was fuer den Compiler noch offen ist.
 
 Bereits erledigt:
 
@@ -35,18 +35,20 @@ Bereits erledigt:
 - Multi-File-/Projekt-Codegen mit `go.mod` und `build.cmd`.
 - Importaufloesung, `exposing`, qualifizierte Namen, Cross-Module-Calls auf importierte Freehold-Routinen, exposed importierte Record-Typen in Signaturen sowie importierte Result-/Error-/Abort-Paketgrenzen.
 - Cross-Module-Typen-Basis fuer V1: importierte Record-Typen ueber Paketgrenzen (`e1082ba`), importierte Error-Namen und `Result<T,E>` ueber Paketgrenzen (`3e6b608`), importierte abortende Routinen mit Go-`err`-Propagation, exposing-basierte Sichtbarkeit fuer Types/Records/Errors/Routines, Single-file-Go-Goldens, Project-Go-Goldens und additive Artefakte.
+- Cross-Module-Typkomposition: `Result<Array<imported Record>, imported Error>` plus importierter Abort-Call als additiver Drei-Modul-Fall.
 - Primitive Typen, Records, einfache Routinen, Statements und Expressions.
 - Result-Wertmodell.
 - Abort als Go-`error`-Return fuer abgedeckte V1-Faelle.
 - Runtime-Builtins fuer `Math`, `Std.IO`, `String.*`, `String.template`, `Json.stringify` und `Big.*`.
 - Feature-Matrix-Gate mit `24/24` Language-Modulen.
-- Go-Codegen-Generator-Gate mit aktuell `64/64` matching; eingefrorene Artefakt-Snapshots bleiben separat kontrolliert.
+- Go-Codegen-Generator-Gate mit aktuell `66/66` matching; eingefrorene Artefakt-Snapshots bleiben separat kontrolliert.
 
 Direkt offen fuer die naechsten Compiler-Slices:
 
 1. Breitere Cross-Module-Typkompositionen
     - Der natuerliche Cross-Module-Typen-Slice fuer V1 ist erledigt: Records, Errors, Results und Aborts stehen ueber Paketgrenzen.
-    - Noch zu haerten sind kombinierte Faelle wie `Array<imported Record>`, `Result<Array<T>, imported Error>`, verschachtelte importierte Typen in Records/Results, mehrere Module mit gleichnamigen Errors sowie komplexere Alias-/Namenskonflikt-Szenarien.
+    - Der erste Kombinationsfall `Result<Array<imported Record>, imported Error>` plus importierter Abort-Call ist vorhanden.
+    - Noch zu haerten sind weitere kombinierte Faelle wie `Array<imported Record>` als direkte Signatur, verschachtelte importierte Typen in Records/Results, mehrere Module mit gleichnamigen Errors sowie komplexere Alias-/Namenskonflikt-Szenarien.
     - Spaetere Domain-Bloecke wie JSON/gRPC muessen diese Cross-Module-Typen gezielt wiederverwenden statt eigene Sonderpfade einzufuehren.
 
 2. Result value field access
@@ -80,7 +82,7 @@ Bewusst geparkt fuer V2/V3:
 
 Empfohlene Reihenfolge aus heutiger Sicht:
 
-1. Kombinierte Cross-Module-Typkompositionen haerten, z.B. `Array<imported Record>` und `Result<Array<T>, imported Error>`.
+1. Weitere Cross-Module-Typkompositionen haerten, z.B. direkte `Array<imported Record>`-Signaturen, verschachtelte importierte Records/Results und Namenskonflikte.
 2. Danach kleinere Matrix-Luecken schliessen.
 3. Danach JSON/gRPC- und weitere Runtime-/Bootstrap-nahe Slices ueber den stabilisierten Cross-Module-Typen aufbauen.
 

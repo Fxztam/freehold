@@ -1,0 +1,22 @@
+module App.Main
+
+import Domain.Types exposing Account
+import Domain.Accounts exposing NotFound, load_accounts, read_account
+
+function load_app(id: Integer) returns Result<Array<Account, 2>, NotFound>
+is
+    return load_accounts(id)
+end load_app
+
+function fail_app() returns Result<Array<Account, 2>, NotFound>
+is
+    return error NotFound
+end fail_app
+
+function read_app(id: Integer) returns Account
+aborts NotFound
+is
+    return read_account(id)
+end read_app
+
+end App.Main
