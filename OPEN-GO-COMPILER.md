@@ -64,8 +64,7 @@ Direkt offen fuer die naechsten Compiler-Slices:
     - Feature-Matrix: `21_abort_handling` hat entsprechende deferred items.
 
 4. Dynamische `String.template`-Formate
-    - Statische Templates sind implementiert.
-    - Dynamische Formatargumente sind noch deferred.
+    - Erledigt fuer V1: Statische Template-Literale nutzen `fmt.Sprintf`; dynamische `String`-Formatargumente nutzen einen generierten Runtime-Helper fuer positionale und benannte Bindings.
     - Feature-Matrix: `18_string_templates`.
 
 5. Core-/Import-/Whitespace-/Control-Flow-Goldens
@@ -311,8 +310,6 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 - Restpunkte aus `tests/language_modules/go_codegen_feature_matrix.json`, die keine vergessenen V1-Luecken sind, sondern spaetere Slices oder Policy-Grenzen:
     - `04_types`: breitere User-Type-Alias-Kombinationen.
     - `08_routines`: async routines, generic routines.
-    - `11_errors_results`: Result-value-field-access.
-    - `18_string_templates`: dynamische Formatargumente.
     - `21_abort_handling`: breitere abort contract implication, Handler-Syntax.
     - `23_concurrency`: echte async/runtime/channels/scope execution.
     - `24_grpc_idl`: Go-gRPC bindings, status mapping, streaming.
@@ -327,7 +324,6 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 - Runtime-Contract-Enforcement
 - path-aware control-flow proofs
 - breitere abort contract implication und Handler-Syntax; abgedeckte V1-Aborts bleiben explizite Go-`error`-Returns
-- dynamische `String.template`-Formatargumente; statische Template-Literale bleiben V1-supported
 - Generics Bounds/Inference/volle Monomorphisierung
 - Native/Image Builder
 
@@ -336,7 +332,7 @@ Reihenfolge fuer die Weiterarbeit:
 1. Zuerst policy-only/rejected V1-Pfade beweisen: V1 soll diese Pfade bewusst ablehnen und nicht halb uebersetzen. `12_type_conflicts` ist mit Go-Codegen-Rejection-Cases fuer alle negativen Konflikt-Fixtures abgedeckt. `13_contract_blocks` ist fuer gueltige V1-Contracts positiv supported und fuer ungueltige Contract-Fixtures mit Go-Codegen-Rejection-Cases abgesichert. `22_generics` ist mit Unsupported-Cases fuer frontend-gueltige Generics und Rejection-Cases fuer ungueltige Generics abgedeckt.
 2. Danach kleine deferred Codegen-Slices angehen:
     - Erledigt fuer V1: `11_errors_results` Result-value-field-access ist als Go-Golden abgedeckt.
-    - `18_string_templates`: dynamische Formatargumente.
+    - Erledigt fuer V1: `18_string_templates` dynamische Formatargumente sind als Go-Goldens fuer positional, named und `Std.IO.logf` abgedeckt.
     - `04_types`: breitere User-Type-Alias-Kombinationen.
 3. Grosse deferred Slices spaeter angehen:
     - `23_concurrency`: echte Runtime/Channels/Scope-Ausfuehrung.
@@ -345,7 +341,7 @@ Reihenfolge fuer die Weiterarbeit:
 
 ## Empfohlene naechste Schritte
 
-1. Kleine deferred Codegen-Slices priorisieren: dynamische String-Template-Argumente, breitere Type-Alias-Kombinationen.
+1. Kleine deferred Codegen-Slices priorisieren: breitere Type-Alias-Kombinationen.
 2. Grosse deferred Runtime-/Transport-/Abort-Slices erst danach angehen.
 3. Feature-Matrix bei jedem neuen Go-Codegen-Slice mitpflegen.
 

@@ -225,6 +225,7 @@ class GoGenerator:
         self.result_types: dict[str, ResultTypeName] = {}
         self.needs_json_helper = False
         self.needs_big_helpers = False
+        self.needs_template_helper = False
         self.current_return_type: Any = None
         self.current_aborts: list[Any] = []
         self.current_routine_decl: RoutineDecl | None = None
@@ -383,6 +384,98 @@ class GoGenerator:
                 "\t\tresult.Neg(result)",
                 "\t}",
                 "\treturn result",
+                "}",
+                "",
+            ])
+        if self.needs_template_helper:
+            lines.extend([
+                "func freeholdStringTemplateWriteText(builder *strings.Builder, text string) {",
+                "\tif strings.Contains(text, \"{}\") {",
+                "\t\tpanic(\"template placeholder must use ${} instead of {}\")",
+                "\t}",
+                "\tif strings.ContainsAny(text, \"{}\") {",
+                "\t\tpanic(\"invalid template brace\")",
+                "\t}",
+                "\tbuilder.WriteString(text)",
+                "}",
+                "",
+                "func freeholdStringTemplateIdent(name string) bool {",
+                "\tif name == \"\" {",
+                "\t\treturn false",
+                "\t}",
+                "\tfor index := 0; index < len(name); index++ {",
+                "\t\tchar := name[index]",
+                "\t\tletter := (char >= 'A' && char <= 'Z') || (char >= 'a' && char <= 'z') || char == '_'",
+                "\t\tdigit := char >= '0' && char <= '9'",
+                "\t\tif index == 0 {",
+                "\t\t\tif !letter {",
+                "\t\t\t\treturn false",
+                "\t\t\t}",
+                "\t\t\tcontinue",
+                "\t\t}",
+                "\t\tif !letter && !digit {",
+                "\t\t\treturn false",
+                "\t\t}",
+                "\t}",
+                "\treturn true",
+                "}",
+                "",
+                "func freeholdStringTemplate(template string, positional []any, named map[string]any) string {",
+                "\tvar builder strings.Builder",
+                "\tposition := 0",
+                "\tusedNamed := map[string]bool{}",
+                "\tsawPositional := false",
+                "\tsawNamed := false",
+                "\tfor index := 0; index < len(template); {",
+                "\t\tstart := strings.Index(template[index:], \"${\")",
+                "\t\tif start < 0 {",
+                "\t\t\tfreeholdStringTemplateWriteText(&builder, template[index:])",
+                "\t\t\tbreak",
+                "\t\t}",
+                "\t\tstart += index",
+                "\t\tfreeholdStringTemplateWriteText(&builder, template[index:start])",
+                "\t\tend := strings.Index(template[start+2:], \"}\")",
+                "\t\tif end < 0 {",
+                "\t\t\tpanic(\"invalid string template brace\")",
+                "\t\t}",
+                "\t\tend += start + 2",
+                "\t\tplaceholder := strings.TrimSpace(template[start+2 : end])",
+                "\t\tif placeholder == \"\" {",
+                "\t\t\tif sawNamed {",
+                "\t\t\t\tpanic(\"cannot mix positional and named template placeholders\")",
+                "\t\t\t}",
+                "\t\t\tsawPositional = true",
+                "\t\t\tif position >= len(positional) {",
+                "\t\t\t\tpanic(\"string template placeholder count mismatch\")",
+                "\t\t\t}",
+                "\t\t\tbuilder.WriteString(fmt.Sprint(positional[position]))",
+                "\t\t\tposition++",
+                "\t\t} else {",
+                "\t\t\tif sawPositional {",
+                "\t\t\t\tpanic(\"cannot mix positional and named template placeholders\")",
+                "\t\t\t}",
+                "\t\t\tif !freeholdStringTemplateIdent(placeholder) {",
+                "\t\t\t\tpanic(\"invalid named template placeholder: ${\" + placeholder + \"}\")",
+                "\t\t\t}",
+                "\t\t\tsawNamed = true",
+                "\t\t\tvalue, ok := named[placeholder]",
+                "\t\t\tif !ok {",
+                "\t\t\t\tpanic(\"missing string template binding: \" + placeholder)",
+                "\t\t\t}",
+                "\t\t\tusedNamed[placeholder] = true",
+                "\t\t\tbuilder.WriteString(fmt.Sprint(value))",
+                "\t\t}",
+                "\t\tindex = end + 1",
+                "\t}",
+                "\tif position != len(positional) {",
+                "\t\tpanic(\"string template placeholder count mismatch\")",
+                "\t}",
+                "\tfor name := range named {",
+                "\t\tif !usedNamed[name] {",
+                "\t\t\tpanic(\"unused string template binding: \" + name)",
+                "\t\t}",
+                "\t}",
+                "\treturn builder.String()",
                 "}",
                 "",
             ])
@@ -987,12 +1080,28 @@ class GoGenerator:
         if not isinstance(template_arg, StringExpr):
             if len(args) == 1:
                 return self.expr(template_arg)
-            self.unsupported(template_arg, "dynamic String.template format arguments are not supported by Go codegen V1")
-            return self.expr(template_arg)
+            self.needs_template_helper = True
+            self.std_imports.add("strings")
+            return self.render_dynamic_string_template_call(args)
         format_text, ordered_args = go_template_format(template_arg.value, args[1:])
         if not ordered_args:
             return json.dumps(format_text)
         return f"fmt.Sprintf({json.dumps(format_text)}, {', '.join(self.expr(arg) for arg in ordered_args)})"
+
+    def render_dynamic_string_template_call(self, args: list[Any]) -> str:
+        positional: list[Any] = []
+        named: dict[str, Any] = {}
+        for arg in args[1:]:
+            if isinstance(arg, NamedArg):
+                named[arg.name] = arg.expr
+            else:
+                positional.append(arg)
+        positional_expr = "[]any{" + ", ".join(self.expr(arg) for arg in positional) + "}"
+        if named:
+            named_expr = "map[string]any{" + ", ".join(f"{json.dumps(name)}: {self.expr(expr)}" for name, expr in sorted(named.items())) + "}"
+        else:
+            named_expr = "nil"
+        return f"freeholdStringTemplate({self.expr(args[0])}, {positional_expr}, {named_expr})"
 
     def contract_checks(self, contracts: list[Any], label: str) -> list[str]:
         lines: list[str] = []
