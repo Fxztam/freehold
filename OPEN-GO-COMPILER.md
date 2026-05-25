@@ -37,40 +37,35 @@ Bereits erledigt:
 - Primitive Typen, Records, einfache Routinen, Statements und Expressions.
 - Result-Wertmodell.
 - Abort als Go-`error`-Return fuer abgedeckte V1-Faelle.
-- Runtime-Builtins fuer `Math`, `Std.IO`, `String.*`, `String.template` und `Json.stringify`.
+- Runtime-Builtins fuer `Math`, `Std.IO`, `String.*`, `String.template`, `Json.stringify` und `Big.*`.
 - Feature-Matrix-Gate mit `24/24` Language-Modulen.
-- Go-Codegen-Artefakte mit aktuell `51/51` matching.
+- Go-Codegen-Artefakte mit aktuell `56/56` matching.
 
 Direkt offen fuer die naechsten Compiler-Slices:
 
-1. BigNumber-/Runtime-Builtins
-    - `BigInteger` und `BigFloat`.
-    - Runtime-Package oder Go-Codegen-Mapping fuer `Big.*`.
-    - Feature-Matrix: `19_big_numbers` ist `deferred`.
-
-2. Arrays weiter haerten
+1. Arrays weiter haerten
     - Eigene Go-Goldens im Array-Modul fehlen noch.
     - Finale Array-Repraesentation sauber entscheiden und absichern.
     - Feature-Matrix: `06_arrays` ist `deferred`, obwohl Arrays schon in anderen Slices vorkommen.
 
-3. Record-/Result-/Abort-Interaktionen ueber Modulgrenzen
+2. Record-/Result-/Abort-Interaktionen ueber Modulgrenzen
     - Cross-Module-Routine-Calls sind vorhanden.
     - Noch zu haerten sind importierte Records, Result-Typen, Abort-Fehler, Signaturtypen, Fehlernamen und Package-Typnamen ueber Modulgrenzen.
 
-4. Result value field access
+3. Result value field access
     - Feature-Matrix: `11_errors_results` fuehrt `Result value field access` als deferred.
 
-5. Abort breiter machen
+4. Abort breiter machen
     - Breitere abort contract implication.
     - Handler-Syntax bleibt offen/geparkt.
     - Feature-Matrix: `21_abort_handling` hat entsprechende deferred items.
 
-6. Dynamische `String.template`-Formate
+5. Dynamische `String.template`-Formate
     - Statische Templates sind implementiert.
     - Dynamische Formatargumente sind noch deferred.
     - Feature-Matrix: `18_string_templates`.
 
-7. Core-/Import-/Whitespace-/Control-Flow-Goldens
+6. Core-/Import-/Whitespace-/Control-Flow-Goldens
     - `01_core`: minimal/empty module Go-Golden-Policy.
     - `02_import`: single-file import declaration codegen policy.
     - `14_comments_whitespace`: optionale Formatter-/Comment-Preservation-Policy.
@@ -88,9 +83,9 @@ Bewusst geparkt fuer V2/V3:
 
 Empfohlene Reihenfolge aus heutiger Sicht:
 
-1. BigNumber-/Runtime-Builtins, weil der Slice klar abgegrenzt ist und direkt einen deferred Matrix-Eintrag in supported verwandeln kann.
-2. Danach Cross-Module Typ-/Result-/Abort-Signaturen haerten, weil das architektonisch wichtiger ist als kosmetische Goldens.
-3. Danach Array-Goldens und kleinere Matrix-Luecken schliessen.
+1. Cross-Module Typ-/Result-/Abort-Signaturen haerten, weil das architektonisch wichtiger ist als kosmetische Goldens.
+2. Danach Array-Goldens und kleinere Matrix-Luecken schliessen.
+3. Danach weitere Runtime- und Bootstrap-nahe Slices priorisieren.
 
 ## Ziel
 
@@ -196,7 +191,7 @@ Vorlaeufige Einordnung:
 | --- | --- |
 | String builtins | Go `strings`, `fmt.Sprintf` und native String-Operatoren fuer V1-Standardfaelle. |
 | Math builtins | Go `math` fuer V1-Standardfaelle. |
-| BigInteger/BigFloat | Runtime package oder vorerst abgelehnt, je nach Ziel-Slice. |
+| BigInteger/BigFloat | Go `math/big` fuer V1-Standardfaelle. |
 | Json.stringify | Go `encoding/json` fuer verifierseitig begrenzte V1-Recordformen. |
 | Std.IO | Go `fmt` fuer `log`/`logf` V1-Standardfaelle. |
 | Channel/Scope/JoinHandle | Typen koennen existieren; echte Runtime-Ausfuehrung geparkt. |

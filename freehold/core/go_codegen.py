@@ -58,6 +58,12 @@ class GoCodegenError(Exception):
 GO_RUNTIME_MODULE_EXPORTS: dict[str, set[str]] = {
     "Math": {"sin", "cos", "tan", "sqrt", "pow", "abs", "min", "max", "floor", "ceil"},
     "Std.IO": {"log", "logf", "log_int", "log_bool", "log_double"},
+    "Big": {
+        "int", "integer", "fromInteger", "float", "floatFromInteger",
+        "addInt", "subInt", "mulInt", "divInt", "negInt", "absInt", "signInt",
+        "addFloat", "subFloat", "mulFloat", "divFloat", "sqrt", "absFloat", "signFloat",
+        "toString", "format",
+    },
 }
 
 GO_PROJECT_MODULE_PATH = "freehold.local"
@@ -214,12 +220,15 @@ class GoGenerator:
         self.std_imports: set[str] = set()
         self.result_types: dict[str, ResultTypeName] = {}
         self.needs_json_helper = False
+        self.needs_big_helpers = False
         self.current_return_type: Any = None
         self.current_aborts: list[Any] = []
 
     def generate(self) -> GoCodegenResult:
         package_name = go_package_name(self.program.module_name)
         body_lines: list[str] = []
+        if program_uses_big_types(self.program):
+            self.std_imports.add("math/big")
         for declaration in self.program.declarations:
             if isinstance(declaration, TypeDecl):
                 body_lines.extend(self.type_decl(declaration))
@@ -304,18 +313,50 @@ class GoGenerator:
         return lines
 
     def helper_decls(self) -> list[str]:
-        if not self.needs_json_helper:
-            return []
-        return [
-            "func freeholdJSONString(value interface{}) string {",
-            "\tdata, err := json.Marshal(value)",
-            "\tif err != nil {",
-            "\t\tpanic(err)",
-            "\t}",
-            "\treturn string(data)",
-            "}",
-            "",
-        ]
+        lines: list[str] = []
+        if self.needs_json_helper:
+            lines.extend([
+                "func freeholdJSONString(value interface{}) string {",
+                "\tdata, err := json.Marshal(value)",
+                "\tif err != nil {",
+                "\t\tpanic(err)",
+                "\t}",
+                "\treturn string(data)",
+                "}",
+                "",
+            ])
+        if self.needs_big_helpers:
+            lines.extend([
+                "func freeholdBigInt(text string) *big.Int {",
+                "\tvalue, ok := new(big.Int).SetString(text, 10)",
+                "\tif !ok {",
+                "\t\tpanic(\"invalid BigInteger literal\")",
+                "\t}",
+                "\treturn value",
+                "}",
+                "",
+                "func freeholdBigFloat(text string, precision int64) *big.Float {",
+                "\tvalue, ok := new(big.Float).SetPrec(uint(precision)).SetString(text)",
+                "\tif !ok {",
+                "\t\tpanic(\"invalid BigFloat literal\")",
+                "\t}",
+                "\treturn value",
+                "}",
+                "",
+                "func freeholdBigFloatFromInteger(value *big.Int, precision int64) *big.Float {",
+                "\treturn new(big.Float).SetPrec(uint(precision)).SetInt(value)",
+                "}",
+                "",
+                "func freeholdBigFloatAbs(value *big.Float) *big.Float {",
+                "\tresult := new(big.Float).SetPrec(value.Prec()).Set(value)",
+                "\tif result.Sign() < 0 {",
+                "\t\tresult.Neg(result)",
+                "\t}",
+                "\treturn result",
+                "}",
+                "",
+            ])
+        return lines
 
     def record_decl(self, declaration: RecordTypeDecl) -> list[str]:
         if declaration.type_params:
@@ -602,6 +643,9 @@ class GoGenerator:
         if expr.name == "String.template":
             self.std_imports.add("fmt")
             return self.render_string_template_call(expr.args)
+        big_call = self.big_runtime_call_expr(expr)
+        if big_call is not None:
+            return big_call
         if not expr.name.startswith("Math."):
             return None
         self.used_runtime_modules.add("Math")
@@ -623,6 +667,55 @@ class GoGenerator:
             go_name = "Min" if expr.name == "Math.min" else "Max"
             rendered = f"math.{go_name}(float64({args[0]}), float64({args[1]}))"
             return f"int64({rendered})" if go_expected_base(expected_type) == "Integer" else rendered
+        return None
+
+    def big_runtime_call_expr(self, expr: CallExpr) -> str | None:
+        if not expr.name.startswith("Big."):
+            return None
+        self.used_runtime_modules.add("Big")
+        self.std_imports.add("math/big")
+        self.needs_big_helpers = True
+        args = [self.expr(arg) for arg in expr.args]
+        if expr.name in {"Big.int", "Big.integer"}:
+            return f"freeholdBigInt({args[0]})"
+        if expr.name == "Big.fromInteger":
+            return f"big.NewInt({args[0]})"
+        if expr.name == "Big.float":
+            return f"freeholdBigFloat({args[0]}, {args[1]})"
+        if expr.name == "Big.floatFromInteger":
+            return f"freeholdBigFloatFromInteger({args[0]}, {args[1]})"
+        int_ops = {
+            "Big.addInt": "Add",
+            "Big.subInt": "Sub",
+            "Big.mulInt": "Mul",
+            "Big.divInt": "Quo",
+        }
+        if expr.name in int_ops:
+            return f"new(big.Int).{int_ops[expr.name]}({args[0]}, {args[1]})"
+        if expr.name == "Big.negInt":
+            return f"new(big.Int).Neg({args[0]})"
+        if expr.name == "Big.absInt":
+            return f"new(big.Int).Abs({args[0]})"
+        if expr.name == "Big.signInt":
+            return f"int64({args[0]}.Sign())"
+        float_ops = {
+            "Big.addFloat": "Add",
+            "Big.subFloat": "Sub",
+            "Big.mulFloat": "Mul",
+            "Big.divFloat": "Quo",
+        }
+        if expr.name in float_ops:
+            return f"new(big.Float).SetPrec({args[0]}.Prec()).{float_ops[expr.name]}({args[0]}, {args[1]})"
+        if expr.name == "Big.sqrt":
+            return f"new(big.Float).SetPrec({args[0]}.Prec()).Sqrt({args[0]})"
+        if expr.name == "Big.absFloat":
+            return f"freeholdBigFloatAbs({args[0]})"
+        if expr.name == "Big.signFloat":
+            return f"int64({args[0]}.Sign())"
+        if expr.name == "Big.toString":
+            return f"{args[0]}.String()"
+        if expr.name == "Big.format":
+            return f"{args[0]}.Text('f', int({args[1]}))"
         return None
 
     def string_runtime_call_expr(self, expr: CallExpr) -> str | None:
@@ -695,6 +788,8 @@ def go_type_string(type_name: str) -> str:
         "Boolean": "bool",
         "Double": "float64",
         "String": "string",
+        "BigInteger": "*big.Int",
+        "BigFloat": "*big.Float",
     }
     return mapping.get(type_name, go_exported_name(type_name))
 
@@ -721,6 +816,8 @@ def go_zero_value_for_type_name(type_name: str) -> str:
         "Boolean": "false",
         "Double": "0.0",
         "String": "\"\"",
+        "BigInteger": "nil",
+        "BigFloat": "nil",
     }
     if type_name in mapping:
         return mapping[type_name]
@@ -744,6 +841,43 @@ def go_type_name_fragment(type_ref: Any) -> str:
     return go_exported_name(type_to_string(type_ref))
 
 
+def program_uses_big_types(program: Program) -> bool:
+    for declaration in program.declarations:
+        if isinstance(declaration, TypeDecl) and type_name_uses_big(declaration.base):
+            return True
+        if isinstance(declaration, RecordTypeDecl):
+            if any(type_name_uses_big(field.type_name) for field in declaration.fields):
+                return True
+        if isinstance(declaration, RoutineDecl):
+            if any(type_name_uses_big(param.type_name) for param in declaration.params):
+                return True
+            if type_ref_uses_big(declaration.return_type):
+                return True
+    return False
+
+
+def type_ref_uses_big(type_ref: Any) -> bool:
+    if type_ref is None:
+        return False
+    if isinstance(type_ref, TypeName):
+        return type_name_uses_big(type_ref.name)
+    if isinstance(type_ref, ArrayTypeName):
+        return type_name_uses_big(type_ref.element_type)
+    if isinstance(type_ref, ResultTypeName):
+        return type_ref_uses_big(type_ref.ok_type) or type_name_uses_big(type_ref.error_type)
+    return False
+
+
+def type_name_uses_big(type_name: str) -> bool:
+    if type_name in {"BigInteger", "BigFloat"}:
+        return True
+    generic = parse_generic(type_name)
+    if generic is None:
+        return False
+    _, args = generic
+    return any(type_name_uses_big(arg) for arg in args)
+
+
 def go_package_name(module_name: str) -> str:
     package = re.sub(r"[^A-Za-z0-9_]", "_", module_name).lower()
     if not package or package[0].isdigit():
@@ -765,7 +899,7 @@ def go_import_path(module_name: str) -> str:
 
 
 def runtime_module_import_path(module_name: str) -> str | None:
-    return {"Math": "math", "Std.IO": "fmt"}.get(module_name)
+    return {"Math": "math", "Std.IO": "fmt", "Big": "math/big"}.get(module_name)
 
 
 def go_import_alias(module_name: str) -> str:
