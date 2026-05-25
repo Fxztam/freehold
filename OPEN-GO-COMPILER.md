@@ -52,7 +52,8 @@ Direkt offen fuer die naechsten Compiler-Slices:
     - Spaetere Domain-Bloecke wie JSON/gRPC muessen diese Cross-Module-Typen gezielt wiederverwenden statt eigene Sonderpfade einzufuehren.
 
 2. Result value field access
-    - Feature-Matrix: `11_errors_results` fuehrt `Result value field access` als deferred.
+    - Erledigt fuer V1: `value.field` in Result-`ensures` wird fuer Record-Ok-Payloads geparst, typisiert und im Go-Codegen ausgegeben.
+    - Importierte verschachtelte Record-Payloads verwenden dieselbe transitive Typkontext-Regel wie normale importierte Record-Feldzugriffe.
 
 3. Abort breiter machen
     - Breitere abort contract implication.

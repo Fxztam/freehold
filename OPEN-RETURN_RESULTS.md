@@ -42,7 +42,7 @@ AST shape parity:               227/227
 Semantic AST parity:            227/227
 ```
 
-Post-V1 remains intentionally open for richer result ergonomics such as `value.field`, multiple error types, and explicit unwrapping/propagation syntax.
+Post-V1 remains intentionally open for richer result ergonomics such as multiple error types and explicit unwrapping/propagation syntax. `value.field` for record ok payloads is part of the V1 surface.
 
 ## Current Status
 
@@ -197,13 +197,13 @@ value    OkTypeName
 error    ErrorTypeName
 ```
 
-Open issue:
+V1 field access:
 
 ```text
-value.field is not yet parseable when value is a record.
+value.field is parseable and type-checked when value is a record ok payload.
 ```
 
-The positive matrix tracks this as a known gap.
+The positive matrix tracks this with Result value-field contract coverage.
 
 ## V1 Scope And Post-V1 Questions
 
@@ -425,7 +425,7 @@ error NetworkError
 
 ### Result Value Field Access
 
-For record ok values, contracts should eventually allow field access from `value`:
+For record ok values, contracts allow field access from `value`:
 
 ```fh
 record Person
@@ -443,18 +443,13 @@ is
 end load_person
 ```
 
-Current gap:
-
-```text
-value.field is not yet parseable because value is a special result-contract atom, not a normal field-access root.
-```
-
-Recommended direction:
+V1 decision:
 
 ```text
 Allow value.field when the Result ok type is a record.
 Reject value.field when the Result ok type is not a record.
 Type-check value.field against the record field type.
+For imported record ok payloads, use the same transitive imported record type context as ordinary imported record field access.
 ```
 
 ### Multiple Error Types
@@ -507,7 +502,6 @@ FH-RES-4104 Result function must return ok or error
 FH-RES-4105 plain function cannot return ok or error
 FH-RES-4106 Result ok type mismatch
 FH-RES-4107 nested Result payload not supported
-FH-RES-4108 Result value field access not supported
 FH-RES-4109 Result ok type expression not supported
 FH-RES-4110 Result error type must be declared error
 FH-RES-4111 Result value field does not exist
@@ -524,6 +518,7 @@ result_error_return
 result_let_from_function
 result_assignment_from_function
 result_value_ensures
+result_value_field_ensures
 result_status_ensures
 function_returning_result_array
 nested_result_payload_not_supported
@@ -533,7 +528,6 @@ Post-V1 matrix targets:
 
 ```text
 function_returning_result_record
-contract_uses_result_value_field once value.field is supported
 contract_uses_result_value_field_unknown_field
 contract_uses_result_value_field_on_scalar_rejected
 qualified_result_call_assignment
@@ -550,8 +544,8 @@ return ok expr returns a success value.
 return error E returns a failure value.
 return error E is not abort E.
 Result ok type supports simple value type names and Array<T, N> payloads.
-Result ok type should later allow record field access through value.field contracts.
+Result ok type supports record field access through value.field contracts.
 Result error type should remain a declared error name in v1.
 Nested Result payloads are forbidden in v1 so that success, failure, value, and error remain unambiguous.
-value.field contracts should be added for record ok values.
+value.field contracts are allowed for record ok values.
 ```

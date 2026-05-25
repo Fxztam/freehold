@@ -236,6 +236,13 @@ include transitive type_or_record dependencies in importing module type context
 reason "FieldAccess over imported composed records must resolve nested record fields without helper routines."
 end
 
+meaning imported_result_value_field_context
+when ResultReturningEnsures contains field path rooted at value
+and Result ok type is an imported record
+include imported_record_type_context for the ok payload and its transitive record fields
+reason "Result value contracts over imported record payloads use the same nested field resolution as ordinary imported record values."
+end
+
 rule module_self_import
 when ImportDecl module equals current_module
 emit FH-SEM-1001
@@ -751,6 +758,14 @@ when ResultContractAtom appears outside ResultReturningEnsures
 emit FH-SEM-1601
     found atom
     expected "Result-returning ensures clause"
+end
+
+meaning result_value_field_access
+when ResultReturningEnsures contains field path rooted at value
+and Result ok type is a record
+resolve the field path against the ok payload record type
+reject with field_access_requires_record or unknown_record_field when the path cannot be resolved
+reason "value.field is part of the Result contract surface for structured ok payloads, not a separate unwrap operation."
 end
 
 section aborts

@@ -176,7 +176,7 @@ Positive feature-matrix coverage is tracked in:
 tests/language_modules/positive_feature_matrix.json
 ```
 
-The first matrix wave adds valid interaction cases for multiple while invariants with a variant, case branches returning record values, record-field contracts, qualified calls inside contracts, comma-separated `requires`/`ensures`, declared abort paths, abort call propagation, explicit top-level main aborts, positional and named string templates, string templates inside `Std.IO.logf`, string templates inside record literals, Big number calls inside expressions, `Json.stringify` on record values, and `Result<Array<...>, E>` ok payloads. `value.field` in Result ensures remains recorded as a known grammar gap rather than a green positive case.
+The first matrix wave adds valid interaction cases for multiple while invariants with a variant, case branches returning record values, record-field contracts, qualified calls inside contracts, comma-separated `requires`/`ensures`, declared abort paths, abort call propagation, explicit top-level main aborts, positional and named string templates, string templates inside `Std.IO.logf`, string templates inside record literals, Big number calls inside expressions, `Json.stringify` on record values, `Result<Array<...>, E>` ok payloads, and `value.field` contracts over record ok payloads.
 
 The first AST-shape comparison stage is:
 
