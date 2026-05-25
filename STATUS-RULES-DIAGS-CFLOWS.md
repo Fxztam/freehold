@@ -1,6 +1,6 @@
 # Status: Rules, Diagnostics, Control Flow
 
-Stand: 2026-05-24
+Stand: 2026-05-25
 
 Dieser Status trennt drei Ebenen, die leicht verwechselt werden koennen:
 
@@ -18,7 +18,7 @@ Der Go-Parser ist bei Syntax/AST-Paritaet sehr weit: alle 319 Language-Module-Fa
 
 `spec/freehold.diag`:
 
-- Diagnostic-Specs: `111`
+- Diagnostic-Specs: `112`
 
 `spec/freehold.rules`:
 
@@ -50,7 +50,7 @@ Damit sind im Go-Code direkt vor allem Syntax-/Parserdiagnostics umgesetzt. Das 
 
 Einordnung gegen die Spec:
 
-- `23/111` Diagnostic-Specs direkt im Go-Catalog.
+- `23/112` Diagnostic-Specs direkt im Go-Catalog.
 - grob die `parse_syntax`-Schicht aus `freehold.rules`, also `23/113` Rules/Emits direkt im Go-Frontend.
 - Semantik-, Typ-, Contract-, Abort-, Concurrency-, Generic-, JSON-, Record- und gRPC-Diagnostics sind aktuell nicht als kompletter Go-Verifier umgesetzt.
 
@@ -105,16 +105,23 @@ Import-/Record-Semantik:
 
 - `spec/freehold.rules` enthaelt eine nicht-emittierende `meaning imported_record_type_context` fuer exposed/importierte Records: transitive Type-/Record-Abhaengigkeiten von Record-Feldern gehoeren in den Typkontext des importierenden Moduls. Das ist eine positive Aufloesungsregel; Fehlerfaelle laufen weiter ueber `FH-TYP-2101 field_access_requires_record` bzw. `FH-SEM-1105 unknown_record_field`.
 
+Async-/Scope-Semantik:
+
+- `spec/freehold.rules` enthaelt die `concurrency`-Regeln fuer `await`, Channel-Builtins und strukturierte Scope-Blocks.
+- `spec/freehold.diag` enthaelt die stabilen Concurrency-Diagnostics `FH-CON-3101`, `FH-CON-3102`, `FH-CON-3111`, `FH-CON-3112`, `FH-CON-3121` und `FH-CON-3122`.
+- `spec/analyzer.cflow` enthaelt `ScopeFlowSummary` sowie die Scope-Ownership-Regeln fuer `spawn`, `join`, Escape und unjoined Handles.
+- Der Compiler-V1-Smoke `examples/compiler_v1/unsupported/async_scope_runtime/App/Main.fh` dokumentiert die aktuelle Grenze: Python-Frontend/Semantik/CFlow verifizieren den strukturierten Scope, Go-Codegen V1 meldet fuer async Runtime weiterhin `FH-GOCODEGEN-0001`.
+
 Offizieller Spec-Diagnostic-Check:
 
 ```text
 verify-spec-diagnostics.cmd
 
-Diagnostic specs:        111
+Diagnostic specs:        112
 Rule emits:              113
 Expected syntax codes:   19
 Expected semantic codes: 83
-CODE_MAP entries:        88
+CODE_MAP entries:        89
 Failures:                0
 ```
 
@@ -160,6 +167,8 @@ Noch nicht als eigener Go-Analyzer umgesetzt:
 - strukturierte Scope-Flow-Regeln als eigener Analyzer
 - path-aware Proofs
 - breitere Abort-Contract-Implication
+
+Der neue Unsupported-Smoke fuer Async/Scope aendert diese Einordnung nicht: Er bestaetigt die bestehende Python-Semantik- und CFlow-Grenze und haelt die Go-native Runtime-/Analyzer-Arbeit weiter als offenen Positiv-Slice fest.
 
 ## Aktuelle Einschaetzung
 
