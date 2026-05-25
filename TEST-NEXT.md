@@ -88,6 +88,11 @@ Fuer bewusst nicht unterstuetzte Beispiele prueft der Wrapper:
    - `ensures value...` prueft verschachtelte Record-Felder des erfolgreichen Result-Payloads
    - `App.Main` verwendet `outcome.value` als normalen Record-Wert und schreibt eine Runtime-Ausgabe
 
+11. `11_result_array_record_payload`
+   - importierte verschachtelte Records als `Result<Array<Order, 2>, Error>`-Payload
+   - `App.Main` bindet `outcome.value` explizit an ein Array und liest `orders[0]` / `orders[1]` als Records
+   - Runtime-Smoke prueft verschachtelte Felder und Ausgabe fuer beide Array-Elemente
+
 ## Unsupported-Smokes
 
 Bewusst nicht unterstuetzte Go-Codegen-V1-Faelle bleiben als Smoke-Test wichtig. Aktuell abgedeckt:
@@ -125,8 +130,8 @@ verify-additive-test-line.cmd
 
 ## Naechste sinnvolle Erweiterungen
 
-- Testmodus fuer Ausgabe-Regression ausweiten: Der Compiler-Example-Smoke schreibt fuer alte buildbare Examples sowie `07_complex_contracts`, `08_cross_module_type_composition`, `09_result_record_type_composition` und `10_result_record_contract_demo` bereits `<module-name>.log` und vergleicht gegen `examples/expected_logs/<module-name>.expected.log`. Durch einfache Go-Runtime-Checks fuer `requires`/`ensures` sind nun auch die alten Contract-Beispiele Teil dieser Runtime-Flotte. Naechster Schritt ist, weitere neue `compiler_v1`-Examples mit bewusster Ausgabe in diesen Mechanismus aufzunehmen.
-- Weitere Cross-Module-Typkompositionen: Namenskonflikte und negative Result-/Import-Kontraktfaelle. Erste negative Result-`value.field`-Faelle sind in `13_contract_blocks` und `03_import_resolution` als additive Artefakte verankert; offen bleiben breitere Namenskonflikt-Kombinationen und Array-Payload-Folgefaelle.
+- Testmodus fuer Ausgabe-Regression ausweiten: Der Compiler-Example-Smoke schreibt fuer alte buildbare Examples sowie `07_complex_contracts`, `08_cross_module_type_composition`, `09_result_record_type_composition`, `10_result_record_contract_demo` und `11_result_array_record_payload` bereits `<module-name>.log` und vergleicht gegen `examples/expected_logs/<module-name>.expected.log`. Durch einfache Go-Runtime-Checks fuer `requires`/`ensures` sind nun auch die alten Contract-Beispiele Teil dieser Runtime-Flotte. Naechster Schritt ist, weitere neue `compiler_v1`-Examples mit bewusster Ausgabe in diesen Mechanismus aufzunehmen.
+- Weitere Cross-Module-Typkompositionen: Namenskonflikte und negative Result-/Import-Kontraktfaelle. Erste negative Result-`value.field`-Faelle sind in `13_contract_blocks` und `03_import_resolution` als additive Artefakte verankert; `Result<Array<Order, 2>, Error>` ist als Compiler-V1-Smoke abgedeckt. Offen bleiben breitere Namenskonflikt-Kombinationen.
 - Async/Channels/Scope Runtime als Unsupported-Smoke oder spaeterer Positiv-Slice.
 - gRPC server/client bindings als eigener V2/V3-Codegen-Pfad.
 - Go-native Semantik-/CFlow-Slices Richtung Bootstrap.

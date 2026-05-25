@@ -1,0 +1,21 @@
+module App.Main
+
+import Std.IO
+import Domain.Orders exposing NotFound, load_orders
+import Domain.Types exposing Order
+
+procedure main()
+is
+    let outcome: Result<Array<Order, 2>, NotFound> = load_orders(700)
+    let orders: Array<Order, 2> = outcome.value
+    let first: Order = orders[0]
+    let second: Order = orders[1]
+    check first.customer.address.city_id = first.destination.city_id
+    check second.customer.address.city_id = second.destination.city_id
+    call Std.IO.logf("first order = ${}", first.id)
+    call Std.IO.logf("first customer = ${}", first.customer.name)
+    call Std.IO.logf("second city = ${}", second.destination.label)
+    call Std.IO.logf("second zone = ${}", second.customer.address.city_id)
+end main
+
+end App.Main

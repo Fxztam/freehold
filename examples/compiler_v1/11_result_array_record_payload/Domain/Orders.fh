@@ -1,0 +1,23 @@
+module Domain.Orders
+
+import Domain.Types exposing Address, Customer, Order, make_address, make_customer, make_order
+
+error NotFound
+
+function build_order(id: Integer, customer_id: Integer, customer_name: String, city_id: Integer, city: String) returns Order
+is
+    let destination: Address = make_address(city_id, city)
+    let customer: Customer = make_customer(customer_id, customer_name, destination)
+    return make_order(id, customer, destination)
+end build_order
+
+function load_orders(seed: Integer) returns Result<Array<Order, 2>, NotFound>
+requires seed > 0
+ensures success
+is
+    let first: Order = build_order(seed, 1001, "Ada", 42, "Berlin")
+    let second: Order = build_order(seed + 1, 1002, "Grace", 7, "Hamburg")
+    return ok [first, second]
+end load_orders
+
+end Domain.Orders
