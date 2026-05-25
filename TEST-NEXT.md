@@ -56,7 +56,7 @@ Fuer bewusst nicht unterstuetzte Beispiele prueft der Wrapper:
 
 5. `05_runtime_builtins`
    - `String.*`
-   - `String.template`
+   - `String.template` fuer statische Template-Literale
    - `Math.*`
    - `Json.stringify`
    - `Std.IO.log` / `Std.IO.logf`
@@ -140,4 +140,5 @@ verify-additive-test-line.cmd
 - Weitere Cross-Module-Typkompositionen: Namenskonflikte und negative Result-/Import-Kontraktfaelle. Erste negative Result-`value.field`-Faelle sind in `13_contract_blocks` und `03_import_resolution` als additive Artefakte verankert; `Result<Array<Order, 2>, Error>` und qualifizierte gleichnamige Module sind als Compiler-V1-Smokes abgedeckt; doppelt exponierte Routinen, Records und Errors werden in `03_import_resolution` negativ abgesichert. Transitive gleichnamige Records/Errors in getrennten Importgraph-Aesten sind positiv in `import_transitive_name_conflicts` abgedeckt. Offen bleiben weitere komplexe Alias-Konflikte.
 - Async/Channels/Scope Runtime als spaeterer Positiv-Slice; ein Unsupported-Smoke dokumentiert die aktuelle Go-Codegen-Grenze.
 - gRPC server/client bindings als eigener V2/V3-Codegen-Pfad; der V1-Kern endet bei IDL-Verifikation, `.proto`-Output und Unsupported-Smoke fuer Go-Bindings.
+- Dynamische `String.template`-Formatargumente als spaeterer Codegen-Slice; statische Template-Literale sind in `05_runtime_builtins` und `18_string_templates` abgedeckt.
 - Go-native Semantik-/CFlow-Slices Richtung Bootstrap.

@@ -309,6 +309,7 @@ Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
 - REST/WebSocket/SSE Transport-Libs
 - Runtime-Contract-Enforcement
 - path-aware control-flow proofs
+- dynamische `String.template`-Formatargumente; statische Template-Literale bleiben V1-supported
 - Generics Bounds/Inference/volle Monomorphisierung
 - Native/Image Builder
 
