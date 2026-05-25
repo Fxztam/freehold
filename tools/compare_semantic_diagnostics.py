@@ -79,6 +79,7 @@ CODE_MAP = {
     "VF-ABT002": ("FH-ABT-3002", 3002, "abort_not_declared_by_routine", "abort"),
     "VF-ABT003": ("FH-ABT-3003", 3003, "duplicate_abort_declaration", "abort"),
     "VF-ABT005": ("FH-ABT-3005", 3005, "caller_does_not_handle_or_propagate_abort", "abort"),
+    "VF-ABT006": ("FH-ABT-3006", 3006, "abort_condition_not_covered_by_contract", "abort"),
     "VF-ABT009": ("FH-ABT-3009", 3009, "main_requires_clause_not_allowed", "abort"),
     "VF-ABT010": ("FH-ABT-3010", 3010, "unreachable_statement_after_guaranteed_exit", "abort"),
     "VF-TPL001": ("FH-TPL-4001", 4001, "template_placeholder_count_mismatch", "template"),

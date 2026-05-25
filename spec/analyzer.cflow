@@ -281,11 +281,7 @@ emit FH-ABT-3005
 end
 
 limit same_error_name_only
-reason "Abort V2 checks only that the error name is propagated. It does not prove condition implication."
-end
-
-non_goal condition_implication
-until abort_path_conditions are implemented
+reason "Abort V2 call propagation checks only that the error name is propagated across calls. It does not prove callee/caller condition implication."
 end
 
 non_goal handler_syntax
@@ -323,7 +319,27 @@ emit FH-ABT-3010
 end
 
 limit simple_block_reachability
-reason "Abort V4a rejects statements after syntactically guaranteed exits in the same block. It does not prove symbolic path infeasibility or condition implication."
+reason "Abort V4a rejects statements after syntactically guaranteed exits in the same block. It does not prove symbolic path infeasibility."
+end
+
+section abort_condition_implication_v4b
+
+flow abort_path_conditions
+source RoutineDecl requires
+through IfStmt then_condition and else_not_condition
+to AbortStmt
+end
+
+rule abort_condition_not_covered_by_contract
+when AbortStmt error_name has matching RoutineDecl aborts error_name when condition
+and abort_path_conditions do not syntactically contain condition
+emit FH-ABT-3006
+    found abort_statement
+    expected "path implies aborts condition"
+end
+
+limit syntactic_condition_implication
+reason "Abort V4b recognizes direct syntactic matches from requires and if/else path conditions. It does not solve arbitrary Boolean formulas or numeric constraints."
 end
 
 section grpc_idl_boundary

@@ -798,6 +798,14 @@ emit FH-ABT-3005
     expected "caller declares matching aborts clause or handles abort"
 end
 
+rule abort_condition_not_covered_by_contract
+when AbortStmt error_name has enclosing RoutineDecl aborts error_name when condition
+and current_path_conditions do not syntactically imply condition
+emit FH-ABT-3006
+    found abort_statement
+    expected "path implies aborts condition"
+end
+
 rule main_requires_clause_not_allowed
 when RoutineDecl name is "main" and requires is not empty
 emit FH-ABT-3009

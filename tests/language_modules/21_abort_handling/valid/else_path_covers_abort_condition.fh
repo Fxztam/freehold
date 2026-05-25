@@ -1,0 +1,15 @@
+module AbortElsePathCoversCondition
+
+error NotReady
+
+procedure read(ready: Boolean)
+aborts NotReady when not ready
+is
+    if ready then
+        check ready
+    else
+        abort NotReady
+    end if
+end read
+
+end AbortElsePathCoversCondition

@@ -592,6 +592,11 @@ ABORT_PROPAGATION_HINT = """A call to an aborting routine must keep the abort vi
 Add a matching `aborts ErrorName` clause to the caller, or handle the abort once handler syntax exists.
 """
 
+ABORT_CONDITION_COVERAGE_HINT = """A conditional abort contract only covers abort sites reached under the same condition.
+
+Move the `abort ErrorName` under a matching `if` guard, change the `aborts ErrorName when ...` condition, or remove the condition if every path may abort with that error.
+"""
+
 ABORT_MAIN_REQUIRES_HINT = """`main` has no ordinary Freehold caller, so `requires` cannot express a call-site obligation there.
 
 Use an explicit top-level `aborts ErrorName when condition` path, or introduce a future environment-assumption construct instead of `requires`.
@@ -1255,6 +1260,11 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         routine_name, error_name = abort_propagation_match.groups()
         return Diagnostic("VF-ABT005", "caller does not handle or propagate abort", line, column, f"call {routine_name} may abort {error_name}", f"caller declares aborts {error_name} or handles {error_name}", ABORT_PROPAGATION_HINT, phase="semantic")
+    abort_condition_coverage_match = re.search(r"abort condition not covered by abort contract: ([A-Za-z_][A-Za-z0-9_]*)", message)
+    if abort_condition_coverage_match:
+        line, column = _source_position_from_message(message)
+        error_name = abort_condition_coverage_match.group(1)
+        return Diagnostic("VF-ABT006", "abort condition not covered by abort contract", line, column, f"abort {error_name}", f"path implies aborts {error_name} condition", ABORT_CONDITION_COVERAGE_HINT, phase="semantic")
     main_requires_match = re.search(r"main requires clause is not allowed", message)
     if main_requires_match:
         line, column = _source_position_from_message(message)

@@ -301,7 +301,7 @@ class Verifier:
                 if clause.condition is not None:
                     self.contract_bool("aborts", clause.condition, env, ctx, False, None)
             for e in r.ensures: self.contract_bool("ensures", e, env, ctx, True, r.return_type)
-            ret = self.block(r.body, r, env, ctx)
+            ret = self.block(r.body, r, env, ctx, list(r.requires))
             ctx.require_no_unjoined_scope_handles(r.pos)
             if r.kind == "function" and not ret: raise TypeCheckError(f"{r.pos.text()}: function {r.name} has no guaranteed return")
         finally:
@@ -319,7 +319,46 @@ class Verifier:
             error_name = missing[0]
             raise TypeCheckError(f"{pos.text()}: caller does not handle or propagate abort: {callee.name} may abort {error_name}")
 
-    def block(self, body, r, env, ctx):
+    def abort_condition(self, r, error_name):
+        for clause in r.aborts:
+            if clause.error_name == error_name:
+                return clause.condition
+        return None
+
+    def require_abort_condition_covered(self, stmt, r, path_conditions):
+        condition = self.abort_condition(r, stmt.error_name)
+        if condition is None:
+            return
+        if any(self.same_expr(condition, path_condition) for path_condition in path_conditions):
+            return
+        raise TypeCheckError(f"{stmt.pos.text()}: abort condition not covered by abort contract: {stmt.error_name}")
+
+    def same_expr(self, left, right):
+        if type(left) is not type(right):
+            return False
+        if isinstance(left, (NumberExpr, DoubleExpr, BoolExpr, StringExpr)):
+            return left.value == right.value
+        if isinstance(left, VarExpr):
+            return left.name == right.name
+        if isinstance(left, FieldAccessExpr):
+            return left.path == right.path
+        if isinstance(left, SpecialResultExpr):
+            return left.name == right.name
+        if isinstance(left, UnaryExpr):
+            return left.op == right.op and self.same_expr(left.expr, right.expr)
+        if isinstance(left, BinaryExpr):
+            if left.op != right.op:
+                return False
+            if self.same_expr(left.left, right.left) and self.same_expr(left.right, right.right):
+                return True
+            return left.op in {"=", "!="} and self.same_expr(left.left, right.right) and self.same_expr(left.right, right.left)
+        return False
+
+    def negated_condition(self, condition):
+        return UnaryExpr("not", condition, condition.pos)
+
+    def block(self, body, r, env, ctx, path_conditions=None):
+        path_conditions = path_conditions or []
         saw = False
         for s in body:
             if saw:
@@ -346,12 +385,15 @@ class Verifier:
                     raise TypeCheckError(f"{s.pos.text()}: unknown abort error: {s.error_name}")
                 if s.error_name not in {clause.error_name for clause in r.aborts}:
                     raise TypeCheckError(f"{s.pos.text()}: abort not declared by routine: {s.error_name}")
+                self.require_abort_condition_covered(s, r, path_conditions)
                 saw = True
             elif isinstance(s, CheckStmt):
                 self.statement_bool("check", s.expr, env, ctx, False, None)
             elif isinstance(s, IfStmt):
                 self.statement_bool("if condition", s.condition, env, ctx, False, None)
-                saw = saw or (self.block(s.then_body, r, dict(env), ctx) and self.block(s.else_body, r, dict(env), ctx))
+                then_path = [*path_conditions, s.condition]
+                else_path = [*path_conditions, self.negated_condition(s.condition)]
+                saw = saw or (self.block(s.then_body, r, dict(env), ctx, then_path) and self.block(s.else_body, r, dict(env), ctx, else_path))
             elif isinstance(s, WhileStmt):
                 self.statement_bool("while condition", s.condition, env, ctx, False, None)
                 for invariant in s.invariants:
@@ -360,7 +402,7 @@ class Verifier:
                     variant_type = self.infer(s.variant, env, ctx, False, None)
                     if self.base(variant_type, ctx) != "Integer":
                         raise TypeCheckError(f"{s.variant.pos.text()}: while variant must be Integer, got {type_to_string(variant_type)}")
-                self.block(s.body, r, dict(env), ctx)
+                self.block(s.body, r, dict(env), ctx, path_conditions)
             elif isinstance(s, CaseStmt):
                 case_t = self.infer(s.expr, env, ctx, False, None)
                 seen_literals = set()
@@ -383,8 +425,8 @@ class Verifier:
                         if key in seen_literals:
                             raise TypeCheckError(f"{br.pos.text()}: duplicate case branch value")
                         seen_literals.add(key)
-                    branch_returns.append(self.block(br.body, r, dict(env), ctx))
-                default_returns = self.block(s.default_body, r, dict(env), ctx)
+                    branch_returns.append(self.block(br.body, r, dict(env), ctx, path_conditions))
+                default_returns = self.block(s.default_body, r, dict(env), ctx, path_conditions)
                 saw = saw or (all(branch_returns) and default_returns)
             elif isinstance(s, ScopeStmt):
                 self.validate_identifier(s.name, s.pos)
@@ -392,9 +434,9 @@ class Verifier:
                 scope_env[s.name] = TypeName("Scope")
                 ctx.scope_vars.add(s.name)
                 try:
-                    self.block(s.spawn_body, r, scope_env, ctx)
-                    self.block(s.join_body, r, scope_env, ctx)
-                    saw = saw or self.block(s.result_body, r, scope_env, ctx)
+                    self.block(s.spawn_body, r, scope_env, ctx, path_conditions)
+                    self.block(s.join_body, r, scope_env, ctx, path_conditions)
+                    saw = saw or self.block(s.result_body, r, scope_env, ctx, path_conditions)
                     ctx.require_no_unjoined_scope_handles(s.pos, s.name)
                 finally:
                     ctx.scope_vars.discard(s.name)

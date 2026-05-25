@@ -14,15 +14,15 @@ aborts ErrorName when condition
 abort ErrorName
 ```
 
-V1 verifies declared errors, duplicate abort declarations, abort statements declared by the enclosing routine, and Boolean abort conditions. V2 adds same-error-name call propagation. V3 adds main-specific requires rejection while keeping explicit top-level main aborts valid. V4a rejects statements after syntactically guaranteed exits such as `abort`, `return`, and exhaustive aborting branches. Path-condition coverage, condition implication, handler syntax, and proof obligations remain future slices.
+V1 verifies declared errors, duplicate abort declarations, abort statements declared by the enclosing routine, and Boolean abort conditions. V2 adds same-error-name call propagation. V3 adds main-specific requires rejection while keeping explicit top-level main aborts valid. V4a rejects statements after syntactically guaranteed exits such as `abort`, `return`, and exhaustive aborting branches. V4b adds simple syntactic path implication for conditional abort contracts using routine `requires` clauses and `if`/`else` guards. Handler syntax, broader call-condition implication, and full proof obligations remain future slices.
 
-Current validation baseline after V4a:
+Current validation baseline after V4b:
 
 ```text
-21_abort_handling module:       13/13
-Language module gate:           456/456
-Semantic diagnostics:           97/97
-Spec diagnostics:               113 specs, 114 emits, 84 semantic codes, 90 CODE_MAP entries
+21_abort_handling module:       17/17
+Language module gate:           461/461
+Semantic diagnostics:           99/99
+Spec diagnostics:               114 specs, 115 emits, 85 semantic codes, 91 CODE_MAP entries
 Parser status parity:           322/322
 AST shape parity:               277/277
 Semantic AST parity:            277/277
@@ -54,13 +54,17 @@ Implemented on 2026-05-23 for rejecting normal `requires` clauses on `main`. Exp
 
 V4a implemented on 2026-05-25 for statements after guaranteed exits in the same block. Covered shapes include a direct `abort` followed by another statement and an exhaustive `if/else` whose branches both abort before a later statement.
 
+V4b implemented on 2026-05-25 for simple syntactic condition implication at abort sites. The verifier carries routine `requires` expressions and surrounding `if`/`else` guards as active path conditions. An `abort X` covered by `aborts X when condition` must occur under a syntactically matching condition; otherwise `FH-ABT-3006` rejects the site.
+
 Reject obviously unreachable abort statements and simple inconsistent control-flow shapes. Initial examples include `abort` after a guaranteed `return`, `return` after an unconditional `abort`, and abort conditions that are plainly incompatible with routine preconditions.
 
-Remaining V4 work: condition implication and broader contract/path consistency.
+Remaining V4 work: broader call-condition implication and contract/path consistency beyond direct syntactic matches.
 
 4. Abort V5: Path Coverage And Proof Obligations
 
 This is the heaviest slice. It should check whether each `aborts X when condition` is covered by actual abort paths and whether every `abort X` site is compatible with the declared abort condition.
+
+The first abort-site compatibility slice is now covered by V4b for direct syntactic path matches. V5 remains responsible for full path coverage and proof obligations.
 
 This step should wait until call propagation is stable, because path coverage and proof obligations build on the routine-level abort surface.
 
