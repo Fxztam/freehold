@@ -229,6 +229,13 @@ end
 
 section imports_and_names
 
+meaning imported_record_type_context
+when ImportDecl exposing contains record symbol
+and exposed_record fields reference type_or_record symbols from imported module
+include transitive type_or_record dependencies in importing module type context
+reason "FieldAccess over imported composed records must resolve nested record fields without helper routines."
+end
+
 rule module_self_import
 when ImportDecl module equals current_module
 emit FH-SEM-1001

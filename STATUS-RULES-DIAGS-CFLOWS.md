@@ -101,6 +101,10 @@ freehold-go-frontend/internal/token                             [no test files]
 
 ## Spec- und Semantic-Diagnostic-Gates
 
+Import-/Record-Semantik:
+
+- `spec/freehold.rules` enthaelt eine nicht-emittierende `meaning imported_record_type_context` fuer exposed/importierte Records: transitive Type-/Record-Abhaengigkeiten von Record-Feldern gehoeren in den Typkontext des importierenden Moduls. Das ist eine positive Aufloesungsregel; Fehlerfaelle laufen weiter ueber `FH-TYP-2101 field_access_requires_record` bzw. `FH-SEM-1105 unknown_record_field`.
+
 Offizieller Spec-Diagnostic-Check:
 
 ```text
