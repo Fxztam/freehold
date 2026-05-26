@@ -58,8 +58,10 @@ func run(entryFile string) ProjectResult {
 	}
 
 	result.ParseOK = true
-	result.EntryModule = project.Entry.Name
-	result.Modules = project.ModuleNames()
+	if project != nil {
+		result.EntryModule = project.Entry.Name
+		result.Modules = project.ModuleNames()
+	}
 	result.SemanticDiagnostics = diagnostics
 	if result.SemanticDiagnostics == nil {
 		result.SemanticDiagnostics = []*diagnostic.Diagnostic{}

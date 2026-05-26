@@ -6,6 +6,46 @@
       "modules": ["App.Main", "Domain.Shipments", "Domain.Types"],
       "semantic_ok": true,
       "semantic_diagnostics": []
+    },
+    "03_import_resolution/imported_module_not_found": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/imported_module_not_found/App/Main.fh",
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {"code": "FH-SEM-1006", "name": "imported_module_not_found", "found": "Banking.Missing"}
+      ]
+    },
+    "03_import_resolution/cyclic_import": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/cyclic_import/App/Main.fh",
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {"code": "FH-SEM-1007", "name": "import_cycle", "found": "App.Main -> Banking.Proofs -> App.Main"}
+      ]
+    },
+    "03_import_resolution/exposed_symbol_not_found": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/exposed_symbol_not_found/App/Main.fh",
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {"code": "FH-SEM-1010", "name": "unknown_exposed_symbol", "found": "missing_symbol"}
+      ]
+    },
+    "03_import_resolution/imported_module_name_mismatch": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/imported_module_name_mismatch/App/Main.fh",
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {"code": "FH-SEM-1009", "name": "imported_module_name_mismatch", "found": "Banking.WrongProofs"}
+      ]
+    },
+    "03_import_resolution/entry_module_path_mismatch": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/entry_module_path_mismatch/App/Main.fh",
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {"code": "FH-SEM-1008", "name": "module_file_path_mismatch"}
+      ]
     }
   }
 }

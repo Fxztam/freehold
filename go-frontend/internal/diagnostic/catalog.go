@@ -289,6 +289,56 @@ var catalog = map[string]Definition{
 		Message:  "unknown record field",
 		Hint:     "A record literal or field access may only use fields declared by the record type.",
 	},
+	"imported_module_not_found": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1006",
+		Number:   1006,
+		Name:     "imported_module_not_found",
+		Message:  "imported module not found",
+		Hint:     "Imported project modules must exist at the path implied by their module name.",
+	},
+	"import_cycle": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1007",
+		Number:   1007,
+		Name:     "import_cycle",
+		Message:  "import cycle",
+		Hint:     "Project imports must form an acyclic module graph.",
+	},
+	"module_file_path_mismatch": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1008",
+		Number:   1008,
+		Name:     "module_file_path_mismatch",
+		Message:  "module file path mismatch",
+		Hint:     "A module file path must match its module name, for example App.Main -> App/Main.fh.",
+	},
+	"imported_module_name_mismatch": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1009",
+		Number:   1009,
+		Name:     "imported_module_name_mismatch",
+		Message:  "imported module name mismatch",
+		Hint:     "An imported file must declare the module named by the import.",
+	},
+	"unknown_exposed_symbol": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1010",
+		Number:   1010,
+		Name:     "unknown_exposed_symbol",
+		Message:  "unknown exposed symbol",
+		Hint:     "An import exposing list may only name declarations from the imported module.",
+	},
 	"unknown_routine": {
 		Severity: "error",
 		Phase:    "semantic",
@@ -408,6 +458,26 @@ func FieldAccessRequiresRecord(location Location, foundType string, field string
 
 func UnknownRecordField(location Location, recordName string, field string) *Diagnostic {
 	return fromDefinition("unknown_record_field", location, field, []string{"declared field in " + recordName})
+}
+
+func ImportedModuleNotFound(location Location, moduleName string, expectedPath string) *Diagnostic {
+	return fromDefinition("imported_module_not_found", location, moduleName, []string{"module file at " + expectedPath})
+}
+
+func ImportCycle(location Location, cycle string) *Diagnostic {
+	return fromDefinition("import_cycle", location, cycle, []string{"acyclic import graph"})
+}
+
+func ModuleFilePathMismatch(location Location, expectedPath string, actualPath string) *Diagnostic {
+	return fromDefinition("module_file_path_mismatch", location, actualPath, []string{expectedPath})
+}
+
+func ImportedModuleNameMismatch(location Location, expectedName string, actualName string) *Diagnostic {
+	return fromDefinition("imported_module_name_mismatch", location, actualName, []string{expectedName})
+}
+
+func UnknownExposedSymbol(location Location, moduleName string, symbolName string) *Diagnostic {
+	return fromDefinition("unknown_exposed_symbol", location, symbolName, []string{"declaration in " + moduleName})
 }
 
 func UnknownRoutine(location Location, routineName string) *Diagnostic {

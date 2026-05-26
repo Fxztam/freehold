@@ -1,6 +1,7 @@
 package semantic
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,6 +20,17 @@ type Project struct {
 	Entry   *ast.Module
 	Modules map[string]*ast.Module
 	Files   map[string]string
+}
+
+type ProjectLoadError struct {
+	Diagnostic *diagnostic.Diagnostic
+}
+
+func (e *ProjectLoadError) Error() string {
+	if e == nil || e.Diagnostic == nil {
+		return "project load error"
+	}
+	return e.Diagnostic.Error()
 }
 
 var runtimeModules = map[string]bool{
@@ -46,7 +58,7 @@ func LoadProject(entryFile string) (*Project, error) {
 
 	expectedPath := modulePath(root, entryModule.Name)
 	if !samePath(expectedPath, entryPath) {
-		return nil, fmt.Errorf("module file path mismatch: expected %s, got %s", expectedPath, entryPath)
+		return nil, projectDiagnostic(diagnostic.ModuleFilePathMismatch(locationFromPosition(entryModule.Pos), expectedPath, entryPath))
 	}
 
 	project := &Project{
@@ -64,6 +76,10 @@ func LoadProject(entryFile string) (*Project, error) {
 func ValidateProject(entryFile string) (*Project, []*diagnostic.Diagnostic, error) {
 	project, err := LoadProject(entryFile)
 	if err != nil {
+		var loadErr *ProjectLoadError
+		if errors.As(err, &loadErr) {
+			return nil, []*diagnostic.Diagnostic{loadErr.Diagnostic}, nil
+		}
 		return nil, nil, err
 	}
 
@@ -98,25 +114,30 @@ func (p *Project) resolveImports(module *ast.Module, stack []string) error {
 			continue
 		}
 		if contains(stack, moduleName) {
-			return fmt.Errorf("import cycle: %s", strings.Join(append(stack, moduleName), " -> "))
+			cycle := strings.Join(append(stack, moduleName), " -> ")
+			return projectDiagnostic(diagnostic.ImportCycle(locationFromPosition(importDecl.Pos), cycle))
 		}
 
 		imported, ok := p.Modules[moduleName]
 		if !ok {
 			path := modulePath(p.Root, moduleName)
 			if _, err := os.Stat(path); err != nil {
-				return fmt.Errorf("imported module not found: %s", moduleName)
+				return projectDiagnostic(diagnostic.ImportedModuleNotFound(locationFromPosition(importDecl.Pos), moduleName, path))
 			}
 			parsed, err := parseModuleFile(path)
 			if err != nil {
 				return fmt.Errorf("imported module has syntax error: %s: %w", moduleName, err)
 			}
 			if parsed.Name != moduleName {
-				return fmt.Errorf("imported module name mismatch: expected %s, got %s", moduleName, parsed.Name)
+				return projectDiagnostic(diagnostic.ImportedModuleNameMismatch(locationFromPosition(parsed.Pos), moduleName, parsed.Name))
 			}
 			p.Modules[moduleName] = parsed
 			p.Files[moduleName] = path
 			imported = parsed
+		}
+
+		if missing := missingExposedSymbols(imported, importDecl.Exposing); len(missing) > 0 {
+			return projectDiagnostic(diagnostic.UnknownExposedSymbol(locationFromPosition(importDecl.Pos), moduleName, missing[0]))
 		}
 
 		if err := p.resolveImports(imported, append(stack, moduleName)); err != nil {
@@ -124,6 +145,37 @@ func (p *Project) resolveImports(module *ast.Module, stack []string) error {
 		}
 	}
 	return nil
+}
+
+func projectDiagnostic(diag *diagnostic.Diagnostic) error {
+	return &ProjectLoadError{Diagnostic: diag}
+}
+
+func missingExposedSymbols(module *ast.Module, exposing []string) []string {
+	if module == nil || len(exposing) == 0 {
+		return nil
+	}
+	declared := map[string]bool{}
+	for _, decl := range module.Declarations {
+		switch value := decl.(type) {
+		case ast.TypeDecl:
+			declared[value.Name] = true
+		case ast.FunctionDecl:
+			declared[value.Name] = true
+		case ast.ProcedureDecl:
+			declared[value.Name] = true
+		case ast.ErrorDecl:
+			declared[value.Name] = true
+		}
+	}
+
+	var missing []string
+	for _, name := range exposing {
+		if !declared[name] {
+			missing = append(missing, name)
+		}
+	}
+	return missing
 }
 
 func parseModuleFile(path string) (*ast.Module, error) {
