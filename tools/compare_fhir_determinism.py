@@ -119,10 +119,22 @@ def validate_document(document: dict[str, Any]) -> list[str]:
     violations.extend(find_forbidden_keys(document))
     violations.extend(find_forbidden_string_markers(document))
 
+    if document.get("node") != "FhirDocumentV1":
+        violations.append("document node is not FhirDocumentV1")
+    if document.get("schema_profile") != "fh-ir":
+        violations.append("schema_profile is not fh-ir")
+
+    schema_version = document.get("schema_version", {})
+    if not isinstance(schema_version, dict) or any(key not in schema_version for key in ("major", "minor", "patch")):
+        violations.append("schema_version is missing major/minor/patch")
+
     if document.get("schema") != "fh-ir-v1":
         violations.append("schema is not fh-ir-v1")
 
     project = document.get("project", {})
+    if project.get("node") != "ProjectGraph":
+        violations.append("project.node is not ProjectGraph")
+
     module_order = project.get("module_order", [])
     if module_order != sorted(module_order):
         violations.append("project.module_order is not canonical")
@@ -132,7 +144,11 @@ def validate_document(document: dict[str, Any]) -> list[str]:
         violations.append("project.modules order does not match project.module_order")
 
     for module in modules:
+        if module.get("node") != "ModuleEntry":
+            violations.append(f"project.modules node mismatch: {module.get('name', '<unknown>')}")
         module_block = module.get("module", {})
+        if module_block.get("node") != "Module":
+            violations.append(f"module.node mismatch: {module.get('name', '<unknown>')}")
         imports = module_block.get("imports", [])
         if imports != sorted(imports, key=lambda item: (item.get("module", ""), tuple(item.get("exposing", [])))):
             violations.append(f"module.imports order is not stable: {module.get('name', '<unknown>')}")
@@ -142,6 +158,8 @@ def validate_document(document: dict[str, Any]) -> list[str]:
             violations.append(f"module.declarations order is not stable: {module.get('name', '<unknown>')}")
 
         analysis = module.get("analysis", {})
+        if analysis.get("node") != "AnalysisReport":
+            violations.append(f"analysis.node mismatch: {module.get('name', '<unknown>')}")
         violations.extend(validate_name_order(analysis.get("types", []), f"analysis.types[{module.get('name', '<unknown>')}]"))
         violations.extend(validate_name_order(analysis.get("records", []), f"analysis.records[{module.get('name', '<unknown>')}]"))
         if analysis.get("errors", []) != sorted(analysis.get("errors", [])):
@@ -149,24 +167,66 @@ def validate_document(document: dict[str, Any]) -> list[str]:
         violations.extend(validate_name_order(analysis.get("routines", []), f"analysis.routines[{module.get('name', '<unknown>')}]"))
         violations.extend(validate_name_order(analysis.get("services", []), f"analysis.services[{module.get('name', '<unknown>')}]"))
 
+        verifier = analysis.get("verifier", {})
+        if verifier.get("node") != "VerifierReport":
+            violations.append(f"analysis.verifier.node mismatch: {module.get('name', '<unknown>')}")
+
+        for type_def in analysis.get("types", []):
+            if type_def.get("kind") != "TypeDef":
+                violations.append(f"type kind mismatch: {module.get('name', '<unknown>')}.{type_def.get('name', '<unknown>')}")
+            if "base_type" not in type_def:
+                violations.append(f"type base_type missing: {module.get('name', '<unknown>')}.{type_def.get('name', '<unknown>')}")
+
         for record in analysis.get("records", []):
+            if record.get("kind") != "RecordDef":
+                violations.append(f"record kind mismatch: {module.get('name', '<unknown>')}.{record.get('name', '<unknown>')}")
             fields = record.get("fields", [])
             if fields != sorted(fields, key=lambda item: item.get("name", "")):
                 violations.append(f"record fields order is not stable: {record.get('name', '<unknown>')}")
+            for field in fields:
+                if field.get("kind") != "RecordFieldDef":
+                    violations.append(f"record field kind mismatch: {record.get('name', '<unknown>')}.{field.get('name', '<unknown>')}")
+                if "type_repr" not in field:
+                    violations.append(f"record field type_repr missing: {record.get('name', '<unknown>')}.{field.get('name', '<unknown>')}")
             proto_fields = record.get("proto_fields", [])
             if proto_fields != sorted(proto_fields, key=lambda item: item.get("name", "")):
                 violations.append(f"record proto_fields order is not stable: {record.get('name', '<unknown>')}")
+
+        for routine in analysis.get("routines", []):
+            contracts = routine.get("contracts", {})
+            for clause in contracts.get("requires", []):
+                if clause.get("kind") != "ContractClause" or clause.get("role") != "requires":
+                    violations.append(f"routine requires contract malformed: {routine.get('name', '<unknown>')}")
+            for clause in contracts.get("ensures", []):
+                if clause.get("kind") != "ContractClause" or clause.get("role") != "ensures":
+                    violations.append(f"routine ensures contract malformed: {routine.get('name', '<unknown>')}")
+            for clause in contracts.get("aborts", []):
+                if clause.get("kind") != "AbortContractClause":
+                    violations.append(f"routine abort contract malformed: {routine.get('name', '<unknown>')}")
+
+        for proof in analysis.get("proof_obligations", []):
+            if proof.get("kind") != "ProofObligation":
+                violations.append(f"proof obligation kind mismatch: {module.get('name', '<unknown>')}")
+
+        for flow in analysis.get("flow_summaries", []):
+            if flow.get("kind") != "RoutineFlowSummary":
+                violations.append(f"flow summary kind mismatch: {module.get('name', '<unknown>')}.{flow.get('routine_name', '<unknown>')}")
 
         for service in analysis.get("services", []):
             rpcs = service.get("rpcs", [])
             if rpcs != sorted(rpcs, key=lambda item: item.get("name", "")):
                 violations.append(f"service RPC order is not stable: {service.get('name', '<unknown>')}")
+            for rpc in rpcs:
+                if "request_type_repr" not in rpc or "response_type_repr" not in rpc:
+                    violations.append(f"service RPC type_repr missing: {service.get('name', '<unknown>')}.{rpc.get('name', '<unknown>')}")
 
     import_graph = project.get("import_graph", [])
     if import_graph != sorted(import_graph, key=lambda item: (item.get("from_module", ""), item.get("to_module", ""), tuple(item.get("exposing", [])))):
         violations.append("project.import_graph order is not canonical")
 
     for edge in import_graph:
+        if edge.get("node") != "ImportEdge":
+            violations.append("import_graph edge node is not ImportEdge")
         exposing = edge.get("exposing", [])
         if exposing != sorted(exposing):
             violations.append(f"import_graph exposing order is not stable: {edge.get('from_module', '<unknown>')} -> {edge.get('to_module', '<unknown>')}")
@@ -178,6 +238,8 @@ def validate_document(document: dict[str, Any]) -> list[str]:
     if runtime_modules != sorted(runtime_modules, key=lambda item: item.get("name", "")):
         violations.append("project.runtime_modules order is not canonical")
     for runtime_entry in runtime_modules:
+        if runtime_entry.get("node") != "RuntimeModule":
+            violations.append("runtime module node is not RuntimeModule")
         exports = runtime_entry.get("exports", [])
         if exports != sorted(exports):
             violations.append(f"runtime module exports order is not stable: {runtime_entry.get('name', '<unknown>')}")

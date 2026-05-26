@@ -55,12 +55,37 @@ from freehold.core.verifier import VerifiedProgram
 
 FH_IR_SCHEMA = "fh-ir-v0"
 FH_IR_SCHEMA_V1 = "fh-ir-v1"
+FH_IR_PROFILE = "fh-ir"
 FREEHOLD_LANGUAGE_VERSION = "freehold-v1"
+FH_IR_SCHEMA_VERSION_V0 = {"major": 0, "minor": 1, "patch": 0}
+FH_IR_SCHEMA_VERSION_V1 = {"major": 1, "minor": 0, "patch": 0}
+
+NODE_DOCUMENT_V0 = "FhirDocumentV0"
+NODE_DOCUMENT_V1 = "FhirDocumentV1"
+NODE_PROJECT = "ProjectGraph"
+NODE_MODULE = "Module"
+NODE_MODULE_ENTRY = "ModuleEntry"
+NODE_ANALYSIS = "AnalysisReport"
+NODE_VERIFIER = "VerifierReport"
+NODE_IMPORT_EDGE = "ImportEdge"
+NODE_RUNTIME_MODULE = "RuntimeModule"
+NODE_TYPE_DEF = "TypeDef"
+NODE_RECORD_DEF = "RecordDef"
+NODE_RECORD_FIELD_DEF = "RecordFieldDef"
+NODE_ERROR_DEF = "ErrorDef"
+NODE_PROOF_OBLIGATION = "ProofObligation"
+NODE_FLOW_SUMMARY = "RoutineFlowSummary"
+NODE_CONTRACT_CLAUSE = "ContractClause"
+NODE_ABORT_CONTRACT_CLAUSE = "AbortContractClause"
+NODE_ERROR_REF = "ErrorRef"
 
 
 def export_verified_program(verified: VerifiedProgram) -> dict[str, Any]:
     return {
+        "node": NODE_DOCUMENT_V0,
+        "schema_profile": FH_IR_PROFILE,
         "schema": FH_IR_SCHEMA,
+        "schema_version": dict(FH_IR_SCHEMA_VERSION_V0),
         "language_version": FREEHOLD_LANGUAGE_VERSION,
         "module": export_program(verified.ast),
         "analysis": export_analysis(verified),
@@ -82,27 +107,34 @@ def export_verified_project(
     for module_name in module_names:
         resolved = resolved_modules[module_name]
         verified = resolved.verified
-        modules.append({
-            "name": module_name,
-            "module": export_program(verified.ast),
-            "analysis": export_analysis(verified),
-        })
+        modules.append(
+            {
+                "node": NODE_MODULE_ENTRY,
+                "name": module_name,
+                "module": export_program(verified.ast),
+                "analysis": export_analysis(verified),
+            }
+        )
 
         for import_decl in sorted_imports(verified.ast.imports or []):
             is_runtime = import_decl.module_name in runtime_modules
             if is_runtime:
                 runtime_used.add(import_decl.module_name)
             exposing = sorted(import_decl.exposing)
-            import_graph.append({
-                "from_module": module_name,
-                "to_module": import_decl.module_name,
-                "is_runtime": is_runtime,
-                "exposing": exposing,
-                "qualified_exposing": [f"{import_decl.module_name}.{symbol_name}" for symbol_name in exposing],
-            })
+            import_graph.append(
+                {
+                    "node": NODE_IMPORT_EDGE,
+                    "from_module": module_name,
+                    "to_module": import_decl.module_name,
+                    "is_runtime": is_runtime,
+                    "exposing": exposing,
+                    "qualified_exposing": [f"{import_decl.module_name}.{symbol_name}" for symbol_name in exposing],
+                }
+            )
 
     runtime_entries = [
         {
+            "node": NODE_RUNTIME_MODULE,
             "name": module_name,
             "exports": sorted(runtime_modules[module_name]),
         }
@@ -110,10 +142,14 @@ def export_verified_project(
     ]
 
     return {
+        "node": NODE_DOCUMENT_V1,
+        "schema_profile": FH_IR_PROFILE,
         "schema": FH_IR_SCHEMA_V1,
+        "schema_version": dict(FH_IR_SCHEMA_VERSION_V1),
         "language_version": FREEHOLD_LANGUAGE_VERSION,
         "entry_module": entry_module_name,
         "project": {
+            "node": NODE_PROJECT,
             "module_order": module_names,
             "modules": modules,
             "import_graph": import_graph,
@@ -124,6 +160,7 @@ def export_verified_project(
 
 def export_program(program: Program) -> dict[str, Any]:
     return {
+        "node": NODE_MODULE,
         "name": program.module_name,
         "imports": [export_import_decl(import_decl) for import_decl in sorted_imports(program.imports or [])],
         "declarations": [export_declaration(declaration) for declaration in sorted_declarations(program.declarations)],
@@ -147,15 +184,37 @@ def export_fhir_project_json(
 
 
 def export_analysis(verified: VerifiedProgram) -> dict[str, Any]:
+    errors = sorted(verified.errors)
+    proof_obligations = [export_proof_obligation(item) for item in sorted(verified.proof_obligations, key=canonical_json_key)]
+    flow_summaries = [export_flow_summary(verified.flow_summaries[name]) for name in sorted(verified.flow_summaries)]
     return {
+        "node": NODE_ANALYSIS,
         "types": [export_type_def(verified.types[name]) for name in sorted(verified.types)],
         "records": [export_record_def(verified.records[name]) for name in sorted(verified.records)],
-        "errors": sorted(verified.errors),
+        "errors": errors,
+        "error_defs": [export_error_def(error_name) for error_name in errors],
         "routines": [export_routine_decl(verified.routines[name]) for name in sorted(verified.routines)],
         "services": [export_service_decl(verified.services[name]) for name in sorted(verified.services)],
-        "proof_obligations": [dict(item) for item in verified.proof_obligations],
-        "flow_summaries": [export_flow_summary(verified.flow_summaries[name]) for name in sorted(verified.flow_summaries)],
+        "proof_obligations": proof_obligations,
+        "flow_summaries": flow_summaries,
+        "verifier": {
+            "node": NODE_VERIFIER,
+            "proof_obligations": proof_obligations,
+            "flow_summaries": flow_summaries,
+        },
     }
+
+
+def canonical_json_key(value: Any) -> str:
+    return json.dumps(canonicalize(value), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
+def canonicalize(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: canonicalize(value[key]) for key in sorted(value)}
+    if isinstance(value, list):
+        return [canonicalize(item) for item in value]
+    return value
 
 
 def sorted_imports(imports: list[ImportDecl]) -> list[ImportDecl]:
@@ -216,7 +275,7 @@ def export_type_decl(declaration: TypeDecl) -> dict[str, Any]:
 
 
 def export_type_def(type_def: Any) -> dict[str, Any]:
-    item: dict[str, Any] = {"name": type_def.name, "base": type_def.base}
+    item: dict[str, Any] = {"kind": NODE_TYPE_DEF, "name": type_def.name, "base": type_def.base, "base_type": export_type_name_ref(type_def.base)}
     if getattr(type_def, "min_value", None) is not None:
         item["min_value"] = type_def.min_value
     if getattr(type_def, "max_value", None) is not None:
@@ -238,8 +297,17 @@ def export_record_type_decl(declaration: RecordTypeDecl) -> dict[str, Any]:
 def export_record_def(record_def: Any) -> dict[str, Any]:
     proto_fields = getattr(record_def, "proto_fields", None) or {}
     return {
+        "kind": NODE_RECORD_DEF,
         "name": record_def.name,
-        "fields": [{"name": field_name, "type": record_def.fields[field_name]} for field_name in sorted(record_def.fields)],
+        "fields": [
+            {
+                "kind": NODE_RECORD_FIELD_DEF,
+                "name": field_name,
+                "type": record_def.fields[field_name],
+                "type_repr": export_type_name_ref(record_def.fields[field_name]),
+            }
+            for field_name in sorted(record_def.fields)
+        ],
         "proto_fields": [{"name": field_name, "id": proto_fields[field_name]} for field_name in sorted(proto_fields)],
     }
 
@@ -249,7 +317,7 @@ def sorted_record_fields(fields: list[Any]) -> list[Any]:
 
 
 def export_record_field(field: Any) -> dict[str, Any]:
-    item: dict[str, Any] = {"name": field.name, "type": field.type_name}
+    item: dict[str, Any] = {"name": field.name, "type": field.type_name, "type_repr": export_type_name_ref(field.type_name)}
     if getattr(field, "proto_id", None) is not None:
         item["proto_id"] = field.proto_id
     return item
@@ -265,11 +333,16 @@ def export_rpc_decl(rpc: Any) -> dict[str, Any]:
         "name": rpc.name,
         "request_name": rpc.request_name,
         "request_type": rpc.request_type,
+        "request_type_repr": export_type_name_ref(rpc.request_type),
         "response_type": rpc.response_type,
+        "response_type_repr": export_type_name_ref(rpc.response_type),
     }
 
 
 def export_routine_decl(routine: RoutineDecl) -> dict[str, Any]:
+    requires = [export_expr(expr) for expr in routine.requires]
+    ensures = [export_expr(expr) for expr in routine.ensures]
+    aborts = [export_abort_clause(clause) for clause in routine.aborts]
     return {
         "kind": "RoutineDecl",
         "routine_kind": routine.kind,
@@ -278,22 +351,48 @@ def export_routine_decl(routine: RoutineDecl) -> dict[str, Any]:
         "is_async": routine.is_async,
         "params": [export_param(param) for param in routine.params],
         "return_type": export_type_ref(routine.return_type),
-        "requires": [export_expr(expr) for expr in routine.requires],
-        "aborts": [export_abort_clause(clause) for clause in routine.aborts],
-        "ensures": [export_expr(expr) for expr in routine.ensures],
+        "requires": requires,
+        "aborts": aborts,
+        "ensures": ensures,
+        "contracts": {
+            "requires": [export_contract_clause("requires", index, condition) for index, condition in enumerate(requires)],
+            "ensures": [export_contract_clause("ensures", index, condition) for index, condition in enumerate(ensures)],
+            "aborts": aborts,
+        },
         "body": [export_stmt(stmt) for stmt in routine.body],
     }
 
 
 def export_param(param: Param) -> dict[str, Any]:
-    return {"name": param.name, "type": param.type_name}
+    return {"name": param.name, "type": param.type_name, "type_repr": export_type_name_ref(param.type_name)}
+
+
+def export_contract_clause(role: str, index: int, condition: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "kind": NODE_CONTRACT_CLAUSE,
+        "role": role,
+        "index": index,
+        "condition": condition,
+    }
 
 
 def export_abort_clause(clause: AbortClause) -> dict[str, Any]:
-    item: dict[str, Any] = {"error": clause.error_name}
+    item: dict[str, Any] = {
+        "kind": NODE_ABORT_CONTRACT_CLAUSE,
+        "error": clause.error_name,
+        "error_ref": export_error_ref(clause.error_name),
+    }
     if clause.condition is not None:
         item["condition"] = export_expr(clause.condition)
     return item
+
+
+def export_error_ref(error_name: str) -> dict[str, Any]:
+    return {"kind": NODE_ERROR_REF, "name": error_name}
+
+
+def export_error_def(error_name: str) -> dict[str, Any]:
+    return {"kind": NODE_ERROR_DEF, "name": error_name}
 
 
 def export_stmt(stmt: Any) -> dict[str, Any]:
@@ -352,7 +451,7 @@ def export_return_value(value: Any) -> dict[str, Any]:
     if isinstance(value, ReturnOk):
         return {"kind": "ReturnOk", "value": export_expr(value.expr)}
     if isinstance(value, ReturnError):
-        return {"kind": "ReturnError", "error": value.error_name}
+        return {"kind": "ReturnError", "error": value.error_name, "error_ref": export_error_ref(value.error_name)}
     return {"kind": "ReturnValue", "value": export_expr(value)}
 
 
@@ -405,13 +504,23 @@ def export_type_ref(type_ref: TypeRef | None) -> dict[str, Any]:
     if type_ref is None:
         return {"kind": "Void"}
     if isinstance(type_ref, TypeName):
-        return {"kind": "TypeName", "name": type_ref.name}
+        return export_type_name_ref(type_ref.name)
     if isinstance(type_ref, ResultTypeName):
-        return {"kind": "ResultTypeName", "ok_type": export_type_ref(type_ref.ok_type), "error_type": type_ref.error_type}
+        return {
+            "kind": "ResultTypeName",
+            "ok_type": export_type_ref(type_ref.ok_type),
+            "error_type": type_ref.error_type,
+            "error_ref": export_error_ref(type_ref.error_type),
+        }
     if isinstance(type_ref, ArrayTypeName):
-        return {"kind": "ArrayTypeName", "element_type": type_ref.element_type, "size": type_ref.size}
+        return {"kind": "ArrayTypeName", "element_type": type_ref.element_type, "element_type_repr": export_type_name_ref(type_ref.element_type), "size": type_ref.size}
     if isinstance(type_ref, ArrayLiteralType):
-        return {"kind": "ArrayLiteralType", "element_type": type_ref.element_type, "size": type_ref.size}
+        return {
+            "kind": "ArrayLiteralType",
+            "element_type": type_ref.element_type,
+            "element_type_repr": export_type_name_ref(type_ref.element_type),
+            "size": type_ref.size,
+        }
     if isinstance(type_ref, AwaitableType):
         return {"kind": "AwaitableType", "inner_type": export_type_ref(type_ref.inner_type)}
     raise TypeError(f"unsupported type reference for FH-IR export: {type(type_ref).__name__}")
@@ -421,18 +530,82 @@ def export_type_ref_name(name: str) -> str:
     return name
 
 
+def export_type_name_ref(type_name: str) -> dict[str, Any]:
+    base_name, generic_args = split_generic_type(type_name)
+    if generic_args is None:
+        return {"kind": "TypeName", "name": type_name}
+    if base_name == "Array" and len(generic_args) == 2 and generic_args[1].strip().isdigit():
+        return {
+            "kind": "ArrayTypeName",
+            "element_type": generic_args[0].strip(),
+            "element_type_repr": export_type_name_ref(generic_args[0].strip()),
+            "size": int(generic_args[1].strip()),
+        }
+    if base_name == "Result" and len(generic_args) == 2:
+        error_name = generic_args[1].strip()
+        return {
+            "kind": "ResultTypeName",
+            "ok_type": export_type_name_ref(generic_args[0].strip()),
+            "error_type": error_name,
+            "error_ref": export_error_ref(error_name),
+        }
+    if base_name == "Awaitable" and len(generic_args) == 1:
+        return {
+            "kind": "AwaitableType",
+            "inner_type": export_type_name_ref(generic_args[0].strip()),
+        }
+    return {
+        "kind": "GenericTypeName",
+        "name": base_name,
+        "args": [export_type_name_ref(arg.strip()) for arg in generic_args],
+        "text": type_name,
+    }
+
+
+def split_generic_type(type_name: str) -> tuple[str, list[str] | None]:
+    left = type_name.find("<")
+    if left <= 0 or not type_name.endswith(">"):
+        return type_name, None
+    base = type_name[:left].strip()
+    inner = type_name[left + 1 : -1]
+    return base, split_top_level_csv(inner)
+
+
+def split_top_level_csv(value: str) -> list[str]:
+    parts: list[str] = []
+    depth = 0
+    start = 0
+    for index, char in enumerate(value):
+        if char == "<":
+            depth += 1
+        elif char == ">":
+            depth = max(depth - 1, 0)
+        elif char == "," and depth == 0:
+            parts.append(value[start:index].strip())
+            start = index + 1
+    parts.append(value[start:].strip())
+    return [part for part in parts if part]
+
+
 def export_flow_summary(summary: RoutineFlowSummary) -> dict[str, Any]:
     return {
+        "kind": NODE_FLOW_SUMMARY,
         "routine_name": summary.routine_name,
         "routine_kind": summary.routine_kind,
         "normal_return_possible": summary.normal_return_possible,
         "guaranteed_exit": summary.guaranteed_exit,
         "declared_aborts": sorted(summary.declared_aborts),
+        "declared_abort_refs": [export_error_ref(name) for name in sorted(summary.declared_aborts)],
         "emitted_aborts": sorted(summary.emitted_aborts),
+        "emitted_abort_refs": [export_error_ref(name) for name in sorted(summary.emitted_aborts)],
         "called_routines": sorted(summary.called_routines),
         "propagated_aborts": sorted(summary.propagated_aborts),
+        "propagated_abort_refs": [export_error_ref(name) for name in sorted(summary.propagated_aborts)],
     }
 
 
 def export_proof_obligation(item: dict[str, Any]) -> dict[str, Any]:
-    return dict(item)
+    return {
+        "kind": NODE_PROOF_OBLIGATION,
+        "data": canonicalize(dict(item)),
+    }

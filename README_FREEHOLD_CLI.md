@@ -279,6 +279,23 @@ V1 includes:
 - explicit runtime module entries for imported runtime modules
 ```
 
+V1 now also includes explicit schema version metadata and fixed root node names:
+
+```text
+- schema_profile: fh-ir
+- schema_version: { major, minor, patch }
+- fixed node names (for example: FhirDocumentV1, ProjectGraph, ModuleEntry, ImportEdge)
+```
+
+Type and verifier representation in FH-IR is normalized for stable downstream checks:
+
+```text
+- type_repr payloads on record fields, routine params, and RPC request/response types
+- explicit Result/Array/Awaitable type nodes in type_repr
+- verifier report mirrored under analysis.verifier
+- proof obligations and flow summaries emitted with fixed node names
+```
+
 Legacy single-module export remains available with:
 
 ```powershell
@@ -286,8 +303,6 @@ python -m freehold ir .\examples\compiler_v1\01_minimal_app\App\Main.fh --module
 ```
 
 This emits schema `fh-ir-v0`.
-
-Compare canonical FH-IR v0 baselines with:
 
 Compare canonical FH-IR baselines with:
 
@@ -320,6 +335,32 @@ The determinism check validates FH-IR canonical export constraints:
 ```
 
 The parser conformance verify chain includes this check as a narrow additive gate. It is intentionally small-scope by default to keep baseline runtime low while still catching ordering drift.
+
+Run the FH-IR language-module stability gate (stable profile) with:
+
+```powershell
+.\compare-fhir-language-modules.cmd
+```
+
+```text
+artifacts/compare-fhir-language-modules
+```
+
+The language-module gate starts with stable domains and expands stepwise:
+
+```text
+- records
+- results
+- arrays
+- contracts
+- imports
+```
+
+For broader coverage, run the expanded profile directly:
+
+```powershell
+python .\tools\compare_fhir_language_modules.py --profile expanded
+```
 
 ### FH-IR V1 limits (intentional)
 
