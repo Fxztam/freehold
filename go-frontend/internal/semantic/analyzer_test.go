@@ -122,6 +122,36 @@ end UnknownFieldAccess`)
 	}
 }
 
+func TestValidateModuleRejectsUnknownResultValueFieldInEnsures(t *testing.T) {
+	module := parseModule(t, `module ResultValueContract
+
+type Account is record
+    id: Integer
+end record
+
+error NotFound
+
+function load_account() returns Result<Account, NotFound>
+ensures value.active
+is
+    return ok Account { id: 1 }
+end load_account
+
+end ResultValueContract`)
+
+	diagnostics := ValidateModule(module)
+	if len(diagnostics) != 1 {
+		t.Fatalf("ValidateModule() diagnostics count = %d, want 1", len(diagnostics))
+	}
+	diag := diagnostics[0]
+	if diag.Code != "FH-SEM-1105" || diag.Name != "unknown_record_field" {
+		t.Fatalf("diagnostic = %s/%s, want FH-SEM-1105/unknown_record_field", diag.Code, diag.Name)
+	}
+	if diag.Found != "active" {
+		t.Fatalf("diagnostic Found = %q, want active", diag.Found)
+	}
+}
+
 func TestValidateModuleRejectsUnknownRoutine(t *testing.T) {
 	module := parseModule(t, `module UnknownRoutineCall
 

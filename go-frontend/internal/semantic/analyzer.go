@@ -223,8 +223,9 @@ func (a *Analyzer) validateModule(module *ast.Module) {
 					a.inferExpr(clause.Condition, env)
 				}
 			}
+			ensuresEnv := contractEnv(env, value.ReturnType)
 			for _, expr := range value.Ensures {
-				a.inferExpr(expr, env)
+				a.inferExpr(expr, ensuresEnv)
 			}
 			a.validateBlock(value.Body, env)
 		case ast.ProcedureDecl:
@@ -252,6 +253,31 @@ func (a *Analyzer) envFromParams(params []ast.Param) map[string]string {
 		env[param.Name] = param.Type
 	}
 	return env
+}
+
+func contractEnv(env map[string]string, returnType string) map[string]string {
+	contract := cloneEnv(env)
+	if returnType == "" {
+		return contract
+	}
+	contract["result"] = returnType
+	if okType, errorType, ok := resultTypes(returnType); ok {
+		contract["value"] = okType
+		contract["error"] = errorType
+	}
+	return contract
+}
+
+func resultTypes(typeName string) (string, string, bool) {
+	typeName = strings.TrimSpace(typeName)
+	if !strings.HasPrefix(typeName, "Result<") || !strings.HasSuffix(typeName, ">") {
+		return "", "", false
+	}
+	parts := splitTopLevel(typeName[len("Result<") : len(typeName)-1])
+	if len(parts) != 2 {
+		return "", "", false
+	}
+	return parts[0], parts[1], true
 }
 
 func (a *Analyzer) validateRoutineSignature(params []ast.Param, returnType string, returnLocation diagnostic.Location) {
