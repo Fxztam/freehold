@@ -1,0 +1,11 @@
+{
+  "source_file": "tests\\language_modules\\11_errors_results\\valid\\result_value_field_access.fh",
+  "module_name": "11_errors_results",
+  "case_kind": "valid",
+  "parse_ok": false,
+  "source_snippet": "module ResultValueFieldAccess\n\ntype Address is record\n    city_id: Integer\nend record\n\ntype Customer is record\n    id: Integer\n    address: Address\nend record\n\nerror NotFound\n\nfunction load() returns Result<Customer, NotFound>\nis\n    return ok Customer { id: 1, address: Address { city_id: 42 } }\nend load\n\nprocedure main()\nis\n    let loaded: Result<Customer, NotFound> = load()\n    check loaded.value.id = 1\n    check loaded.value.address.city_id = 42\nend main\n\nend ResultValueFieldAccess",
+  "error": "22:18: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... lse\\\\b|success\\\\b|failure\\\\b|value\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bbvalue.id = 1\n    che ...\u00ab",
+  "errors": [
+    "22:18: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... lse\\\\b|success\\\\b|failure\\\\b|value\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bbvalue.id = 1\n    che ...\u00ab"
+  ]
+}

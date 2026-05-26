@@ -1,0 +1,69 @@
+{
+  "source_file": "..\\tests\\language_modules\\21_abort_handling\\invalid_semantics\\abort_condition_uncovered_guard.fh",
+  "source_snippet": "module AbortConditionUncoveredGuard\r\n\r\nerror NotFound\r\n\r\nprocedure main(id: Integer)\r\naborts NotFound when id = 0\r\nis\r\n    if id = 1 then\r\n        abort NotFound\r\n    end if\r\nend main\r\n\r\nend AbortConditionUncoveredGuard",
+  "module_name": "21_abort_handling",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "AbortConditionUncoveredGuard",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "aborts": [
+          {
+            "error": "NotFound",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            },
+            "then_body": [
+              {
+                "kind": "AbortStmt",
+                "error": "NotFound"
+              }
+            ]
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "AbortConditionUncoveredGuard"
+  }
+}

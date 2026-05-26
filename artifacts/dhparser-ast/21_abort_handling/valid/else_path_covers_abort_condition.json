@@ -1,0 +1,533 @@
+{
+  "source_file": "tests\\language_modules\\21_abort_handling\\valid\\else_path_covers_abort_condition.fh",
+  "module_name": "21_abort_handling",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "source_snippet": "module AbortElsePathCoversCondition\n\nerror NotReady\n\nprocedure read(ready: Boolean)\naborts NotReady when not ready\nis\n    if ready then\n        check ready\n    else\n        abort NotReady\n    end if\nend read\n\nend AbortElsePathCoversCondition",
+  "ast": {
+    "name": "start",
+    "pos": 0,
+    "children": [
+      {
+        "name": "module_decl",
+        "pos": 0,
+        "children": [
+          {
+            "name": ":Text",
+            "pos": 0,
+            "text": "module"
+          },
+          {
+            "name": "qualified_name",
+            "pos": 7,
+            "children": [
+              {
+                "name": "IDENT",
+                "pos": 7,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 7,
+                    "text": "AbortElsePathCoversCondition"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 37,
+        "children": [
+          {
+            "name": "error_decl",
+            "pos": 37,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 37,
+                "text": "error"
+              },
+              {
+                "name": "IDENT",
+                "pos": 43,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 43,
+                    "text": "NotReady"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 53,
+        "children": [
+          {
+            "name": "procedure_decl",
+            "pos": 53,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 53,
+                "text": "procedure"
+              },
+              {
+                "name": "IDENT",
+                "pos": 63,
+                "text": "read"
+              },
+              {
+                "name": ":Text",
+                "pos": 67,
+                "text": "("
+              },
+              {
+                "name": "param_list",
+                "pos": 68,
+                "children": [
+                  {
+                    "name": "param",
+                    "pos": 68,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 68,
+                        "text": "ready"
+                      },
+                      {
+                        "name": ":Text",
+                        "pos": 73,
+                        "text": ":"
+                      },
+                      {
+                        "name": "type_ref",
+                        "pos": 75,
+                        "children": [
+                          {
+                            "name": "BASE_TYPE",
+                            "pos": 75,
+                            "text": "Boolean"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 82,
+                "text": ")"
+              },
+              {
+                "name": "contract_block",
+                "pos": 84,
+                "children": [
+                  {
+                    "name": "aborts_clause",
+                    "pos": 84,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 84,
+                        "text": "aborts"
+                      },
+                      {
+                        "name": "IDENT",
+                        "pos": 91,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 91,
+                            "text": "NotReady"
+                          }
+                        ]
+                      },
+                      {
+                        "name": ":Text",
+                        "pos": 100,
+                        "text": "when"
+                      },
+                      {
+                        "name": "expr",
+                        "pos": 105,
+                        "children": [
+                          {
+                            "name": "logic_or",
+                            "pos": 105,
+                            "children": [
+                              {
+                                "name": "logic_and",
+                                "pos": 105,
+                                "children": [
+                                  {
+                                    "name": "equality",
+                                    "pos": 105,
+                                    "children": [
+                                      {
+                                        "name": "comparison",
+                                        "pos": 105,
+                                        "children": [
+                                          {
+                                            "name": "sum",
+                                            "pos": 105,
+                                            "children": [
+                                              {
+                                                "name": "product",
+                                                "pos": 105,
+                                                "children": [
+                                                  {
+                                                    "name": "unary",
+                                                    "pos": 105,
+                                                    "children": [
+                                                      {
+                                                        "name": ":Text",
+                                                        "pos": 105,
+                                                        "text": "not"
+                                                      },
+                                                      {
+                                                        "name": "unary",
+                                                        "pos": 109,
+                                                        "children": [
+                                                          {
+                                                            "name": "postfix_expr",
+                                                            "pos": 109,
+                                                            "children": [
+                                                              {
+                                                                "name": "primary",
+                                                                "pos": 109,
+                                                                "children": [
+                                                                  {
+                                                                    "name": "IDENT",
+                                                                    "pos": 109,
+                                                                    "children": [
+                                                                      {
+                                                                        "name": ":RegExp",
+                                                                        "pos": 109,
+                                                                        "text": "ready"
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 115,
+                "text": "is"
+              },
+              {
+                "name": "stmt",
+                "pos": 122,
+                "children": [
+                  {
+                    "name": "if_stmt",
+                    "pos": 122,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 122,
+                        "text": "if"
+                      },
+                      {
+                        "name": "expr",
+                        "pos": 125,
+                        "children": [
+                          {
+                            "name": "logic_or",
+                            "pos": 125,
+                            "children": [
+                              {
+                                "name": "logic_and",
+                                "pos": 125,
+                                "children": [
+                                  {
+                                    "name": "equality",
+                                    "pos": 125,
+                                    "children": [
+                                      {
+                                        "name": "comparison",
+                                        "pos": 125,
+                                        "children": [
+                                          {
+                                            "name": "sum",
+                                            "pos": 125,
+                                            "children": [
+                                              {
+                                                "name": "product",
+                                                "pos": 125,
+                                                "children": [
+                                                  {
+                                                    "name": "unary",
+                                                    "pos": 125,
+                                                    "children": [
+                                                      {
+                                                        "name": "postfix_expr",
+                                                        "pos": 125,
+                                                        "children": [
+                                                          {
+                                                            "name": "primary",
+                                                            "pos": 125,
+                                                            "children": [
+                                                              {
+                                                                "name": "IDENT",
+                                                                "pos": 125,
+                                                                "children": [
+                                                                  {
+                                                                    "name": ":RegExp",
+                                                                    "pos": 125,
+                                                                    "text": "ready"
+                                                                  }
+                                                                ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": ":Text",
+                        "pos": 131,
+                        "text": "then"
+                      },
+                      {
+                        "name": "then_block",
+                        "pos": 144,
+                        "children": [
+                          {
+                            "name": "stmt",
+                            "pos": 144,
+                            "children": [
+                              {
+                                "name": "check_stmt",
+                                "pos": 144,
+                                "children": [
+                                  {
+                                    "name": ":Text",
+                                    "pos": 144,
+                                    "text": "check"
+                                  },
+                                  {
+                                    "name": "expr",
+                                    "pos": 150,
+                                    "children": [
+                                      {
+                                        "name": "logic_or",
+                                        "pos": 150,
+                                        "children": [
+                                          {
+                                            "name": "logic_and",
+                                            "pos": 150,
+                                            "children": [
+                                              {
+                                                "name": "equality",
+                                                "pos": 150,
+                                                "children": [
+                                                  {
+                                                    "name": "comparison",
+                                                    "pos": 150,
+                                                    "children": [
+                                                      {
+                                                        "name": "sum",
+                                                        "pos": 150,
+                                                        "children": [
+                                                          {
+                                                            "name": "product",
+                                                            "pos": 150,
+                                                            "children": [
+                                                              {
+                                                                "name": "unary",
+                                                                "pos": 150,
+                                                                "children": [
+                                                                  {
+                                                                    "name": "postfix_expr",
+                                                                    "pos": 150,
+                                                                    "children": [
+                                                                      {
+                                                                        "name": "primary",
+                                                                        "pos": 150,
+                                                                        "children": [
+                                                                          {
+                                                                            "name": "IDENT",
+                                                                            "pos": 150,
+                                                                            "children": [
+                                                                              {
+                                                                                "name": ":RegExp",
+                                                                                "pos": 150,
+                                                                                "text": "ready"
+                                                                              }
+                                                                            ]
+                                                                          }
+                                                                        ]
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": ":Text",
+                        "pos": 160,
+                        "text": "else"
+                      },
+                      {
+                        "name": "else_block",
+                        "pos": 173,
+                        "children": [
+                          {
+                            "name": "stmt",
+                            "pos": 173,
+                            "children": [
+                              {
+                                "name": "abort_stmt",
+                                "pos": 173,
+                                "children": [
+                                  {
+                                    "name": ":Text",
+                                    "pos": 173,
+                                    "text": "abort"
+                                  },
+                                  {
+                                    "name": "IDENT",
+                                    "pos": 179,
+                                    "children": [
+                                      {
+                                        "name": ":RegExp",
+                                        "pos": 179,
+                                        "text": "NotReady"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": ":Text",
+                        "pos": 192,
+                        "text": "end"
+                      },
+                      {
+                        "name": ":Text",
+                        "pos": 196,
+                        "text": "if"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 199,
+                "text": "end"
+              },
+              {
+                "name": "IDENT",
+                "pos": 203,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 203,
+                    "text": "read"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "module_end",
+        "pos": 209,
+        "children": [
+          {
+            "name": ":Text",
+            "pos": 209,
+            "text": "end"
+          },
+          {
+            "name": "qualified_name",
+            "pos": 213,
+            "children": [
+              {
+                "name": "IDENT",
+                "pos": 213,
+                "text": "AbortElsePathCoversCondition"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "EOF",
+        "pos": 241,
+        "text": ""
+      }
+    ]
+  }
+}

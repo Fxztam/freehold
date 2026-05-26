@@ -1,0 +1,66 @@
+{
+  "source_file": "..\\tests\\language_modules\\21_abort_handling\\valid\\requires_covers_abort_condition.fh",
+  "source_snippet": "module AbortRequiresCoversCondition\r\n\r\nerror NotFound\r\n\r\nprocedure read(id: Integer)\r\nrequires id = 0\r\naborts NotFound when id = 0\r\nis\r\n    abort NotFound\r\nend read\r\n\r\nend AbortRequiresCoversCondition",
+  "module_name": "21_abort_handling",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "AbortRequiresCoversCondition",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "read",
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "id"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "0"
+            }
+          }
+        ],
+        "aborts": [
+          {
+            "error": "NotFound",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "AbortStmt",
+            "error": "NotFound"
+          }
+        ],
+        "end_name": "read"
+      }
+    ],
+    "end_name": "AbortRequiresCoversCondition"
+  }
+}

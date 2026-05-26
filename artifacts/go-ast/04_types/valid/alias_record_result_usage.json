@@ -1,0 +1,107 @@
+{
+  "source_file": "..\\tests\\language_modules\\04_types\\valid\\alias_record_result_usage.fh",
+  "source_snippet": "module AliasRecordResultUsage\r\n\r\ntype AccountId is String\r\ntype Money is Integer\r\n\r\ntype Account is record\r\n    id: AccountId\r\n    balance: Money\r\nend record\r\n\r\nerror MissingAccount\r\n\r\nfunction load(id: AccountId) returns Result\u003cAccount, MissingAccount\u003e\r\nis\r\n    return ok Account { id: id, balance: 10 }\r\nend load\r\n\r\nprocedure main()\r\nis\r\n    let account: Result\u003cAccount, MissingAccount\u003e = load(\"acct-1\")\r\n    check account.value.id = \"acct-1\"\r\n    check account.value.balance = 10\r\nend main\r\n\r\nend AliasRecordResultUsage",
+  "module_name": "04_types",
+  "case_kind": "valid",
+  "parse_ok": false,
+  "error": "FH-SYN-0002: Expected an identifier. | Location: line 21, column 19 | Expected: identifier | Found: value \"value\" | Hint: Use a non-keyword name here.",
+  "diagnostic": {
+    "severity": "error",
+    "phase": "parse",
+    "category": "syntax",
+    "code": "FH-SYN-0002",
+    "number": 2,
+    "name": "expected_identifier",
+    "message": "Expected an identifier.",
+    "location": {
+      "line": 21,
+      "column": 19,
+      "offset": 425
+    },
+    "expected": [
+      "identifier"
+    ],
+    "found": "value \"value\"",
+    "hint": "Use a non-keyword name here."
+  },
+  "diagnostics": [
+    {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0002",
+      "number": 2,
+      "name": "expected_identifier",
+      "message": "Expected an identifier.",
+      "location": {
+        "line": 21,
+        "column": 19,
+        "offset": 425
+      },
+      "expected": [
+        "identifier"
+      ],
+      "found": "value \"value\"",
+      "hint": "Use a non-keyword name here."
+    },
+    {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0012",
+      "number": 12,
+      "name": "expected_assignment_or_call",
+      "message": "Expected assignment or call statement.",
+      "location": {
+        "line": 21,
+        "column": 28,
+        "offset": 434
+      },
+      "expected": [
+        ":=",
+        "call"
+      ],
+      "found": "= \"=\"",
+      "hint": "An identifier-led statement must be an assignment with ':=' or a procedure call."
+    },
+    {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0002",
+      "number": 2,
+      "name": "expected_identifier",
+      "message": "Expected an identifier.",
+      "location": {
+        "line": 22,
+        "column": 19,
+        "offset": 464
+      },
+      "expected": [
+        "identifier"
+      ],
+      "found": "value \"value\"",
+      "hint": "Use a non-keyword name here."
+    },
+    {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0012",
+      "number": 12,
+      "name": "expected_assignment_or_call",
+      "message": "Expected assignment or call statement.",
+      "location": {
+        "line": 22,
+        "column": 33,
+        "offset": 478
+      },
+      "expected": [
+        ":=",
+        "call"
+      ],
+      "found": "= \"=\"",
+      "hint": "An identifier-led statement must be an assignment with ':=' or a procedure call."
+    }
+  ]
+}
