@@ -175,6 +175,7 @@ procedure main()
 is
     let shipment: Shipment = make_shipment(1001, 42)
     check shipment.customer.id = 1001
+	check make_shipment(1001, 42).customer.address.city_id = 42
     check shipment.customer.address.city_id = shipment.destination.city_id
 end main
 

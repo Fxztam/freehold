@@ -12,8 +12,15 @@ type RecordType struct {
 	Fields        map[string]string
 }
 
+type RoutineType struct {
+	Name          string
+	QualifiedName string
+	ReturnType    string
+}
+
 type SymbolTable struct {
-	Records map[string]RecordType
+	Records  map[string]RecordType
+	Routines map[string]RoutineType
 }
 
 type Analyzer struct {
@@ -22,28 +29,34 @@ type Analyzer struct {
 }
 
 func BuildSymbolTable(module *ast.Module) SymbolTable {
-	symbols := SymbolTable{Records: map[string]RecordType{}}
+	symbols := SymbolTable{Records: map[string]RecordType{}, Routines: map[string]RoutineType{}}
 	if module == nil {
 		return symbols
 	}
 	for _, decl := range module.Declarations {
-		typeDecl, ok := decl.(ast.TypeDecl)
-		if !ok || typeDecl.Base != "record" {
-			continue
-		}
+		switch value := decl.(type) {
+		case ast.TypeDecl:
+			if value.Base != "record" {
+				continue
+			}
 
-		fields := map[string]string{}
-		for _, field := range typeDecl.Fields {
-			fields[field.Name] = field.Type
+			fields := map[string]string{}
+			for _, field := range value.Fields {
+				fields[field.Name] = field.Type
+			}
+			record := RecordType{Name: value.Name, QualifiedName: qualifiedName(module, value.Name), Fields: fields}
+			symbols.Records[value.Name] = record
+			symbols.Records[record.QualifiedName] = record
+		case ast.FunctionDecl:
+			routine := RoutineType{Name: value.Name, QualifiedName: qualifiedName(module, value.Name), ReturnType: value.ReturnType}
+			symbols.Routines[value.Name] = routine
+			symbols.Routines[routine.QualifiedName] = routine
 		}
-		record := RecordType{Name: typeDecl.Name, QualifiedName: qualifiedRecordName(module, typeDecl.Name), Fields: fields}
-		symbols.Records[typeDecl.Name] = record
-		symbols.Records[record.QualifiedName] = record
 	}
 	return symbols
 }
 
-func qualifiedRecordName(module *ast.Module, name string) string {
+func qualifiedName(module *ast.Module, name string) string {
 	if module == nil || module.Name == "" {
 		return name
 	}
@@ -86,10 +99,23 @@ func buildSymbolTableWithImports(module *ast.Module, importedByName map[string]*
 			if ok {
 				addRecordWithDependencies(&symbols, importedSymbols, record, map[string]bool{})
 			}
+			routine, ok := importedSymbols.Routines[exposed]
+			if ok {
+				addRoutine(&symbols, routine)
+			}
 		}
 	}
 
 	return symbols
+}
+
+func addRoutine(target *SymbolTable, routine RoutineType) {
+	if _, exists := target.Routines[routine.Name]; !exists {
+		target.Routines[routine.Name] = routine
+	}
+	if routine.QualifiedName != "" {
+		target.Routines[routine.QualifiedName] = routine
+	}
 }
 
 func addRecordWithDependencies(target *SymbolTable, source SymbolTable, record RecordType, seen map[string]bool) {
@@ -249,6 +275,9 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 	case nil:
 		return "", false
 	case ast.IdentifierExpr:
+		if value.Name == "true" || value.Name == "false" || value.Name == "success" || value.Name == "failure" {
+			return "Boolean", true
+		}
 		typeName, ok := env[value.Name]
 		return typeName, ok
 	case ast.FieldAccessExpr:
@@ -273,28 +302,50 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 		}
 		return value.Type, true
 	case ast.BinaryExpr:
-		a.inferExpr(value.Left, env)
-		a.inferExpr(value.Right, env)
-		return "Boolean", true
+		leftType, leftOK := a.inferExpr(value.Left, env)
+		rightType, rightOK := a.inferExpr(value.Right, env)
+		if isBooleanOperator(value.Op) || isComparisonOperator(value.Op) {
+			return "Boolean", true
+		}
+		if leftOK && rightOK && (leftType == "Double" || rightType == "Double") {
+			return "Double", true
+		}
+		if leftOK && rightOK {
+			return leftType, true
+		}
+		return "", false
 	case ast.UnaryExpr:
-		a.inferExpr(value.Value, env)
-		return "Boolean", true
+		valueType, ok := a.inferExpr(value.Value, env)
+		if value.Op == "not" {
+			return "Boolean", true
+		}
+		return valueType, ok
 	case ast.CallExpr:
 		for _, arg := range value.Arguments {
 			a.inferExpr(arg, env)
 		}
-		return "", false
+		return a.inferCall(value)
 	case ast.NamedArgumentExpr:
 		return a.inferExpr(value.Value, env)
 	case ast.IndexExpr:
-		a.inferExpr(value.Array, env)
+		arrayType, ok := a.inferExpr(value.Array, env)
 		a.inferExpr(value.Index, env)
-		return "", false
+		if !ok {
+			return "", false
+		}
+		return arrayElementType(arrayType)
 	case ast.ArrayLiteralExpr:
+		if len(value.Elements) == 0 {
+			return "Array<Empty, 0>", true
+		}
+		elementType, elementOK := a.inferExpr(value.Elements[0], env)
 		for _, element := range value.Elements {
 			a.inferExpr(element, env)
 		}
-		return "", false
+		if !elementOK {
+			return "", false
+		}
+		return elementType, true
 	case ast.AwaitExpr:
 		return a.inferExpr(value.Value, env)
 	case ast.OkExpr:
@@ -305,6 +356,66 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 		return "String", true
 	case ast.ErrorExpr:
 		return value.Name, true
+	}
+	return "", false
+}
+
+func (a *Analyzer) inferCall(call ast.CallExpr) (string, bool) {
+	name, ok := callName(call.Callee)
+	if !ok {
+		return "", false
+	}
+	routine, ok := a.symbols.Routines[name]
+	if !ok {
+		return "", false
+	}
+	return routine.ReturnType, routine.ReturnType != ""
+}
+
+func callName(expr ast.Expr) (string, bool) {
+	switch value := expr.(type) {
+	case ast.IdentifierExpr:
+		return value.Name, true
+	case ast.FieldAccessExpr:
+		objectName, ok := callName(value.Object)
+		if !ok {
+			return "", false
+		}
+		return objectName + "." + value.Field, true
+	}
+	return "", false
+}
+
+func isBooleanOperator(op string) bool {
+	return op == "and" || op == "or"
+}
+
+func isComparisonOperator(op string) bool {
+	switch op {
+	case "=", "!=", "<", "<=", ">", ">=":
+		return true
+	}
+	return false
+}
+
+func arrayElementType(typeName string) (string, bool) {
+	const prefix = "Array<"
+	if len(typeName) <= len(prefix) || typeName[:len(prefix)] != prefix || typeName[len(typeName)-1] != '>' {
+		return "", false
+	}
+	inner := typeName[len(prefix) : len(typeName)-1]
+	depth := 0
+	for index, char := range inner {
+		switch char {
+		case '<':
+			depth++
+		case '>':
+			depth--
+		case ',':
+			if depth == 0 {
+				return inner[:index], true
+			}
+		}
 	}
 	return "", false
 }
