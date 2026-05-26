@@ -51,7 +51,7 @@ def main() -> int:
 
 
 def load_manifest(path: Path) -> dict[str, Any]:
-    with path.open("r", encoding="utf-8") as handle:
+    with path.open("r", encoding="utf-8-sig") as handle:
         manifest = json.load(handle)
     if manifest.get("schema") != "fhir-samples-v1":
         raise ValueError(f"unsupported manifest schema: {manifest.get('schema')!r}")

@@ -1,0 +1,800 @@
+{
+  "schema": "fh-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "examples.std_io_console_demo",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Std.IO",
+        "exposing": [
+          "log",
+          "logf"
+        ]
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RecordTypeDecl",
+        "name": "Customer",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "name",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "bonus",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "base",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "VarExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "VarExpr",
+                "name": "base"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 10
+              }
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "BinaryExpr",
+                "op": "+",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "base"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 10
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "c",
+            "type": {
+              "kind": "TypeName",
+              "name": "Customer"
+            },
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Customer",
+              "args": [
+                {
+                  "kind": "NamedArg",
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 1001
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "name",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Ada"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "bonus",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 32
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "message",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.concat",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Customer: "
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "c",
+                      "name"
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "epsilon",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "DoubleExpr",
+              "value": 1.0
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.log",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "=== Freehold Std.IO Demo ==="
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.log",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "message"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "customer id = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "c",
+                    "id"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "value = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "total"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "LetStmt",
+            "name": "epsilon",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "DoubleExpr",
+              "value": 1.0
+            }
+          },
+          {
+            "kind": "WhileStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "!=",
+              "left": {
+                "kind": "BinaryExpr",
+                "op": "+",
+                "left": {
+                  "kind": "DoubleExpr",
+                  "value": 1.0
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "epsilon"
+                }
+              },
+              "right": {
+                "kind": "DoubleExpr",
+                "value": 1.0
+              }
+            },
+            "invariants": [
+              {
+                "kind": "BinaryExpr",
+                "op": ">",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "epsilon"
+                },
+                "right": {
+                  "kind": "DoubleExpr",
+                  "value": 0.0
+                }
+              }
+            ],
+            "body": [
+              {
+                "kind": "AssignStmt",
+                "name": "epsilon",
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "/",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "epsilon"
+                  },
+                  "right": {
+                    "kind": "DoubleExpr",
+                    "value": 2.0
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "kind": "AssignStmt",
+            "name": "epsilon",
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "*",
+              "left": {
+                "kind": "VarExpr",
+                "name": "epsilon"
+              },
+              "right": {
+                "kind": "DoubleExpr",
+                "value": 2.0
+              }
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "epsilon = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "epsilon"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [
+      {
+        "name": "Customer",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "name",
+            "type": "String"
+          }
+        ],
+        "proto_fields": []
+      }
+    ],
+    "errors": [],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "bonus",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "base",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "VarExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "VarExpr",
+                "name": "base"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 10
+              }
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "BinaryExpr",
+                "op": "+",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "base"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 10
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "c",
+            "type": {
+              "kind": "TypeName",
+              "name": "Customer"
+            },
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Customer",
+              "args": [
+                {
+                  "kind": "NamedArg",
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 1001
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "name",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Ada"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "bonus",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 32
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "message",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.concat",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Customer: "
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "c",
+                      "name"
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "epsilon",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "DoubleExpr",
+              "value": 1.0
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.log",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "=== Freehold Std.IO Demo ==="
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.log",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "message"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "customer id = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "c",
+                    "id"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "value = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "total"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "LetStmt",
+            "name": "epsilon",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "DoubleExpr",
+              "value": 1.0
+            }
+          },
+          {
+            "kind": "WhileStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "!=",
+              "left": {
+                "kind": "BinaryExpr",
+                "op": "+",
+                "left": {
+                  "kind": "DoubleExpr",
+                  "value": 1.0
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "epsilon"
+                }
+              },
+              "right": {
+                "kind": "DoubleExpr",
+                "value": 1.0
+              }
+            },
+            "invariants": [
+              {
+                "kind": "BinaryExpr",
+                "op": ">",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "epsilon"
+                },
+                "right": {
+                  "kind": "DoubleExpr",
+                  "value": 0.0
+                }
+              }
+            ],
+            "body": [
+              {
+                "kind": "AssignStmt",
+                "name": "epsilon",
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "/",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "epsilon"
+                  },
+                  "right": {
+                    "kind": "DoubleExpr",
+                    "value": 2.0
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "kind": "AssignStmt",
+            "name": "epsilon",
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "*",
+              "left": {
+                "kind": "VarExpr",
+                "name": "epsilon"
+              },
+              "right": {
+                "kind": "DoubleExpr",
+                "value": 2.0
+              }
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "epsilon = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "epsilon"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "services": [],
+    "proof_obligations": [],
+    "flow_summaries": [
+      {
+        "routine_name": "bonus",
+        "routine_kind": "function",
+        "normal_return_possible": true,
+        "guaranteed_exit": true,
+        "declared_aborts": [],
+        "emitted_aborts": [],
+        "called_routines": [],
+        "propagated_aborts": []
+      },
+      {
+        "routine_name": "main",
+        "routine_kind": "procedure",
+        "normal_return_possible": true,
+        "guaranteed_exit": false,
+        "declared_aborts": [],
+        "emitted_aborts": [],
+        "called_routines": [
+          "bonus"
+        ],
+        "propagated_aborts": []
+      }
+    ]
+  }
+}
