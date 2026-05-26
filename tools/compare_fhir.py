@@ -14,19 +14,22 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from freehold.core.ast import TypeCheckError
-from freehold.core.fhir import export_fhir_json
+from freehold.core.fhir import export_fhir_json, export_fhir_project_json
+from freehold.core.go_codegen import GO_RUNTIME_MODULE_EXPORTS
 from freehold.core.module_resolver import ModuleResolver
 from tools.artifact_io import canonical_json_text, default_temp_out_root, normalize_text, would_change_file, write_text
 from tools.verify_compiler_examples import SUPPORTED_EXAMPLES
 
 
-DEFAULT_EXPECTED_ROOT = Path("artifacts/fhir")
+DEFAULT_EXPECTED_ROOT_V0 = Path("artifacts/fhir")
+DEFAULT_EXPECTED_ROOT_V1 = Path("artifacts/fhir-v1")
 DEFAULT_OUT_ROOT = default_temp_out_root("compare-fhir")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Compare canonical FH-IR export against committed baselines")
-    parser.add_argument("--expected", default=str(DEFAULT_EXPECTED_ROOT), help="committed FH-IR baseline root")
+    parser.add_argument("--mode", choices=("module-v0", "project-v1"), default="module-v0", help="export profile to compare")
+    parser.add_argument("--expected", default=None, help="committed FH-IR baseline root")
     parser.add_argument("--out", default=str(DEFAULT_OUT_ROOT), help="comparison report output root")
     parser.add_argument("--update", action="store_true", help="write missing or changed FH-IR baselines")
     parser.add_argument("--force", action="store_true", help="allow baseline update even when expected root is dirty")
@@ -37,7 +40,7 @@ def main() -> int:
         print("--dry-run requires --update", file=sys.stderr)
         return 2
 
-    expected_root = Path(args.expected)
+    expected_root = Path(args.expected) if args.expected else default_expected_root(args.mode)
     out_root = Path(args.out)
 
     if args.update and not ensure_update_allowed(expected_root, force=args.force):
@@ -48,7 +51,7 @@ def main() -> int:
     baseline_updates = 0
 
     for example in SUPPORTED_EXAMPLES:
-        row = run_case(example.name, Path(example.entry), expected_root, update=args.update, dry_run=args.dry_run)
+        row = run_case(example.name, Path(example.entry), expected_root, mode=args.mode, update=args.update, dry_run=args.dry_run)
         rows.append(row)
         if row["status"] != "match":
             mismatches.append(row)
@@ -56,6 +59,7 @@ def main() -> int:
             baseline_updates += 1
 
     summary = {
+        "mode": args.mode,
         "total_cases": len(rows),
         "matching_fhir": len(rows) - len(mismatches),
         "mismatching_fhir": len(mismatches),
@@ -72,7 +76,7 @@ def main() -> int:
     return 1 if mismatches else 0
 
 
-def run_case(name: str, entry_path: Path, expected_root: Path, *, update: bool, dry_run: bool) -> dict[str, Any]:
+def run_case(name: str, entry_path: Path, expected_root: Path, *, mode: str, update: bool, dry_run: bool) -> dict[str, Any]:
     source_path = (REPO_ROOT / entry_path).resolve()
     expected_path = expected_root / f"{name}.json"
     expected_path.parent.mkdir(parents=True, exist_ok=True)
@@ -82,8 +86,7 @@ def run_case(name: str, entry_path: Path, expected_root: Path, *, update: bool, 
     error: dict[str, Any] | None = None
 
     try:
-        verified = ModuleResolver().verify_entry(source_path)
-        actual_text = export_fhir_json(verified)
+        actual_text = export_case(source_path, mode)
         actual = json.loads(actual_text)
     except (TypeCheckError, UnexpectedInput) as exc:
         error = build_error("parse_or_resolver", exc, source_path)
@@ -119,12 +122,13 @@ def run_case(name: str, entry_path: Path, expected_root: Path, *, update: bool, 
     status = "match" if error is None and actual == expected else "mismatch"
     row = {
         "case": name,
+        "mode": mode,
         "status": status,
         "source_file": display_path(source_path),
         "expected_file": display_path(expected_path),
         "schema": actual.get("schema") if isinstance(actual, dict) else "",
-        "module": actual.get("module", {}).get("name", "") if isinstance(actual, dict) else "",
-        "analysis_routines": len(actual.get("analysis", {}).get("routines", [])) if isinstance(actual, dict) else 0,
+        "module": extract_module_name(actual),
+        "analysis_routines": extract_analysis_routine_count(actual),
         "error": error,
         "would_update_baseline": bool(update and dry_run and baseline_changed),
     }
@@ -142,6 +146,7 @@ def write_json(path: Path, value: Any, *, additive: bool = False) -> bool:
 
 def write_text_report(path: Path, summary: dict[str, Any], *, additive: bool = False) -> bool:
     lines = [
+        f"Mode:            {summary.get('mode', 'module-v0')}",
         f"Total cases:     {summary['total_cases']}",
         f"Matching FH-IR:  {summary['matching_fhir']}",
         f"Mismatching FH-IR: {summary['mismatching_fhir']}",
@@ -169,6 +174,7 @@ def normalize(text: str) -> str:
 def print_summary(summary: dict[str, Any]) -> None:
     print("Compare FH-IR artifacts")
     print("-----------------------")
+    print("Mode:            ", summary.get("mode", "module-v0"))
     print("Total cases:     ", summary["total_cases"])
     print("Matching FH-IR:  ", summary["matching_fhir"])
     print("Mismatching FH-IR:", summary["mismatching_fhir"])
@@ -209,6 +215,48 @@ def build_error(category: str, exc: Exception, context_path: Path) -> dict[str, 
         "message": str(exc),
         "context": display_path(context_path),
     }
+
+
+def default_expected_root(mode: str) -> Path:
+    return DEFAULT_EXPECTED_ROOT_V1 if mode == "project-v1" else DEFAULT_EXPECTED_ROOT_V0
+
+
+def export_case(source_path: Path, mode: str) -> str:
+    if mode == "project-v1":
+        resolver = ModuleResolver(runtime_modules=GO_RUNTIME_MODULE_EXPORTS)
+        resolver.resolve_entry(source_path)
+        if resolver.entry is None:
+            raise TypeCheckError("module resolver did not produce an entry module")
+        return export_fhir_project_json(resolver.entry.name, resolver.resolved, GO_RUNTIME_MODULE_EXPORTS)
+    verified = ModuleResolver().verify_entry(source_path)
+    return export_fhir_json(verified)
+
+
+def extract_module_name(actual: dict[str, Any] | None) -> str:
+    if not isinstance(actual, dict):
+        return ""
+    if "entry_module" in actual:
+        return str(actual.get("entry_module", ""))
+    return str(actual.get("module", {}).get("name", ""))
+
+
+def extract_analysis_routine_count(actual: dict[str, Any] | None) -> int:
+    if not isinstance(actual, dict):
+        return 0
+    if isinstance(actual.get("analysis"), dict):
+        return len(actual.get("analysis", {}).get("routines", []))
+    project = actual.get("project", {})
+    if not isinstance(project, dict):
+        return 0
+    modules = project.get("modules", [])
+    if not isinstance(modules, list):
+        return 0
+    total = 0
+    for module in modules:
+        analysis = module.get("analysis", {}) if isinstance(module, dict) else {}
+        if isinstance(analysis, dict):
+            total += len(analysis.get("routines", []))
+    return total
 
 
 def display_path(path: Path) -> str:
