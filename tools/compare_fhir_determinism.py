@@ -17,7 +17,7 @@ from freehold.core.ast import TypeCheckError
 from freehold.core.fhir import export_fhir_project_json
 from freehold.core.go_codegen import GO_RUNTIME_MODULE_EXPORTS
 from freehold.core.module_resolver import ModuleResolver
-from tools.artifact_io import default_temp_out_root, write_json, write_text
+from tools.artifact_io import build_manifest, default_temp_out_root, write_json, write_text
 from tools.verify_compiler_examples import SUPPORTED_EXAMPLES
 
 
@@ -65,7 +65,15 @@ def main() -> int:
         "mismatching_cases": len(mismatches),
         "mismatches": mismatches,
     }
-    manifest = build_manifest(rows, summary)
+    manifest = build_manifest(
+        rows,
+        artifact=summary.get("artifact", "compare-fhir-determinism"),
+        profile="compiler_examples_default",
+        total_cases=summary.get("total_cases", 0),
+        matching_cases=summary.get("matching_cases", 0),
+        mismatching_cases=summary.get("mismatching_cases", 0),
+        case_fields=["case", "status", "schema", "schema_version", "entry_module", "diagnostic", "violations"],
+    )
 
     out_root.mkdir(parents=True, exist_ok=True)
     write_json(out_root / "_all.json", rows)
@@ -366,30 +374,6 @@ def display_path(path: Path) -> str:
         return path.relative_to(Path.cwd()).as_posix()
     except ValueError:
         return path.as_posix()
-
-def build_manifest(rows: list[dict[str, Any]], summary: dict[str, Any]) -> dict[str, Any]:
-    manifest_cases = []
-    for row in sorted(rows, key=lambda item: item.get("case", "")):
-        manifest_cases.append(
-            {
-                "case": row.get("case", ""),
-                "status": row.get("status", ""),
-                "schema": row.get("schema", ""),
-                "schema_version": row.get("schema_version", {}),
-                "entry_module": row.get("entry_module", ""),
-                "diagnostic": row.get("diagnostic"),
-                "violations": sorted(row.get("violations", [])),
-            }
-        )
-    return {
-        "artifact": summary.get("artifact", "compare-fhir-determinism"),
-        "profile": "compiler_examples_default",
-        "total_cases": summary.get("total_cases", 0),
-        "matching_cases": summary.get("matching_cases", 0),
-        "mismatching_cases": summary.get("mismatching_cases", 0),
-        "cases": manifest_cases,
-    }
-
 
 def normalize_diagnostic_error(error: dict[str, Any] | None) -> dict[str, Any] | None:
     if error is None:

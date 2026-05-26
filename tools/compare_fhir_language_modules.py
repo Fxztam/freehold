@@ -20,7 +20,7 @@ from freehold.core.go_codegen import GO_RUNTIME_MODULE_EXPORTS
 from freehold.core.module_resolver import ModuleResolver
 from freehold.core.parser import parse_source
 from freehold.core.verifier import verify_program
-from tools.artifact_io import default_temp_out_root, write_json, write_text
+from tools.artifact_io import build_manifest, default_temp_out_root, write_json, write_text
 
 DEFAULT_OUT_ROOT = default_temp_out_root("compare-fhir-language-modules")
 FORBIDDEN_KEYWORDS = (
@@ -170,7 +170,16 @@ def main() -> int:
         "domains": sorted({case.domain for case in selected_cases}),
         "mismatches": mismatches,
     }
-    manifest = build_manifest(rows, summary)
+    manifest = build_manifest(
+        rows,
+        artifact=summary.get("artifact", "compare-fhir-language-modules"),
+        profile=summary.get("profile", "stable"),
+        total_cases=summary.get("total_cases", 0),
+        matching_cases=summary.get("matching_cases", 0),
+        mismatching_cases=summary.get("mismatching_cases", 0),
+        case_fields=["case", "domain", "mode", "status", "schema", "schema_version", "diagnostic", "violations"],
+        extra_top_level={"domains": summary.get("domains", [])},
+    )
 
     out_root = Path(args.out)
     out_root.mkdir(parents=True, exist_ok=True)
@@ -494,32 +503,6 @@ def find_forbidden_string_markers(value: Any, path: str = "") -> list[str]:
         for index, child in enumerate(value):
             violations.extend(find_forbidden_string_markers(child, f"{path}[{index}]"))
     return violations
-
-
-def build_manifest(rows: list[dict[str, Any]], summary: dict[str, Any]) -> dict[str, Any]:
-    manifest_cases = []
-    for row in sorted(rows, key=lambda item: item.get("case", "")):
-        manifest_cases.append(
-            {
-                "case": row.get("case", ""),
-                "domain": row.get("domain", ""),
-                "mode": row.get("mode", ""),
-                "status": row.get("status", ""),
-                "schema": row.get("schema", ""),
-                "schema_version": row.get("schema_version", {}),
-                "diagnostic": row.get("diagnostic"),
-                "violations": sorted(row.get("violations", [])),
-            }
-        )
-    return {
-        "artifact": summary.get("artifact", "compare-fhir-language-modules"),
-        "profile": summary.get("profile", "stable"),
-        "domains": summary.get("domains", []),
-        "total_cases": summary.get("total_cases", 0),
-        "matching_cases": summary.get("matching_cases", 0),
-        "mismatching_cases": summary.get("mismatching_cases", 0),
-        "cases": manifest_cases,
-    }
 
 
 def normalize_diagnostic_error(error: dict[str, Any] | None) -> dict[str, Any] | None:
