@@ -10,7 +10,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from freehold.core.fhir import export_fhir_json
+from freehold.core.fhir import export_fhir_project_json
+from freehold.core.go_codegen import GO_RUNTIME_MODULE_EXPORTS
 from freehold.core.module_resolver import ModuleResolver
 from tools.verify_compiler_examples import SUPPORTED_EXAMPLES
 
@@ -33,7 +34,7 @@ FORBIDDEN_KEYWORDS = (
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate deterministic FH-IR v0 export profile")
+    parser = argparse.ArgumentParser(description="Validate deterministic FH-IR v1 project export profile")
     parser.add_argument("--out", default=str(DEFAULT_OUT_ROOT), help="comparison report output root")
     parser.add_argument("--limit", type=int, default=DEFAULT_CASE_LIMIT, help="number of supported compiler examples to check")
     parser.add_argument("--all", action="store_true", help="check all supported compiler examples")
@@ -73,8 +74,18 @@ def run_case(name: str, entry_path: Path) -> dict[str, Any]:
     violations: list[str] = []
 
     try:
-        first = export_fhir_json(ModuleResolver().verify_entry(source_path))
-        second = export_fhir_json(ModuleResolver().verify_entry(source_path))
+        first_resolver = ModuleResolver(runtime_modules=GO_RUNTIME_MODULE_EXPORTS)
+        first_resolver.resolve_entry(source_path)
+        if first_resolver.entry is None:
+            raise RuntimeError("module resolver did not produce an entry module")
+        first = export_fhir_project_json(first_resolver.entry.name, first_resolver.resolved, GO_RUNTIME_MODULE_EXPORTS)
+
+        second_resolver = ModuleResolver(runtime_modules=GO_RUNTIME_MODULE_EXPORTS)
+        second_resolver.resolve_entry(source_path)
+        if second_resolver.entry is None:
+            raise RuntimeError("module resolver did not produce an entry module")
+        second = export_fhir_project_json(second_resolver.entry.name, second_resolver.resolved, GO_RUNTIME_MODULE_EXPORTS)
+
         deterministic_text = first == second
         if not deterministic_text:
             violations.append("non-deterministic serialization across repeated export")
@@ -96,7 +107,7 @@ def run_case(name: str, entry_path: Path) -> dict[str, Any]:
         "violations": violations,
         "error": error,
         "schema": document.get("schema") if isinstance(document, dict) else "",
-        "module": document.get("module", {}).get("name", "") if isinstance(document, dict) else "",
+        "entry_module": document.get("entry_module", "") if isinstance(document, dict) else "",
     }
     print("OK   " if status == "match" else "FAIL ", name)
     return row
@@ -108,35 +119,68 @@ def validate_document(document: dict[str, Any]) -> list[str]:
     violations.extend(find_forbidden_keys(document))
     violations.extend(find_forbidden_string_markers(document))
 
-    module = document.get("module", {})
-    imports = module.get("imports", [])
-    if imports != sorted(imports, key=lambda item: (item.get("module", ""), tuple(item.get("exposing", [])))):
-        violations.append("module.imports order is not stable")
+    if document.get("schema") != "fh-ir-v1":
+        violations.append("schema is not fh-ir-v1")
 
-    declarations = module.get("declarations", [])
-    if declarations != sorted(declarations, key=lambda item: (DECLARATION_KIND_ORDER.get(item.get("kind", ""), 99), item.get("name", ""))):
-        violations.append("module.declarations order is not stable")
+    project = document.get("project", {})
+    module_order = project.get("module_order", [])
+    if module_order != sorted(module_order):
+        violations.append("project.module_order is not canonical")
 
-    analysis = document.get("analysis", {})
-    violations.extend(validate_name_order(analysis.get("types", []), "analysis.types"))
-    violations.extend(validate_name_order(analysis.get("records", []), "analysis.records"))
-    if analysis.get("errors", []) != sorted(analysis.get("errors", [])):
-        violations.append("analysis.errors order is not stable")
-    violations.extend(validate_name_order(analysis.get("routines", []), "analysis.routines"))
-    violations.extend(validate_name_order(analysis.get("services", []), "analysis.services"))
+    modules = project.get("modules", [])
+    if [item.get("name", "") for item in modules] != module_order:
+        violations.append("project.modules order does not match project.module_order")
 
-    for record in analysis.get("records", []):
-        fields = record.get("fields", [])
-        if fields != sorted(fields, key=lambda item: item.get("name", "")):
-            violations.append(f"record fields order is not stable: {record.get('name', '<unknown>')}")
-        proto_fields = record.get("proto_fields", [])
-        if proto_fields != sorted(proto_fields, key=lambda item: item.get("name", "")):
-            violations.append(f"record proto_fields order is not stable: {record.get('name', '<unknown>')}")
+    for module in modules:
+        module_block = module.get("module", {})
+        imports = module_block.get("imports", [])
+        if imports != sorted(imports, key=lambda item: (item.get("module", ""), tuple(item.get("exposing", [])))):
+            violations.append(f"module.imports order is not stable: {module.get('name', '<unknown>')}")
 
-    for service in analysis.get("services", []):
-        rpcs = service.get("rpcs", [])
-        if rpcs != sorted(rpcs, key=lambda item: item.get("name", "")):
-            violations.append(f"service RPC order is not stable: {service.get('name', '<unknown>')}")
+        declarations = module_block.get("declarations", [])
+        if declarations != sorted(declarations, key=lambda item: (DECLARATION_KIND_ORDER.get(item.get("kind", ""), 99), item.get("name", ""))):
+            violations.append(f"module.declarations order is not stable: {module.get('name', '<unknown>')}")
+
+        analysis = module.get("analysis", {})
+        violations.extend(validate_name_order(analysis.get("types", []), f"analysis.types[{module.get('name', '<unknown>')}]"))
+        violations.extend(validate_name_order(analysis.get("records", []), f"analysis.records[{module.get('name', '<unknown>')}]"))
+        if analysis.get("errors", []) != sorted(analysis.get("errors", [])):
+            violations.append(f"analysis.errors order is not stable: {module.get('name', '<unknown>')}")
+        violations.extend(validate_name_order(analysis.get("routines", []), f"analysis.routines[{module.get('name', '<unknown>')}]"))
+        violations.extend(validate_name_order(analysis.get("services", []), f"analysis.services[{module.get('name', '<unknown>')}]"))
+
+        for record in analysis.get("records", []):
+            fields = record.get("fields", [])
+            if fields != sorted(fields, key=lambda item: item.get("name", "")):
+                violations.append(f"record fields order is not stable: {record.get('name', '<unknown>')}")
+            proto_fields = record.get("proto_fields", [])
+            if proto_fields != sorted(proto_fields, key=lambda item: item.get("name", "")):
+                violations.append(f"record proto_fields order is not stable: {record.get('name', '<unknown>')}")
+
+        for service in analysis.get("services", []):
+            rpcs = service.get("rpcs", [])
+            if rpcs != sorted(rpcs, key=lambda item: item.get("name", "")):
+                violations.append(f"service RPC order is not stable: {service.get('name', '<unknown>')}")
+
+    import_graph = project.get("import_graph", [])
+    if import_graph != sorted(import_graph, key=lambda item: (item.get("from_module", ""), item.get("to_module", ""), tuple(item.get("exposing", [])))):
+        violations.append("project.import_graph order is not canonical")
+
+    for edge in import_graph:
+        exposing = edge.get("exposing", [])
+        if exposing != sorted(exposing):
+            violations.append(f"import_graph exposing order is not stable: {edge.get('from_module', '<unknown>')} -> {edge.get('to_module', '<unknown>')}")
+        expected_qualified = [f"{edge.get('to_module', '')}.{symbol_name}" for symbol_name in exposing]
+        if edge.get("qualified_exposing", []) != expected_qualified:
+            violations.append(f"import_graph qualified_exposing mismatch: {edge.get('from_module', '<unknown>')} -> {edge.get('to_module', '<unknown>')}")
+
+    runtime_modules = project.get("runtime_modules", [])
+    if runtime_modules != sorted(runtime_modules, key=lambda item: item.get("name", "")):
+        violations.append("project.runtime_modules order is not canonical")
+    for runtime_entry in runtime_modules:
+        exports = runtime_entry.get("exports", [])
+        if exports != sorted(exports):
+            violations.append(f"runtime module exports order is not stable: {runtime_entry.get('name', '<unknown>')}")
 
     return violations
 

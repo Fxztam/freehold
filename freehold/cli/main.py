@@ -8,7 +8,7 @@ from pathlib import Path
 
 from freehold.core.diagnostics import diagnose_exception
 from freehold.core.compare_ir import export_compare_ir_json
-from freehold.core.fhir import export_fhir_json
+from freehold.core.fhir import export_fhir_json, export_fhir_project_json
 from freehold.core.go_codegen import generate_go_file, generate_go_project, generate_go_project_build_files, project_result_json, result_json
 from freehold.core.grpc_codegen import generate_proto_file
 from freehold.core.grpc_go_codegen import generate_grpc_go_bindings_file
@@ -36,8 +36,15 @@ def cmd_ast(args):
 
 def cmd_fhir(args):
     resolver = ModuleResolver(runtime_modules=GO_RUNTIME_MODULE_EXPORTS)
-    verified = resolver.verify_entry(args.file)
-    fhir_json = export_fhir_json(verified)
+    resolver.resolve_entry(args.file)
+    if resolver.entry is None or resolver.entry.verified is None:
+        raise RuntimeError("module resolver did not produce an entry module")
+
+    if args.module_only:
+        fhir_json = export_fhir_json(resolver.entry.verified)
+    else:
+        fhir_json = export_fhir_project_json(resolver.entry.name, resolver.resolved, GO_RUNTIME_MODULE_EXPORTS)
+
     if args.output:
         out = Path(args.output)
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -234,9 +241,10 @@ def build_parser():
     p = sub.add_parser("run", help="Parse, verify, and run a .fh module"); p.add_argument("file"); p.set_defaults(func=cmd_run)
     p = sub.add_parser("verify", help="Parse and verify a .fh module"); p.add_argument("file"); p.set_defaults(func=cmd_verify)
     p = sub.add_parser("ast", help="Print parsed AST"); p.add_argument("file"); p.set_defaults(func=cmd_ast)
-    p = sub.add_parser("ir", aliases=["fhir"], help="Export canonical FH-IR JSON from a verified Freehold module")
+    p = sub.add_parser("ir", aliases=["fhir"], help="Export canonical FH-IR JSON (project-wide v1 by default)")
     p.add_argument("file")
     p.add_argument("--output", "-o", default=None)
+    p.add_argument("--module-only", action="store_true", help="Export single-module FH-IR v0 instead of project-wide v1")
     p.set_defaults(func=cmd_fhir)
     p = sub.add_parser("compare-ir", help="Export reduced compare IR JSON from a verified Freehold module")
     p.add_argument("file")
@@ -280,6 +288,7 @@ def main(argv=None):
     if args.version:
         print("Freehold CLI: toolchain frontend")
         print("Commands: run, verify, test, ebnf, ast, ir/fhir, compare-ir, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project")
+        print("FH-IR schemas: fh-ir-v1 (project-wide default), fh-ir-v0 (--module-only)")
         return 0
     if not args.command:
         parser.print_help(); return 0

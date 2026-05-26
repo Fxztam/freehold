@@ -54,6 +54,7 @@ from freehold.core.control_flow import RoutineFlowSummary
 from freehold.core.verifier import VerifiedProgram
 
 FH_IR_SCHEMA = "fh-ir-v0"
+FH_IR_SCHEMA_V1 = "fh-ir-v1"
 FREEHOLD_LANGUAGE_VERSION = "freehold-v1"
 
 
@@ -62,14 +63,61 @@ def export_verified_program(verified: VerifiedProgram) -> dict[str, Any]:
         "schema": FH_IR_SCHEMA,
         "language_version": FREEHOLD_LANGUAGE_VERSION,
         "module": export_program(verified.ast),
-        "analysis": {
-            "types": [export_type_def(verified.types[name]) for name in sorted(verified.types)],
-            "records": [export_record_def(verified.records[name]) for name in sorted(verified.records)],
-            "errors": sorted(verified.errors),
-            "routines": [export_routine_decl(verified.routines[name]) for name in sorted(verified.routines)],
-            "services": [export_service_decl(verified.services[name]) for name in sorted(verified.services)],
-            "proof_obligations": [dict(item) for item in verified.proof_obligations],
-            "flow_summaries": [export_flow_summary(verified.flow_summaries[name]) for name in sorted(verified.flow_summaries)],
+        "analysis": export_analysis(verified),
+    }
+
+
+def export_verified_project(
+    entry_module_name: str,
+    resolved_modules: dict[str, Any],
+    runtime_modules: dict[str, set[str]] | None = None,
+) -> dict[str, Any]:
+    runtime_modules = runtime_modules or {}
+    module_names = sorted(name for name in resolved_modules if getattr(resolved_modules[name], "verified", None) is not None)
+
+    modules: list[dict[str, Any]] = []
+    import_graph: list[dict[str, Any]] = []
+    runtime_used: set[str] = set()
+
+    for module_name in module_names:
+        resolved = resolved_modules[module_name]
+        verified = resolved.verified
+        modules.append({
+            "name": module_name,
+            "module": export_program(verified.ast),
+            "analysis": export_analysis(verified),
+        })
+
+        for import_decl in sorted_imports(verified.ast.imports or []):
+            is_runtime = import_decl.module_name in runtime_modules
+            if is_runtime:
+                runtime_used.add(import_decl.module_name)
+            exposing = sorted(import_decl.exposing)
+            import_graph.append({
+                "from_module": module_name,
+                "to_module": import_decl.module_name,
+                "is_runtime": is_runtime,
+                "exposing": exposing,
+                "qualified_exposing": [f"{import_decl.module_name}.{symbol_name}" for symbol_name in exposing],
+            })
+
+    runtime_entries = [
+        {
+            "name": module_name,
+            "exports": sorted(runtime_modules[module_name]),
+        }
+        for module_name in sorted(runtime_used)
+    ]
+
+    return {
+        "schema": FH_IR_SCHEMA_V1,
+        "language_version": FREEHOLD_LANGUAGE_VERSION,
+        "entry_module": entry_module_name,
+        "project": {
+            "module_order": module_names,
+            "modules": modules,
+            "import_graph": import_graph,
+            "runtime_modules": runtime_entries,
         },
     }
 
@@ -84,6 +132,30 @@ def export_program(program: Program) -> dict[str, Any]:
 
 def export_fhir_json(verified: VerifiedProgram) -> str:
     return json.dumps(export_verified_program(verified), indent=2, ensure_ascii=False) + "\n"
+
+
+def export_fhir_project_json(
+    entry_module_name: str,
+    resolved_modules: dict[str, Any],
+    runtime_modules: dict[str, set[str]] | None = None,
+) -> str:
+    return json.dumps(
+        export_verified_project(entry_module_name, resolved_modules, runtime_modules),
+        indent=2,
+        ensure_ascii=False,
+    ) + "\n"
+
+
+def export_analysis(verified: VerifiedProgram) -> dict[str, Any]:
+    return {
+        "types": [export_type_def(verified.types[name]) for name in sorted(verified.types)],
+        "records": [export_record_def(verified.records[name]) for name in sorted(verified.records)],
+        "errors": sorted(verified.errors),
+        "routines": [export_routine_decl(verified.routines[name]) for name in sorted(verified.routines)],
+        "services": [export_service_decl(verified.services[name]) for name in sorted(verified.services)],
+        "proof_obligations": [dict(item) for item in verified.proof_obligations],
+        "flow_summaries": [export_flow_summary(verified.flow_summaries[name]) for name in sorted(verified.flow_summaries)],
+    }
 
 
 def sorted_imports(imports: list[ImportDecl]) -> list[ImportDecl]:

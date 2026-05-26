@@ -259,7 +259,35 @@ Compare normalized semantic ASTs for the files that both parsers accept with:
 .\compare-ast-semantic.cmd
 ```
 
-## FH-IR v0 profile
+## FH-IR profile (V1)
+
+Export project-wide FH-IR directly from CLI with:
+
+```powershell
+python -m freehold ir .\examples\compiler_v1\01_minimal_app\App\Main.fh
+```
+
+This emits FH-IR schema `fh-ir-v1` and serializes the full resolved import graph.
+
+V1 includes:
+
+```text
+- complete project module set (not only entry module)
+- canonical module order
+- per-module canonical imports/declarations/analysis
+- explicit import graph edges with exposing and qualified_exposing
+- explicit runtime module entries for imported runtime modules
+```
+
+Legacy single-module export remains available with:
+
+```powershell
+python -m freehold ir .\examples\compiler_v1\01_minimal_app\App\Main.fh --module-only
+```
+
+This emits schema `fh-ir-v0`.
+
+Compare canonical FH-IR v0 baselines with:
 
 Compare canonical FH-IR baselines with:
 
@@ -281,7 +309,7 @@ Run the additive determinism check in a small scope with:
 artifacts/compare-fhir-determinism
 ```
 
-The determinism check validates FH-IR v0 export constraints:
+The determinism check validates FH-IR canonical export constraints:
 
 ```text
 - stable ordering for modules/imports/declarations/record fields
@@ -293,9 +321,9 @@ The determinism check validates FH-IR v0 export constraints:
 
 The parser conformance verify chain includes this check as a narrow additive gate. It is intentionally small-scope by default to keep baseline runtime low while still catching ordering drift.
 
-### FH-IR v0 limits (intentional)
+### FH-IR V1 limits (intentional)
 
-FH-IR v0 is a canonical comparison/export profile, not a full lowering IR. The following are intentionally out of scope in v0:
+FH-IR v1 is a canonical project export profile, not a full lowering IR. The following are intentionally out of scope in v1:
 
 ```text
 - backend-specific lowering stages and optimization passes
@@ -304,7 +332,7 @@ FH-IR v0 is a canonical comparison/export profile, not a full lowering IR. The f
 - V1/V2 lowering metadata and phase annotations
 ```
 
-These omissions are expected and should not be interpreted as regressions when later V1/V2 lowering layers are introduced.
+These omissions are expected and should not be interpreted as regressions when later V2/V3 lowering layers are introduced.
 
 ```text
 artifacts/compare-ast-semantic
