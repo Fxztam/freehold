@@ -67,6 +67,13 @@ func (l *Lexer) skipIgnored() *token.Token {
 			continue
 		}
 
+		if l.peek() == '/' && l.peekNext() == '/' {
+			for !l.eof() && l.peek() != '\n' {
+				l.advance()
+			}
+			continue
+		}
+
 		if l.peek() == '/' && l.peekNext() == '*' {
 			start := token.Position{Line: l.line, Column: l.column, Offset: l.pos}
 			l.advance()
@@ -163,6 +170,14 @@ func (l *Lexer) Next() token.Token {
 		return token.Token{
 			Kind:   token.Star,
 			Lexeme: "*",
+			Pos:    start,
+		}
+
+	case '/':
+		l.advance()
+		return token.Token{
+			Kind:   token.Slash,
+			Lexeme: "/",
 			Pos:    start,
 		}
 

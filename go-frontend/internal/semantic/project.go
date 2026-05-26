@@ -225,7 +225,10 @@ func (p *Project) qualifiedCallDiagnostics(module *ast.Module) []*diagnostic.Dia
 			return
 		}
 		moduleName, ok := p.qualifiedCallModule(name)
-		if !ok || !directImports[moduleName] || !moduleHasRoutine(p.Modules[moduleName], name) {
+		if !ok {
+			return
+		}
+		if !directImports[moduleName] || !moduleHasRoutine(p.Modules[moduleName], name) {
 			diagnostics = append(diagnostics, diagnostic.UnknownRoutine(locationFromPosition(call.Pos), name))
 		}
 	})

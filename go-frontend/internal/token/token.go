@@ -63,6 +63,7 @@ const (
 	Plus         Kind = "+"
 	Minus        Kind = "-"
 	Star         Kind = "*"
+	Slash        Kind = "/"
 	Equal        Kind = "="
 	NotEqual     Kind = "!="
 	Assign       Kind = ":="

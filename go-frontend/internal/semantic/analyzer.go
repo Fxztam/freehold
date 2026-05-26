@@ -359,9 +359,12 @@ func (a *Analyzer) validateBlock(body []ast.Stmt, env map[string]string) {
 		case ast.ScopeStmt:
 			scopeEnv := cloneEnv(env)
 			scopeEnv[value.Name] = "Scope"
-			a.validateBlock(value.SpawnBody, cloneEnv(scopeEnv))
-			a.validateBlock(value.JoinBody, cloneEnv(scopeEnv))
-			a.validateBlock(value.ResultBody, cloneEnv(scopeEnv))
+			spawnEnv := cloneEnv(scopeEnv)
+			a.validateBlock(value.SpawnBody, spawnEnv)
+			joinEnv := cloneEnv(spawnEnv)
+			a.validateBlock(value.JoinBody, joinEnv)
+			resultEnv := cloneEnv(joinEnv)
+			a.validateBlock(value.ResultBody, resultEnv)
 		}
 	}
 }
@@ -383,6 +386,14 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 		objectType, ok := a.inferExpr(value.Object, env)
 		if !ok {
 			return "", false
+		}
+		if okType, errorType, isResult := resultTypes(objectType); isResult {
+			if value.Field == "value" {
+				return okType, true
+			}
+			if value.Field == "error" {
+				return errorType, true
+			}
 		}
 		record, ok := a.symbols.Records[objectType]
 		if !ok {
@@ -453,6 +464,9 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 	case ast.OkExpr:
 		return a.inferExpr(value.Value, env)
 	case ast.NumberExpr:
+		if strings.Contains(value.Value, ".") {
+			return "Double", true
+		}
 		return "Integer", true
 	case ast.StringExpr:
 		return "String", true
@@ -493,6 +507,15 @@ func (a *Analyzer) knownType(typeName string) bool {
 	if _, ok := a.symbols.Records[typeName]; ok {
 		return true
 	}
+	if genericBase, genericArgs, ok := parseGenericType(typeName); ok {
+		switch genericBase {
+		case "JoinHandle", "Channel", "Sender", "Receiver":
+			if len(genericArgs) != 1 {
+				return false
+			}
+			return a.knownType(genericArgs[0])
+		}
+	}
 	if elementType, ok := arrayElementType(typeName); ok {
 		return a.knownType(elementType)
 	}
@@ -504,6 +527,23 @@ func (a *Analyzer) knownType(typeName string) bool {
 		return a.knownType(parts[0]) && a.knownType(parts[1])
 	}
 	return false
+}
+
+func parseGenericType(typeName string) (string, []string, bool) {
+	typeName = strings.TrimSpace(typeName)
+	if !strings.HasSuffix(typeName, ">") {
+		return "", nil, false
+	}
+	index := strings.Index(typeName, "<")
+	if index <= 0 {
+		return "", nil, false
+	}
+	base := strings.TrimSpace(typeName[:index])
+	inner := strings.TrimSpace(typeName[index+1 : len(typeName)-1])
+	if inner == "" {
+		return "", nil, false
+	}
+	return base, splitTopLevel(inner), true
 }
 
 func builtinTypes() map[string]bool {
@@ -589,6 +629,12 @@ func (a *Analyzer) validateCall(call ast.CallExpr, env map[string]string, locati
 	if !ok {
 		return "", false
 	}
+	if isScopeMethodCall(name, env) {
+		return "", false
+	}
+	if isBuiltinRoutineCall(name) {
+		return "", false
+	}
 	routine, ok := a.symbols.Routines[name]
 	if !ok {
 		if !isQualifiedCallName(name) {
@@ -670,6 +716,26 @@ func isQualifiedCallName(name string) bool {
 		}
 	}
 	return false
+}
+
+func isScopeMethodCall(name string, env map[string]string) bool {
+	owner, method, ok := strings.Cut(name, ".")
+	if !ok {
+		return false
+	}
+	if env[owner] != "Scope" {
+		return false
+	}
+	return method == "spawn" || method == "join"
+}
+
+func isBuiltinRoutineCall(name string) bool {
+	switch name {
+	case "channel", "channel_sender", "channel_receiver", "channel_send", "channel_receive", "scope", "scope_spawn", "scope_join":
+		return true
+	default:
+		return false
+	}
 }
 
 func isBooleanOperator(op string) bool {

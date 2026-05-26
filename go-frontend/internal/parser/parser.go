@@ -274,7 +274,7 @@ func (p *Parser) parseName() string {
 
 func (p *Parser) parseNameToken() token.Token {
 	tok := p.peek()
-	if tok.Kind == token.Ident || tok.Kind == token.Scope || tok.Kind == token.Spawn || tok.Kind == token.Join || tok.Kind == token.Result {
+	if tok.Kind == token.Ident || tok.Kind == token.Scope || tok.Kind == token.Spawn || tok.Kind == token.Join || tok.Kind == token.Result || tok.Kind == token.Value {
 		p.pos++
 		return tok
 	}
@@ -830,14 +830,15 @@ func (p *Parser) parseSum() ast.Expr {
 func (p *Parser) parseProduct() ast.Expr {
 	left := p.parseUnary()
 
-	for p.at(token.Star) {
-		op := p.expect(token.Star).Lexeme
+	for p.at(token.Star) || p.at(token.Slash) {
+		tok := p.peek()
+		p.pos++
 		right := p.parseUnary()
 
 		left = ast.BinaryExpr{
 			Kind:  "BinaryExpr",
 			Pos:   exprPos(left),
-			Op:    op,
+			Op:    tok.Lexeme,
 			Left:  left,
 			Right: right,
 		}
