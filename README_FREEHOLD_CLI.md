@@ -296,6 +296,22 @@ Type and verifier representation in FH-IR is normalized for stable downstream ch
 - proof obligations and flow summaries emitted with fixed node names
 ```
 
+Contract metadata is exported explicitly for verification-aware tooling:
+
+```text
+- routine.contract_bindings with explicit binding entries
+- explicit Result value/error bindings (value, error)
+- context availability matrix for requires/ensures/aborts
+```
+
+FH-IR now keeps source syntax and semantic enrichment clearly separated:
+
+```text
+- source_ast section for canonical declaration/statement tree
+- semantic_ir section for verifier/enriched analysis data
+- compatibility aliases remain (module/analysis) for existing consumers
+```
+
 Legacy single-module export remains available with:
 
 ```powershell
@@ -308,6 +324,18 @@ Compare canonical FH-IR baselines with:
 
 ```powershell
 .\compare-fhir.cmd
+```
+
+Compare canonical FH-IR V1 baselines with:
+
+```powershell
+.\compare-fhir-v1.cmd
+```
+
+Targeted V1 baseline update:
+
+```powershell
+.\compare-fhir-v1-update.cmd
 ```
 
 ```text
@@ -334,7 +362,21 @@ The determinism check validates FH-IR canonical export constraints:
 - deterministic repeated export text for the same input
 ```
 
+Determinism artifacts now include a normalized manifest for bootstrap comparisons:
+
+```text
+artifacts/compare-fhir-determinism/_manifest.json
+```
+
+The manifest contains stable per-case schema metadata, normalized diagnostics, and sorted violation lists.
+
 The parser conformance verify chain includes this check as a narrow additive gate. It is intentionally small-scope by default to keep baseline runtime low while still catching ordering drift.
+
+The parser conformance verify chain now includes the FH-IR V1 compare gate by default. Use the escape flag when needed:
+
+```powershell
+.\verify-parser-conformance.cmd --disable-fhir-v1-gate
+```
 
 Run the FH-IR language-module stability gate (stable profile) with:
 
@@ -354,6 +396,12 @@ The language-module gate starts with stable domains and expands stepwise:
 - arrays
 - contracts
 - imports
+```
+
+Language-module artifacts also include a normalized comparison manifest:
+
+```text
+artifacts/compare-fhir-language-modules/_manifest.json
 ```
 
 For broader coverage, run the expanded profile directly:

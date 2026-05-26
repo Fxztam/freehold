@@ -5,7 +5,7 @@ pushd "%~dp0" || exit /b 1
 
 set "UPDATE_GO_BASELINE=0"
 set "UPDATE_PYTHON_BASELINE=0"
-set "ENABLE_FHIR_V1_GATE=0"
+set "ENABLE_FHIR_V1_GATE=1"
 
 :parse_args
 if "%~1"=="" goto :args_done
@@ -24,8 +24,13 @@ if /i "%~1"=="--enable-fhir-v1-gate" (
 	shift
 	goto :parse_args
 )
+if /i "%~1"=="--disable-fhir-v1-gate" (
+	set "ENABLE_FHIR_V1_GATE=0"
+	shift
+	goto :parse_args
+)
 echo Unknown argument: %~1
-echo Supported flags: --update-go-baseline --update-python-baseline --enable-fhir-v1-gate
+echo Supported flags: --update-go-baseline --update-python-baseline --enable-fhir-v1-gate --disable-fhir-v1-gate
 popd
 exit /b 1
 
@@ -78,9 +83,9 @@ if "%UPDATE_PYTHON_BASELINE%"=="1" (
 
 echo [mode] go=%GO_MODE% ; python=%PY_MODE%
 if "%ENABLE_FHIR_V1_GATE%"=="1" (
-	echo [mode] optional FH-IR V1 gate enabled
+	echo [mode] FH-IR V1 gate enabled (default)
 ) else (
-	echo [mode] optional FH-IR V1 gate disabled
+	echo [mode] FH-IR V1 gate disabled via escape flag
 )
 if "%UPDATE_GO_BASELINE%"=="0" echo [mode] temporary Go AST output: %GO_AST_ROOT%
 if "%UPDATE_PYTHON_BASELINE%"=="0" echo [mode] temporary Python outputs root: %PY_OUT_ROOT%
@@ -190,7 +195,7 @@ if errorlevel 1 goto :fail
 
 if "%ENABLE_FHIR_V1_GATE%"=="1" (
 	echo.
-	echo [20b/22] Compare FH-IR V1 (optional)
+	echo [20b/22] Compare FH-IR V1
 	if "%UPDATE_PYTHON_BASELINE%"=="1" (
 		python ".\tools\compare_fhir.py" --mode project-v1 --expected .\artifacts\fhir-v1 --out "%COMPARE_FHIR_V1_ROOT%" --update
 	) else (

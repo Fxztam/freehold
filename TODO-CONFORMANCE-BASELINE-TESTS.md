@@ -40,8 +40,9 @@ Abschlusskriterium:
 ## Verbindlicher Ablauf
 1. Normalen Verify-Lauf ausfuehren (nicht-mutierend):
    - `cmd /c verify-parser-conformance.cmd`
-   - Optional mit V1-Gate:
-     - `cmd /c verify-parser-conformance.cmd --enable-fhir-v1-gate`
+    - V1-Gate ist standardmaessig aktiv.
+    - Escape-Flag zum Deaktivieren:
+       - `cmd /c verify-parser-conformance.cmd --disable-fhir-v1-gate`
 2. Abweichungen pruefen:
    - Sind sie deterministisch?
    - Sind sie fachlich gewollt?
@@ -52,6 +53,7 @@ Abschlusskriterium:
      - `cmd /c verify-parser-conformance.cmd --update-go-baseline --update-python-baseline`
     - Bei V1-Baseline-Updates zusaetzlich (optional, wenn V1-Gate aktiv verwendet wird):
        - `python .\tools\compare_fhir.py --mode project-v1 --expected .\artifacts\fhir-v1 --update`
+       - oder kurz: `cmd /c compare-fhir-v1-update.cmd`
    - Bei FH-IR-Aenderungen zusaetzlich:
      - `python .\tools\compare_fhir.py --update`
 4. Baseline-Diff separat reviewen.
@@ -72,6 +74,8 @@ Hinweis:
 - [ ] Compare-Reports plausibel.
 - [ ] Additive/Frozen-Regeln weiterhin konsistent.
 - [ ] Bei FH-IR-Updates: `python .\tools\compare_fhir.py` liefert `Mismatching FH-IR: 0`.
+- [ ] Bei FH-IR-V1-Checks: `cmd /c compare-fhir-v1.cmd` liefert `Mismatching FH-IR: 0`.
+- [ ] Verify-Standardlauf enthaelt das V1-Gate; nur bei Bedarf mit `--disable-fhir-v1-gate` abschalten.
 
 ## Offene TODOs
 - [ ] Optional: separates Script `verify-parser-conformance-update-baseline.cmd` fuer explizite Baseline-Pflege anlegen.
