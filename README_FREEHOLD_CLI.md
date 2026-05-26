@@ -259,6 +259,53 @@ Compare normalized semantic ASTs for the files that both parsers accept with:
 .\compare-ast-semantic.cmd
 ```
 
+## FH-IR v0 profile
+
+Compare canonical FH-IR baselines with:
+
+```powershell
+.\compare-fhir.cmd
+```
+
+```text
+artifacts/compare-fhir
+```
+
+Run the additive determinism check in a small scope with:
+
+```powershell
+.\compare-fhir-determinism.cmd
+```
+
+```text
+artifacts/compare-fhir-determinism
+```
+
+The determinism check validates FH-IR v0 export constraints:
+
+```text
+- stable ordering for modules/imports/declarations/record fields
+- stable ordering in analysis lists (types, records, errors, routines, services)
+- no source-position payloads in the comparison profile
+- no Python runtime/object-name leakage in serialized output
+- deterministic repeated export text for the same input
+```
+
+The parser conformance verify chain includes this check as a narrow additive gate. It is intentionally small-scope by default to keep baseline runtime low while still catching ordering drift.
+
+### FH-IR v0 limits (intentional)
+
+FH-IR v0 is a canonical comparison/export profile, not a full lowering IR. The following are intentionally out of scope in v0:
+
+```text
+- backend-specific lowering stages and optimization passes
+- executable runtime representation details
+- cross-target ABI/packing commitments
+- V1/V2 lowering metadata and phase annotations
+```
+
+These omissions are expected and should not be interpreted as regressions when later V1/V2 lowering layers are introduced.
+
 ```text
 artifacts/compare-ast-semantic
 ```
