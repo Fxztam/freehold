@@ -1,0 +1,1144 @@
+{
+  "schema": "fh-compare-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "examples.GaussLegendrePi",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Math",
+        "exposing": [
+          "abs",
+          "pow",
+          "sqrt"
+        ]
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Std.IO",
+        "exposing": [
+          "logf"
+        ]
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "compute_pi",
+        "type_params": null,
+        "is_async": false,
+        "params": [
+          {
+            "name": "max_iter",
+            "type": "Integer"
+          },
+          {
+            "name": "eps",
+            "type": "Double"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Double"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "a",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "DoubleExpr",
+              "value": 1
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "b",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "/",
+              "left": {
+                "kind": "DoubleExpr",
+                "value": 1
+              },
+              "right": {
+                "kind": "CallExpr",
+                "name": "Math.sqrt",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "DoubleExpr",
+                      "value": 2
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "t",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "DoubleExpr",
+              "value": 0.25
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "p",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "DoubleExpr",
+              "value": 1
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "pi",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "DoubleExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "i",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "WhileStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "\u003c",
+              "left": {
+                "kind": "VarExpr",
+                "name": "i"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "max_iter"
+              }
+            },
+            "invariants": [
+              {
+                "kind": "BinaryExpr",
+                "op": "\u003e=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": "\u003c=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "max_iter"
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": "\u003e",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "eps"
+                },
+                "right": {
+                  "kind": "DoubleExpr",
+                  "value": 0
+                }
+              }
+            ],
+            "variant": {
+              "kind": "BinaryExpr",
+              "op": "-",
+              "left": {
+                "kind": "VarExpr",
+                "name": "max_iter"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "i"
+              }
+            },
+            "body": [
+              {
+                "kind": "LetStmt",
+                "name": "a_next",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "/",
+                  "left": {
+                    "kind": "BinaryExpr",
+                    "op": "+",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "a"
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "b"
+                    }
+                  },
+                  "right": {
+                    "kind": "DoubleExpr",
+                    "value": 2
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "b_next",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Math.sqrt",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "BinaryExpr",
+                        "op": "*",
+                        "left": {
+                          "kind": "VarExpr",
+                          "name": "a"
+                        },
+                        "right": {
+                          "kind": "VarExpr",
+                          "name": "b"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "t_next",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "-",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "t"
+                  },
+                  "right": {
+                    "kind": "BinaryExpr",
+                    "op": "*",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "p"
+                    },
+                    "right": {
+                      "kind": "CallExpr",
+                      "name": "Math.pow",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "BinaryExpr",
+                            "op": "-",
+                            "left": {
+                              "kind": "VarExpr",
+                              "name": "a"
+                            },
+                            "right": {
+                              "kind": "VarExpr",
+                              "name": "a_next"
+                            }
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "DoubleExpr",
+                            "value": 2
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "p_next",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "*",
+                  "left": {
+                    "kind": "DoubleExpr",
+                    "value": 2
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "p"
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "pi_new",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "/",
+                  "left": {
+                    "kind": "CallExpr",
+                    "name": "Math.pow",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "BinaryExpr",
+                          "op": "+",
+                          "left": {
+                            "kind": "VarExpr",
+                            "name": "a_next"
+                          },
+                          "right": {
+                            "kind": "VarExpr",
+                            "name": "b_next"
+                          }
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "DoubleExpr",
+                          "value": 2
+                        }
+                      }
+                    ]
+                  },
+                  "right": {
+                    "kind": "BinaryExpr",
+                    "op": "*",
+                    "left": {
+                      "kind": "DoubleExpr",
+                      "value": 4
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "t_next"
+                    }
+                  }
+                }
+              },
+              {
+                "kind": "IfStmt",
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": "\u003c",
+                  "left": {
+                    "kind": "CallExpr",
+                    "name": "Math.abs",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "BinaryExpr",
+                          "op": "-",
+                          "left": {
+                            "kind": "VarExpr",
+                            "name": "pi_new"
+                          },
+                          "right": {
+                            "kind": "VarExpr",
+                            "name": "pi"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "eps"
+                  }
+                },
+                "then_body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "pi_new"
+                      }
+                    }
+                  }
+                ],
+                "else_body": []
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "a",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "a_next"
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "b",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "b_next"
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "t",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "t_next"
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "p",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "p_next"
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "pi",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "pi_new"
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "i",
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "+",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "i"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "VarExpr",
+                "name": "pi"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "pi",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "compute_pi",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 20
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "DoubleExpr",
+                    "value": 1e-15
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "Pi ~ ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "pi"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [],
+    "errors": [],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "compute_pi",
+        "type_params": null,
+        "is_async": false,
+        "params": [
+          {
+            "name": "max_iter",
+            "type": "Integer"
+          },
+          {
+            "name": "eps",
+            "type": "Double"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Double"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "a",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "DoubleExpr",
+              "value": 1
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "b",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "/",
+              "left": {
+                "kind": "DoubleExpr",
+                "value": 1
+              },
+              "right": {
+                "kind": "CallExpr",
+                "name": "Math.sqrt",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "DoubleExpr",
+                      "value": 2
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "t",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "DoubleExpr",
+              "value": 0.25
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "p",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "DoubleExpr",
+              "value": 1
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "pi",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "DoubleExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "i",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "WhileStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "\u003c",
+              "left": {
+                "kind": "VarExpr",
+                "name": "i"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "max_iter"
+              }
+            },
+            "invariants": [
+              {
+                "kind": "BinaryExpr",
+                "op": "\u003e=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": "\u003c=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "max_iter"
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": "\u003e",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "eps"
+                },
+                "right": {
+                  "kind": "DoubleExpr",
+                  "value": 0
+                }
+              }
+            ],
+            "variant": {
+              "kind": "BinaryExpr",
+              "op": "-",
+              "left": {
+                "kind": "VarExpr",
+                "name": "max_iter"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "i"
+              }
+            },
+            "body": [
+              {
+                "kind": "LetStmt",
+                "name": "a_next",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "/",
+                  "left": {
+                    "kind": "BinaryExpr",
+                    "op": "+",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "a"
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "b"
+                    }
+                  },
+                  "right": {
+                    "kind": "DoubleExpr",
+                    "value": 2
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "b_next",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Math.sqrt",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "BinaryExpr",
+                        "op": "*",
+                        "left": {
+                          "kind": "VarExpr",
+                          "name": "a"
+                        },
+                        "right": {
+                          "kind": "VarExpr",
+                          "name": "b"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "t_next",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "-",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "t"
+                  },
+                  "right": {
+                    "kind": "BinaryExpr",
+                    "op": "*",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "p"
+                    },
+                    "right": {
+                      "kind": "CallExpr",
+                      "name": "Math.pow",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "BinaryExpr",
+                            "op": "-",
+                            "left": {
+                              "kind": "VarExpr",
+                              "name": "a"
+                            },
+                            "right": {
+                              "kind": "VarExpr",
+                              "name": "a_next"
+                            }
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "DoubleExpr",
+                            "value": 2
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "p_next",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "*",
+                  "left": {
+                    "kind": "DoubleExpr",
+                    "value": 2
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "p"
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "pi_new",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "/",
+                  "left": {
+                    "kind": "CallExpr",
+                    "name": "Math.pow",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "BinaryExpr",
+                          "op": "+",
+                          "left": {
+                            "kind": "VarExpr",
+                            "name": "a_next"
+                          },
+                          "right": {
+                            "kind": "VarExpr",
+                            "name": "b_next"
+                          }
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "DoubleExpr",
+                          "value": 2
+                        }
+                      }
+                    ]
+                  },
+                  "right": {
+                    "kind": "BinaryExpr",
+                    "op": "*",
+                    "left": {
+                      "kind": "DoubleExpr",
+                      "value": 4
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "t_next"
+                    }
+                  }
+                }
+              },
+              {
+                "kind": "IfStmt",
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": "\u003c",
+                  "left": {
+                    "kind": "CallExpr",
+                    "name": "Math.abs",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "BinaryExpr",
+                          "op": "-",
+                          "left": {
+                            "kind": "VarExpr",
+                            "name": "pi_new"
+                          },
+                          "right": {
+                            "kind": "VarExpr",
+                            "name": "pi"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "eps"
+                  }
+                },
+                "then_body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "pi_new"
+                      }
+                    }
+                  }
+                ],
+                "else_body": []
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "a",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "a_next"
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "b",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "b_next"
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "t",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "t_next"
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "p",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "p_next"
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "pi",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "pi_new"
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "i",
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "+",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "i"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "VarExpr",
+                "name": "pi"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "pi",
+            "type": {
+              "kind": "TypeName",
+              "name": "Double"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "compute_pi",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 20
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "DoubleExpr",
+                    "value": 1e-15
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "Pi ~ ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "pi"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "services": []
+  }
+}

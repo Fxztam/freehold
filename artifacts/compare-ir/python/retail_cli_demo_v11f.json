@@ -1,0 +1,667 @@
+{
+  "schema": "fh-compare-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "examples.retail_cli_demo_v11f",
+    "imports": [],
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Money",
+        "base": "Integer",
+        "min_value": 0,
+        "max_value": 1000000
+      },
+      {
+        "kind": "RecordTypeDecl",
+        "name": "Customer",
+        "fields": [
+          {
+            "name": "active",
+            "type": "Boolean"
+          },
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "name",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "label_customer",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "c",
+            "type": "Customer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "String"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "VarExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "CallExpr",
+              "name": "String.concat",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Customer: "
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "c",
+                      "name"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "String.concat",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "Customer: "
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "c",
+                        "name"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "c",
+            "type": {
+              "kind": "TypeName",
+              "name": "Customer"
+            },
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Customer",
+              "args": [
+                {
+                  "kind": "NamedArg",
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 1001
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "name",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Ada"
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "active",
+                  "value": {
+                    "kind": "BoolExpr",
+                    "value": true
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "label",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "label_customer",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "c"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "fee",
+            "type": {
+              "kind": "TypeName",
+              "name": "Money"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "shipping_fee",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 42
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "label"
+              },
+              "right": {
+                "kind": "StringExpr",
+                "value": "Customer: Ada"
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "fee"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 7
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "shipping_fee",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "amount",
+            "type": "Money"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Money"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "VarExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": ">=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 100
+              }
+            },
+            "then_body": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "ReturnPlain",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              }
+            ],
+            "else_body": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "ReturnPlain",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 7
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Money",
+        "base": "Integer",
+        "min_value": 0,
+        "max_value": 1000000
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [
+      {
+        "name": "Customer",
+        "fields": [
+          {
+            "name": "active",
+            "type": "Boolean"
+          },
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "name",
+            "type": "String"
+          }
+        ],
+        "proto_fields": []
+      }
+    ],
+    "errors": [],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "label_customer",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "c",
+            "type": "Customer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "String"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "VarExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "CallExpr",
+              "name": "String.concat",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Customer: "
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "c",
+                      "name"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "String.concat",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "Customer: "
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "c",
+                        "name"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "c",
+            "type": {
+              "kind": "TypeName",
+              "name": "Customer"
+            },
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Customer",
+              "args": [
+                {
+                  "kind": "NamedArg",
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 1001
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "name",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Ada"
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "active",
+                  "value": {
+                    "kind": "BoolExpr",
+                    "value": true
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "label",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "label_customer",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "c"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "fee",
+            "type": {
+              "kind": "TypeName",
+              "name": "Money"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "shipping_fee",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 42
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "label"
+              },
+              "right": {
+                "kind": "StringExpr",
+                "value": "Customer: Ada"
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "fee"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 7
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "shipping_fee",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "amount",
+            "type": "Money"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Money"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "VarExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": ">=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 100
+              }
+            },
+            "then_body": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "ReturnPlain",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              }
+            ],
+            "else_body": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "ReturnPlain",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 7
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "services": []
+  }
+}

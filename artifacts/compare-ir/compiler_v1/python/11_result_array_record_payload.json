@@ -1,0 +1,593 @@
+{
+  "schema": "fh-compare-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "App.Main",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Domain.Orders",
+        "exposing": [
+          "NotFound",
+          "load_orders"
+        ]
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Domain.Types",
+        "exposing": [
+          "Order"
+        ]
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Std.IO",
+        "exposing": []
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "outcome",
+            "type": {
+              "kind": "ResultTypeName",
+              "ok_type": {
+                "kind": "ArrayTypeName",
+                "element_type": "Order",
+                "size": 2
+              },
+              "error_type": "NotFound"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "load_orders",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 700
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "orders",
+            "type": {
+              "kind": "ArrayTypeName",
+              "element_type": "Order",
+              "size": 2
+            },
+            "value": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "outcome",
+                "value"
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "first",
+            "type": {
+              "kind": "TypeName",
+              "name": "Order"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "orders",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "second",
+            "type": {
+              "kind": "TypeName",
+              "name": "Order"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "orders",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 1
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "first",
+                  "customer",
+                  "address",
+                  "city_id"
+                ]
+              },
+              "right": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "first",
+                  "destination",
+                  "city_id"
+                ]
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "second",
+                  "customer",
+                  "address",
+                  "city_id"
+                ]
+              },
+              "right": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "second",
+                  "destination",
+                  "city_id"
+                ]
+              }
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "first order = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "first",
+                    "id"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "first customer = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "first",
+                    "customer",
+                    "name"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "second city = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "second",
+                    "destination",
+                    "label"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "second zone = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "second",
+                    "customer",
+                    "address",
+                    "city_id"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [
+      {
+        "name": "Address",
+        "fields": [
+          {
+            "name": "city_id",
+            "type": "Integer"
+          },
+          {
+            "name": "label",
+            "type": "String"
+          }
+        ],
+        "proto_fields": []
+      },
+      {
+        "name": "Customer",
+        "fields": [
+          {
+            "name": "address",
+            "type": "Address"
+          },
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "name",
+            "type": "String"
+          }
+        ],
+        "proto_fields": []
+      },
+      {
+        "name": "Order",
+        "fields": [
+          {
+            "name": "customer",
+            "type": "Customer"
+          },
+          {
+            "name": "destination",
+            "type": "Address"
+          },
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "proto_fields": []
+      }
+    ],
+    "errors": [
+      "NotFound"
+    ],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "outcome",
+            "type": {
+              "kind": "ResultTypeName",
+              "ok_type": {
+                "kind": "ArrayTypeName",
+                "element_type": "Order",
+                "size": 2
+              },
+              "error_type": "NotFound"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "load_orders",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 700
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "orders",
+            "type": {
+              "kind": "ArrayTypeName",
+              "element_type": "Order",
+              "size": 2
+            },
+            "value": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "outcome",
+                "value"
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "first",
+            "type": {
+              "kind": "TypeName",
+              "name": "Order"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "orders",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "second",
+            "type": {
+              "kind": "TypeName",
+              "name": "Order"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "orders",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 1
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "first",
+                  "customer",
+                  "address",
+                  "city_id"
+                ]
+              },
+              "right": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "first",
+                  "destination",
+                  "city_id"
+                ]
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "second",
+                  "customer",
+                  "address",
+                  "city_id"
+                ]
+              },
+              "right": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "second",
+                  "destination",
+                  "city_id"
+                ]
+              }
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "first order = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "first",
+                    "id"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "first customer = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "first",
+                    "customer",
+                    "name"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "second city = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "second",
+                    "destination",
+                    "label"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "second zone = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "second",
+                    "customer",
+                    "address",
+                    "city_id"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "services": []
+  }
+}

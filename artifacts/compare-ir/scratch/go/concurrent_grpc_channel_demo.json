@@ -1,0 +1,1656 @@
+{
+  "schema": "fh-compare-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "examples.concurrent_grpc_channel_demo",
+    "imports": [],
+    "declarations": [
+      {
+        "kind": "RecordTypeDecl",
+        "name": "AuditEvent",
+        "fields": [
+          {
+            "name": "message",
+            "type": "String"
+          },
+          {
+            "name": "trace_id",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "kind": "RecordTypeDecl",
+        "name": "PriceReply",
+        "fields": [
+          {
+            "name": "accepted",
+            "type": "Boolean"
+          },
+          {
+            "name": "audit",
+            "type": "AuditEvent"
+          },
+          {
+            "name": "total",
+            "type": "Integer"
+          }
+        ]
+      },
+      {
+        "kind": "RecordTypeDecl",
+        "name": "PriceRequest",
+        "fields": [
+          {
+            "name": "quantity",
+            "type": "Integer"
+          },
+          {
+            "name": "sku",
+            "type": "String"
+          },
+          {
+            "name": "trace_id",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "kind": "ServiceDecl",
+        "name": "PricingService",
+        "rpcs": [
+          {
+            "kind": "RpcDecl",
+            "name": "Quote",
+            "request_name": "request",
+            "request_type": "PriceRequest",
+            "response_type": "PriceReply"
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "audit_roundtrip",
+        "type_params": null,
+        "is_async": true,
+        "params": [
+          {
+            "name": "sender",
+            "type": "Sender\u003cAuditEvent\u003e"
+          },
+          {
+            "name": "receiver",
+            "type": "Receiver\u003cAuditEvent\u003e"
+          },
+          {
+            "name": "trace_id",
+            "type": "String"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "AuditEvent"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "event",
+            "type": {
+              "kind": "TypeName",
+              "name": "AuditEvent"
+            },
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "AuditEvent",
+              "args": [
+                {
+                  "kind": "NamedArg",
+                  "name": "message",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "quote requested"
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "trace_id",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "trace_id"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "sent",
+            "type": {
+              "kind": "TypeName",
+              "name": "Boolean"
+            },
+            "value": {
+              "kind": "AwaitExpr",
+              "value": {
+                "kind": "CallExpr",
+                "name": "channel_send",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "sender"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "event"
+                    }
+                  }
+                ],
+                "type_args": [
+                  "AuditEvent"
+                ]
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "sent"
+              },
+              "right": {
+                "kind": "BoolExpr",
+                "value": true
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "received",
+            "type": {
+              "kind": "TypeName",
+              "name": "AuditEvent"
+            },
+            "value": {
+              "kind": "AwaitExpr",
+              "value": {
+                "kind": "CallExpr",
+                "name": "channel_receive",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "receiver"
+                    }
+                  }
+                ],
+                "type_args": [
+                  "AuditEvent"
+                ]
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "VarExpr",
+                "name": "received"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "demo",
+        "type_params": null,
+        "is_async": true,
+        "params": [],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "PriceReply"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "audit_channel",
+            "type": {
+              "kind": "TypeName",
+              "name": "Channel\u003cAuditEvent\u003e"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "channel",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 8
+                  }
+                }
+              ],
+              "type_args": [
+                "AuditEvent"
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "sender",
+            "type": {
+              "kind": "TypeName",
+              "name": "Sender\u003cAuditEvent\u003e"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "channel_sender",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "audit_channel"
+                  }
+                }
+              ],
+              "type_args": [
+                "AuditEvent"
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "receiver",
+            "type": {
+              "kind": "TypeName",
+              "name": "Receiver\u003cAuditEvent\u003e"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "channel_receiver",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "audit_channel"
+                  }
+                }
+              ],
+              "type_args": [
+                "AuditEvent"
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "request",
+            "type": {
+              "kind": "TypeName",
+              "name": "PriceRequest"
+            },
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "PriceRequest",
+              "args": [
+                {
+                  "kind": "NamedArg",
+                  "name": "quantity",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 3
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "sku",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "tea"
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "trace_id",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "demo-001"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "AwaitExpr",
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "quote",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "request"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "sender"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "receiver"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "load_unit_price",
+        "type_params": null,
+        "is_async": true,
+        "params": [
+          {
+            "name": "sku",
+            "type": "String"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "CallExpr",
+                "name": "String.instr",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "sku"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": ""
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "NumberExpr",
+                "value": 42
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "quote",
+        "type_params": null,
+        "is_async": true,
+        "params": [
+          {
+            "name": "request",
+            "type": "PriceRequest"
+          },
+          {
+            "name": "sender",
+            "type": "Sender\u003cAuditEvent\u003e"
+          },
+          {
+            "name": "receiver",
+            "type": "Receiver\u003cAuditEvent\u003e"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "PriceReply"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ScopeStmt",
+            "name": "quote_scope",
+            "spawn_body": [
+              {
+                "kind": "LetStmt",
+                "name": "price_handle",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "JoinHandle\u003cInteger\u003e"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "quote_scope.spawn",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "load_unit_price",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "FieldAccessExpr",
+                              "path": [
+                                "request",
+                                "sku"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "type_args": [
+                    "Integer"
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "reserve_handle",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "JoinHandle\u003cBoolean\u003e"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "quote_scope.spawn",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "reserve_inventory",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "FieldAccessExpr",
+                              "path": [
+                                "request",
+                                "quantity"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "type_args": [
+                    "Boolean"
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "audit_handle",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "JoinHandle\u003cAuditEvent\u003e"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "quote_scope.spawn",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "audit_roundtrip",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "sender"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "receiver"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "FieldAccessExpr",
+                              "path": [
+                                "request",
+                                "trace_id"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "type_args": [
+                    "AuditEvent"
+                  ]
+                }
+              }
+            ],
+            "join_body": [
+              {
+                "kind": "LetStmt",
+                "name": "unit_price",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                },
+                "value": {
+                  "kind": "AwaitExpr",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "quote_scope.join",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "price_handle"
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "Integer"
+                    ]
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "reserved",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                },
+                "value": {
+                  "kind": "AwaitExpr",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "quote_scope.join",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "reserve_handle"
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "Boolean"
+                    ]
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "audit",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                },
+                "value": {
+                  "kind": "AwaitExpr",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "quote_scope.join",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "audit_handle"
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "AuditEvent"
+                    ]
+                  }
+                }
+              }
+            ],
+            "result_body": [
+              {
+                "kind": "LetStmt",
+                "name": "total",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "*",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "unit_price"
+                  },
+                  "right": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "request",
+                      "quantity"
+                    ]
+                  }
+                }
+              },
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "ReturnPlain",
+                  "value": {
+                    "kind": "RecordLiteralExpr",
+                    "type": "PriceReply",
+                    "args": [
+                      {
+                        "kind": "NamedArg",
+                        "name": "accepted",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "reserved"
+                        }
+                      },
+                      {
+                        "kind": "NamedArg",
+                        "name": "audit",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "audit"
+                        }
+                      },
+                      {
+                        "kind": "NamedArg",
+                        "name": "total",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "total"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "reserve_inventory",
+        "type_params": null,
+        "is_async": true,
+        "params": [
+          {
+            "name": "quantity",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Boolean"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "\u003e",
+              "left": {
+                "kind": "VarExpr",
+                "name": "quantity"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "BoolExpr",
+                "value": true
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [
+      {
+        "name": "AuditEvent",
+        "fields": [
+          {
+            "name": "message",
+            "type": "String"
+          },
+          {
+            "name": "trace_id",
+            "type": "String"
+          }
+        ],
+        "proto_fields": [
+          {
+            "name": "message",
+            "id": 2
+          },
+          {
+            "name": "trace_id",
+            "id": 1
+          }
+        ]
+      },
+      {
+        "name": "PriceReply",
+        "fields": [
+          {
+            "name": "accepted",
+            "type": "Boolean"
+          },
+          {
+            "name": "audit",
+            "type": "AuditEvent"
+          },
+          {
+            "name": "total",
+            "type": "Integer"
+          }
+        ],
+        "proto_fields": [
+          {
+            "name": "accepted",
+            "id": 2
+          },
+          {
+            "name": "audit",
+            "id": 3
+          },
+          {
+            "name": "total",
+            "id": 1
+          }
+        ]
+      },
+      {
+        "name": "PriceRequest",
+        "fields": [
+          {
+            "name": "quantity",
+            "type": "Integer"
+          },
+          {
+            "name": "sku",
+            "type": "String"
+          },
+          {
+            "name": "trace_id",
+            "type": "String"
+          }
+        ],
+        "proto_fields": [
+          {
+            "name": "quantity",
+            "id": 2
+          },
+          {
+            "name": "sku",
+            "id": 1
+          },
+          {
+            "name": "trace_id",
+            "id": 3
+          }
+        ]
+      }
+    ],
+    "errors": [],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "audit_roundtrip",
+        "type_params": null,
+        "is_async": true,
+        "params": [
+          {
+            "name": "sender",
+            "type": "Sender\u003cAuditEvent\u003e"
+          },
+          {
+            "name": "receiver",
+            "type": "Receiver\u003cAuditEvent\u003e"
+          },
+          {
+            "name": "trace_id",
+            "type": "String"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "AuditEvent"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "event",
+            "type": {
+              "kind": "TypeName",
+              "name": "AuditEvent"
+            },
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "AuditEvent",
+              "args": [
+                {
+                  "kind": "NamedArg",
+                  "name": "message",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "quote requested"
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "trace_id",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "trace_id"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "sent",
+            "type": {
+              "kind": "TypeName",
+              "name": "Boolean"
+            },
+            "value": {
+              "kind": "AwaitExpr",
+              "value": {
+                "kind": "CallExpr",
+                "name": "channel_send",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "sender"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "event"
+                    }
+                  }
+                ],
+                "type_args": [
+                  "AuditEvent"
+                ]
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "sent"
+              },
+              "right": {
+                "kind": "BoolExpr",
+                "value": true
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "received",
+            "type": {
+              "kind": "TypeName",
+              "name": "AuditEvent"
+            },
+            "value": {
+              "kind": "AwaitExpr",
+              "value": {
+                "kind": "CallExpr",
+                "name": "channel_receive",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "receiver"
+                    }
+                  }
+                ],
+                "type_args": [
+                  "AuditEvent"
+                ]
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "VarExpr",
+                "name": "received"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "demo",
+        "type_params": null,
+        "is_async": true,
+        "params": [],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "PriceReply"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "audit_channel",
+            "type": {
+              "kind": "TypeName",
+              "name": "Channel\u003cAuditEvent\u003e"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "channel",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 8
+                  }
+                }
+              ],
+              "type_args": [
+                "AuditEvent"
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "sender",
+            "type": {
+              "kind": "TypeName",
+              "name": "Sender\u003cAuditEvent\u003e"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "channel_sender",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "audit_channel"
+                  }
+                }
+              ],
+              "type_args": [
+                "AuditEvent"
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "receiver",
+            "type": {
+              "kind": "TypeName",
+              "name": "Receiver\u003cAuditEvent\u003e"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "channel_receiver",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "audit_channel"
+                  }
+                }
+              ],
+              "type_args": [
+                "AuditEvent"
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "request",
+            "type": {
+              "kind": "TypeName",
+              "name": "PriceRequest"
+            },
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "PriceRequest",
+              "args": [
+                {
+                  "kind": "NamedArg",
+                  "name": "quantity",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 3
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "sku",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "tea"
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "trace_id",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "demo-001"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "AwaitExpr",
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "quote",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "request"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "sender"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "receiver"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "load_unit_price",
+        "type_params": null,
+        "is_async": true,
+        "params": [
+          {
+            "name": "sku",
+            "type": "String"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "CallExpr",
+                "name": "String.instr",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "sku"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": ""
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "NumberExpr",
+                "value": 42
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "quote",
+        "type_params": null,
+        "is_async": true,
+        "params": [
+          {
+            "name": "request",
+            "type": "PriceRequest"
+          },
+          {
+            "name": "sender",
+            "type": "Sender\u003cAuditEvent\u003e"
+          },
+          {
+            "name": "receiver",
+            "type": "Receiver\u003cAuditEvent\u003e"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "PriceReply"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ScopeStmt",
+            "name": "quote_scope",
+            "spawn_body": [
+              {
+                "kind": "LetStmt",
+                "name": "price_handle",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "JoinHandle\u003cInteger\u003e"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "quote_scope.spawn",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "load_unit_price",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "FieldAccessExpr",
+                              "path": [
+                                "request",
+                                "sku"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "type_args": [
+                    "Integer"
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "reserve_handle",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "JoinHandle\u003cBoolean\u003e"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "quote_scope.spawn",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "reserve_inventory",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "FieldAccessExpr",
+                              "path": [
+                                "request",
+                                "quantity"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "type_args": [
+                    "Boolean"
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "audit_handle",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "JoinHandle\u003cAuditEvent\u003e"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "quote_scope.spawn",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "audit_roundtrip",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "sender"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "receiver"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "FieldAccessExpr",
+                              "path": [
+                                "request",
+                                "trace_id"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "type_args": [
+                    "AuditEvent"
+                  ]
+                }
+              }
+            ],
+            "join_body": [
+              {
+                "kind": "LetStmt",
+                "name": "unit_price",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                },
+                "value": {
+                  "kind": "AwaitExpr",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "quote_scope.join",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "price_handle"
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "Integer"
+                    ]
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "reserved",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                },
+                "value": {
+                  "kind": "AwaitExpr",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "quote_scope.join",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "reserve_handle"
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "Boolean"
+                    ]
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "audit",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                },
+                "value": {
+                  "kind": "AwaitExpr",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "quote_scope.join",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "audit_handle"
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "AuditEvent"
+                    ]
+                  }
+                }
+              }
+            ],
+            "result_body": [
+              {
+                "kind": "LetStmt",
+                "name": "total",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "*",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "unit_price"
+                  },
+                  "right": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "request",
+                      "quantity"
+                    ]
+                  }
+                }
+              },
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "ReturnPlain",
+                  "value": {
+                    "kind": "RecordLiteralExpr",
+                    "type": "PriceReply",
+                    "args": [
+                      {
+                        "kind": "NamedArg",
+                        "name": "accepted",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "reserved"
+                        }
+                      },
+                      {
+                        "kind": "NamedArg",
+                        "name": "audit",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "audit"
+                        }
+                      },
+                      {
+                        "kind": "NamedArg",
+                        "name": "total",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "total"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "reserve_inventory",
+        "type_params": null,
+        "is_async": true,
+        "params": [
+          {
+            "name": "quantity",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Boolean"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "\u003e",
+              "left": {
+                "kind": "VarExpr",
+                "name": "quantity"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "BoolExpr",
+                "value": true
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "services": [
+      {
+        "kind": "ServiceDecl",
+        "name": "PricingService",
+        "rpcs": [
+          {
+            "kind": "RpcDecl",
+            "name": "Quote",
+            "request_name": "request",
+            "request_type": "PriceRequest",
+            "response_type": "PriceReply"
+          }
+        ]
+      }
+    ]
+  }
+}

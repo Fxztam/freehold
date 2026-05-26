@@ -1,0 +1,1992 @@
+{
+  "schema": "fh-compare-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "examples.ChudnovskyPi",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Big",
+        "exposing": []
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Std.IO",
+        "exposing": []
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "compute_pi",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "terms",
+            "type": "Integer"
+          },
+          {
+            "name": "digits",
+            "type": "Integer"
+          },
+          {
+            "name": "precision",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "BigFloat"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "m",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.fromInteger",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "l",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.fromInteger",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 13591409
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "x",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.fromInteger",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "k_factor",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 6
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "sum",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigFloat"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.float",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "0"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "precision"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "i",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "WhileStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "<",
+              "left": {
+                "kind": "VarExpr",
+                "name": "i"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "terms"
+              }
+            },
+            "invariants": [
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": "<=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "terms"
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "terms"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 1
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "digits"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 1
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "precision"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 1
+                }
+              }
+            ],
+            "body": [
+              {
+                "kind": "LetStmt",
+                "name": "numerator_int",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "BigInteger"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.mulInt",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "m"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "l"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "numerator",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "BigFloat"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.floatFromInteger",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "numerator_int"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "precision"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "denominator",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "BigFloat"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.floatFromInteger",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "x"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "precision"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "term",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "BigFloat"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.divFloat",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "numerator"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "denominator"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "sum",
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.addFloat",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "sum"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "term"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "next_i",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "+",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "i"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                }
+              },
+              {
+                "kind": "IfStmt",
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": "<",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "next_i"
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "terms"
+                  }
+                },
+                "then_body": [
+                  {
+                    "kind": "LetStmt",
+                    "name": "next_big",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.fromInteger",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "next_i"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "next_square",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.mulInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "next_big"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "next_big"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "next_cube",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.mulInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "next_square"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "next_big"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "k_big",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.fromInteger",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_factor"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "k_square",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.mulInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_big"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_big"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "k_cube",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.mulInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_square"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_big"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "sixteen_k",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.mulInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "CallExpr",
+                            "name": "Big.fromInteger",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "NumberExpr",
+                                  "value": 16
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_big"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "multiplier",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.subInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_cube"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "sixteen_k"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "AssignStmt",
+                    "name": "m",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.divInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "CallExpr",
+                            "name": "Big.mulInt",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "VarExpr",
+                                  "name": "m"
+                                }
+                              },
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "VarExpr",
+                                  "name": "multiplier"
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "next_cube"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "AssignStmt",
+                    "name": "l",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.addInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "l"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "CallExpr",
+                            "name": "Big.fromInteger",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "NumberExpr",
+                                  "value": 545140134
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "AssignStmt",
+                    "name": "x",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.mulInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "x"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "CallExpr",
+                            "name": "Big.int",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "StringExpr",
+                                  "value": "-262537412640768000"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "AssignStmt",
+                    "name": "k_factor",
+                    "value": {
+                      "kind": "BinaryExpr",
+                      "op": "+",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "k_factor"
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 12
+                      }
+                    }
+                  }
+                ],
+                "else_body": []
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "i",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "next_i"
+                }
+              }
+            ],
+            "variant": {
+              "kind": "BinaryExpr",
+              "op": "-",
+              "left": {
+                "kind": "VarExpr",
+                "name": "terms"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "i"
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "sqrt_10005",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigFloat"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.sqrt",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Big.float",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "10005"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "precision"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "factor",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigFloat"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.mulFloat",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Big.float",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "426880"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "precision"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "sqrt_10005"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "Big.divFloat",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "factor"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "sum"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "digits",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 50
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "pi",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigFloat"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "compute_pi",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 5
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "digits"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 256
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "Chudnovsky pi ~= ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.format",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "pi"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "digits"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [],
+    "errors": [],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "compute_pi",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "terms",
+            "type": "Integer"
+          },
+          {
+            "name": "digits",
+            "type": "Integer"
+          },
+          {
+            "name": "precision",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "BigFloat"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "m",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.fromInteger",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "l",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.fromInteger",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 13591409
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "x",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.fromInteger",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "k_factor",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 6
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "sum",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigFloat"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.float",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "0"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "precision"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "i",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "WhileStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "<",
+              "left": {
+                "kind": "VarExpr",
+                "name": "i"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "terms"
+              }
+            },
+            "invariants": [
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": "<=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "terms"
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "terms"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 1
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "digits"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 1
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "precision"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 1
+                }
+              }
+            ],
+            "body": [
+              {
+                "kind": "LetStmt",
+                "name": "numerator_int",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "BigInteger"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.mulInt",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "m"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "l"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "numerator",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "BigFloat"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.floatFromInteger",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "numerator_int"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "precision"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "denominator",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "BigFloat"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.floatFromInteger",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "x"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "precision"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "term",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "BigFloat"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.divFloat",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "numerator"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "denominator"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "sum",
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.addFloat",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "sum"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "term"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "next_i",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "+",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "i"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                }
+              },
+              {
+                "kind": "IfStmt",
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": "<",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "next_i"
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "terms"
+                  }
+                },
+                "then_body": [
+                  {
+                    "kind": "LetStmt",
+                    "name": "next_big",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.fromInteger",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "next_i"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "next_square",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.mulInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "next_big"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "next_big"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "next_cube",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.mulInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "next_square"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "next_big"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "k_big",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.fromInteger",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_factor"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "k_square",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.mulInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_big"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_big"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "k_cube",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.mulInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_square"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_big"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "sixteen_k",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.mulInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "CallExpr",
+                            "name": "Big.fromInteger",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "NumberExpr",
+                                  "value": 16
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_big"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "multiplier",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "BigInteger"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.subInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "k_cube"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "sixteen_k"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "AssignStmt",
+                    "name": "m",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.divInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "CallExpr",
+                            "name": "Big.mulInt",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "VarExpr",
+                                  "name": "m"
+                                }
+                              },
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "VarExpr",
+                                  "name": "multiplier"
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "next_cube"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "AssignStmt",
+                    "name": "l",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.addInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "l"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "CallExpr",
+                            "name": "Big.fromInteger",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "NumberExpr",
+                                  "value": 545140134
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "AssignStmt",
+                    "name": "x",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Big.mulInt",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "x"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "CallExpr",
+                            "name": "Big.int",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "StringExpr",
+                                  "value": "-262537412640768000"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "AssignStmt",
+                    "name": "k_factor",
+                    "value": {
+                      "kind": "BinaryExpr",
+                      "op": "+",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "k_factor"
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 12
+                      }
+                    }
+                  }
+                ],
+                "else_body": []
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "i",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "next_i"
+                }
+              }
+            ],
+            "variant": {
+              "kind": "BinaryExpr",
+              "op": "-",
+              "left": {
+                "kind": "VarExpr",
+                "name": "terms"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "i"
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "sqrt_10005",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigFloat"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.sqrt",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Big.float",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "10005"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "precision"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "factor",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigFloat"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.mulFloat",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Big.float",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "426880"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "precision"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "sqrt_10005"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "Big.divFloat",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "factor"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "sum"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "digits",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 50
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "pi",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigFloat"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "compute_pi",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 5
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "digits"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 256
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "Chudnovsky pi ~= ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.format",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "pi"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "digits"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "services": []
+  }
+}

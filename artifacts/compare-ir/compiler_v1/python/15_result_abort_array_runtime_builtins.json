@@ -1,0 +1,1327 @@
+{
+  "schema": "fh-compare-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "App.Main",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Big",
+        "exposing": []
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Domain.Inventory",
+        "exposing": [
+          "StockMissing",
+          "load_stock",
+          "read_item"
+        ]
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Domain.Types",
+        "exposing": [
+          "StockItem"
+        ]
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Std.IO",
+        "exposing": []
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "outcome",
+            "type": {
+              "kind": "ResultTypeName",
+              "ok_type": {
+                "kind": "ArrayTypeName",
+                "element_type": "StockItem",
+                "size": 3
+              },
+              "error_type": "StockMissing"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "load_stock",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 5
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "items",
+            "type": {
+              "kind": "ArrayTypeName",
+              "element_type": "StockItem",
+              "size": 3
+            },
+            "value": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "outcome",
+                "value"
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "first",
+            "type": {
+              "kind": "TypeName",
+              "name": "StockItem"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "items",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "second",
+            "type": {
+              "kind": "TypeName",
+              "name": "StockItem"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "items",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 1
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "third",
+            "type": {
+              "kind": "TypeName",
+              "name": "StockItem"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "items",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 2
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "summary",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "summarize",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "first"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "second"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "third"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "encoded",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Json.stringify",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "first"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "max_score",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Math.floor",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Math.max",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "DoubleExpr",
+                          "value": 3.0
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "DoubleExpr",
+                          "value": 4.0
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.addInt",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Big.fromInteger",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "first",
+                            "quantity"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Big.fromInteger",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "third",
+                            "quantity"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "total_text",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.toString",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "total"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "summary = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "summary"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "json has sku = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "String.instr",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "encoded"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "SKU-001"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "max score = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "max_score"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "total = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "total_text"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "third = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "third",
+                    "sku"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "summarize",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "first",
+            "type": "StockItem"
+          },
+          {
+            "name": "second",
+            "type": "StockItem"
+          },
+          {
+            "name": "third",
+            "type": "StockItem"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "String"
+        },
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": ">",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "first",
+                "quantity"
+              ]
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "second",
+                "warehouse",
+                "id"
+              ]
+            },
+            "right": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "first",
+                "warehouse",
+                "id"
+              ]
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": ">",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "third",
+                "warehouse",
+                "id"
+              ]
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          }
+        ],
+        "aborts": [],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "CallExpr",
+              "name": "String.instr",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "result"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "SKU"
+                  }
+                }
+              ]
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "CallExpr",
+              "name": "String.instr",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "result"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "north"
+                  }
+                }
+              ]
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "cleaned",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.replace",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "first",
+                      "sku"
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "-"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": ""
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "String.template",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "${sku}@${zone}"
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "sku",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "cleaned"
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "zone",
+                    "value": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "first",
+                        "warehouse",
+                        "label"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [
+      {
+        "name": "StockItem",
+        "fields": [
+          {
+            "name": "quantity",
+            "type": "Integer"
+          },
+          {
+            "name": "sku",
+            "type": "String"
+          },
+          {
+            "name": "warehouse",
+            "type": "Warehouse"
+          }
+        ],
+        "proto_fields": []
+      },
+      {
+        "name": "Warehouse",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "label",
+            "type": "String"
+          }
+        ],
+        "proto_fields": []
+      }
+    ],
+    "errors": [
+      "StockMissing"
+    ],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "outcome",
+            "type": {
+              "kind": "ResultTypeName",
+              "ok_type": {
+                "kind": "ArrayTypeName",
+                "element_type": "StockItem",
+                "size": 3
+              },
+              "error_type": "StockMissing"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "load_stock",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 5
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "items",
+            "type": {
+              "kind": "ArrayTypeName",
+              "element_type": "StockItem",
+              "size": 3
+            },
+            "value": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "outcome",
+                "value"
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "first",
+            "type": {
+              "kind": "TypeName",
+              "name": "StockItem"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "items",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "second",
+            "type": {
+              "kind": "TypeName",
+              "name": "StockItem"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "items",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 1
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "third",
+            "type": {
+              "kind": "TypeName",
+              "name": "StockItem"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "items",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 2
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "summary",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "summarize",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "first"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "second"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "third"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "encoded",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Json.stringify",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "first"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "max_score",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Math.floor",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Math.max",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "DoubleExpr",
+                          "value": 3.0
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "DoubleExpr",
+                          "value": 4.0
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.addInt",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Big.fromInteger",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "first",
+                            "quantity"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Big.fromInteger",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "third",
+                            "quantity"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "total_text",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.toString",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "total"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "summary = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "summary"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "json has sku = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "String.instr",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "encoded"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "SKU-001"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "max score = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "max_score"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "total = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "total_text"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "third = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "third",
+                    "sku"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "summarize",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "first",
+            "type": "StockItem"
+          },
+          {
+            "name": "second",
+            "type": "StockItem"
+          },
+          {
+            "name": "third",
+            "type": "StockItem"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "String"
+        },
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": ">",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "first",
+                "quantity"
+              ]
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "second",
+                "warehouse",
+                "id"
+              ]
+            },
+            "right": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "first",
+                "warehouse",
+                "id"
+              ]
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": ">",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "third",
+                "warehouse",
+                "id"
+              ]
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          }
+        ],
+        "aborts": [],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "CallExpr",
+              "name": "String.instr",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "result"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "SKU"
+                  }
+                }
+              ]
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "CallExpr",
+              "name": "String.instr",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "result"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "north"
+                  }
+                }
+              ]
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "cleaned",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.replace",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "first",
+                      "sku"
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "-"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": ""
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "String.template",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "${sku}@${zone}"
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "sku",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "cleaned"
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "zone",
+                    "value": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "first",
+                        "warehouse",
+                        "label"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "services": []
+  }
+}

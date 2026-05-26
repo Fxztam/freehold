@@ -1,0 +1,394 @@
+{
+  "schema": "fh-compare-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "App.Main",
+    "imports": [],
+    "declarations": [
+      {
+        "kind": "RecordTypeDecl",
+        "name": "Account",
+        "fields": [
+          {
+            "name": "active",
+            "type": "Boolean"
+          },
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "account_ok",
+        "type_params": null,
+        "is_async": false,
+        "params": [
+          {
+            "name": "account",
+            "type": "Account"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Boolean"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "BinaryExpr",
+                "op": "and",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "account",
+                    "active"
+                  ]
+                },
+                "right": {
+                  "kind": "BinaryExpr",
+                  "op": "\u003e",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "account",
+                      "id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "account",
+            "type": {
+              "kind": "TypeName",
+              "name": "Account"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "make_account",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 7
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "CallExpr",
+              "name": "account_ok",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "account"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "make_account",
+        "type_params": null,
+        "is_async": false,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Account"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "RecordLiteralExpr",
+                "type": "Account",
+                "args": [
+                  {
+                    "kind": "NamedArg",
+                    "name": "active",
+                    "value": {
+                      "kind": "BoolExpr",
+                      "value": true
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "id",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [
+      {
+        "name": "Account",
+        "fields": [
+          {
+            "name": "active",
+            "type": "Boolean"
+          },
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "proto_fields": []
+      }
+    ],
+    "errors": [],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "account_ok",
+        "type_params": null,
+        "is_async": false,
+        "params": [
+          {
+            "name": "account",
+            "type": "Account"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Boolean"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "BinaryExpr",
+                "op": "and",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "account",
+                    "active"
+                  ]
+                },
+                "right": {
+                  "kind": "BinaryExpr",
+                  "op": "\u003e",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "account",
+                      "id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "account",
+            "type": {
+              "kind": "TypeName",
+              "name": "Account"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "make_account",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 7
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "CallExpr",
+              "name": "account_ok",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "account"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "make_account",
+        "type_params": null,
+        "is_async": false,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Account"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "RecordLiteralExpr",
+                "type": "Account",
+                "args": [
+                  {
+                    "kind": "NamedArg",
+                    "name": "active",
+                    "value": {
+                      "kind": "BoolExpr",
+                      "value": true
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "id",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "services": []
+  }
+}

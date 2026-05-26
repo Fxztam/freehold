@@ -1,0 +1,427 @@
+{
+  "schema": "fh-compare-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "App.Main",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Domain.Accounts",
+        "exposing": [
+          "NotFound",
+          "load_accounts",
+          "read_account"
+        ]
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Domain.Types",
+        "exposing": [
+          "Account"
+        ]
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "load_app",
+        "type_params": null,
+        "is_async": false,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "ResultTypeName",
+          "ok_type": {
+            "kind": "ArrayTypeName",
+            "element_type": "Account",
+            "size": 2
+          },
+          "error_type": "NotFound"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "load_accounts",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "read_app",
+        "type_params": null,
+        "is_async": false,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Account"
+        },
+        "requires": [],
+        "aborts": [
+          {
+            "error": "NotFound"
+          }
+        ],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "read_account",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [
+      {
+        "name": "Account",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "proto_fields": []
+      }
+    ],
+    "errors": [
+      "NotFound"
+    ],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "load_accounts",
+        "type_params": null,
+        "is_async": false,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "ResultTypeName",
+          "ok_type": {
+            "kind": "ArrayTypeName",
+            "element_type": "Account",
+            "size": 2
+          },
+          "error_type": "NotFound"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            },
+            "then_body": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "ReturnError",
+                  "error": "NotFound"
+                }
+              }
+            ],
+            "else_body": []
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnOk",
+              "value": {
+                "kind": "ArrayLiteralExpr",
+                "items": [
+                  {
+                    "kind": "CallExpr",
+                    "name": "make_account",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "id"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallExpr",
+                    "name": "make_account",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "BinaryExpr",
+                          "op": "+",
+                          "left": {
+                            "kind": "VarExpr",
+                            "name": "id"
+                          },
+                          "right": {
+                            "kind": "NumberExpr",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "load_app",
+        "type_params": null,
+        "is_async": false,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "ResultTypeName",
+          "ok_type": {
+            "kind": "ArrayTypeName",
+            "element_type": "Account",
+            "size": 2
+          },
+          "error_type": "NotFound"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "load_accounts",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "read_account",
+        "type_params": null,
+        "is_async": false,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Account"
+        },
+        "requires": [],
+        "aborts": [
+          {
+            "error": "NotFound"
+          }
+        ],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            },
+            "then_body": [
+              {
+                "kind": "AbortStmt",
+                "error": "NotFound"
+              }
+            ],
+            "else_body": []
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "make_account",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "read_app",
+        "type_params": null,
+        "is_async": false,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Account"
+        },
+        "requires": [],
+        "aborts": [
+          {
+            "error": "NotFound"
+          }
+        ],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "read_account",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "services": []
+  }
+}
