@@ -508,10 +508,14 @@ func (a *Analyzer) knownType(typeName string) bool {
 
 func builtinTypes() map[string]bool {
 	return map[string]bool{
-		"Boolean": true,
-		"Double":  true,
-		"Integer": true,
-		"String":  true,
+		"Boolean":    true,
+		"BigFloat":   true,
+		"BigInteger": true,
+		"Double":     true,
+		"Executor":   true,
+		"Integer":    true,
+		"Scope":      true,
+		"String":     true,
 	}
 }
 

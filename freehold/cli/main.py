@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from freehold.core.diagnostics import diagnose_exception
+from freehold.core.compare_ir import export_compare_ir_json
 from freehold.core.fhir import export_fhir_json
 from freehold.core.go_codegen import generate_go_file, generate_go_project, generate_go_project_build_files, project_result_json, result_json
 from freehold.core.grpc_codegen import generate_proto_file
@@ -44,6 +45,20 @@ def cmd_fhir(args):
         print(f"[OK] FH-IR JSON written: {out}")
     else:
         print(fhir_json, end="")
+    return 0
+
+
+def cmd_compare_ir(args):
+    resolver = ModuleResolver(runtime_modules=GO_RUNTIME_MODULE_EXPORTS)
+    verified = resolver.verify_entry(args.file)
+    compare_ir_json = export_compare_ir_json(verified)
+    if args.output:
+        out = Path(args.output)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(compare_ir_json, encoding="utf-8", newline="\n")
+        print(f"[OK] Compare-IR JSON written: {out}")
+    else:
+        print(compare_ir_json, end="")
     return 0
 
 def cmd_grpc_proto(args):
@@ -223,6 +238,10 @@ def build_parser():
     p.add_argument("file")
     p.add_argument("--output", "-o", default=None)
     p.set_defaults(func=cmd_fhir)
+    p = sub.add_parser("compare-ir", help="Export reduced compare IR JSON from a verified Freehold module")
+    p.add_argument("file")
+    p.add_argument("--output", "-o", default=None)
+    p.set_defaults(func=cmd_compare_ir)
     p = sub.add_parser("grpc-proto", help="Generate a proto3 file from Freehold gRPC IDL")
     p.add_argument("file")
     p.add_argument("--output", "-o", default=None)
@@ -260,7 +279,7 @@ def main(argv=None):
     parser = build_parser(); args = parser.parse_args(argv)
     if args.version:
         print("Freehold CLI: toolchain frontend")
-        print("Commands: run, verify, test, ebnf, ast, ir/fhir, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project")
+        print("Commands: run, verify, test, ebnf, ast, ir/fhir, compare-ir, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project")
         return 0
     if not args.command:
         parser.print_help(); return 0

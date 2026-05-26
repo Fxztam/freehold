@@ -8,9 +8,9 @@ from typing import Any
 
 
 DEFAULT_MANIFEST = Path("artifacts/fhir-samples/manifest.json")
-DEFAULT_PYTHON_ROOT = Path("artifacts/fhir-samples")
-DEFAULT_GO_ROOT = Path("artifacts/fhir-samples")
-DEFAULT_OUT_ROOT = Path("artifacts/compare-ir-hashes")
+DEFAULT_PYTHON_ROOT = Path("artifacts/compare-ir/python")
+DEFAULT_GO_ROOT = Path("artifacts/compare-ir/go")
+DEFAULT_OUT_ROOT = Path("artifacts/compare-ir/report")
 
 
 def main() -> int:
