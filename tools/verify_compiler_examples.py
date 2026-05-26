@@ -7,6 +7,12 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from freehold.core.go_codegen import go_executable_name
+
 
 @dataclass(frozen=True)
 class SupportedExample:
@@ -60,7 +66,6 @@ UNSUPPORTED_EXAMPLES = [
 ]
 
 
-ROOT = Path(__file__).resolve().parents[1]
 OUT_ROOT = ROOT / ".tmp" / "compiler_examples"
 
 
@@ -102,6 +107,9 @@ def run_supported(example: SupportedExample) -> bool:
         str(project_out),
         "--json",
         str(json_path),
+        "--emit-executable",
+        "--executable-name",
+        example.name,
     ], ROOT).returncode != 0:
         print(f"[FAIL] Go project codegen failed: {example.name}")
         return True
@@ -172,6 +180,31 @@ def run_runtime_log_check(example: SupportedExample, project_out: Path, json_pat
         print(f"[INFO] actual: {log_path.relative_to(ROOT)}")
         return True
     print(f"[OK] runtime log matches: {Path(example.expected_log).name}")
+    if run_executable_log_check(example, project_out, expected_path):
+        return True
+    return False
+
+
+def run_executable_log_check(example: SupportedExample, project_out: Path, expected_path: Path) -> bool:
+    exe_path = project_out / "bin" / f"{go_executable_name(example.name)}.exe"
+    if not exe_path.exists():
+        print(f"[FAIL] generated executable missing: {exe_path.relative_to(ROOT)}")
+        return True
+    result = subprocess.run([str(exe_path)], cwd=project_out, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if result.returncode != 0:
+        print(f"[FAIL] generated executable failed: {example.name}")
+        print(result.stdout)
+        return True
+    actual = normalize_log(result.stdout)
+    expected = normalize_log(expected_path.read_text(encoding="utf-8"))
+    if actual != expected:
+        actual_path = project_out / f"{go_executable_name(example.name)}.exe.log"
+        actual_path.write_text(result.stdout, encoding="utf-8")
+        print(f"[FAIL] executable runtime log mismatch: {example.name}")
+        print(f"[INFO] expected: {example.expected_log}")
+        print(f"[INFO] actual: {actual_path.relative_to(ROOT)}")
+        return True
+    print(f"[OK] executable runtime log matches: {Path(example.expected_log or '').name}")
     return False
 
 

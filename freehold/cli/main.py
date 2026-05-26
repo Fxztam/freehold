@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -82,7 +83,14 @@ def cmd_go_codegen(args):
 
 def cmd_go_codegen_project(args):
     files = generate_go_project(args.file)
-    build_files = generate_go_project_build_files(files)
+    entry_module_name = project_entry_module_name(files, args.file)
+    executable_name = args.executable_name or Path(args.file).stem
+    emit_executable = args.emit_executable and project_has_entry_main(files, entry_module_name)
+    build_files = generate_go_project_build_files(
+        files,
+        executable_name=executable_name if emit_executable else None,
+        entry_module_name=entry_module_name,
+    )
     out_root = Path(args.output_dir)
     for file in files:
         out_path = out_root / file.output_path
@@ -99,7 +107,28 @@ def cmd_go_codegen_project(args):
         json_path.parent.mkdir(parents=True, exist_ok=True)
         json_path.write_text(project_result_json(files, build_files), encoding="utf-8")
         print(f"[OK] Go project JSON written: {json_path}")
+    if args.emit_executable and not emit_executable:
+        print("[INFO] Go executable not emitted: entry module has no Main() routine")
     return 0 if all(file.result.supported for file in files) else 1
+
+def project_entry_module_name(files, entry_file: str):
+    entry_path = Path(entry_file)
+    if not entry_path.is_absolute():
+        entry_path = Path.cwd() / entry_path
+    entry_path = entry_path.resolve()
+    for file in files:
+        source_path = Path(file.source_file)
+        if not source_path.is_absolute():
+            source_path = Path.cwd() / source_path
+        if source_path.resolve() == entry_path:
+            return file.module_name
+    return files[0].module_name if files else None
+
+def project_has_entry_main(files, entry_module_name: str | None) -> bool:
+    entry = next((file for file in files if file.module_name == entry_module_name), None)
+    if entry is None:
+        return False
+    return re.search(r"(?m)^func Main\(\) \{", entry.result.go_source) is not None
 
 def normalize_text(text: str) -> str:
     return text.strip().replace("\r\n", "\n")
@@ -192,6 +221,8 @@ def build_parser():
     p.add_argument("file")
     p.add_argument("--output-dir", "-o", required=True)
     p.add_argument("--json", default=None, help="Write a JSON mirror of the project codegen result")
+    p.add_argument("--emit-executable", action="store_true", help="Emit a cmd/<name>/main.go wrapper and build a native Go executable")
+    p.add_argument("--executable-name", default=None, help="Executable base name when --emit-executable is used")
     p.set_defaults(func=cmd_go_codegen_project)
     p = sub.add_parser("test", help="Run regression tests"); p.add_argument("--log", default=None); p.add_argument("--json-summary", default=None); p.add_argument("--no-console", action="store_true"); p.set_defaults(func=cmd_test)
     p = sub.add_parser("ebnf", help="Regenerate generated EBNF")

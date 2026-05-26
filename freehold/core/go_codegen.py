@@ -173,19 +173,57 @@ def generate_go_project(entry_file: str | Path) -> list[GoProjectFile]:
     return files
 
 
-def generate_go_project_build_files(files: list[GoProjectFile]) -> list[GoProjectBuildFile]:
-    return [
+def generate_go_project_build_files(files: list[GoProjectFile], executable_name: str | None = None, entry_module_name: str | None = None) -> list[GoProjectBuildFile]:
+    build_files = [
         GoProjectBuildFile(
             output_path="go.mod",
             kind="go_mod",
             content=f"module {GO_PROJECT_MODULE_PATH}\n\ngo 1.22\n",
         ),
+    ]
+    if executable_name is not None:
+        if not files:
+            raise GoCodegenError("cannot generate executable wrapper without project files")
+        entry = next((file for file in files if file.module_name == entry_module_name), files[0])
+        exe_name = go_executable_name(executable_name)
+        import_alias = go_package_name(entry.module_name)
+        build_files.append(
+            GoProjectBuildFile(
+                output_path=f"cmd/{exe_name}/main.go",
+                kind="go_main",
+                content=(
+                    "package main\n\n"
+                    "import (\n"
+                    f"\t{import_alias} \"{go_import_path(entry.module_name)}\"\n"
+                    ")\n\n"
+                    "func main() {\n"
+                    f"\t{import_alias}.Main()\n"
+                    "}\n"
+                ),
+            )
+        )
+        build_files.append(
+            GoProjectBuildFile(
+                output_path="build.cmd",
+                kind="build_cmd",
+                content=(
+                    "@echo off\n"
+                    "setlocal\n"
+                    "go test ./...\n"
+                    "if errorlevel 1 exit /b %errorlevel%\n"
+                    f"go build -trimpath -o bin\\{exe_name}.exe .\\cmd\\{exe_name}\n"
+                ),
+            )
+        )
+        return build_files
+    build_files.append(
         GoProjectBuildFile(
             output_path="build.cmd",
             kind="build_cmd",
             content="@echo off\nsetlocal\ngo test ./...\n",
         ),
-    ]
+    )
+    return build_files
 
 
 def result_json(result: GoCodegenResult, **metadata: str) -> str:
@@ -1312,6 +1350,10 @@ def go_package_path_part(name: str) -> str:
     if not part or part[0].isdigit():
         return f"fh_{part}"
     return part
+
+
+def go_executable_name(name: str) -> str:
+    return go_package_path_part(name)
 
 
 def go_expected_base(type_ref: Any) -> str | None:
