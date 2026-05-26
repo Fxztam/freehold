@@ -1,0 +1,28 @@
+module Domain.Types
+
+type Warehouse is record
+    id: Integer
+    label: String
+end record
+
+type StockItem is record
+    sku: String
+    quantity: Integer
+    warehouse: Warehouse
+end record
+
+function make_warehouse(id: Integer, label: String) returns Warehouse
+requires id > 0, String.instr(label, "") = 0
+ensures result.id = id, result.label = label
+is
+    return Warehouse { id: id, label: label }
+end make_warehouse
+
+function make_stock_item(sku: String, quantity: Integer, warehouse: Warehouse) returns StockItem
+requires String.instr(sku, "SKU") >= 0, quantity >= 0, warehouse.id > 0
+ensures result.quantity = quantity, result.warehouse.id = warehouse.id
+is
+    return StockItem { sku: sku, quantity: quantity, warehouse: warehouse }
+end make_stock_item
+
+end Domain.Types

@@ -1,0 +1,35 @@
+module App.Main
+
+import Big
+import Std.IO
+import Domain.Inventory exposing StockMissing, load_stock, read_item
+import Domain.Types exposing StockItem
+
+function summarize(first: StockItem, second: StockItem, third: StockItem) returns String
+requires first.quantity > 0, second.warehouse.id = first.warehouse.id, third.warehouse.id > 0
+ensures String.instr(result, "SKU") >= 0, String.instr(result, "north") >= 0
+is
+    let cleaned: String = String.replace(first.sku, "-", "")
+    return String.template("${sku}@${zone}", sku: cleaned, zone: first.warehouse.label)
+end summarize
+
+procedure main()
+is
+    let outcome: Result<Array<StockItem, 3>, StockMissing> = load_stock(5)
+    let items: Array<StockItem, 3> = outcome.value
+    let first: StockItem = items[0]
+    let second: StockItem = items[1]
+    let third: StockItem = items[2]
+    let summary: String = summarize(first, second, third)
+    let encoded: String = Json.stringify(first)
+    let max_score: Integer = Math.floor(Math.max(3.0, 4.0))
+    let total: BigInteger = Big.addInt(Big.fromInteger(first.quantity), Big.fromInteger(third.quantity))
+    let total_text: String = Big.toString(total)
+    call Std.IO.logf("summary = ${}", summary)
+    call Std.IO.logf("json has sku = ${}", String.instr(encoded, "SKU-001"))
+    call Std.IO.logf("max score = ${}", max_score)
+    call Std.IO.logf("total = ${}", total_text)
+    call Std.IO.logf("third = ${}", third.sku)
+end main
+
+end App.Main

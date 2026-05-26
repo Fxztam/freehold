@@ -1,0 +1,36 @@
+module Domain.Inventory
+
+import Domain.Types exposing StockItem, Warehouse, make_stock_item, make_warehouse
+
+error StockMissing
+
+function build_item(sku: String, quantity: Integer, warehouse_id: Integer, warehouse_label: String) returns StockItem
+requires String.instr(sku, "SKU") >= 0, quantity >= 0, warehouse_id > 0
+ensures result.quantity = quantity, result.warehouse.id = warehouse_id
+is
+    let warehouse: Warehouse = make_warehouse(warehouse_id, warehouse_label)
+    return make_stock_item(sku, quantity, warehouse)
+end build_item
+
+function load_stock(seed: Integer) returns Result<Array<StockItem, 3>, StockMissing>
+requires seed > 0, seed >= 1
+ensures success
+is
+    let primary: StockItem = build_item("SKU-001", seed + 2, 1, "north")
+    let secondary: StockItem = build_item("SKU-002", seed + 3, 1, "north")
+    let overflow: StockItem = build_item("SKU-003", seed + 4, 2, "south")
+    return ok [primary, secondary, overflow]
+end load_stock
+
+function read_item(seed: Integer) returns StockItem
+requires seed > 0
+aborts StockMissing
+ensures result.quantity >= seed
+is
+    if seed = 0 then
+        abort StockMissing
+    end if
+    return build_item("SKU-READ", seed + 5, 3, "direct")
+end read_item
+
+end Domain.Inventory
