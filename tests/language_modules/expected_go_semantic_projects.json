@@ -99,6 +99,38 @@
         }
       ]
     },
+    "03_import_resolution/imported_function_return_unknown_record_field": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/imported_function_return_unknown_record_field/App/Main.fh",
+      "entry_module": "App.Main",
+      "modules": ["App.Main", "Domain.Accounts"],
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {
+          "code": "FH-SEM-1105",
+          "name": "unknown_record_field",
+          "location": { "line": 7, "column": 11, "offset": 108 },
+          "expected": ["declared field in Account"],
+          "found": "active"
+        }
+      ]
+    },
+    "03_import_resolution/imported_function_return_index_on_scalar": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/imported_function_return_index_on_scalar/App/Main.fh",
+      "entry_module": "App.Main",
+      "modules": ["App.Main", "Domain.Metrics"],
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {
+          "code": "FH-TYP-2115",
+          "name": "index_access_requires_array",
+          "location": { "line": 7, "column": 11, "offset": 96 },
+          "expected": ["Array"],
+          "found": "Integer"
+        }
+      ]
+    },
     "03_import_resolution/imported_module_not_found": {
       "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/imported_module_not_found/App/Main.fh",
       "parse_ok": true,
