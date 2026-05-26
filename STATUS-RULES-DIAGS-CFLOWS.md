@@ -161,7 +161,8 @@ Erster Go-native Semantikanker:
 - Abgedeckte Diagnostics: `FH-TYP-2101 field_access_requires_record`, `FH-SEM-1105 unknown_record_field`, `FH-SEM-1204 unknown_routine`, `FH-SEM-1205 routine_argument_count_mismatch` und `FH-TYP-2201 routine_argument_type_mismatch`.
 - Relevante Go-AST-Decl-/Stmt-/Expr-Knoten tragen interne Source-Positionen (`json:"-"`), sodass Go-native Semantic-Diagnostics positionsgenau sein koennen, ohne AST-JSON-Goldens zu veraendern.
 - Der Parser-CLI `go-parse-tests-language-modules` kann den Analyzer optional mit `--semantic` nach erfolgreichem Parse ausfuehren. `verify-go-semantic-diagnostics.cmd` schreibt temporaere Artefakte nach `.tmp/go-semantic` und vergleicht die V0-Diagnostics gegen `tests/language_modules/expected_go_semantic_diagnostics.json`.
-- `go-semantic-project` laedt ein Entry-Modul samt Imports nach derselben Modulpfad-Konvention (`App.Main -> App/Main.fh`). `verify-go-semantic-projects.cmd` schreibt temporaere Artefakte nach `.tmp/go-semantic-project` und verankert den importierten Nested-Record-FieldAccess-Projektfall.
+- `go-semantic-project` laedt ein Entry-Modul samt Imports nach derselben Modulpfad-Konvention (`App.Main -> App/Main.fh`). `verify-go-semantic-projects.cmd` schreibt temporaere Artefakte nach `.tmp/go-semantic-project` und verankert 18 Projektfaelle fuer positive Imports, Project-Loader-Diagnostics und negative cross-module Semantik.
+- `verify-grammar-consistency.cmd` schreibt einen report-only Abschnitt fuer Lark-vs.-Spec-Regeldeltas und reservierte Keyword-Fixture-Kandidaten. Alte Semantik-Fixtures, die `value`, `module` oder andere reservierte Woerter als Namen verwenden, bleiben damit sichtbar kategorisiert, ohne den Gate hart fehlschlagen zu lassen.
 - Bewusste Grenze: keine vollstaendige Typinferenz.
 
 ## Control Flow
