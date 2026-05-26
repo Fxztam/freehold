@@ -16,11 +16,12 @@ if str(REPO_ROOT) not in sys.path:
 from freehold.core.ast import TypeCheckError
 from freehold.core.fhir import export_fhir_json
 from freehold.core.module_resolver import ModuleResolver
+from tools.artifact_io import canonical_json_text, default_temp_out_root, normalize_text, would_change_file, write_text
 from tools.verify_compiler_examples import SUPPORTED_EXAMPLES
 
 
 DEFAULT_EXPECTED_ROOT = Path("artifacts/fhir")
-DEFAULT_OUT_ROOT = Path("artifacts/compare-fhir")
+DEFAULT_OUT_ROOT = default_temp_out_root("compare-fhir")
 
 
 def main() -> int:
@@ -136,7 +137,7 @@ def run_case(name: str, entry_path: Path, expected_root: Path, *, update: bool, 
 
 
 def write_json(path: Path, value: Any, *, additive: bool = False) -> bool:
-    return write_artifact(path, json.dumps(value, indent=2) + "\n", additive=additive)
+    return write_artifact(path, canonical_json_text(value), additive=additive)
 
 
 def write_text_report(path: Path, summary: dict[str, Any], *, additive: bool = False) -> bool:
@@ -155,15 +156,14 @@ def write_text_report(path: Path, summary: dict[str, Any], *, additive: bool = F
 
 
 def write_artifact(path: Path, content: str, *, additive: bool) -> bool:
-    if additive and path.exists():
-        return normalize(path.read_text(encoding="utf-8")) != normalize(content)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding="utf-8")
+    if additive:
+        return would_change_file(path, content)
+    write_text(path, content)
     return False
 
 
 def normalize(text: str) -> str:
-    return text.strip().replace("\r\n", "\n")
+    return normalize_text(text)
 
 
 def print_summary(summary: dict[str, Any]) -> None:

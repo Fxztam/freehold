@@ -17,10 +17,11 @@ from freehold.core.ast import TypeCheckError
 from freehold.core.fhir import export_fhir_project_json
 from freehold.core.go_codegen import GO_RUNTIME_MODULE_EXPORTS
 from freehold.core.module_resolver import ModuleResolver
+from tools.artifact_io import default_temp_out_root, write_json, write_text
 from tools.verify_compiler_examples import SUPPORTED_EXAMPLES
 
 
-DEFAULT_OUT_ROOT = Path("artifacts/compare-fhir-determinism")
+DEFAULT_OUT_ROOT = default_temp_out_root("compare-fhir-determinism")
 DEFAULT_CASE_LIMIT = 6
 DECLARATION_KIND_ORDER = {
     "TypeDecl": 0,
@@ -67,10 +68,10 @@ def main() -> int:
     manifest = build_manifest(rows, summary)
 
     out_root.mkdir(parents=True, exist_ok=True)
-    (out_root / "_all.json").write_text(json.dumps(rows, indent=2) + "\n", encoding="utf-8")
-    (out_root / "_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    (out_root / "_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-    (out_root / "_mismatches.txt").write_text(render_report(summary), encoding="utf-8")
+    write_json(out_root / "_all.json", rows)
+    write_json(out_root / "_summary.json", summary)
+    write_json(out_root / "_manifest.json", manifest)
+    write_text(out_root / "_mismatches.txt", render_report(summary))
     print_summary(summary)
     return 1 if mismatches else 0
 

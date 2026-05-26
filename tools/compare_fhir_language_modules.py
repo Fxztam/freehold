@@ -20,8 +20,9 @@ from freehold.core.go_codegen import GO_RUNTIME_MODULE_EXPORTS
 from freehold.core.module_resolver import ModuleResolver
 from freehold.core.parser import parse_source
 from freehold.core.verifier import verify_program
+from tools.artifact_io import default_temp_out_root, write_json, write_text
 
-DEFAULT_OUT_ROOT = Path("artifacts/compare-fhir-language-modules")
+DEFAULT_OUT_ROOT = default_temp_out_root("compare-fhir-language-modules")
 FORBIDDEN_KEYWORDS = (
     "__dict__",
     "__class__",
@@ -173,10 +174,10 @@ def main() -> int:
 
     out_root = Path(args.out)
     out_root.mkdir(parents=True, exist_ok=True)
-    (out_root / "_all.json").write_text(json.dumps(rows, indent=2) + "\n", encoding="utf-8")
-    (out_root / "_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    (out_root / "_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-    (out_root / "_mismatches.txt").write_text(render_report(summary), encoding="utf-8")
+    write_json(out_root / "_all.json", rows)
+    write_json(out_root / "_summary.json", summary)
+    write_json(out_root / "_manifest.json", manifest)
+    write_text(out_root / "_mismatches.txt", render_report(summary))
     print_summary(summary)
     return 1 if mismatches else 0
 
