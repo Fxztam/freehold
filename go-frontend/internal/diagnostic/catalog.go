@@ -289,6 +289,56 @@ var catalog = map[string]Definition{
 		Message:  "unknown record field",
 		Hint:     "A record literal or field access may only use fields declared by the record type.",
 	},
+	"duplicate_record_literal_field": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1102",
+		Number:   1102,
+		Name:     "duplicate_record_literal_field",
+		Message:  "duplicate record literal field",
+		Hint:     "Each record literal field may be assigned at most once.",
+	},
+	"unknown_record_literal_field": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1103",
+		Number:   1103,
+		Name:     "unknown_record_literal_field",
+		Message:  "unknown record literal field",
+		Hint:     "A record literal may only assign fields declared by the record type.",
+	},
+	"missing_record_literal_field": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1104",
+		Number:   1104,
+		Name:     "missing_record_literal_field",
+		Message:  "missing record literal field",
+		Hint:     "A record literal must assign every declared field exactly once.",
+	},
+	"index_access_requires_array": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "type",
+		Code:     "FH-TYP-2115",
+		Number:   2115,
+		Name:     "index_access_requires_array",
+		Message:  "index access requires array",
+		Hint:     "Index access requires the indexed value to have an Array type.",
+	},
+	"array_index_requires_integer": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "type",
+		Code:     "FH-TYP-2116",
+		Number:   2116,
+		Name:     "array_index_requires_integer",
+		Message:  "array index requires Integer",
+		Hint:     "Array indices must have type Integer.",
+	},
 	"imported_module_not_found": {
 		Severity: "error",
 		Phase:    "semantic",
@@ -458,6 +508,26 @@ func FieldAccessRequiresRecord(location Location, foundType string, field string
 
 func UnknownRecordField(location Location, recordName string, field string) *Diagnostic {
 	return fromDefinition("unknown_record_field", location, field, []string{"declared field in " + recordName})
+}
+
+func DuplicateRecordLiteralField(location Location, recordName string, field string) *Diagnostic {
+	return fromDefinition("duplicate_record_literal_field", location, field, []string{"one assignment for " + recordName + "." + field})
+}
+
+func UnknownRecordLiteralField(location Location, recordName string, field string) *Diagnostic {
+	return fromDefinition("unknown_record_literal_field", location, field, []string{"declared field in " + recordName})
+}
+
+func MissingRecordLiteralField(location Location, recordName string, field string) *Diagnostic {
+	return fromDefinition("missing_record_literal_field", location, field, []string{"field assignment in " + recordName + " literal"})
+}
+
+func IndexAccessRequiresArray(location Location, foundType string) *Diagnostic {
+	return fromDefinition("index_access_requires_array", location, foundType, []string{"Array"})
+}
+
+func ArrayIndexRequiresInteger(location Location, foundType string) *Diagnostic {
+	return fromDefinition("array_index_requires_integer", location, foundType, []string{"Integer"})
 }
 
 func ImportedModuleNotFound(location Location, moduleName string, expectedPath string) *Diagnostic {

@@ -1,6 +1,8 @@
 package semantic
 
 import (
+	"sort"
+
 	"freehold-go-frontend/internal/ast"
 	"freehold-go-frontend/internal/diagnostic"
 	"freehold-go-frontend/internal/token"
@@ -306,9 +308,7 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 		}
 		return fieldType, true
 	case ast.RecordLiteralExpr:
-		for _, field := range value.Fields {
-			a.inferExpr(field.Value, env)
-		}
+		a.validateRecordLiteral(value, env)
 		return value.Type, true
 	case ast.BinaryExpr:
 		leftType, leftOK := a.inferExpr(value.Left, env)
@@ -335,11 +335,19 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 		return a.inferExpr(value.Value, env)
 	case ast.IndexExpr:
 		arrayType, ok := a.inferExpr(value.Array, env)
-		a.inferExpr(value.Index, env)
+		indexType, indexOK := a.inferExpr(value.Index, env)
+		if indexOK && !sameType("Integer", indexType) {
+			a.diagnostics = append(a.diagnostics, diagnostic.ArrayIndexRequiresInteger(locationFromExpr(value.Index), indexType))
+		}
 		if !ok {
 			return "", false
 		}
-		return arrayElementType(arrayType)
+		elementType, elementOK := arrayElementType(arrayType)
+		if !elementOK {
+			a.diagnostics = append(a.diagnostics, diagnostic.IndexAccessRequiresArray(locationFromPosition(value.Pos), arrayType))
+			return "", false
+		}
+		return elementType, true
 	case ast.ArrayLiteralExpr:
 		if len(value.Elements) == 0 {
 			return "Array<Empty, 0>", true
@@ -364,6 +372,44 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 		return value.Name, true
 	}
 	return "", false
+}
+
+func (a *Analyzer) validateRecordLiteral(literal ast.RecordLiteralExpr, env map[string]string) {
+	record, ok := a.symbols.Records[literal.Type]
+	if !ok {
+		for _, field := range literal.Fields {
+			a.inferExpr(field.Value, env)
+		}
+		return
+	}
+
+	seen := map[string]token.Position{}
+	for _, field := range literal.Fields {
+		if firstPos, exists := seen[field.Name]; exists {
+			location := locationFromPosition(field.Pos)
+			if location.Line == 0 {
+				location = locationFromPosition(firstPos)
+			}
+			a.diagnostics = append(a.diagnostics, diagnostic.DuplicateRecordLiteralField(location, record.Name, field.Name))
+		} else {
+			seen[field.Name] = field.Pos
+		}
+		if _, exists := record.Fields[field.Name]; !exists {
+			a.diagnostics = append(a.diagnostics, diagnostic.UnknownRecordLiteralField(locationFromPosition(field.Pos), record.Name, field.Name))
+		}
+		a.inferExpr(field.Value, env)
+	}
+
+	var missing []string
+	for fieldName := range record.Fields {
+		if _, exists := seen[fieldName]; !exists {
+			missing = append(missing, fieldName)
+		}
+	}
+	sort.Strings(missing)
+	for _, fieldName := range missing {
+		a.diagnostics = append(a.diagnostics, diagnostic.MissingRecordLiteralField(locationFromPosition(literal.Pos), record.Name, fieldName))
+	}
 }
 
 func (a *Analyzer) validateCall(call ast.CallExpr, env map[string]string, location diagnostic.Location) (string, bool) {

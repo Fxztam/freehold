@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"freehold-go-frontend/internal/ast"
+	"freehold-go-frontend/internal/diagnostic"
 	"freehold-go-frontend/internal/lexer"
 	"freehold-go-frontend/internal/parser"
 	"freehold-go-frontend/internal/token"
@@ -215,6 +216,91 @@ end WrongArgumentType`)
 	}
 }
 
+func TestValidateModuleRejectsIndexOnScalar(t *testing.T) {
+	module := parseModule(t, `module IndexOnScalar
+
+procedure main()
+is
+    let amount: Integer = 1
+    check amount[0] = 1
+end main
+
+end IndexOnScalar`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-TYP-2115", "index_access_requires_array", "Integer")
+}
+
+func TestValidateModuleRejectsNonIntegerArrayIndex(t *testing.T) {
+	module := parseModule(t, `module NonIntegerArrayIndex
+
+procedure main()
+is
+    let values: Array<Integer, 2> = [1, 2]
+    check values[true] = 1
+end main
+
+end NonIntegerArrayIndex`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-TYP-2116", "array_index_requires_integer", "Boolean")
+}
+
+func TestValidateModuleRejectsUnknownRecordLiteralField(t *testing.T) {
+	module := parseModule(t, `module UnknownRecordLiteralField
+
+type Account is record
+    id: Integer
+end record
+
+procedure main()
+is
+    let account: Account = Account { id: 1, active: true }
+end main
+
+end UnknownRecordLiteralField`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-SEM-1103", "unknown_record_literal_field", "active")
+}
+
+func TestValidateModuleRejectsMissingRecordLiteralField(t *testing.T) {
+	module := parseModule(t, `module MissingRecordLiteralField
+
+type Account is record
+    id: Integer
+    active: Boolean
+end record
+
+procedure main()
+is
+    let account: Account = Account { id: 1 }
+end main
+
+end MissingRecordLiteralField`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-SEM-1104", "missing_record_literal_field", "active")
+}
+
+func TestValidateModuleRejectsDuplicateRecordLiteralField(t *testing.T) {
+	module := parseModule(t, `module DuplicateRecordLiteralField
+
+type Account is record
+    id: Integer
+end record
+
+procedure main()
+is
+    let account: Account = Account { id: 1, id: 2 }
+end main
+
+end DuplicateRecordLiteralField`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-SEM-1102", "duplicate_record_literal_field", "id")
+}
+
 func TestValidateModuleWithImportsAcceptsImportedNestedRecordFieldAccess(t *testing.T) {
 	typesModule := parseModule(t, `module Domain.Types
 
@@ -279,6 +365,30 @@ end App.Main`)
 	if len(diagnostics) != 0 {
 		t.Fatalf("ValidateModuleWithImports() diagnostics = %#v, want none", diagnostics)
 	}
+}
+
+func TestValidateModuleWithImportsRejectsImportedRecordLiteralField(t *testing.T) {
+	domainModule := parseModule(t, `module Domain.Types
+
+type Account is record
+    id: Integer
+end record
+
+end Domain.Types`)
+
+	appModule := parseModule(t, `module App.Main
+
+import Domain.Types exposing Account
+
+procedure main()
+is
+    let account: Account = Account { id: 1, active: true }
+end main
+
+end App.Main`)
+
+	diagnostics := ValidateModuleWithImports(appModule, domainModule)
+	assertSingleDiagnostic(t, diagnostics, "FH-SEM-1103", "unknown_record_literal_field", "active")
 }
 
 func TestValidateModuleWithImportsRejectsImportedRoutineArgumentTypeMismatch(t *testing.T) {
@@ -421,5 +531,19 @@ end App.Main`)
 	}
 	if _, ok := symbols.Records["Domain.Types.Address"]; !ok {
 		t.Fatal("qualified Address transitive dependency missing from import-aware symbol table")
+	}
+}
+
+func assertSingleDiagnostic(t *testing.T, diagnostics []*diagnostic.Diagnostic, code string, name string, found string) {
+	t.Helper()
+	if len(diagnostics) != 1 {
+		t.Fatalf("diagnostics count = %d, want 1: %#v", len(diagnostics), diagnostics)
+	}
+	diag := diagnostics[0]
+	if diag.Code != code || diag.Name != name {
+		t.Fatalf("diagnostic = %s/%s, want %s/%s", diag.Code, diag.Name, code, name)
+	}
+	if diag.Found != found {
+		t.Fatalf("diagnostic Found = %q, want %q", diag.Found, found)
 	}
 }
