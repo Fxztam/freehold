@@ -157,6 +157,38 @@ end Domain.Types`)
 	assertProjectDiagnostic(t, diagnostics, err, "FH-SEM-1010", "unknown_exposed_symbol", "Missing")
 }
 
+func TestValidateProjectRejectsAmbiguousExposedSymbol(t *testing.T) {
+	root := t.TempDir()
+	entry := writeProjectFile(t, root, "App", "Main.fh", `module App.Main
+
+import Domestic.Orders exposing load_order
+import Partner.Orders exposing load_order
+
+procedure main()
+is
+    call load_order()
+end main
+
+end App.Main`)
+	writeProjectFile(t, root, "Domestic", "Orders.fh", `module Domestic.Orders
+
+procedure load_order()
+is
+end load_order
+
+end Domestic.Orders`)
+	writeProjectFile(t, root, "Partner", "Orders.fh", `module Partner.Orders
+
+procedure load_order()
+is
+end load_order
+
+end Partner.Orders`)
+
+	_, diagnostics, err := ValidateProject(entry)
+	assertProjectDiagnostic(t, diagnostics, err, "FH-SEM-1005", "ambiguous_exposed_symbol", "load_order")
+}
+
 func TestValidateProjectRejectsRoutineHiddenByImportExposing(t *testing.T) {
 	root := t.TempDir()
 	entry := writeProjectFile(t, root, "App", "Main.fh", `module App.Main

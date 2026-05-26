@@ -1,0 +1,35 @@
+module App.Main
+
+import Big
+import Std.IO
+
+function accumulate(terms: Integer) returns BigInteger
+is
+    let total: BigInteger = Big.fromInteger(0)
+    let i: Integer = 0
+
+    while i < terms
+        invariant i >= 0
+        invariant i <= terms
+        invariant terms >= 1
+        variant terms - i
+    do
+        let next_i: Integer = i + 1
+        let next_big: BigInteger = Big.fromInteger(next_i)
+        total := Big.addInt(total, next_big)
+        i := next_i
+    end while
+
+    return total
+end accumulate
+
+procedure main()
+is
+    let terms: Integer = 4
+    let total: BigInteger = accumulate(terms)
+    let text: String = Big.toString(total)
+    call Std.IO.logf("big sum = ${}", text)
+    check text = "10"
+end main
+
+end App.Main

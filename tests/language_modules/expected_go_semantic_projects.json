@@ -42,6 +42,13 @@
       "semantic_ok": true,
       "semantic_diagnostics": []
     },
+    "03_import_resolution/import_transitive_name_conflicts_go_semantic": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/valid/import_transitive_name_conflicts_go_semantic/App/Main.fh",
+      "entry_module": "App.Main",
+      "modules": ["App.Main", "Domestic.Reports", "Domestic.Shared", "Partner.Reports", "Partner.Shared"],
+      "semantic_ok": true,
+      "semantic_diagnostics": []
+    },
     "03_import_resolution/imported_routine_argument_count": {
       "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/imported_routine_argument_count/App/Main.fh",
       "entry_module": "App.Main",
@@ -168,6 +175,36 @@
       "semantic_ok": false,
       "semantic_diagnostics": [
         {"code": "FH-SEM-1010", "name": "unknown_exposed_symbol", "found": "missing_symbol"}
+      ]
+    },
+    "03_import_resolution/ambiguous_exposed_routine": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/ambiguous_exposed_routine/App/Main.fh",
+      "entry_module": "App.Main",
+      "modules": ["App.Main", "Domestic.Orders", "Partner.Orders"],
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {"code": "FH-SEM-1005", "name": "ambiguous_exposed_symbol", "found": "load_order"}
+      ]
+    },
+    "03_import_resolution/ambiguous_exposed_record": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/ambiguous_exposed_record/App/Main.fh",
+      "entry_module": "App.Main",
+      "modules": ["App.Main", "Domestic.Types", "Partner.Types"],
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {"code": "FH-SEM-1005", "name": "ambiguous_exposed_symbol", "found": "Order"}
+      ]
+    },
+    "03_import_resolution/ambiguous_exposed_error": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/ambiguous_exposed_error/App/Main.fh",
+      "entry_module": "App.Main",
+      "modules": ["App.Main", "Domestic.Errors", "Partner.Errors"],
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {"code": "FH-SEM-1005", "name": "ambiguous_exposed_symbol", "found": "NotFound"}
       ]
     },
     "03_import_resolution/imported_module_name_mismatch": {

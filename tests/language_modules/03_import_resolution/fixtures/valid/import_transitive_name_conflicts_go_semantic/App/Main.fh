@@ -1,0 +1,16 @@
+module App.Main
+
+import Domestic.Reports exposing DomesticReport, load_domestic
+import Partner.Reports exposing PartnerReport, load_partner
+
+function total_city_ids(seed: Integer) returns Integer
+requires seed > 0
+is
+    let domestic: DomesticReport = load_domestic(seed)
+    let partner: PartnerReport = load_partner(seed)
+    check domestic.order.address.city_id = domestic.depot.city_id
+    check partner.order.address.city_id = partner.depot.city_id
+    return domestic.order.address.city_id + partner.order.address.city_id
+end total_city_ids
+
+end App.Main

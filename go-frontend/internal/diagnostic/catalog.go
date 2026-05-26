@@ -349,6 +349,16 @@ var catalog = map[string]Definition{
 		Message:  "imported module not found",
 		Hint:     "Imported project modules must exist at the path implied by their module name.",
 	},
+	"ambiguous_exposed_symbol": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1005",
+		Number:   1005,
+		Name:     "ambiguous_exposed_symbol",
+		Message:  "ambiguous exposed symbol",
+		Hint:     "A symbol exposed into the local namespace must come from exactly one imported module.",
+	},
 	"import_cycle": {
 		Severity: "error",
 		Phase:    "semantic",
@@ -592,6 +602,10 @@ func ArrayIndexRequiresInteger(location Location, foundType string) *Diagnostic 
 
 func ImportedModuleNotFound(location Location, moduleName string, expectedPath string) *Diagnostic {
 	return fromDefinition("imported_module_not_found", location, moduleName, []string{"module file at " + expectedPath})
+}
+
+func AmbiguousExposedSymbol(location Location, symbolName string, firstModule string, secondModule string) *Diagnostic {
+	return fromDefinition("ambiguous_exposed_symbol", location, symbolName, []string{"unique symbol from either " + firstModule + " or " + secondModule})
 }
 
 func ImportCycle(location Location, cycle string) *Diagnostic {

@@ -1,0 +1,18 @@
+module Partner.Reports
+
+import Partner.Shared exposing Address, Order, NotFound, make_address, make_order
+
+type PartnerReport is record
+    order: Order
+    depot: Address
+end record
+
+function load_partner(seed: Integer) returns PartnerReport
+requires seed > 0
+is
+    let depot: Address = make_address(7, "Hamburg")
+    let order: Order = make_order(seed + 100, depot)
+    return PartnerReport { order: order, depot: depot }
+end load_partner
+
+end Partner.Reports

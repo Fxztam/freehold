@@ -90,6 +90,10 @@ func ValidateProject(entryFile string) (*Project, []*diagnostic.Diagnostic, erro
 		}
 	}
 
+	if diagnostics := project.ambiguousExposedDiagnostics(project.Entry); len(diagnostics) > 0 {
+		return project, diagnostics, nil
+	}
+
 	return project, ValidateModuleWithImports(project.Entry, imports...), nil
 }
 
@@ -176,6 +180,28 @@ func missingExposedSymbols(module *ast.Module, exposing []string) []string {
 		}
 	}
 	return missing
+}
+
+func (p *Project) ambiguousExposedDiagnostics(module *ast.Module) []*diagnostic.Diagnostic {
+	if p == nil || module == nil {
+		return nil
+	}
+	seen := map[string]string{}
+	for _, decl := range module.Declarations {
+		importDecl, ok := decl.(ast.ImportDecl)
+		if !ok || runtimeModules[importDecl.Module] {
+			continue
+		}
+		for _, exposed := range importDecl.Exposing {
+			if firstModule, exists := seen[exposed]; exists && firstModule != importDecl.Module {
+				return []*diagnostic.Diagnostic{
+					diagnostic.AmbiguousExposedSymbol(locationFromPosition(importDecl.Pos), exposed, firstModule, importDecl.Module),
+				}
+			}
+			seen[exposed] = importDecl.Module
+		}
+	}
+	return nil
 }
 
 func parseModuleFile(path string) (*ast.Module, error) {
