@@ -1,7 +1,1659 @@
 {
+  "node": "FhirDocumentV0",
+  "schema_profile": "fh-ir",
   "schema": "fh-ir-v0",
+  "schema_version": {
+    "major": 0,
+    "minor": 1,
+    "patch": 0
+  },
   "language_version": "freehold-v1",
+  "source_ast": {
+    "node": "SourceAst",
+    "module": {
+      "node": "Module",
+      "name": "examples.GaussLegendrePi",
+      "imports": [
+        {
+          "kind": "ImportDecl",
+          "module": "Math",
+          "exposing": [
+            "abs",
+            "pow",
+            "sqrt"
+          ]
+        },
+        {
+          "kind": "ImportDecl",
+          "module": "Std.IO",
+          "exposing": [
+            "logf"
+          ]
+        }
+      ],
+      "declarations": [
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "compute_pi",
+          "type_params": [],
+          "is_async": false,
+          "params": [
+            {
+              "name": "max_iter",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "name": "eps",
+              "type": "Double",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Double"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "Double"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "LetStmt",
+              "name": "a",
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              },
+              "value": {
+                "kind": "DoubleExpr",
+                "value": 1.0
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "b",
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              },
+              "value": {
+                "kind": "BinaryExpr",
+                "op": "/",
+                "left": {
+                  "kind": "DoubleExpr",
+                  "value": 1.0
+                },
+                "right": {
+                  "kind": "CallExpr",
+                  "name": "Math.sqrt",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "DoubleExpr",
+                        "value": 2.0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "t",
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              },
+              "value": {
+                "kind": "DoubleExpr",
+                "value": 0.25
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "p",
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              },
+              "value": {
+                "kind": "DoubleExpr",
+                "value": 1.0
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "pi",
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              },
+              "value": {
+                "kind": "DoubleExpr",
+                "value": 0.0
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "i",
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              },
+              "value": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            },
+            {
+              "kind": "WhileStmt",
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "<",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "max_iter"
+                }
+              },
+              "invariants": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": ">=",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "i"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                },
+                {
+                  "kind": "BinaryExpr",
+                  "op": "<=",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "i"
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "max_iter"
+                  }
+                },
+                {
+                  "kind": "BinaryExpr",
+                  "op": ">",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "eps"
+                  },
+                  "right": {
+                    "kind": "DoubleExpr",
+                    "value": 0.0
+                  }
+                }
+              ],
+              "body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "a_next",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Double"
+                  },
+                  "value": {
+                    "kind": "BinaryExpr",
+                    "op": "/",
+                    "left": {
+                      "kind": "BinaryExpr",
+                      "op": "+",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "a"
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "b"
+                      }
+                    },
+                    "right": {
+                      "kind": "DoubleExpr",
+                      "value": 2.0
+                    }
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "b_next",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Double"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Math.sqrt",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "BinaryExpr",
+                          "op": "*",
+                          "left": {
+                            "kind": "VarExpr",
+                            "name": "a"
+                          },
+                          "right": {
+                            "kind": "VarExpr",
+                            "name": "b"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "t_next",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Double"
+                  },
+                  "value": {
+                    "kind": "BinaryExpr",
+                    "op": "-",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "t"
+                    },
+                    "right": {
+                      "kind": "BinaryExpr",
+                      "op": "*",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "p"
+                      },
+                      "right": {
+                        "kind": "CallExpr",
+                        "name": "Math.pow",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "BinaryExpr",
+                              "op": "-",
+                              "left": {
+                                "kind": "VarExpr",
+                                "name": "a"
+                              },
+                              "right": {
+                                "kind": "VarExpr",
+                                "name": "a_next"
+                              }
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "DoubleExpr",
+                              "value": 2.0
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "p_next",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Double"
+                  },
+                  "value": {
+                    "kind": "BinaryExpr",
+                    "op": "*",
+                    "left": {
+                      "kind": "DoubleExpr",
+                      "value": 2.0
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "p"
+                    }
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "pi_new",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Double"
+                  },
+                  "value": {
+                    "kind": "BinaryExpr",
+                    "op": "/",
+                    "left": {
+                      "kind": "CallExpr",
+                      "name": "Math.pow",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "BinaryExpr",
+                            "op": "+",
+                            "left": {
+                              "kind": "VarExpr",
+                              "name": "a_next"
+                            },
+                            "right": {
+                              "kind": "VarExpr",
+                              "name": "b_next"
+                            }
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "DoubleExpr",
+                            "value": 2.0
+                          }
+                        }
+                      ]
+                    },
+                    "right": {
+                      "kind": "BinaryExpr",
+                      "op": "*",
+                      "left": {
+                        "kind": "DoubleExpr",
+                        "value": 4.0
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "t_next"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "IfStmt",
+                  "condition": {
+                    "kind": "BinaryExpr",
+                    "op": "<",
+                    "left": {
+                      "kind": "CallExpr",
+                      "name": "Math.abs",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "BinaryExpr",
+                            "op": "-",
+                            "left": {
+                              "kind": "VarExpr",
+                              "name": "pi_new"
+                            },
+                            "right": {
+                              "kind": "VarExpr",
+                              "name": "pi"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "eps"
+                    }
+                  },
+                  "then_body": [
+                    {
+                      "kind": "ReturnStmt",
+                      "value": {
+                        "kind": "ReturnPlain",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "pi_new"
+                        }
+                      }
+                    }
+                  ],
+                  "else_body": []
+                },
+                {
+                  "kind": "AssignStmt",
+                  "name": "a",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "a_next"
+                  }
+                },
+                {
+                  "kind": "AssignStmt",
+                  "name": "b",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "b_next"
+                  }
+                },
+                {
+                  "kind": "AssignStmt",
+                  "name": "t",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "t_next"
+                  }
+                },
+                {
+                  "kind": "AssignStmt",
+                  "name": "p",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "p_next"
+                  }
+                },
+                {
+                  "kind": "AssignStmt",
+                  "name": "pi",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "pi_new"
+                  }
+                },
+                {
+                  "kind": "AssignStmt",
+                  "name": "i",
+                  "value": {
+                    "kind": "BinaryExpr",
+                    "op": "+",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "i"
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 1
+                    }
+                  }
+                }
+              ],
+              "variant": {
+                "kind": "BinaryExpr",
+                "op": "-",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "max_iter"
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                }
+              }
+            },
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "pi"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "procedure",
+          "name": "main",
+          "type_params": [],
+          "is_async": false,
+          "params": [],
+          "return_type": {
+            "kind": "Void"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "Void"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "LetStmt",
+              "name": "pi",
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              },
+              "value": {
+                "kind": "CallExpr",
+                "name": "compute_pi",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "NumberExpr",
+                      "value": 20
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "DoubleExpr",
+                      "value": 1e-15
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "kind": "CallStmt",
+              "name": "Std.IO.logf",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Pi ~ ${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "pi"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "semantic_ir": {
+    "node": "SemanticIr",
+    "analysis": {
+      "node": "AnalysisReport",
+      "types": [
+        {
+          "kind": "TypeDef",
+          "name": "BigFloat",
+          "base": "BigFloat",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "BigFloat"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "BigInteger",
+          "base": "BigInteger",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "BigInteger"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Boolean",
+          "base": "Boolean",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Boolean"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Double",
+          "base": "Double",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Double"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Executor",
+          "base": "Executor",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Executor"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Integer",
+          "base": "Integer",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Integer"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Scope",
+          "base": "Scope",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Scope"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "String",
+          "base": "String",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "String"
+          }
+        }
+      ],
+      "records": [],
+      "errors": [],
+      "error_defs": [],
+      "routines": [
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "compute_pi",
+          "type_params": [],
+          "is_async": false,
+          "params": [
+            {
+              "name": "max_iter",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "name": "eps",
+              "type": "Double",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Double"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "Double"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "LetStmt",
+              "name": "a",
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              },
+              "value": {
+                "kind": "DoubleExpr",
+                "value": 1.0
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "b",
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              },
+              "value": {
+                "kind": "BinaryExpr",
+                "op": "/",
+                "left": {
+                  "kind": "DoubleExpr",
+                  "value": 1.0
+                },
+                "right": {
+                  "kind": "CallExpr",
+                  "name": "Math.sqrt",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "DoubleExpr",
+                        "value": 2.0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "t",
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              },
+              "value": {
+                "kind": "DoubleExpr",
+                "value": 0.25
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "p",
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              },
+              "value": {
+                "kind": "DoubleExpr",
+                "value": 1.0
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "pi",
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              },
+              "value": {
+                "kind": "DoubleExpr",
+                "value": 0.0
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "i",
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              },
+              "value": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            },
+            {
+              "kind": "WhileStmt",
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "<",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "max_iter"
+                }
+              },
+              "invariants": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": ">=",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "i"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                },
+                {
+                  "kind": "BinaryExpr",
+                  "op": "<=",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "i"
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "max_iter"
+                  }
+                },
+                {
+                  "kind": "BinaryExpr",
+                  "op": ">",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "eps"
+                  },
+                  "right": {
+                    "kind": "DoubleExpr",
+                    "value": 0.0
+                  }
+                }
+              ],
+              "body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "a_next",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Double"
+                  },
+                  "value": {
+                    "kind": "BinaryExpr",
+                    "op": "/",
+                    "left": {
+                      "kind": "BinaryExpr",
+                      "op": "+",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "a"
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "b"
+                      }
+                    },
+                    "right": {
+                      "kind": "DoubleExpr",
+                      "value": 2.0
+                    }
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "b_next",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Double"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Math.sqrt",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "BinaryExpr",
+                          "op": "*",
+                          "left": {
+                            "kind": "VarExpr",
+                            "name": "a"
+                          },
+                          "right": {
+                            "kind": "VarExpr",
+                            "name": "b"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "t_next",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Double"
+                  },
+                  "value": {
+                    "kind": "BinaryExpr",
+                    "op": "-",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "t"
+                    },
+                    "right": {
+                      "kind": "BinaryExpr",
+                      "op": "*",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "p"
+                      },
+                      "right": {
+                        "kind": "CallExpr",
+                        "name": "Math.pow",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "BinaryExpr",
+                              "op": "-",
+                              "left": {
+                                "kind": "VarExpr",
+                                "name": "a"
+                              },
+                              "right": {
+                                "kind": "VarExpr",
+                                "name": "a_next"
+                              }
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "DoubleExpr",
+                              "value": 2.0
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "p_next",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Double"
+                  },
+                  "value": {
+                    "kind": "BinaryExpr",
+                    "op": "*",
+                    "left": {
+                      "kind": "DoubleExpr",
+                      "value": 2.0
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "p"
+                    }
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "pi_new",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Double"
+                  },
+                  "value": {
+                    "kind": "BinaryExpr",
+                    "op": "/",
+                    "left": {
+                      "kind": "CallExpr",
+                      "name": "Math.pow",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "BinaryExpr",
+                            "op": "+",
+                            "left": {
+                              "kind": "VarExpr",
+                              "name": "a_next"
+                            },
+                            "right": {
+                              "kind": "VarExpr",
+                              "name": "b_next"
+                            }
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "DoubleExpr",
+                            "value": 2.0
+                          }
+                        }
+                      ]
+                    },
+                    "right": {
+                      "kind": "BinaryExpr",
+                      "op": "*",
+                      "left": {
+                        "kind": "DoubleExpr",
+                        "value": 4.0
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "t_next"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "IfStmt",
+                  "condition": {
+                    "kind": "BinaryExpr",
+                    "op": "<",
+                    "left": {
+                      "kind": "CallExpr",
+                      "name": "Math.abs",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "BinaryExpr",
+                            "op": "-",
+                            "left": {
+                              "kind": "VarExpr",
+                              "name": "pi_new"
+                            },
+                            "right": {
+                              "kind": "VarExpr",
+                              "name": "pi"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "eps"
+                    }
+                  },
+                  "then_body": [
+                    {
+                      "kind": "ReturnStmt",
+                      "value": {
+                        "kind": "ReturnPlain",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "pi_new"
+                        }
+                      }
+                    }
+                  ],
+                  "else_body": []
+                },
+                {
+                  "kind": "AssignStmt",
+                  "name": "a",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "a_next"
+                  }
+                },
+                {
+                  "kind": "AssignStmt",
+                  "name": "b",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "b_next"
+                  }
+                },
+                {
+                  "kind": "AssignStmt",
+                  "name": "t",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "t_next"
+                  }
+                },
+                {
+                  "kind": "AssignStmt",
+                  "name": "p",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "p_next"
+                  }
+                },
+                {
+                  "kind": "AssignStmt",
+                  "name": "pi",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "pi_new"
+                  }
+                },
+                {
+                  "kind": "AssignStmt",
+                  "name": "i",
+                  "value": {
+                    "kind": "BinaryExpr",
+                    "op": "+",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "i"
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 1
+                    }
+                  }
+                }
+              ],
+              "variant": {
+                "kind": "BinaryExpr",
+                "op": "-",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "max_iter"
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                }
+              }
+            },
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "pi"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "procedure",
+          "name": "main",
+          "type_params": [],
+          "is_async": false,
+          "params": [],
+          "return_type": {
+            "kind": "Void"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "Void"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "LetStmt",
+              "name": "pi",
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              },
+              "value": {
+                "kind": "CallExpr",
+                "name": "compute_pi",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "NumberExpr",
+                      "value": 20
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "DoubleExpr",
+                      "value": 1e-15
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "kind": "CallStmt",
+              "name": "Std.IO.logf",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Pi ~ ${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "pi"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "services": [],
+      "proof_obligations": [],
+      "flow_summaries": [
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "compute_pi",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "main",
+          "routine_kind": "procedure",
+          "normal_return_possible": true,
+          "guaranteed_exit": false,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [
+            "compute_pi"
+          ],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        }
+      ],
+      "verifier": {
+        "node": "VerifierReport",
+        "proof_obligations": [],
+        "flow_summaries": [
+          {
+            "kind": "RoutineFlowSummary",
+            "routine_name": "compute_pi",
+            "routine_kind": "function",
+            "normal_return_possible": true,
+            "guaranteed_exit": true,
+            "declared_aborts": [],
+            "declared_abort_refs": [],
+            "emitted_aborts": [],
+            "emitted_abort_refs": [],
+            "called_routines": [],
+            "propagated_aborts": [],
+            "propagated_abort_refs": []
+          },
+          {
+            "kind": "RoutineFlowSummary",
+            "routine_name": "main",
+            "routine_kind": "procedure",
+            "normal_return_possible": true,
+            "guaranteed_exit": false,
+            "declared_aborts": [],
+            "declared_abort_refs": [],
+            "emitted_aborts": [],
+            "emitted_abort_refs": [],
+            "called_routines": [
+              "compute_pi"
+            ],
+            "propagated_aborts": [],
+            "propagated_abort_refs": []
+          }
+        ]
+      }
+    }
+  },
   "module": {
+    "node": "Module",
     "name": "examples.GaussLegendrePi",
     "imports": [
       {
@@ -31,11 +1683,19 @@
         "params": [
           {
             "name": "max_iter",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           },
           {
             "name": "eps",
-            "type": "Double"
+            "type": "Double",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Double"
+            }
           }
         ],
         "return_type": {
@@ -45,6 +1705,99 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -509,6 +2262,98 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -563,42 +2408,84 @@
     ]
   },
   "analysis": {
+    "node": "AnalysisReport",
     "types": [
       {
+        "kind": "TypeDef",
         "name": "BigFloat",
-        "base": "BigFloat"
+        "base": "BigFloat",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigFloat"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "BigInteger",
-        "base": "BigInteger"
+        "base": "BigInteger",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigInteger"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Boolean",
-        "base": "Boolean"
+        "base": "Boolean",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Boolean"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Double",
-        "base": "Double"
+        "base": "Double",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Double"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Executor",
-        "base": "Executor"
+        "base": "Executor",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Executor"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Integer",
-        "base": "Integer"
+        "base": "Integer",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Scope",
-        "base": "Scope"
+        "base": "Scope",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Scope"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "String",
-        "base": "String"
+        "base": "String",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "String"
+        }
       }
     ],
     "records": [],
     "errors": [],
+    "error_defs": [],
     "routines": [
       {
         "kind": "RoutineDecl",
@@ -609,11 +2496,19 @@
         "params": [
           {
             "name": "max_iter",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           },
           {
             "name": "eps",
-            "type": "Double"
+            "type": "Double",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Double"
+            }
           }
         ],
         "return_type": {
@@ -623,6 +2518,99 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Double"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -1087,6 +3075,98 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -1143,27 +3223,71 @@
     "proof_obligations": [],
     "flow_summaries": [
       {
+        "kind": "RoutineFlowSummary",
         "routine_name": "compute_pi",
         "routine_kind": "function",
         "normal_return_possible": true,
         "guaranteed_exit": true,
         "declared_aborts": [],
+        "declared_abort_refs": [],
         "emitted_aborts": [],
+        "emitted_abort_refs": [],
         "called_routines": [],
-        "propagated_aborts": []
+        "propagated_aborts": [],
+        "propagated_abort_refs": []
       },
       {
+        "kind": "RoutineFlowSummary",
         "routine_name": "main",
         "routine_kind": "procedure",
         "normal_return_possible": true,
         "guaranteed_exit": false,
         "declared_aborts": [],
+        "declared_abort_refs": [],
         "emitted_aborts": [],
+        "emitted_abort_refs": [],
         "called_routines": [
           "compute_pi"
         ],
-        "propagated_aborts": []
+        "propagated_aborts": [],
+        "propagated_abort_refs": []
       }
-    ]
+    ],
+    "verifier": {
+      "node": "VerifierReport",
+      "proof_obligations": [],
+      "flow_summaries": [
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "compute_pi",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "main",
+          "routine_kind": "procedure",
+          "normal_return_possible": true,
+          "guaranteed_exit": false,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [
+            "compute_pi"
+          ],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        }
+      ]
+    }
   }
 }
