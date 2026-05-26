@@ -9,6 +9,16 @@ from pathlib import Path
 
 DEFAULT_ARTIFACT_ROOT = "artifacts/"
 DEFAULT_FH_ROOT = "tests/language_modules/"
+IGNORED_ARTIFACT_REPORT_PREFIXES = (
+    "artifacts/compare-",
+    "artifacts/verify-spec-diagnostics/",
+)
+IGNORED_ARTIFACT_REPORT_FILES = {
+    "artifacts/dhparser-ast/_errors.txt",
+    "artifacts/dhparser-ast/_summary.json",
+    "artifacts/go-ast/_errors.txt",
+    "artifacts/go-ast/_summary.json",
+}
 
 
 @dataclass(frozen=True)
@@ -96,6 +106,8 @@ def parse_status_line(line: str) -> StatusEntry:
 
 
 def is_violation(entry: StatusEntry, artifact_root: str, fh_root: str) -> bool:
+    if is_ignored_artifact_report(entry.path):
+        return False
     if not is_protected_path(entry.path, artifact_root, fh_root):
         return False
     if is_added(entry.status):
@@ -104,6 +116,8 @@ def is_violation(entry: StatusEntry, artifact_root: str, fh_root: str) -> bool:
 
 
 def is_allowed_addition(entry: StatusEntry, artifact_root: str, fh_root: str) -> bool:
+    if is_ignored_artifact_report(entry.path):
+        return False
     return is_protected_path(entry.path, artifact_root, fh_root) and is_added(entry.status)
 
 
@@ -111,6 +125,10 @@ def is_protected_path(path: str, artifact_root: str, fh_root: str) -> bool:
     artifact_root = normalize_root(artifact_root)
     fh_root = normalize_root(fh_root)
     return path.startswith(artifact_root) or (path.startswith(fh_root) and path.endswith(".fh"))
+
+
+def is_ignored_artifact_report(path: str) -> bool:
+    return path in IGNORED_ARTIFACT_REPORT_FILES or any(path.startswith(prefix) for prefix in IGNORED_ARTIFACT_REPORT_PREFIXES)
 
 
 def is_added(status: str) -> bool:
