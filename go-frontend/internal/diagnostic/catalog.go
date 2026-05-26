@@ -399,6 +399,16 @@ var catalog = map[string]Definition{
 		Message:  "unknown exposed symbol",
 		Hint:     "An import exposing list may only name declarations from the imported module.",
 	},
+	"imported_module_parse_error": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1011",
+		Number:   1011,
+		Name:     "imported_module_parse_error",
+		Message:  "imported module parse error",
+		Hint:     "Imported project modules must parse before project semantics can run.",
+	},
 	"unknown_routine": {
 		Severity: "error",
 		Phase:    "semantic",
@@ -622,6 +632,14 @@ func ImportedModuleNameMismatch(location Location, expectedName string, actualNa
 
 func UnknownExposedSymbol(location Location, moduleName string, symbolName string) *Diagnostic {
 	return fromDefinition("unknown_exposed_symbol", location, symbolName, []string{"declaration in " + moduleName})
+}
+
+func ImportedModuleParseError(location Location, moduleName string, cause error) *Diagnostic {
+	expected := []string{"parseable module file"}
+	if cause != nil {
+		expected = append(expected, cause.Error())
+	}
+	return fromDefinition("imported_module_parse_error", location, moduleName, expected)
 }
 
 func UnknownRoutine(location Location, routineName string) *Diagnostic {

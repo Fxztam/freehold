@@ -133,6 +133,28 @@ end Domain.Other`)
 	assertProjectDiagnostic(t, diagnostics, err, "FH-SEM-1009", "imported_module_name_mismatch", "Domain.Other")
 }
 
+func TestValidateProjectRejectsImportedModuleParseError(t *testing.T) {
+	root := t.TempDir()
+	entry := writeProjectFile(t, root, "App", "Main.fh", `module App.Main
+
+import Domain.Types
+
+procedure main()
+is
+    check true
+end main
+
+end App.Main`)
+	writeProjectFile(t, root, "Domain", "Types.fh", `module Domain.Types
+
+procedure broken
+
+end Domain.Types`)
+
+	_, diagnostics, err := ValidateProject(entry)
+	assertProjectDiagnostic(t, diagnostics, err, "FH-SEM-1011", "imported_module_parse_error", "Domain.Types")
+}
+
 func TestValidateProjectRejectsUnknownExposedSymbol(t *testing.T) {
 	root := t.TempDir()
 	entry := writeProjectFile(t, root, "App", "Main.fh", `module App.Main

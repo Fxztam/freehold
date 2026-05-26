@@ -130,7 +130,7 @@ func (p *Project) resolveImports(module *ast.Module, stack []string) error {
 			}
 			parsed, err := parseModuleFile(path)
 			if err != nil {
-				return fmt.Errorf("imported module has syntax error: %s: %w", moduleName, err)
+				return projectDiagnostic(diagnostic.ImportedModuleParseError(locationFromPosition(importDecl.Pos), moduleName, err))
 			}
 			if parsed.Name != moduleName {
 				return projectDiagnostic(diagnostic.ImportedModuleNameMismatch(locationFromPosition(parsed.Pos), moduleName, parsed.Name))
