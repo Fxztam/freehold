@@ -2,6 +2,7 @@ package semantic
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -325,7 +326,7 @@ func ExportCompareIRJSON(entryFile string) (string, error) {
 		return "", err
 	}
 	if len(diagnostics) > 0 {
-		return "", fmt.Errorf(diagnostics[0].Error())
+		return "", errors.New(diagnostics[0].Error())
 	}
 	if project == nil || project.Entry == nil {
 		return "", fmt.Errorf("failed to load project")
