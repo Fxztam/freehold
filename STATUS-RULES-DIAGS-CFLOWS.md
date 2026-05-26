@@ -157,8 +157,8 @@ Erster Go-native Semantikanker:
 
 - Paket: `go-frontend/internal/semantic`
 - SymbolTable V0 sammelt Record-Typen, deren Felder sowie Function-/Procedure-Signaturen aus dem Go-AST; `BuildSymbolTableWithImports` ergaenzt exposed importierte Records/Routinen inklusive transitiver Record-Feldtyp-Abhaengigkeiten.
-- `ValidateModule` prueft lokale Routine-Parameter, `let`-Bindings, verschachtelte FieldAccess-Ausdruecke und lokale/exposed Routine-Calls; `ValidateModuleWithImports` nutzt dieselben Regeln mit import-aware SymbolLookup. Die schmale Typinferenz deckt Literal-Basistypen, Routine-Return-Typen, einfache Operatoren und Array-Index-Elementtypen ab.
-- Abgedeckte Diagnostics: `FH-TYP-2101 field_access_requires_record`, `FH-SEM-1105 unknown_record_field`, `FH-SEM-1204 unknown_routine`, `FH-SEM-1205 routine_argument_count_mismatch` und `FH-TYP-2201 routine_argument_type_mismatch`.
+- `ValidateModule` prueft lokale Routine-Parameter, `let`-Bindings, Assignments, verschachtelte FieldAccess-Ausdruecke, Array-Index-Ausdruecke, Record-Literals und lokale/exposed Routine-Calls; `ValidateModuleWithImports` nutzt dieselben Regeln mit import-aware SymbolLookup. Function-Postconditions binden `result` sowie bei `Result<T,E>` auch `value`/`error`, sodass Contract-Ausdruecke dieselben Typ- und Feldregeln nutzen. Die schmale Typinferenz deckt Literal-Basistypen, Routine-Return-Typen, einfache Operatoren und Array-Index-Elementtypen ab.
+- Abgedeckte Diagnostics: `FH-SEM-1005` bis `FH-SEM-1010` fuer project-aware Import-/Loader-Faelle, `FH-TYP-2101 field_access_requires_record`, `FH-SEM-1105 unknown_record_field`, `FH-SEM-1204 unknown_routine`, `FH-SEM-1205 routine_argument_count_mismatch`, `FH-TYP-2201 routine_argument_type_mismatch`, `FH-TYP-2115`/`FH-TYP-2116` fuer Indexzugriffe, `FH-SEM-1102` bis `FH-SEM-1104` fuer Record-Literals, `FH-SEM-1401` fuer unbekannte Variablen, `FH-TYP-2003` fuer unbekannte Typreferenzen, `FH-SEM-1201`/`FH-SEM-1303` fuer Duplicate Params/Locals sowie `FH-SEM-1301`/`FH-TYP-2301` fuer einfache Assignment-Fehler.
 - Relevante Go-AST-Decl-/Stmt-/Expr-Knoten tragen interne Source-Positionen (`json:"-"`), sodass Go-native Semantic-Diagnostics positionsgenau sein koennen, ohne AST-JSON-Goldens zu veraendern.
 - Der Parser-CLI `go-parse-tests-language-modules` kann den Analyzer optional mit `--semantic` nach erfolgreichem Parse ausfuehren. `verify-go-semantic-diagnostics.cmd` schreibt temporaere Artefakte nach `.tmp/go-semantic` und vergleicht die V0-Diagnostics gegen `tests/language_modules/expected_go_semantic_diagnostics.json`.
 - `go-semantic-project` laedt ein Entry-Modul samt Imports nach derselben Modulpfad-Konvention (`App.Main -> App/Main.fh`). `verify-go-semantic-projects.cmd` schreibt temporaere Artefakte nach `.tmp/go-semantic-project` und verankert 26 Projektfaelle fuer positive Imports, transitive Import-/Record-Kontexte, Project-Loader-Diagnostics und negative cross-module Semantik inklusive Result-/Array-/Abort-/Contract-Kombinationen. Mehrdeutig exposed Symbole werden Go-native mit `FH-SEM-1005 ambiguous_exposed_symbol` gemeldet.
@@ -205,17 +205,16 @@ Der neue Unsupported-Smoke fuer Async/Scope aendert diese Einordnung nicht: Er b
 - Go Parser / AST / Syntax-Diagnostics: sehr weit, gruen gegen die 322 Parser/AST-Vergleichsfaelle.
 - Go Diagnostic Catalog: `45/114` Diagnostic-Specs direkt in Go, davon 23 Syntax, 6 Typdiagnostics und 16 Semantikdiagnostics.
 - `freehold.rules` direkt in Go: grob `25/115` Rules/Emits, also die Parser-/Syntax-Schicht plus erster Record-FieldAccess-Semantikanker.
-- Semantik-Regeln: Python-seitig gruen abgeglichen; Go-native V0 existiert fuer single-module Record-FieldAccess, der Rest ist noch nicht Go-native.
+- Semantik-Regeln: Python-seitig gruen abgeglichen; Go-native V0 deckt inzwischen single-module und project-aware Record-/Routine-/Array-/Record-Literal-/Name-/Type-/Assignment-Slices ab, bleibt aber bewusst ohne vollstaendige Typinferenz und ohne Go-native CFlow.
 - Control Flow: Python V0 vorhanden, Go-native Control Flow noch offen.
 
 ## Praktische Konsequenz
 
 Wenn der Go-Frontend-Pfad Richtung Bootstrap wachsen soll, sind die naechsten grossen Portierungsbloecke:
 
-1. Semantic-Diagnostic/Rule-Engine oder gezielte Go-Verifier-Slices.
-2. Go-native Symboltabellen und Typkontext ueber Record-FieldAccess V0 hinaus.
-3. Go-native Routine-/Call-/Import-Semantik.
-4. Go-native Control-Flow-V0 analog `freehold/core/control_flow.py`.
-5. Danach Result-/Scope-/Abort-CFlow-Erweiterungen.
+1. Project-aware Semantikdiagnostics weiter haerten, vor allem strukturierte importierte Parse-Fehler und weitere negative Drei-Package-Goldens.
+2. Optional separaten `project_semantic_diagnostics`-Gate einfuehren, sobald die project-aware Goldens zu gross fuer den Sammelgate werden.
+3. Go-native Control-Flow-V0 analog `freehold/core/control_flow.py`.
+4. Danach Result-/Scope-/Abort-CFlow-Erweiterungen und Runtime-nahe Compiler-Smokes.
 
 Der Parser ist also schon ein starker Anker. Der naechste grosse Abstand liegt nicht mehr in Syntax/AST, sondern in Semantik und Control Flow.

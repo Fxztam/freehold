@@ -93,9 +93,12 @@ Bewusst geparkt fuer V2/V3:
 
 Empfohlene Reihenfolge aus heutiger Sicht:
 
-1. Weitere Cross-Module-Typkompositionen haerten, z.B. direkte `Array<imported Record>`-Signaturen, verschachtelte importierte Records/Results und Namenskonflikte.
-2. Danach kleinere Matrix-Luecken schliessen.
-3. Danach JSON/gRPC- und weitere Runtime-/Bootstrap-nahe Slices ueber den stabilisierten Cross-Module-Typen aufbauen.
+1. Project-aware negative Semantikfaelle weiter haerten, ohne den normalen single-module Gate umzubauen.
+    - Naechster kleiner Kandidat: importierte Syntaxfehler als strukturierte Project-Diagnostics reporten, damit `imported_module_syntax_error` manifestfaehig wird.
+    - Danach weitere negative Drei-Package-Goldens: hidden/non-exposed Symbolnutzung, falsche qualifizierte Modulnutzung, transitive Dependency-Fehler.
+2. Optional einen separaten `project_semantic_diagnostics`-Gate einfuehren, falls die project-aware Negativgoldens weiter wachsen. Der bestehende `verify-go-semantic-projects.cmd` bleibt bis dahin der stabile Sammelgate.
+3. Go Codegen V1 Runtime-Breite ausbauen: weitere `Result`/`Abort`/`Array`-Kombinationen, komplexere `requires`/`ensures`, und Runtime-Builtins in echten Mehr-Package-Compiler-Examples.
+4. Danach JSON/gRPC- und weitere Runtime-/Bootstrap-nahe Slices ueber den stabilisierten Cross-Module-Typen aufbauen.
 
 ## Ziel
 

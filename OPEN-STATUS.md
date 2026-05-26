@@ -1,6 +1,6 @@
 # OPEN Status
 
-Stand: 2026-05-25
+Stand: 2026-05-26
 
 Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V2/V3-Themen. Die `OPEN-*.md`-Dateien bleiben als Design- und Roadmap-Dokumente erhalten; `OPEN` bedeutet hier nicht automatisch, dass der aktuelle V1-Slice unvollstaendig ist.
 
@@ -45,27 +45,48 @@ Diese Themen sind absichtlich nicht Teil des aktuellen V1-Abschlusses:
 
 ## Current Gate Baseline
 
-Latest verified baseline after Go compiler verify/artifact start-slice:
+Latest verified baseline after `0ddecb9 Expand project-aware negative semantics`:
 
 ```text
-verify-spec-diagnostics.cmd
-Diagnostic specs: 111
-Rule emits:       113
-Failures:         0
+verify-go-semantic-projects.cmd
+Expected semantic projects: 26
+Mismatches:                 0
 
-compare-semantic-diagnostics.cmd
-Expected semantic diagnostics: 95
-Matching semantic diagnostics: 95
-Mismatching semantic diagnostics: 0
+verify-go-semantic-diagnostics.cmd
+Expected semantic diagnostics: 18
+Mismatches:                    0
 
-verify-parser-conformance.cmd
-Total: 319
-OK:    274
-FAIL:  45
-Go codegen generator gate: 66/66 matching
-Go feature matrix: 24/24 modules covered; supported 15, rejected 3, deferred 6
-Additive test-line gate: existing `.fh` cases and existing `artifacts/` files are frozen; new cases/artifacts are additions only.
-AST shape:     274/274
-Semantic AST:  274/274
-Parser conformance verify passed.
+go test ./... in go-frontend
+ok freehold-go-frontend/internal/semantic
+
+verify-grammar-consistency.cmd
+Report warnings: 71
+Mismatches:      0
+
+verify-additive-test-line.cmd
+Allowed additions:       9
+Frozen-line violations: 0
+
+git diff --check
+No whitespace errors; only LF/CRLF warnings for touched Go files.
 ```
+
+The normal single-module Go semantic gate remains intentionally narrow and unchanged at 18 expected diagnostics. The project-aware gate is the current expansion point for imported mini-projects, transitive import graphs, loader diagnostics, and cross-module semantic failures.
+
+## Festgelegte naechste Schritte
+
+1. Project-aware diagnostics weiter haerten, aber den single-module Gate stabil lassen.
+   - Kleiner naechster Kandidat: strukturierte Diagnostics fuer Syntaxfehler in importierten Modulen, damit `imported_module_syntax_error` manifestfaehig wird statt als roher Loader-Fehler zu enden.
+   - Danach weitere negative Mini-Projekte mit drei Paketen: hidden/non-exposed Symbolnutzung, qualifizierte falsche Modulnutzung, transitive Dependency-Fehler.
+
+2. Optional separaten `project_semantic_diagnostics`-Gate einfuehren.
+   - Ziel: project-aware Goldens und Reports klar von Loader-/OK-Projektfaellen trennen, ohne `verify-go-semantic-diagnostics.cmd` umzubauen.
+   - Der bestehende `verify-go-semantic-projects.cmd` bleibt bis dahin stabiler Sammelgate.
+
+3. Go Codegen V1 Runtime-Breite wieder aufnehmen.
+   - Naechste Runtime-Smokes: weitere `Result`/`Abort`/`Array`-Kombinationen, komplexere `requires`/`ensures`, und Runtime-Builtins in echten Mehr-Package-Beispielen.
+   - Bestehender Anker: `14_big_loop_runtime_log` fuer BigInteger-Loop plus `Std.IO.logf`.
+
+4. Spaeter groessere Bootstrap-Bloecke angehen.
+   - Go-native Control-Flow-V0 analog Python-CFlow.
+   - Breitere Abort-Contract-Implication und Handler-Syntax bleiben bewusst nachgelagert.
