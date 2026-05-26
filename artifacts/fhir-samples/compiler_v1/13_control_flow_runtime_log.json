@@ -1,0 +1,658 @@
+{
+  "schema": "fh-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "App.Main",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Std.IO",
+        "exposing": []
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "limit",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 4
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "i",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "WhileStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "<",
+              "left": {
+                "kind": "VarExpr",
+                "name": "i"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "limit"
+              }
+            },
+            "invariants": [
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": "<=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "limit"
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "limit"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            ],
+            "body": [
+              {
+                "kind": "LetStmt",
+                "name": "next_i",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "+",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "i"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "total",
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "+",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "total"
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "next_i"
+                  }
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "i",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "next_i"
+                }
+              }
+            ],
+            "variant": {
+              "kind": "BinaryExpr",
+              "op": "-",
+              "left": {
+                "kind": "VarExpr",
+                "name": "limit"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "i"
+              }
+            }
+          },
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": ">",
+              "left": {
+                "kind": "VarExpr",
+                "name": "total"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 6
+              }
+            },
+            "then_body": [
+              {
+                "kind": "CallStmt",
+                "name": "Std.IO.log",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "control-flow branch = high"
+                    }
+                  }
+                ]
+              }
+            ],
+            "else_body": [
+              {
+                "kind": "CallStmt",
+                "name": "Std.IO.log",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "control-flow branch = low"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "sum = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "total"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CaseStmt",
+            "value": {
+              "kind": "VarExpr",
+              "name": "total"
+            },
+            "branches": [
+              {
+                "value": {
+                  "kind": "NumberExpr",
+                  "value": 6
+                },
+                "body": [
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.log",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "class = triangular-six"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "value": {
+                  "kind": "NumberExpr",
+                  "value": 10
+                },
+                "body": [
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.log",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "class = triangular-ten"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "default_body": [
+              {
+                "kind": "CallStmt",
+                "name": "Std.IO.log",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "class = other"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [],
+    "errors": [],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "limit",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 4
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "i",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "WhileStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "<",
+              "left": {
+                "kind": "VarExpr",
+                "name": "i"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "limit"
+              }
+            },
+            "invariants": [
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": "<=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "limit"
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "limit"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            ],
+            "body": [
+              {
+                "kind": "LetStmt",
+                "name": "next_i",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "+",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "i"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "total",
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "+",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "total"
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "next_i"
+                  }
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "i",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "next_i"
+                }
+              }
+            ],
+            "variant": {
+              "kind": "BinaryExpr",
+              "op": "-",
+              "left": {
+                "kind": "VarExpr",
+                "name": "limit"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "i"
+              }
+            }
+          },
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": ">",
+              "left": {
+                "kind": "VarExpr",
+                "name": "total"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 6
+              }
+            },
+            "then_body": [
+              {
+                "kind": "CallStmt",
+                "name": "Std.IO.log",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "control-flow branch = high"
+                    }
+                  }
+                ]
+              }
+            ],
+            "else_body": [
+              {
+                "kind": "CallStmt",
+                "name": "Std.IO.log",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "control-flow branch = low"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "sum = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "total"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CaseStmt",
+            "value": {
+              "kind": "VarExpr",
+              "name": "total"
+            },
+            "branches": [
+              {
+                "value": {
+                  "kind": "NumberExpr",
+                  "value": 6
+                },
+                "body": [
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.log",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "class = triangular-six"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "value": {
+                  "kind": "NumberExpr",
+                  "value": 10
+                },
+                "body": [
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.log",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "class = triangular-ten"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "default_body": [
+              {
+                "kind": "CallStmt",
+                "name": "Std.IO.log",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "class = other"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "services": [],
+    "proof_obligations": [],
+    "flow_summaries": [
+      {
+        "routine_name": "main",
+        "routine_kind": "procedure",
+        "normal_return_possible": true,
+        "guaranteed_exit": false,
+        "declared_aborts": [],
+        "emitted_aborts": [],
+        "called_routines": [],
+        "propagated_aborts": []
+      }
+    ]
+  }
+}

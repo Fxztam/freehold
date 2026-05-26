@@ -1,0 +1,2 @@
+@echo off
+python .\tools\compare_ir_hashes.py --manifest .\artifacts\fhir-samples\compiler_v1\manifest.json --python-root .\artifacts\fhir-samples\compiler_v1 --go-root .\artifacts\fhir-samples\compiler_v1

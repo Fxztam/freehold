@@ -28,17 +28,22 @@ def main() -> int:
 
     rows: list[dict[str, Any]] = []
     mismatches: list[dict[str, Any]] = []
+    skipped = 0
 
     for sample in manifest["samples"]:
         row = compare_sample(sample, python_root, go_root)
         rows.append(row)
+        if row["status"] == "skipped":
+            skipped += 1
+            continue
         if row["status"] != "match":
             mismatches.append(row)
 
     summary = {
         "total_samples": len(rows),
-        "matching_samples": len(rows) - len(mismatches),
+        "matching_samples": sum(1 for row in rows if row["status"] == "match"),
         "mismatching_samples": len(mismatches),
+        "skipped_samples": skipped,
         "mismatches": mismatches,
     }
 
@@ -61,6 +66,18 @@ def load_manifest(path: Path) -> dict[str, Any]:
 
 
 def compare_sample(sample: dict[str, Any], python_root: Path, go_root: Path) -> dict[str, Any]:
+    if sample.get("skip"):
+        return {
+            "name": sample["name"],
+            "source_file": sample["source_file"],
+            "python_ir_file": sample.get("python_ir_file", ""),
+            "go_ir_file": sample.get("go_ir_file", ""),
+            "python_ir_sha256": None,
+            "go_ir_sha256": None,
+            "status": "skipped",
+            "reason": sample.get("skip_reason", "skipped"),
+        }
+
     python_path = python_root / sample["python_ir_file"]
     go_path = go_root / sample.get("go_ir_file", sample["python_ir_file"])
 
@@ -92,6 +109,7 @@ def render_report(summary: dict[str, Any]) -> str:
         f"Total samples:      {summary['total_samples']}",
         f"Matching samples:   {summary['matching_samples']}",
         f"Mismatching samples: {summary['mismatching_samples']}",
+        f"Skipped samples:    {summary['skipped_samples']}",
     ]
     if summary["mismatches"]:
         lines.extend(["", "Mismatches", "----------"])
@@ -106,6 +124,7 @@ def print_report(summary: dict[str, Any]) -> None:
     print("Total samples:     ", summary["total_samples"])
     print("Matching samples:  ", summary["matching_samples"])
     print("Mismatching samples:", summary["mismatching_samples"])
+    print("Skipped samples:   ", summary["skipped_samples"])
 
 
 if __name__ == "__main__":
