@@ -1,0 +1,32 @@
+module Domain.Types
+
+type Address is record
+    city_id: Integer
+end record
+
+type Customer is record
+    id: Integer
+    address: Address
+end record
+
+type Order is record
+    id: Integer
+    customer: Customer
+end record
+
+function make_address(city_id: Integer) returns Address
+is
+    return Address { city_id: city_id }
+end make_address
+
+function make_customer(id: Integer, address: Address) returns Customer
+is
+    return Customer { id: id, address: address }
+end make_customer
+
+function make_order(id: Integer, customer: Customer) returns Order
+is
+    return Order { id: id, customer: customer }
+end make_order
+
+end Domain.Types
