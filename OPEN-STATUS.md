@@ -27,7 +27,7 @@ Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V
 | --- | --- | --- |
 | Before Go Compiler | `OPEN-BEFORE-GO-COMPILER.md` | Abgeschlossen fuer Compiler V1 Start: proto mapping getestet, schema minimal rule, generics codegen policy, Result/Abort policy, runtime builtins boundary, syntax freeze. |
 | VS Code Language Support | `OPEN-VSCODE-LANGUAGE-SUPPORT.md` | Completion V1 vor Formatter-Ausbau vorgezogen; Extension nach `tools/vscode/freehold-vscode` ueberfuehrt. |
-| Go Compiler | `OPEN-GO-COMPILER.md` | Compiler V1 Start-Slice plus Import-, Cross-Module-Call-, Cross-Module-Record-Type-, Cross-Module-Result-Error-Abort-, Cross-Module-Typkompositions-, Result-, Abort-, Multi-File-, Runtime-Builtin-, BigNumber-, Array-, Go-Projekt-Build- und Feature-Matrix-Slices implementiert: `go-codegen`, `go-codegen-project`, JSON-Spiegel, Golden-Faelle, Artefakt-Gate, import-aware Package-Calls, importierte Freehold-Routinen via `exposing` und qualifizierte Modulnamen, exposed importierte Record-Typen in Signaturen, importierte Result-/Error-/Abort-Paketgrenzen, `Result<Array<imported Record>, imported Error>` plus importierter Abort-Call, Result-Wertreturns, Abort-Error-Returns, Math/Std.IO/String/Json.stringify/Big Runtime-Imports, fixed-size Array-Go-Goldens, `go.mod`/`build.cmd` fuer generierte Projekte, Zwei-Package- und Drei-Package-Projektgoldens, 24/24 Go-Codegen-Feature-Matrix-Abdeckung sowie Go-native Semantic-V0-Diagnostics fuer Project-Loader, Routine-Calls, Record-Felder/Literals, Array-Index-Ausdruecke, Result-Contract-Bindings, Variablen-/Typnamen, Duplicate Params/Locals und einfache Assignments; der Go-Semantic-Project-Gate deckt 27 importierte Mini-Projekte, transitive Importfaelle und negative cross-module Semantik-/Loader-Faelle inklusive importierter Syntaxfehler und Result-/Array-/Abort-/Contract-Kombinationen ab. `verify-grammar-consistency.cmd` ist in den Parser-Conformance-Gate eingebunden und berichtet Lark-vs.-Spec-Regeldeltas sowie reservierte Keyword-Fixture-Kandidaten report-only; der Compiler-Example-Smoke umfasst nun einen BigInteger-Loop mit Runtime-Log. |
+| Go Compiler | `OPEN-GO-COMPILER.md` | Compiler V1 Start-Slice plus Import-, Cross-Module-Call-, Cross-Module-Record-Type-, Cross-Module-Result-Error-Abort-, Cross-Module-Typkompositions-, Result-, Abort-, Multi-File-, Runtime-Builtin-, BigNumber-, Array-, Go-Projekt-Build- und Feature-Matrix-Slices implementiert: `go-codegen`, `go-codegen-project`, JSON-Spiegel, Golden-Faelle, Artefakt-Gate, import-aware Package-Calls, importierte Freehold-Routinen via `exposing` und qualifizierte Modulnamen, exposed importierte Record-Typen in Signaturen, importierte Result-/Error-/Abort-Paketgrenzen, `Result<Array<imported Record>, imported Error>` plus importierter Abort-Call, Result-Wertreturns, Abort-Error-Returns, Math/Std.IO/String/Json.stringify/Big Runtime-Imports, fixed-size Array-Go-Goldens, `go.mod`/`build.cmd` fuer generierte Projekte, Zwei-Package- und Drei-Package-Projektgoldens, 24/24 Go-Codegen-Feature-Matrix-Abdeckung sowie Go-native Semantic-V0-Diagnostics fuer Project-Loader, Routine-Calls, Record-Felder/Literals, Array-Index-Ausdruecke, Result-Contract-Bindings, Variablen-/Typnamen, Duplicate Params/Locals und einfache Assignments; `verify-go-semantic-projects.cmd` deckt 18 importierte OK-/Loader-Projekte ab, `verify-go-project-semantic-diagnostics.cmd` deckt 13 negative cross-module Semantikgoldens inklusive Result-/Array-/Abort-/Contract-Kombinationen und mehrfacher Diagnostics ab. `verify-grammar-consistency.cmd` ist in den Parser-Conformance-Gate eingebunden und berichtet Lark-vs.-Spec-Regeldeltas sowie reservierte Keyword-Fixture-Kandidaten report-only; der Compiler-Example-Smoke umfasst nun einen BigInteger-Loop mit Runtime-Log. |
 
 ## V2/V3 geparkt
 
@@ -49,7 +49,11 @@ Latest verified baseline after the project-aware negative mini-project expansion
 
 ```text
 verify-go-semantic-projects.cmd
-Expected semantic projects: 31
+Expected semantic projects: 18
+Mismatches:                 0
+
+verify-go-project-semantic-diagnostics.cmd
+Expected semantic projects: 13
 Mismatches:                 0
 
 verify-go-semantic-diagnostics.cmd
@@ -71,7 +75,7 @@ git diff --check
 No whitespace errors; only LF/CRLF warnings for touched Go files.
 ```
 
-The normal single-module Go semantic gate remains intentionally narrow and unchanged at 18 expected diagnostics. The project-aware gate is the current expansion point for imported mini-projects, transitive import graphs, loader diagnostics, and cross-module semantic failures.
+The normal single-module Go semantic gate remains intentionally narrow and unchanged at 18 expected diagnostics. The project-aware gates are now split: `verify-go-semantic-projects.cmd` covers OK and loader/project-loader behavior, while `verify-go-project-semantic-diagnostics.cmd` covers negative cross-module semantic failures.
 
 ## Festgelegte naechste Schritte
 
@@ -79,9 +83,9 @@ The normal single-module Go semantic gate remains intentionally narrow and uncha
    - Erledigt: strukturierte Diagnostics fuer Syntaxfehler in importierten Modulen, damit `imported_module_syntax_error` manifestfaehig ist statt als roher Loader-Fehler zu enden.
    - Erledigt: negative Mini-Projekte fuer hidden/non-exposed Symbolnutzung, falsche qualifizierte Modulnutzung, transitive Dependency-Fehler und mehrere Diagnostics in einem Projekt.
 
-2. Optional separaten `project_semantic_diagnostics`-Gate einfuehren.
-   - Ziel: project-aware Goldens und Reports klar von Loader-/OK-Projektfaellen trennen, ohne `verify-go-semantic-diagnostics.cmd` umzubauen.
-   - Der bestehende `verify-go-semantic-projects.cmd` bleibt bis dahin stabiler Sammelgate.
+2. Separaten Project-Semantic-Diagnostics-Gate pflegen.
+   - Erledigt: `verify-go-project-semantic-diagnostics.cmd` trennt project-aware Goldens und Reports klar von Loader-/OK-Projektfaellen, ohne `verify-go-semantic-diagnostics.cmd` umzubauen.
+   - Der bestehende `verify-go-semantic-projects.cmd` bleibt fuer Loader-/OK-Projekte fokussiert.
 
 3. Go Codegen V1 Runtime-Breite wieder aufnehmen.
    - Naechste Runtime-Smokes: weitere `Result`/`Abort`/`Array`-Kombinationen, komplexere `requires`/`ensures`, und Runtime-Builtins in echten Mehr-Package-Beispielen.

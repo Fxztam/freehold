@@ -15,6 +15,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Verify Go-native semantic project loader")
     parser.add_argument("--expected", default=str(DEFAULT_EXPECTED), help="expected Go semantic project JSON")
     parser.add_argument("--out", default=str(DEFAULT_OUT_ROOT), help="temporary output root")
+    parser.add_argument("--title", default="Verify Go semantic projects", help="summary title")
     args = parser.parse_args()
 
     expected = load_json(Path(args.expected))["cases"]
@@ -44,8 +45,8 @@ def main() -> int:
         result = load_json(out_file)
         check_project(failures, case, result, want)
 
-    print("Verify Go semantic projects")
-    print("---------------------------")
+    print(args.title)
+    print("-" * len(args.title))
     if failures:
         for failure in failures:
             print(failure)
