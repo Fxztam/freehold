@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from lark.exceptions import UnexpectedInput
+
 from freehold.core.ast import ErrorDecl, Program, RecordTypeDecl, RoutineDecl, TypeCheckError, TypeDecl
 from freehold.core.parser import parse_source
 from freehold.core.verifier import verify_program
@@ -73,10 +75,8 @@ class ModuleResolver:
                 imported_source = path.read_text(encoding="utf-8")
                 try:
                     imported_program = parse_source(imported_source)
-                except Exception as exc:
-                    if type(exc).__name__ in {"UnexpectedToken", "UnexpectedCharacters", "UnexpectedEOF"}:
-                        raise TypeCheckError(f"{import_decl.pos.text()}: imported module has syntax error: {module_name}") from exc
-                    raise
+                except UnexpectedInput as exc:
+                    raise TypeCheckError(f"{import_decl.pos.text()}: imported module has syntax error: {module_name}") from exc
                 if imported_program.module_name != module_name:
                     raise TypeCheckError(
                         f"{import_decl.pos.text()}: imported module name mismatch: expected {module_name}, got {imported_program.module_name}"

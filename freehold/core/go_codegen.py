@@ -1461,7 +1461,7 @@ def format_go_source(source: str) -> str:
             check=True,
         )
         return completed.stdout
-    except Exception:
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
         return source
 
 

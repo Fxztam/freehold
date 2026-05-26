@@ -2,15 +2,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from lark.exceptions import UnexpectedInput
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from freehold.core.ast import TypeCheckError
 from freehold.core.fhir import export_fhir_json, export_fhir_project_json
 from freehold.core.go_codegen import GO_RUNTIME_MODULE_EXPORTS
 from freehold.core.module_resolver import ModuleResolver
@@ -157,6 +161,7 @@ def main() -> int:
             mismatches.append(row)
 
     summary = {
+        "artifact": "compare-fhir-language-modules",
         "profile": args.profile,
         "total_cases": len(rows),
         "matching_cases": len(rows) - len(mismatches),
@@ -164,11 +169,13 @@ def main() -> int:
         "domains": sorted({case.domain for case in selected_cases}),
         "mismatches": mismatches,
     }
+    manifest = build_manifest(rows, summary)
 
     out_root = Path(args.out)
     out_root.mkdir(parents=True, exist_ok=True)
     (out_root / "_all.json").write_text(json.dumps(rows, indent=2) + "\n", encoding="utf-8")
     (out_root / "_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    (out_root / "_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     (out_root / "_mismatches.txt").write_text(render_report(summary), encoding="utf-8")
     print_summary(summary)
     return 1 if mismatches else 0
@@ -192,11 +199,23 @@ def run_case(case: GateCase) -> dict[str, Any]:
             violations.extend(validate_project_document(document))
         else:
             violations.extend(validate_module_document(document))
-    except Exception as exc:
+    except (TypeCheckError, UnexpectedInput, ValueError) as exc:
         deterministic_text = False
         document = None
-        error = {"type": type(exc).__name__, "message": str(exc)}
+        error = build_error("parse_or_resolver", exc, source_path)
         violations.append("export failed")
+    except (OSError, UnicodeError) as exc:
+        deterministic_text = False
+        document = None
+        error = build_error("io", exc, source_path)
+        violations.append("export failed")
+    except json.JSONDecodeError as exc:
+        deterministic_text = False
+        document = None
+        error = build_error("json_decode", exc, source_path)
+        violations.append("export failed")
+    except Exception as exc:
+        raise RuntimeError(f"unexpected failure while running language-module case: {display_path(source_path)}") from exc
 
     status = "match" if error is None and not violations else "mismatch"
     row = {
@@ -208,6 +227,7 @@ def run_case(case: GateCase) -> dict[str, Any]:
         "deterministic_text": deterministic_text,
         "violations": violations,
         "error": error,
+        "diagnostic": normalize_diagnostic_error(error),
         "schema": document.get("schema") if isinstance(document, dict) else "",
         "schema_version": document.get("schema_version") if isinstance(document, dict) else {},
     }
@@ -275,6 +295,19 @@ def validate_project_document(document: dict[str, Any]) -> list[str]:
     for module in modules:
         if module.get("node") != "ModuleEntry":
             violations.append(f"project.modules node mismatch: {module.get('name', '<unknown>')}")
+
+        source_ast = module.get("source_ast", {})
+        if source_ast.get("node") != "SourceAst":
+            violations.append(f"module.source_ast.node mismatch: {module.get('name', '<unknown>')}")
+        if source_ast.get("module") != module.get("module"):
+            violations.append(f"module.source_ast.module alias mismatch: {module.get('name', '<unknown>')}")
+
+        semantic_ir = module.get("semantic_ir", {})
+        if semantic_ir.get("node") != "SemanticIr":
+            violations.append(f"module.semantic_ir.node mismatch: {module.get('name', '<unknown>')}")
+        if semantic_ir.get("analysis") != module.get("analysis"):
+            violations.append(f"module.semantic_ir.analysis alias mismatch: {module.get('name', '<unknown>')}")
+
         module_block = module.get("module", {})
         if module_block.get("node") != "Module":
             violations.append(f"module.node mismatch: {module.get('name', '<unknown>')}")
@@ -316,6 +349,18 @@ def validate_module_document(document: dict[str, Any]) -> list[str]:
     if document.get("schema") != "fh-ir-v0":
         violations.append("schema is not fh-ir-v0")
 
+    source_ast = document.get("source_ast", {})
+    if source_ast.get("node") != "SourceAst":
+        violations.append("source_ast.node is not SourceAst")
+    if source_ast.get("module") != document.get("module"):
+        violations.append("source_ast.module alias mismatch")
+
+    semantic_ir = document.get("semantic_ir", {})
+    if semantic_ir.get("node") != "SemanticIr":
+        violations.append("semantic_ir.node is not SemanticIr")
+    if semantic_ir.get("analysis") != document.get("analysis"):
+        violations.append("semantic_ir.analysis alias mismatch")
+
     violations.extend(validate_module_shape(document.get("module", {}), "module"))
     return violations
 
@@ -343,6 +388,22 @@ def validate_module_shape(module_block: dict[str, Any], scope_label: str) -> lis
             for clause in contracts.get("aborts", []):
                 if clause.get("kind") != "AbortContractClause":
                     violations.append(f"{scope_label}.contracts abort clause is malformed")
+
+            contract_bindings = declaration.get("contract_bindings", {})
+            if contract_bindings.get("kind") != "ContractBindings":
+                violations.append(f"{scope_label}.contract_bindings is missing")
+            bindings = contract_bindings.get("bindings", [])
+            if [item.get("name") for item in bindings] != ["result", "success", "failure", "value", "error"]:
+                violations.append(f"{scope_label}.contract_bindings order is malformed")
+            for binding in bindings:
+                if binding.get("kind") != "ContractBinding":
+                    violations.append(f"{scope_label}.contract binding kind mismatch")
+                if "available" not in binding:
+                    violations.append(f"{scope_label}.contract binding availability missing")
+            if contract_bindings.get("result_value_binding", {}).get("name") != "value":
+                violations.append(f"{scope_label}.result_value_binding malformed")
+            if contract_bindings.get("result_error_binding", {}).get("name") != "error":
+                violations.append(f"{scope_label}.result_error_binding malformed")
 
     return violations
 
@@ -380,6 +441,9 @@ def validate_analysis(analysis: dict[str, Any], scope_label: str) -> list[str]:
         return_type = routine.get("return_type", {})
         if not isinstance(return_type, dict) or "kind" not in return_type:
             violations.append(f"{scope_label}.routine return_type missing kind: {routine.get('name', '<unknown>')}")
+        contract_bindings = routine.get("contract_bindings", {})
+        if contract_bindings.get("kind") != "ContractBindings":
+            violations.append(f"{scope_label}.routine contract_bindings missing: {routine.get('name', '<unknown>')}")
 
     for proof in analysis.get("proof_obligations", []):
         if proof.get("kind") != "ProofObligation":
@@ -427,8 +491,69 @@ def find_forbidden_string_markers(value: Any, path: str = "") -> list[str]:
             violations.extend(find_forbidden_string_markers(child, child_path))
     elif isinstance(value, list):
         for index, child in enumerate(value):
-            violations.extend(find_forbidden_string_markers(child, f"{path}[{index}]") )
+            violations.extend(find_forbidden_string_markers(child, f"{path}[{index}]"))
     return violations
+
+
+def build_manifest(rows: list[dict[str, Any]], summary: dict[str, Any]) -> dict[str, Any]:
+    manifest_cases = []
+    for row in sorted(rows, key=lambda item: item.get("case", "")):
+        manifest_cases.append(
+            {
+                "case": row.get("case", ""),
+                "domain": row.get("domain", ""),
+                "mode": row.get("mode", ""),
+                "status": row.get("status", ""),
+                "schema": row.get("schema", ""),
+                "schema_version": row.get("schema_version", {}),
+                "diagnostic": row.get("diagnostic"),
+                "violations": sorted(row.get("violations", [])),
+            }
+        )
+    return {
+        "artifact": summary.get("artifact", "compare-fhir-language-modules"),
+        "profile": summary.get("profile", "stable"),
+        "domains": summary.get("domains", []),
+        "total_cases": summary.get("total_cases", 0),
+        "matching_cases": summary.get("matching_cases", 0),
+        "mismatching_cases": summary.get("mismatching_cases", 0),
+        "cases": manifest_cases,
+    }
+
+
+def normalize_diagnostic_error(error: dict[str, Any] | None) -> dict[str, Any] | None:
+    if error is None:
+        return None
+    raw_message = str(error.get("message", "")).strip()
+    normalized_message = normalize_message_text(raw_message)
+    location = None
+    match = re.search(r"line\s+(\d+):(\d+)", raw_message)
+    if match:
+        location = {"line": int(match.group(1)), "column": int(match.group(2))}
+    return {
+        "type": error.get("type", ""),
+        "category": error.get("category", ""),
+        "message": normalized_message,
+        "location": location,
+        "context": error.get("context", ""),
+    }
+
+
+def normalize_message_text(message: str) -> str:
+    normalized = message.replace("\\", "/")
+    repo_root = REPO_ROOT.as_posix()
+    normalized = normalized.replace(repo_root, "<repo>")
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
+
+
+def build_error(category: str, exc: Exception, context_path: Path) -> dict[str, Any]:
+    return {
+        "category": category,
+        "type": type(exc).__name__,
+        "message": str(exc),
+        "context": display_path(context_path),
+    }
 
 
 def render_report(summary: dict[str, Any]) -> str:
