@@ -219,7 +219,7 @@ def build_parser():
     p = sub.add_parser("run", help="Parse, verify, and run a .fh module"); p.add_argument("file"); p.set_defaults(func=cmd_run)
     p = sub.add_parser("verify", help="Parse and verify a .fh module"); p.add_argument("file"); p.set_defaults(func=cmd_verify)
     p = sub.add_parser("ast", help="Print parsed AST"); p.add_argument("file"); p.set_defaults(func=cmd_ast)
-    p = sub.add_parser("fhir", help="Export canonical FH-IR JSON from a verified Freehold module")
+    p = sub.add_parser("ir", aliases=["fhir"], help="Export canonical FH-IR JSON from a verified Freehold module")
     p.add_argument("file")
     p.add_argument("--output", "-o", default=None)
     p.set_defaults(func=cmd_fhir)
@@ -260,7 +260,7 @@ def main(argv=None):
     parser = build_parser(); args = parser.parse_args(argv)
     if args.version:
         print("Freehold CLI: toolchain frontend")
-        print("Commands: run, verify, test, ebnf, ast, fhir, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project")
+        print("Commands: run, verify, test, ebnf, ast, ir/fhir, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project")
         return 0
     if not args.command:
         parser.print_help(); return 0
