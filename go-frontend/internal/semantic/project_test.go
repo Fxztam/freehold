@@ -235,6 +235,30 @@ end Domain.Math`)
 	assertProjectDiagnostic(t, diagnostics, err, "FH-SEM-1204", "unknown_routine", "negate")
 }
 
+func TestValidateProjectRejectsWrongQualifiedModuleRoutine(t *testing.T) {
+	root := t.TempDir()
+	entry := writeProjectFile(t, root, "App", "Main.fh", `module App.Main
+
+import Domestic.Orders
+
+procedure main()
+is
+    call Partner.Orders.load_order()
+end main
+
+end App.Main`)
+	writeProjectFile(t, root, "Domestic", "Orders.fh", `module Domestic.Orders
+
+procedure load_order()
+is
+end load_order
+
+end Domestic.Orders`)
+
+	_, diagnostics, err := ValidateProject(entry)
+	assertProjectDiagnostic(t, diagnostics, err, "FH-SEM-1204", "unknown_routine", "Partner.Orders.load_order")
+}
+
 func fixtureEntry(t *testing.T, name string) string {
 	t.Helper()
 	return filepath.Join("..", "..", "..", "tests", "language_modules", "03_import_resolution", "fixtures", "valid", name, "App", "Main.fh")

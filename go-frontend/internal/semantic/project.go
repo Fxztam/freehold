@@ -94,7 +94,9 @@ func ValidateProject(entryFile string) (*Project, []*diagnostic.Diagnostic, erro
 		return project, diagnostics, nil
 	}
 
-	return project, ValidateModuleWithImports(project.Entry, imports...), nil
+	diagnostics := project.qualifiedCallDiagnostics(project.Entry)
+	diagnostics = append(diagnostics, ValidateModuleWithImports(project.Entry, imports...)...)
+	return project, diagnostics, nil
 }
 
 func (p *Project) ModuleNames() []string {
@@ -202,6 +204,166 @@ func (p *Project) ambiguousExposedDiagnostics(module *ast.Module) []*diagnostic.
 		}
 	}
 	return nil
+}
+
+func (p *Project) qualifiedCallDiagnostics(module *ast.Module) []*diagnostic.Diagnostic {
+	if p == nil || module == nil {
+		return nil
+	}
+	directImports := map[string]bool{module.Name: true}
+	for _, decl := range module.Declarations {
+		importDecl, ok := decl.(ast.ImportDecl)
+		if ok && !runtimeModules[importDecl.Module] {
+			directImports[importDecl.Module] = true
+		}
+	}
+
+	var diagnostics []*diagnostic.Diagnostic
+	forEachCall(module, func(call ast.CallExpr) {
+		name, ok := callName(call.Callee)
+		if !ok || !isQualifiedCallName(name) || hasRuntimePrefix(name) {
+			return
+		}
+		moduleName, ok := p.qualifiedCallModule(name)
+		if !ok || !directImports[moduleName] || !moduleHasRoutine(p.Modules[moduleName], name) {
+			diagnostics = append(diagnostics, diagnostic.UnknownRoutine(locationFromPosition(call.Pos), name))
+		}
+	})
+	return diagnostics
+}
+
+func (p *Project) qualifiedCallModule(name string) (string, bool) {
+	var matched string
+	for moduleName := range p.Modules {
+		if name == moduleName || strings.HasPrefix(name, moduleName+".") {
+			if len(moduleName) > len(matched) {
+				matched = moduleName
+			}
+		}
+	}
+	return matched, matched != ""
+}
+
+func moduleHasRoutine(module *ast.Module, qualifiedRoutine string) bool {
+	if module == nil {
+		return false
+	}
+	_, ok := BuildSymbolTable(module).Routines[qualifiedRoutine]
+	return ok
+}
+
+func hasRuntimePrefix(name string) bool {
+	for moduleName := range runtimeModules {
+		if name == moduleName || strings.HasPrefix(name, moduleName+".") {
+			return true
+		}
+	}
+	return false
+}
+
+func forEachCall(module *ast.Module, visit func(ast.CallExpr)) {
+	for _, decl := range module.Declarations {
+		switch value := decl.(type) {
+		case ast.FunctionDecl:
+			for _, expr := range value.Requires {
+				walkExprCalls(expr, visit)
+			}
+			for _, clause := range value.Aborts {
+				walkExprCalls(clause.Condition, visit)
+			}
+			for _, expr := range value.Ensures {
+				walkExprCalls(expr, visit)
+			}
+			walkStmtCalls(value.Body, visit)
+		case ast.ProcedureDecl:
+			for _, expr := range value.Requires {
+				walkExprCalls(expr, visit)
+			}
+			for _, clause := range value.Aborts {
+				walkExprCalls(clause.Condition, visit)
+			}
+			for _, expr := range value.Ensures {
+				walkExprCalls(expr, visit)
+			}
+			walkStmtCalls(value.Body, visit)
+		}
+	}
+}
+
+func walkStmtCalls(stmts []ast.Stmt, visit func(ast.CallExpr)) {
+	for _, stmt := range stmts {
+		switch value := stmt.(type) {
+		case ast.LetStmt:
+			walkExprCalls(value.Value, visit)
+		case ast.AssignmentStmt:
+			walkExprCalls(value.Target, visit)
+			walkExprCalls(value.Value, visit)
+		case ast.ReturnStmt:
+			walkExprCalls(value.Value, visit)
+		case ast.CheckStmt:
+			walkExprCalls(value.Condition, visit)
+		case ast.CallStmt:
+			walkExprCalls(value.Call, visit)
+		case ast.IfStmt:
+			walkExprCalls(value.Condition, visit)
+			walkStmtCalls(value.ThenBody, visit)
+			walkStmtCalls(value.ElseBody, visit)
+		case ast.WhileStmt:
+			walkExprCalls(value.Condition, visit)
+			for _, invariant := range value.Invariants {
+				walkExprCalls(invariant, visit)
+			}
+			walkExprCalls(value.Variant, visit)
+			walkStmtCalls(value.Body, visit)
+		case ast.CaseStmt:
+			walkExprCalls(value.Value, visit)
+			for _, branch := range value.When {
+				walkExprCalls(branch.Value, visit)
+				walkStmtCalls(branch.Body, visit)
+			}
+			walkStmtCalls(value.Default, visit)
+		case ast.ScopeStmt:
+			walkStmtCalls(value.SpawnBody, visit)
+			walkStmtCalls(value.JoinBody, visit)
+			walkStmtCalls(value.ResultBody, visit)
+		}
+	}
+}
+
+func walkExprCalls(expr ast.Expr, visit func(ast.CallExpr)) {
+	switch value := expr.(type) {
+	case nil:
+		return
+	case ast.CallExpr:
+		visit(value)
+		for _, arg := range value.Arguments {
+			walkExprCalls(arg, visit)
+		}
+	case ast.FieldAccessExpr:
+		walkExprCalls(value.Object, visit)
+	case ast.RecordLiteralExpr:
+		for _, field := range value.Fields {
+			walkExprCalls(field.Value, visit)
+		}
+	case ast.BinaryExpr:
+		walkExprCalls(value.Left, visit)
+		walkExprCalls(value.Right, visit)
+	case ast.UnaryExpr:
+		walkExprCalls(value.Value, visit)
+	case ast.NamedArgumentExpr:
+		walkExprCalls(value.Value, visit)
+	case ast.IndexExpr:
+		walkExprCalls(value.Array, visit)
+		walkExprCalls(value.Index, visit)
+	case ast.ArrayLiteralExpr:
+		for _, element := range value.Elements {
+			walkExprCalls(element, visit)
+		}
+	case ast.AwaitExpr:
+		walkExprCalls(value.Value, visit)
+	case ast.OkExpr:
+		walkExprCalls(value.Value, visit)
+	}
 }
 
 func parseModuleFile(path string) (*ast.Module, error) {

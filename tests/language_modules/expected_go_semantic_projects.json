@@ -209,6 +209,75 @@
         }
       ]
     },
+    "03_import_resolution/import_hidden_routine_unqualified": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/import_hidden_routine_unqualified/App/Main.fh",
+      "entry_module": "App.Main",
+      "modules": ["App.Main", "Domain.Math"],
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {
+          "code": "FH-SEM-1204",
+          "name": "unknown_routine",
+          "location": { "line": 7, "column": 5, "offset": 67 },
+          "expected": ["declared routine"],
+          "found": "negate"
+        }
+      ]
+    },
+    "03_import_resolution/import_wrong_qualified_module": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/import_wrong_qualified_module/App/Main.fh",
+      "entry_module": "App.Main",
+      "modules": ["App.Main", "Domestic.Orders"],
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {
+          "code": "FH-SEM-1204",
+          "name": "unknown_routine",
+          "location": { "line": 7, "column": 10, "offset": 76 },
+          "expected": ["declared routine"],
+          "found": "Partner.Orders.load_order"
+        }
+      ]
+    },
+    "03_import_resolution/import_transitive_unknown_exposed_symbol": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/import_transitive_unknown_exposed_symbol/App/Main.fh",
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {
+          "code": "FH-SEM-1010",
+          "name": "unknown_exposed_symbol",
+          "location": { "line": 3, "column": 1, "offset": 24 },
+          "expected": ["declaration in Domain.Types"],
+          "found": "Missing"
+        }
+      ]
+    },
+    "03_import_resolution/import_multiple_semantic_diagnostics": {
+      "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/import_multiple_semantic_diagnostics/App/Main.fh",
+      "entry_module": "App.Main",
+      "modules": ["App.Main", "Domain.Math"],
+      "parse_ok": true,
+      "semantic_ok": false,
+      "semantic_diagnostics": [
+        {
+          "code": "FH-SEM-1204",
+          "name": "unknown_routine",
+          "location": { "line": 7, "column": 5, "offset": 67 },
+          "expected": ["declared routine"],
+          "found": "hidden_one"
+        },
+        {
+          "code": "FH-SEM-1204",
+          "name": "unknown_routine",
+          "location": { "line": 8, "column": 5, "offset": 90 },
+          "expected": ["declared routine"],
+          "found": "hidden_two"
+        }
+      ]
+    },
     "03_import_resolution/imported_module_not_found": {
       "entry": "tests/language_modules/03_import_resolution/fixtures/invalid/imported_module_not_found/App/Main.fh",
       "parse_ok": true,

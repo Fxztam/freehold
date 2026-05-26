@@ -45,11 +45,11 @@ Diese Themen sind absichtlich nicht Teil des aktuellen V1-Abschlusses:
 
 ## Current Gate Baseline
 
-Latest verified baseline after `0ddecb9 Expand project-aware negative semantics`:
+Latest verified baseline after the project-aware negative mini-project expansion:
 
 ```text
 verify-go-semantic-projects.cmd
-Expected semantic projects: 27
+Expected semantic projects: 31
 Mismatches:                 0
 
 verify-go-semantic-diagnostics.cmd
@@ -76,8 +76,8 @@ The normal single-module Go semantic gate remains intentionally narrow and uncha
 ## Festgelegte naechste Schritte
 
 1. Project-aware diagnostics weiter haerten, aber den single-module Gate stabil lassen.
-   - Kleiner naechster Kandidat: strukturierte Diagnostics fuer Syntaxfehler in importierten Modulen, damit `imported_module_syntax_error` manifestfaehig wird statt als roher Loader-Fehler zu enden.
-   - Danach weitere negative Mini-Projekte mit drei Paketen: hidden/non-exposed Symbolnutzung, qualifizierte falsche Modulnutzung, transitive Dependency-Fehler.
+   - Erledigt: strukturierte Diagnostics fuer Syntaxfehler in importierten Modulen, damit `imported_module_syntax_error` manifestfaehig ist statt als roher Loader-Fehler zu enden.
+   - Erledigt: negative Mini-Projekte fuer hidden/non-exposed Symbolnutzung, falsche qualifizierte Modulnutzung, transitive Dependency-Fehler und mehrere Diagnostics in einem Projekt.
 
 2. Optional separaten `project_semantic_diagnostics`-Gate einfuehren.
    - Ziel: project-aware Goldens und Reports klar von Loader-/OK-Projektfaellen trennen, ohne `verify-go-semantic-diagnostics.cmd` umzubauen.
