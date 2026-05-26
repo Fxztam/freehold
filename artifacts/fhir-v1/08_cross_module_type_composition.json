@@ -1,0 +1,5691 @@
+{
+  "node": "FhirDocumentV1",
+  "schema_profile": "fh-ir",
+  "schema": "fh-ir-v1",
+  "schema_version": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
+  "language_version": "freehold-v1",
+  "entry_module": "App.Main",
+  "project": {
+    "node": "ProjectGraph",
+    "module_order": [
+      "App.Main",
+      "Domain.Shipments",
+      "Domain.Types"
+    ],
+    "modules": [
+      {
+        "node": "ModuleEntry",
+        "name": "App.Main",
+        "source_ast": {
+          "node": "SourceAst",
+          "module": {
+            "node": "Module",
+            "name": "App.Main",
+            "imports": [
+              {
+                "kind": "ImportDecl",
+                "module": "Domain.Shipments",
+                "exposing": [
+                  "Shipment",
+                  "daily_shipments"
+                ]
+              },
+              {
+                "kind": "ImportDecl",
+                "module": "Std.IO",
+                "exposing": []
+              }
+            ],
+            "declarations": [
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "procedure",
+                "name": "main",
+                "type_params": [],
+                "is_async": false,
+                "params": [],
+                "return_type": {
+                  "kind": "Void"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "LetStmt",
+                    "name": "shipments",
+                    "type": {
+                      "kind": "ArrayTypeName",
+                      "element_type": "Shipment",
+                      "element_type_repr": {
+                        "kind": "TypeName",
+                        "name": "Shipment"
+                      },
+                      "size": 2
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "daily_shipments",
+                      "args": []
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "first",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Shipment"
+                    },
+                    "value": {
+                      "kind": "IndexExpr",
+                      "name": "shipments",
+                      "index": {
+                        "kind": "NumberExpr",
+                        "value": 0
+                      }
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "second",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Shipment"
+                    },
+                    "value": {
+                      "kind": "IndexExpr",
+                      "name": "shipments",
+                      "index": {
+                        "kind": "NumberExpr",
+                        "value": 1
+                      }
+                    }
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.logf",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "first customer = ${}"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "first",
+                            "customer",
+                            "name"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.logf",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "first city = ${}"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "first",
+                            "customer",
+                            "address",
+                            "city_id"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.logf",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "second city = ${}"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "second",
+                            "destination",
+                            "city_id"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CheckStmt",
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "first",
+                          "customer",
+                          "address",
+                          "city_id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "first",
+                          "destination",
+                          "city_id"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "kind": "CheckStmt",
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "second",
+                          "customer",
+                          "id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 1002
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "semantic_ir": {
+          "node": "SemanticIr",
+          "analysis": {
+            "node": "AnalysisReport",
+            "types": [
+              {
+                "kind": "TypeDef",
+                "name": "BigFloat",
+                "base": "BigFloat",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "BigFloat"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "BigInteger",
+                "base": "BigInteger",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "BigInteger"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Boolean",
+                "base": "Boolean",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Double",
+                "base": "Double",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Executor",
+                "base": "Executor",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Executor"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Integer",
+                "base": "Integer",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Scope",
+                "base": "Scope",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Scope"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "String",
+                "base": "String",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "String"
+                }
+              }
+            ],
+            "records": [
+              {
+                "kind": "RecordDef",
+                "name": "Address",
+                "fields": [
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "city_id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "label",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "proto_fields": []
+              },
+              {
+                "kind": "RecordDef",
+                "name": "Customer",
+                "fields": [
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "address",
+                    "type": "Address",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "name",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "proto_fields": []
+              },
+              {
+                "kind": "RecordDef",
+                "name": "Shipment",
+                "fields": [
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "customer",
+                    "type": "Customer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Customer"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "destination",
+                    "type": "Address",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    }
+                  }
+                ],
+                "proto_fields": []
+              }
+            ],
+            "errors": [],
+            "error_defs": [],
+            "routines": [
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "procedure",
+                "name": "main",
+                "type_params": [],
+                "is_async": false,
+                "params": [],
+                "return_type": {
+                  "kind": "Void"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "LetStmt",
+                    "name": "shipments",
+                    "type": {
+                      "kind": "ArrayTypeName",
+                      "element_type": "Shipment",
+                      "element_type_repr": {
+                        "kind": "TypeName",
+                        "name": "Shipment"
+                      },
+                      "size": 2
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "daily_shipments",
+                      "args": []
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "first",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Shipment"
+                    },
+                    "value": {
+                      "kind": "IndexExpr",
+                      "name": "shipments",
+                      "index": {
+                        "kind": "NumberExpr",
+                        "value": 0
+                      }
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "second",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Shipment"
+                    },
+                    "value": {
+                      "kind": "IndexExpr",
+                      "name": "shipments",
+                      "index": {
+                        "kind": "NumberExpr",
+                        "value": 1
+                      }
+                    }
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.logf",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "first customer = ${}"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "first",
+                            "customer",
+                            "name"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.logf",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "first city = ${}"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "first",
+                            "customer",
+                            "address",
+                            "city_id"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.logf",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "second city = ${}"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "second",
+                            "destination",
+                            "city_id"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CheckStmt",
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "first",
+                          "customer",
+                          "address",
+                          "city_id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "first",
+                          "destination",
+                          "city_id"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "kind": "CheckStmt",
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "second",
+                          "customer",
+                          "id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 1002
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "services": [],
+            "proof_obligations": [],
+            "flow_summaries": [
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "main",
+                "routine_kind": "procedure",
+                "normal_return_possible": true,
+                "guaranteed_exit": false,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              }
+            ],
+            "verifier": {
+              "node": "VerifierReport",
+              "proof_obligations": [],
+              "flow_summaries": [
+                {
+                  "kind": "RoutineFlowSummary",
+                  "routine_name": "main",
+                  "routine_kind": "procedure",
+                  "normal_return_possible": true,
+                  "guaranteed_exit": false,
+                  "declared_aborts": [],
+                  "declared_abort_refs": [],
+                  "emitted_aborts": [],
+                  "emitted_abort_refs": [],
+                  "called_routines": [],
+                  "propagated_aborts": [],
+                  "propagated_abort_refs": []
+                }
+              ]
+            }
+          }
+        },
+        "module": {
+          "node": "Module",
+          "name": "App.Main",
+          "imports": [
+            {
+              "kind": "ImportDecl",
+              "module": "Domain.Shipments",
+              "exposing": [
+                "Shipment",
+                "daily_shipments"
+              ]
+            },
+            {
+              "kind": "ImportDecl",
+              "module": "Std.IO",
+              "exposing": []
+            }
+          ],
+          "declarations": [
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "procedure",
+              "name": "main",
+              "type_params": [],
+              "is_async": false,
+              "params": [],
+              "return_type": {
+                "kind": "Void"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "shipments",
+                  "type": {
+                    "kind": "ArrayTypeName",
+                    "element_type": "Shipment",
+                    "element_type_repr": {
+                      "kind": "TypeName",
+                      "name": "Shipment"
+                    },
+                    "size": 2
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "daily_shipments",
+                    "args": []
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "first",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Shipment"
+                  },
+                  "value": {
+                    "kind": "IndexExpr",
+                    "name": "shipments",
+                    "index": {
+                      "kind": "NumberExpr",
+                      "value": 0
+                    }
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "second",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Shipment"
+                  },
+                  "value": {
+                    "kind": "IndexExpr",
+                    "name": "shipments",
+                    "index": {
+                      "kind": "NumberExpr",
+                      "value": 1
+                    }
+                  }
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.logf",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "first customer = ${}"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "first",
+                          "customer",
+                          "name"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.logf",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "first city = ${}"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "first",
+                          "customer",
+                          "address",
+                          "city_id"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.logf",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "second city = ${}"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "second",
+                          "destination",
+                          "city_id"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "CheckStmt",
+                  "condition": {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "first",
+                        "customer",
+                        "address",
+                        "city_id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "first",
+                        "destination",
+                        "city_id"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "kind": "CheckStmt",
+                  "condition": {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "second",
+                        "customer",
+                        "id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 1002
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "analysis": {
+          "node": "AnalysisReport",
+          "types": [
+            {
+              "kind": "TypeDef",
+              "name": "BigFloat",
+              "base": "BigFloat",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "BigFloat"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "BigInteger",
+              "base": "BigInteger",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "BigInteger"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Boolean",
+              "base": "Boolean",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Double",
+              "base": "Double",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Double"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Executor",
+              "base": "Executor",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Executor"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Integer",
+              "base": "Integer",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Scope",
+              "base": "Scope",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Scope"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "String",
+              "base": "String",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "String"
+              }
+            }
+          ],
+          "records": [
+            {
+              "kind": "RecordDef",
+              "name": "Address",
+              "fields": [
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "city_id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "label",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "proto_fields": []
+            },
+            {
+              "kind": "RecordDef",
+              "name": "Customer",
+              "fields": [
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "address",
+                  "type": "Address",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "name",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "proto_fields": []
+            },
+            {
+              "kind": "RecordDef",
+              "name": "Shipment",
+              "fields": [
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "customer",
+                  "type": "Customer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Customer"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "destination",
+                  "type": "Address",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  }
+                }
+              ],
+              "proto_fields": []
+            }
+          ],
+          "errors": [],
+          "error_defs": [],
+          "routines": [
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "procedure",
+              "name": "main",
+              "type_params": [],
+              "is_async": false,
+              "params": [],
+              "return_type": {
+                "kind": "Void"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "shipments",
+                  "type": {
+                    "kind": "ArrayTypeName",
+                    "element_type": "Shipment",
+                    "element_type_repr": {
+                      "kind": "TypeName",
+                      "name": "Shipment"
+                    },
+                    "size": 2
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "daily_shipments",
+                    "args": []
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "first",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Shipment"
+                  },
+                  "value": {
+                    "kind": "IndexExpr",
+                    "name": "shipments",
+                    "index": {
+                      "kind": "NumberExpr",
+                      "value": 0
+                    }
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "second",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Shipment"
+                  },
+                  "value": {
+                    "kind": "IndexExpr",
+                    "name": "shipments",
+                    "index": {
+                      "kind": "NumberExpr",
+                      "value": 1
+                    }
+                  }
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.logf",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "first customer = ${}"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "first",
+                          "customer",
+                          "name"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.logf",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "first city = ${}"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "first",
+                          "customer",
+                          "address",
+                          "city_id"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.logf",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "second city = ${}"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "second",
+                          "destination",
+                          "city_id"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "CheckStmt",
+                  "condition": {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "first",
+                        "customer",
+                        "address",
+                        "city_id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "first",
+                        "destination",
+                        "city_id"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "kind": "CheckStmt",
+                  "condition": {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "second",
+                        "customer",
+                        "id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 1002
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "services": [],
+          "proof_obligations": [],
+          "flow_summaries": [
+            {
+              "kind": "RoutineFlowSummary",
+              "routine_name": "main",
+              "routine_kind": "procedure",
+              "normal_return_possible": true,
+              "guaranteed_exit": false,
+              "declared_aborts": [],
+              "declared_abort_refs": [],
+              "emitted_aborts": [],
+              "emitted_abort_refs": [],
+              "called_routines": [],
+              "propagated_aborts": [],
+              "propagated_abort_refs": []
+            }
+          ],
+          "verifier": {
+            "node": "VerifierReport",
+            "proof_obligations": [],
+            "flow_summaries": [
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "main",
+                "routine_kind": "procedure",
+                "normal_return_possible": true,
+                "guaranteed_exit": false,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              }
+            ]
+          }
+        }
+      },
+      {
+        "node": "ModuleEntry",
+        "name": "Domain.Shipments",
+        "source_ast": {
+          "node": "SourceAst",
+          "module": {
+            "node": "Module",
+            "name": "Domain.Shipments",
+            "imports": [
+              {
+                "kind": "ImportDecl",
+                "module": "Domain.Types",
+                "exposing": [
+                  "Address",
+                  "Customer",
+                  "make_address",
+                  "make_customer"
+                ]
+              }
+            ],
+            "declarations": [
+              {
+                "kind": "RecordTypeDecl",
+                "name": "Shipment",
+                "fields": [
+                  {
+                    "name": "customer",
+                    "type": "Customer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Customer"
+                    }
+                  },
+                  {
+                    "name": "destination",
+                    "type": "Address",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "daily_shipments",
+                "type_params": [],
+                "is_async": false,
+                "params": [],
+                "return_type": {
+                  "kind": "ArrayTypeName",
+                  "element_type": "Shipment",
+                  "element_type_repr": {
+                    "kind": "TypeName",
+                    "name": "Shipment"
+                  },
+                  "size": 2
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "ArrayTypeName",
+                        "element_type": "Shipment",
+                        "element_type_repr": {
+                          "kind": "TypeName",
+                          "name": "Shipment"
+                        },
+                        "size": 2
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "ArrayLiteralExpr",
+                        "items": [
+                          {
+                            "kind": "CallExpr",
+                            "name": "make_shipment",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "NumberExpr",
+                                  "value": 1001
+                                }
+                              },
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "StringExpr",
+                                  "value": "Ada"
+                                }
+                              },
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "NumberExpr",
+                                  "value": 42
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "CallExpr",
+                            "name": "make_shipment",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "NumberExpr",
+                                  "value": 1002
+                                }
+                              },
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "StringExpr",
+                                  "value": "Grace"
+                                }
+                              },
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "NumberExpr",
+                                  "value": 77
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "make_shipment",
+                "type_params": [],
+                "is_async": false,
+                "params": [
+                  {
+                    "name": "id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "name": "name",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "name": "city_id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  }
+                ],
+                "return_type": {
+                  "kind": "TypeName",
+                  "name": "Shipment"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Shipment"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "LetStmt",
+                    "name": "destination",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "make_address",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "city_id"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "Berlin"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "customer",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Customer"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "make_customer",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "id"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "name"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "destination"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "RecordLiteralExpr",
+                        "type": "Shipment",
+                        "args": [
+                          {
+                            "kind": "NamedArg",
+                            "name": "customer",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "customer"
+                            }
+                          },
+                          {
+                            "kind": "NamedArg",
+                            "name": "destination",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "destination"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "semantic_ir": {
+          "node": "SemanticIr",
+          "analysis": {
+            "node": "AnalysisReport",
+            "types": [
+              {
+                "kind": "TypeDef",
+                "name": "BigFloat",
+                "base": "BigFloat",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "BigFloat"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "BigInteger",
+                "base": "BigInteger",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "BigInteger"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Boolean",
+                "base": "Boolean",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Double",
+                "base": "Double",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Executor",
+                "base": "Executor",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Executor"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Integer",
+                "base": "Integer",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Scope",
+                "base": "Scope",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Scope"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "String",
+                "base": "String",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "String"
+                }
+              }
+            ],
+            "records": [
+              {
+                "kind": "RecordDef",
+                "name": "Address",
+                "fields": [
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "city_id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "label",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "proto_fields": []
+              },
+              {
+                "kind": "RecordDef",
+                "name": "Customer",
+                "fields": [
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "address",
+                    "type": "Address",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "name",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "proto_fields": []
+              },
+              {
+                "kind": "RecordDef",
+                "name": "Shipment",
+                "fields": [
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "customer",
+                    "type": "Customer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Customer"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "destination",
+                    "type": "Address",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    }
+                  }
+                ],
+                "proto_fields": []
+              }
+            ],
+            "errors": [],
+            "error_defs": [],
+            "routines": [
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "daily_shipments",
+                "type_params": [],
+                "is_async": false,
+                "params": [],
+                "return_type": {
+                  "kind": "ArrayTypeName",
+                  "element_type": "Shipment",
+                  "element_type_repr": {
+                    "kind": "TypeName",
+                    "name": "Shipment"
+                  },
+                  "size": 2
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "ArrayTypeName",
+                        "element_type": "Shipment",
+                        "element_type_repr": {
+                          "kind": "TypeName",
+                          "name": "Shipment"
+                        },
+                        "size": 2
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "ArrayLiteralExpr",
+                        "items": [
+                          {
+                            "kind": "CallExpr",
+                            "name": "make_shipment",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "NumberExpr",
+                                  "value": 1001
+                                }
+                              },
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "StringExpr",
+                                  "value": "Ada"
+                                }
+                              },
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "NumberExpr",
+                                  "value": 42
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "CallExpr",
+                            "name": "make_shipment",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "NumberExpr",
+                                  "value": 1002
+                                }
+                              },
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "StringExpr",
+                                  "value": "Grace"
+                                }
+                              },
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "NumberExpr",
+                                  "value": 77
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "make_shipment",
+                "type_params": [],
+                "is_async": false,
+                "params": [
+                  {
+                    "name": "id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "name": "name",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "name": "city_id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  }
+                ],
+                "return_type": {
+                  "kind": "TypeName",
+                  "name": "Shipment"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Shipment"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "LetStmt",
+                    "name": "destination",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "make_address",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "city_id"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "Berlin"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "customer",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Customer"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "make_customer",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "id"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "name"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "destination"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "RecordLiteralExpr",
+                        "type": "Shipment",
+                        "args": [
+                          {
+                            "kind": "NamedArg",
+                            "name": "customer",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "customer"
+                            }
+                          },
+                          {
+                            "kind": "NamedArg",
+                            "name": "destination",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "destination"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "services": [],
+            "proof_obligations": [],
+            "flow_summaries": [
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "daily_shipments",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [
+                  "make_shipment"
+                ],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              },
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "make_shipment",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              }
+            ],
+            "verifier": {
+              "node": "VerifierReport",
+              "proof_obligations": [],
+              "flow_summaries": [
+                {
+                  "kind": "RoutineFlowSummary",
+                  "routine_name": "daily_shipments",
+                  "routine_kind": "function",
+                  "normal_return_possible": true,
+                  "guaranteed_exit": true,
+                  "declared_aborts": [],
+                  "declared_abort_refs": [],
+                  "emitted_aborts": [],
+                  "emitted_abort_refs": [],
+                  "called_routines": [
+                    "make_shipment"
+                  ],
+                  "propagated_aborts": [],
+                  "propagated_abort_refs": []
+                },
+                {
+                  "kind": "RoutineFlowSummary",
+                  "routine_name": "make_shipment",
+                  "routine_kind": "function",
+                  "normal_return_possible": true,
+                  "guaranteed_exit": true,
+                  "declared_aborts": [],
+                  "declared_abort_refs": [],
+                  "emitted_aborts": [],
+                  "emitted_abort_refs": [],
+                  "called_routines": [],
+                  "propagated_aborts": [],
+                  "propagated_abort_refs": []
+                }
+              ]
+            }
+          }
+        },
+        "module": {
+          "node": "Module",
+          "name": "Domain.Shipments",
+          "imports": [
+            {
+              "kind": "ImportDecl",
+              "module": "Domain.Types",
+              "exposing": [
+                "Address",
+                "Customer",
+                "make_address",
+                "make_customer"
+              ]
+            }
+          ],
+          "declarations": [
+            {
+              "kind": "RecordTypeDecl",
+              "name": "Shipment",
+              "fields": [
+                {
+                  "name": "customer",
+                  "type": "Customer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Customer"
+                  }
+                },
+                {
+                  "name": "destination",
+                  "type": "Address",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "daily_shipments",
+              "type_params": [],
+              "is_async": false,
+              "params": [],
+              "return_type": {
+                "kind": "ArrayTypeName",
+                "element_type": "Shipment",
+                "element_type_repr": {
+                  "kind": "TypeName",
+                  "name": "Shipment"
+                },
+                "size": 2
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "ArrayTypeName",
+                      "element_type": "Shipment",
+                      "element_type_repr": {
+                        "kind": "TypeName",
+                        "name": "Shipment"
+                      },
+                      "size": 2
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "ArrayLiteralExpr",
+                      "items": [
+                        {
+                          "kind": "CallExpr",
+                          "name": "make_shipment",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "NumberExpr",
+                                "value": 1001
+                              }
+                            },
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "Ada"
+                              }
+                            },
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "NumberExpr",
+                                "value": 42
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "CallExpr",
+                          "name": "make_shipment",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "NumberExpr",
+                                "value": 1002
+                              }
+                            },
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "Grace"
+                              }
+                            },
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "NumberExpr",
+                                "value": 77
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "make_shipment",
+              "type_params": [],
+              "is_async": false,
+              "params": [
+                {
+                  "name": "id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "name": "name",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "name": "city_id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                }
+              ],
+              "return_type": {
+                "kind": "TypeName",
+                "name": "Shipment"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Shipment"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "destination",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "make_address",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "city_id"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "Berlin"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "customer",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Customer"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "make_customer",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "id"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "name"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "destination"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "RecordLiteralExpr",
+                      "type": "Shipment",
+                      "args": [
+                        {
+                          "kind": "NamedArg",
+                          "name": "customer",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "customer"
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "destination",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "destination"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "analysis": {
+          "node": "AnalysisReport",
+          "types": [
+            {
+              "kind": "TypeDef",
+              "name": "BigFloat",
+              "base": "BigFloat",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "BigFloat"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "BigInteger",
+              "base": "BigInteger",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "BigInteger"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Boolean",
+              "base": "Boolean",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Double",
+              "base": "Double",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Double"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Executor",
+              "base": "Executor",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Executor"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Integer",
+              "base": "Integer",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Scope",
+              "base": "Scope",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Scope"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "String",
+              "base": "String",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "String"
+              }
+            }
+          ],
+          "records": [
+            {
+              "kind": "RecordDef",
+              "name": "Address",
+              "fields": [
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "city_id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "label",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "proto_fields": []
+            },
+            {
+              "kind": "RecordDef",
+              "name": "Customer",
+              "fields": [
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "address",
+                  "type": "Address",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "name",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "proto_fields": []
+            },
+            {
+              "kind": "RecordDef",
+              "name": "Shipment",
+              "fields": [
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "customer",
+                  "type": "Customer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Customer"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "destination",
+                  "type": "Address",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  }
+                }
+              ],
+              "proto_fields": []
+            }
+          ],
+          "errors": [],
+          "error_defs": [],
+          "routines": [
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "daily_shipments",
+              "type_params": [],
+              "is_async": false,
+              "params": [],
+              "return_type": {
+                "kind": "ArrayTypeName",
+                "element_type": "Shipment",
+                "element_type_repr": {
+                  "kind": "TypeName",
+                  "name": "Shipment"
+                },
+                "size": 2
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "ArrayTypeName",
+                      "element_type": "Shipment",
+                      "element_type_repr": {
+                        "kind": "TypeName",
+                        "name": "Shipment"
+                      },
+                      "size": 2
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "ArrayLiteralExpr",
+                      "items": [
+                        {
+                          "kind": "CallExpr",
+                          "name": "make_shipment",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "NumberExpr",
+                                "value": 1001
+                              }
+                            },
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "Ada"
+                              }
+                            },
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "NumberExpr",
+                                "value": 42
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "CallExpr",
+                          "name": "make_shipment",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "NumberExpr",
+                                "value": 1002
+                              }
+                            },
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "Grace"
+                              }
+                            },
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "NumberExpr",
+                                "value": 77
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "make_shipment",
+              "type_params": [],
+              "is_async": false,
+              "params": [
+                {
+                  "name": "id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "name": "name",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "name": "city_id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                }
+              ],
+              "return_type": {
+                "kind": "TypeName",
+                "name": "Shipment"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Shipment"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "destination",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "make_address",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "city_id"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "Berlin"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "customer",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Customer"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "make_customer",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "id"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "name"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "destination"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "RecordLiteralExpr",
+                      "type": "Shipment",
+                      "args": [
+                        {
+                          "kind": "NamedArg",
+                          "name": "customer",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "customer"
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "destination",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "destination"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "services": [],
+          "proof_obligations": [],
+          "flow_summaries": [
+            {
+              "kind": "RoutineFlowSummary",
+              "routine_name": "daily_shipments",
+              "routine_kind": "function",
+              "normal_return_possible": true,
+              "guaranteed_exit": true,
+              "declared_aborts": [],
+              "declared_abort_refs": [],
+              "emitted_aborts": [],
+              "emitted_abort_refs": [],
+              "called_routines": [
+                "make_shipment"
+              ],
+              "propagated_aborts": [],
+              "propagated_abort_refs": []
+            },
+            {
+              "kind": "RoutineFlowSummary",
+              "routine_name": "make_shipment",
+              "routine_kind": "function",
+              "normal_return_possible": true,
+              "guaranteed_exit": true,
+              "declared_aborts": [],
+              "declared_abort_refs": [],
+              "emitted_aborts": [],
+              "emitted_abort_refs": [],
+              "called_routines": [],
+              "propagated_aborts": [],
+              "propagated_abort_refs": []
+            }
+          ],
+          "verifier": {
+            "node": "VerifierReport",
+            "proof_obligations": [],
+            "flow_summaries": [
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "daily_shipments",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [
+                  "make_shipment"
+                ],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              },
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "make_shipment",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              }
+            ]
+          }
+        }
+      },
+      {
+        "node": "ModuleEntry",
+        "name": "Domain.Types",
+        "source_ast": {
+          "node": "SourceAst",
+          "module": {
+            "node": "Module",
+            "name": "Domain.Types",
+            "imports": [],
+            "declarations": [
+              {
+                "kind": "RecordTypeDecl",
+                "name": "Address",
+                "fields": [
+                  {
+                    "name": "city_id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "name": "label",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RecordTypeDecl",
+                "name": "Customer",
+                "fields": [
+                  {
+                    "name": "address",
+                    "type": "Address",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    }
+                  },
+                  {
+                    "name": "id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "name": "name",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "make_address",
+                "type_params": [],
+                "is_async": false,
+                "params": [
+                  {
+                    "name": "city_id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "name": "label",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "return_type": {
+                  "kind": "TypeName",
+                  "name": "Address"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Address"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "RecordLiteralExpr",
+                        "type": "Address",
+                        "args": [
+                          {
+                            "kind": "NamedArg",
+                            "name": "city_id",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "city_id"
+                            }
+                          },
+                          {
+                            "kind": "NamedArg",
+                            "name": "label",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "label"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "make_customer",
+                "type_params": [],
+                "is_async": false,
+                "params": [
+                  {
+                    "name": "id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "name": "name",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "name": "address",
+                    "type": "Address",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    }
+                  }
+                ],
+                "return_type": {
+                  "kind": "TypeName",
+                  "name": "Customer"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Customer"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "RecordLiteralExpr",
+                        "type": "Customer",
+                        "args": [
+                          {
+                            "kind": "NamedArg",
+                            "name": "id",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "id"
+                            }
+                          },
+                          {
+                            "kind": "NamedArg",
+                            "name": "name",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "name"
+                            }
+                          },
+                          {
+                            "kind": "NamedArg",
+                            "name": "address",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "address"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "semantic_ir": {
+          "node": "SemanticIr",
+          "analysis": {
+            "node": "AnalysisReport",
+            "types": [
+              {
+                "kind": "TypeDef",
+                "name": "BigFloat",
+                "base": "BigFloat",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "BigFloat"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "BigInteger",
+                "base": "BigInteger",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "BigInteger"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Boolean",
+                "base": "Boolean",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Double",
+                "base": "Double",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Executor",
+                "base": "Executor",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Executor"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Integer",
+                "base": "Integer",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Scope",
+                "base": "Scope",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Scope"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "String",
+                "base": "String",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "String"
+                }
+              }
+            ],
+            "records": [
+              {
+                "kind": "RecordDef",
+                "name": "Address",
+                "fields": [
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "city_id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "label",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "proto_fields": []
+              },
+              {
+                "kind": "RecordDef",
+                "name": "Customer",
+                "fields": [
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "address",
+                    "type": "Address",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "name",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "proto_fields": []
+              }
+            ],
+            "errors": [],
+            "error_defs": [],
+            "routines": [
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "make_address",
+                "type_params": [],
+                "is_async": false,
+                "params": [
+                  {
+                    "name": "city_id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "name": "label",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "return_type": {
+                  "kind": "TypeName",
+                  "name": "Address"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Address"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "RecordLiteralExpr",
+                        "type": "Address",
+                        "args": [
+                          {
+                            "kind": "NamedArg",
+                            "name": "city_id",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "city_id"
+                            }
+                          },
+                          {
+                            "kind": "NamedArg",
+                            "name": "label",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "label"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "make_customer",
+                "type_params": [],
+                "is_async": false,
+                "params": [
+                  {
+                    "name": "id",
+                    "type": "Integer",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  },
+                  {
+                    "name": "name",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "name": "address",
+                    "type": "Address",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    }
+                  }
+                ],
+                "return_type": {
+                  "kind": "TypeName",
+                  "name": "Customer"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Customer"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "RecordLiteralExpr",
+                        "type": "Customer",
+                        "args": [
+                          {
+                            "kind": "NamedArg",
+                            "name": "id",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "id"
+                            }
+                          },
+                          {
+                            "kind": "NamedArg",
+                            "name": "name",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "name"
+                            }
+                          },
+                          {
+                            "kind": "NamedArg",
+                            "name": "address",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "address"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "services": [],
+            "proof_obligations": [],
+            "flow_summaries": [
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "make_address",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              },
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "make_customer",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              }
+            ],
+            "verifier": {
+              "node": "VerifierReport",
+              "proof_obligations": [],
+              "flow_summaries": [
+                {
+                  "kind": "RoutineFlowSummary",
+                  "routine_name": "make_address",
+                  "routine_kind": "function",
+                  "normal_return_possible": true,
+                  "guaranteed_exit": true,
+                  "declared_aborts": [],
+                  "declared_abort_refs": [],
+                  "emitted_aborts": [],
+                  "emitted_abort_refs": [],
+                  "called_routines": [],
+                  "propagated_aborts": [],
+                  "propagated_abort_refs": []
+                },
+                {
+                  "kind": "RoutineFlowSummary",
+                  "routine_name": "make_customer",
+                  "routine_kind": "function",
+                  "normal_return_possible": true,
+                  "guaranteed_exit": true,
+                  "declared_aborts": [],
+                  "declared_abort_refs": [],
+                  "emitted_aborts": [],
+                  "emitted_abort_refs": [],
+                  "called_routines": [],
+                  "propagated_aborts": [],
+                  "propagated_abort_refs": []
+                }
+              ]
+            }
+          }
+        },
+        "module": {
+          "node": "Module",
+          "name": "Domain.Types",
+          "imports": [],
+          "declarations": [
+            {
+              "kind": "RecordTypeDecl",
+              "name": "Address",
+              "fields": [
+                {
+                  "name": "city_id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "name": "label",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RecordTypeDecl",
+              "name": "Customer",
+              "fields": [
+                {
+                  "name": "address",
+                  "type": "Address",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  }
+                },
+                {
+                  "name": "id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "name": "name",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "make_address",
+              "type_params": [],
+              "is_async": false,
+              "params": [
+                {
+                  "name": "city_id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "name": "label",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "return_type": {
+                "kind": "TypeName",
+                "name": "Address"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "RecordLiteralExpr",
+                      "type": "Address",
+                      "args": [
+                        {
+                          "kind": "NamedArg",
+                          "name": "city_id",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "city_id"
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "label",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "label"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "make_customer",
+              "type_params": [],
+              "is_async": false,
+              "params": [
+                {
+                  "name": "id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "name": "name",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "name": "address",
+                  "type": "Address",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  }
+                }
+              ],
+              "return_type": {
+                "kind": "TypeName",
+                "name": "Customer"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Customer"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "RecordLiteralExpr",
+                      "type": "Customer",
+                      "args": [
+                        {
+                          "kind": "NamedArg",
+                          "name": "id",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "id"
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "name",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "name"
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "address",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "address"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "analysis": {
+          "node": "AnalysisReport",
+          "types": [
+            {
+              "kind": "TypeDef",
+              "name": "BigFloat",
+              "base": "BigFloat",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "BigFloat"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "BigInteger",
+              "base": "BigInteger",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "BigInteger"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Boolean",
+              "base": "Boolean",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Double",
+              "base": "Double",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Double"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Executor",
+              "base": "Executor",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Executor"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Integer",
+              "base": "Integer",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Scope",
+              "base": "Scope",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Scope"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "String",
+              "base": "String",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "String"
+              }
+            }
+          ],
+          "records": [
+            {
+              "kind": "RecordDef",
+              "name": "Address",
+              "fields": [
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "city_id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "label",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "proto_fields": []
+            },
+            {
+              "kind": "RecordDef",
+              "name": "Customer",
+              "fields": [
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "address",
+                  "type": "Address",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "name",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "proto_fields": []
+            }
+          ],
+          "errors": [],
+          "error_defs": [],
+          "routines": [
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "make_address",
+              "type_params": [],
+              "is_async": false,
+              "params": [
+                {
+                  "name": "city_id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "name": "label",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "return_type": {
+                "kind": "TypeName",
+                "name": "Address"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "RecordLiteralExpr",
+                      "type": "Address",
+                      "args": [
+                        {
+                          "kind": "NamedArg",
+                          "name": "city_id",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "city_id"
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "label",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "label"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "make_customer",
+              "type_params": [],
+              "is_async": false,
+              "params": [
+                {
+                  "name": "id",
+                  "type": "Integer",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  }
+                },
+                {
+                  "name": "name",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "name": "address",
+                  "type": "Address",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  }
+                }
+              ],
+              "return_type": {
+                "kind": "TypeName",
+                "name": "Customer"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Customer"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "RecordLiteralExpr",
+                      "type": "Customer",
+                      "args": [
+                        {
+                          "kind": "NamedArg",
+                          "name": "id",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "id"
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "name",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "name"
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "address",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "address"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "services": [],
+          "proof_obligations": [],
+          "flow_summaries": [
+            {
+              "kind": "RoutineFlowSummary",
+              "routine_name": "make_address",
+              "routine_kind": "function",
+              "normal_return_possible": true,
+              "guaranteed_exit": true,
+              "declared_aborts": [],
+              "declared_abort_refs": [],
+              "emitted_aborts": [],
+              "emitted_abort_refs": [],
+              "called_routines": [],
+              "propagated_aborts": [],
+              "propagated_abort_refs": []
+            },
+            {
+              "kind": "RoutineFlowSummary",
+              "routine_name": "make_customer",
+              "routine_kind": "function",
+              "normal_return_possible": true,
+              "guaranteed_exit": true,
+              "declared_aborts": [],
+              "declared_abort_refs": [],
+              "emitted_aborts": [],
+              "emitted_abort_refs": [],
+              "called_routines": [],
+              "propagated_aborts": [],
+              "propagated_abort_refs": []
+            }
+          ],
+          "verifier": {
+            "node": "VerifierReport",
+            "proof_obligations": [],
+            "flow_summaries": [
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "make_address",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              },
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "make_customer",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "import_graph": [
+      {
+        "node": "ImportEdge",
+        "from_module": "App.Main",
+        "to_module": "Domain.Shipments",
+        "is_runtime": false,
+        "exposing": [
+          "Shipment",
+          "daily_shipments"
+        ],
+        "qualified_exposing": [
+          "Domain.Shipments.Shipment",
+          "Domain.Shipments.daily_shipments"
+        ]
+      },
+      {
+        "node": "ImportEdge",
+        "from_module": "App.Main",
+        "to_module": "Std.IO",
+        "is_runtime": true,
+        "exposing": [],
+        "qualified_exposing": []
+      },
+      {
+        "node": "ImportEdge",
+        "from_module": "Domain.Shipments",
+        "to_module": "Domain.Types",
+        "is_runtime": false,
+        "exposing": [
+          "Address",
+          "Customer",
+          "make_address",
+          "make_customer"
+        ],
+        "qualified_exposing": [
+          "Domain.Types.Address",
+          "Domain.Types.Customer",
+          "Domain.Types.make_address",
+          "Domain.Types.make_customer"
+        ]
+      }
+    ],
+    "runtime_modules": [
+      {
+        "node": "RuntimeModule",
+        "name": "Std.IO",
+        "exports": [
+          "log",
+          "log_bool",
+          "log_double",
+          "log_int",
+          "logf"
+        ]
+      }
+    ]
+  }
+}
