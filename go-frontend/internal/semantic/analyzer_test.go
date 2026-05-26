@@ -301,6 +301,133 @@ end DuplicateRecordLiteralField`)
 	assertSingleDiagnostic(t, diagnostics, "FH-SEM-1102", "duplicate_record_literal_field", "id")
 }
 
+func TestValidateModuleRejectsUnknownVariable(t *testing.T) {
+	module := parseModule(t, `module UnknownVariable
+
+procedure main()
+is
+    check missing = 1
+end main
+
+end UnknownVariable`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-SEM-1401", "unknown_variable", "missing")
+}
+
+func TestValidateModuleRejectsUnknownLetType(t *testing.T) {
+	module := parseModule(t, `module UnknownLetType
+
+procedure main()
+is
+    let amount: MissingType = 1
+end main
+
+end UnknownLetType`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-TYP-2003", "unknown_type_reference", "MissingType")
+}
+
+func TestValidateModuleRejectsUnknownParameterType(t *testing.T) {
+	module := parseModule(t, `module UnknownParameterType
+
+procedure main(amount: MissingType)
+is
+    check true
+end main
+
+end UnknownParameterType`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-TYP-2003", "unknown_type_reference", "MissingType")
+}
+
+func TestValidateModuleRejectsUnknownReturnType(t *testing.T) {
+	module := parseModule(t, `module UnknownReturnType
+
+function missing() returns MissingType
+is
+    return 1
+end missing
+
+end UnknownReturnType`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-TYP-2003", "unknown_type_reference", "MissingType")
+}
+
+func TestValidateModuleRejectsUnknownRecordFieldType(t *testing.T) {
+	module := parseModule(t, `module UnknownRecordFieldType
+
+type Account is record
+    id: MissingType
+end record
+
+end UnknownRecordFieldType`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-TYP-2003", "unknown_type_reference", "MissingType")
+}
+
+func TestValidateModuleRejectsDuplicateParameterName(t *testing.T) {
+	module := parseModule(t, `module DuplicateParameterName
+
+procedure main(item: Integer, item: Integer)
+is
+    check true
+end main
+
+end DuplicateParameterName`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-SEM-1201", "duplicate_parameter_name", "item")
+}
+
+func TestValidateModuleRejectsDuplicateLocalName(t *testing.T) {
+	module := parseModule(t, `module DuplicateLocalName
+
+procedure main()
+is
+    let amount: Integer = 1
+    let amount: Integer = 2
+end main
+
+end DuplicateLocalName`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-SEM-1303", "duplicate_local_name", "amount")
+}
+
+func TestValidateModuleRejectsUnknownAssignmentTarget(t *testing.T) {
+	module := parseModule(t, `module UnknownAssignmentTarget
+
+procedure main()
+is
+    amount := 1
+end main
+
+end UnknownAssignmentTarget`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-SEM-1301", "unknown_assignment_target", "amount")
+}
+
+func TestValidateModuleRejectsAssignmentTypeMismatch(t *testing.T) {
+	module := parseModule(t, `module AssignmentTypeMismatch
+
+procedure main()
+is
+    let amount: Integer = 1
+    amount := true
+end main
+
+end AssignmentTypeMismatch`)
+
+	diagnostics := ValidateModule(module)
+	assertSingleDiagnostic(t, diagnostics, "FH-TYP-2301", "assignment_type_mismatch", "Boolean")
+}
+
 func TestValidateModuleWithImportsAcceptsImportedNestedRecordFieldAccess(t *testing.T) {
 	typesModule := parseModule(t, `module Domain.Types
 

@@ -10,7 +10,7 @@ Dieser Status trennt drei Ebenen, die leicht verwechselt werden koennen:
 
 ## Kurzfassung
 
-Direkt im Go-Code sind aktuell 38 Diagnostics umgesetzt: 23 Syntax-/Parserdiagnostics, 4 Typdiagnostics und 11 semantische Diagnostics. Die Go-native Semantik deckt inzwischen Record-FieldAccess, Record-Literals, Array-Index-Ausdruecke, lokale/exposed Routine-Calls sowie strukturierte Project-Loader-Importdiagnostics ab. Die komplette Spec ist groesser und wird ueber Python-Verifier, Expected-Manifests, Normalizer und Gates vollstaendig abgeglichen.
+Direkt im Go-Code sind aktuell 44 Diagnostics umgesetzt: 23 Syntax-/Parserdiagnostics, 6 Typdiagnostics und 15 semantische Diagnostics. Die Go-native Semantik deckt inzwischen Record-FieldAccess, Record-Literals, Array-Index-Ausdruecke, lokale/exposed Routine-Calls, Variablen-/Typnamen, Duplicate Params/Locals, einfache Assignments sowie strukturierte Project-Loader-Importdiagnostics ab. Die komplette Spec ist groesser und wird ueber Python-Verifier, Expected-Manifests, Normalizer und Gates vollstaendig abgeglichen.
 
 Der Go-Parser ist bei Syntax/AST-Paritaet sehr weit: alle 322 Parser/AST-Vergleichsfaelle haben denselben Parser-Status wie DHParser; alle 277 parse-ok Faelle haben passende AST-Shape- und Semantic-AST-Artefakte. Der vollstaendige Language-Module-Gate steht aktuell bei 461/461.
 
@@ -43,18 +43,18 @@ Go-Datei:
 
 Aktueller Go-Diagnostic-Catalog:
 
-- Catalog-Eintraege: `38`
+- Catalog-Eintraege: `44`
 - davon `FH-SYN-*`: `23`
-- davon `FH-TYP-*`: `4`
-- davon `FH-SEM-*`: `11`
-- davon alle `FH-*`: `38`
+- davon `FH-TYP-*`: `6`
+- davon `FH-SEM-*`: `15`
+- davon alle `FH-*`: `44`
 
-Damit sind im Go-Code direkt vor allem Syntax-/Parserdiagnostics umgesetzt. Neu ist ein Go-native Semantikanker fuer Record-FieldAccess, Record-Literals, Array-Index-Ausdruecke, Routine-Calls und `go-semantic-project`-Loaderfehler; das ist noch kein komplettes Semantiksystem.
+Damit sind im Go-Code direkt vor allem Syntax-/Parserdiagnostics umgesetzt. Neu ist ein Go-native Semantikanker fuer Record-FieldAccess, Record-Literals, Array-Index-Ausdruecke, Routine-Calls, Variablen-/Typnamen, Duplicate Params/Locals, einfache Assignments und `go-semantic-project`-Loaderfehler; das ist noch kein komplettes Semantiksystem.
 
 Einordnung gegen die Spec:
 
-- `38/114` Diagnostic-Specs direkt im Go-Catalog.
-- grob die `parse_syntax`-Schicht aus `freehold.rules` plus Go-native Record-/Array-/Routine- und Project-Loader-Semantikdiagnostics, also `38/115` Rules/Emits direkt im Go-Frontend.
+- `44/114` Diagnostic-Specs direkt im Go-Catalog.
+- grob die `parse_syntax`-Schicht aus `freehold.rules` plus Go-native Record-/Array-/Routine-/Name-/Assignment- und Project-Loader-Semantikdiagnostics, also `44/115` Rules/Emits direkt im Go-Frontend.
 - Semantik-, Typ-, Contract-, Abort-, Concurrency-, Generic-, JSON-, Record- und gRPC-Diagnostics sind aktuell nicht als kompletter Go-Verifier umgesetzt.
 
 ## Go-Parser- und AST-Abdeckung

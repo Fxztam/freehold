@@ -1,7 +1,9 @@
 package semantic
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 
 	"freehold-go-frontend/internal/ast"
 	"freehold-go-frontend/internal/diagnostic"
@@ -24,6 +26,7 @@ type RoutineType struct {
 type SymbolTable struct {
 	Records  map[string]RecordType
 	Routines map[string]RoutineType
+	Types    map[string]bool
 }
 
 type Analyzer struct {
@@ -32,13 +35,14 @@ type Analyzer struct {
 }
 
 func BuildSymbolTable(module *ast.Module) SymbolTable {
-	symbols := SymbolTable{Records: map[string]RecordType{}, Routines: map[string]RoutineType{}}
+	symbols := SymbolTable{Records: map[string]RecordType{}, Routines: map[string]RoutineType{}, Types: builtinTypes()}
 	if module == nil {
 		return symbols
 	}
 	for _, decl := range module.Declarations {
 		switch value := decl.(type) {
 		case ast.TypeDecl:
+			symbols.Types[value.Name] = true
 			if value.Base != "record" {
 				continue
 			}
@@ -50,6 +54,10 @@ func BuildSymbolTable(module *ast.Module) SymbolTable {
 			record := RecordType{Name: value.Name, QualifiedName: qualifiedName(module, value.Name), Fields: fields}
 			symbols.Records[value.Name] = record
 			symbols.Records[record.QualifiedName] = record
+			symbols.Types[record.QualifiedName] = true
+		case ast.ErrorDecl:
+			symbols.Types[value.Name] = true
+			symbols.Types[qualifiedName(module, value.Name)] = true
 		case ast.FunctionDecl:
 			routine := RoutineType{Name: value.Name, QualifiedName: qualifiedName(module, value.Name), Params: value.Params, ReturnType: value.ReturnType}
 			symbols.Routines[value.Name] = routine
@@ -106,6 +114,10 @@ func buildSymbolTableWithImports(module *ast.Module, importedByName map[string]*
 			if ok {
 				addRecordWithDependencies(&symbols, importedSymbols, record, map[string]bool{})
 			}
+			if importedSymbols.Types[exposed] {
+				addType(&symbols, exposed)
+				addType(&symbols, qualifiedName(imported, exposed))
+			}
 			routine, ok := importedSymbols.Routines[exposed]
 			if ok {
 				addRoutine(&symbols, routine)
@@ -125,6 +137,12 @@ func addRoutine(target *SymbolTable, routine RoutineType) {
 	}
 }
 
+func addType(target *SymbolTable, name string) {
+	if name != "" {
+		target.Types[name] = true
+	}
+}
+
 func addRecordWithDependencies(target *SymbolTable, source SymbolTable, record RecordType, seen map[string]bool) {
 	seenName := record.QualifiedName
 	if seenName == "" {
@@ -140,8 +158,10 @@ func addRecordWithDependencies(target *SymbolTable, source SymbolTable, record R
 	if _, exists := target.Records[record.Name]; !exists {
 		target.Records[record.Name] = record
 	}
+	addType(target, record.Name)
 	if record.QualifiedName != "" {
 		target.Records[record.QualifiedName] = record
+		addType(target, record.QualifiedName)
 	}
 
 	for _, fieldType := range record.Fields {
@@ -184,8 +204,17 @@ func (a *Analyzer) validateModule(module *ast.Module) {
 	}
 	for _, decl := range module.Declarations {
 		switch value := decl.(type) {
+		case ast.TypeDecl:
+			if value.Base == "record" {
+				for _, field := range value.Fields {
+					a.validateTypeReference(field.Type, locationFromPosition(field.Pos))
+				}
+			} else {
+				a.validateTypeReference(value.Base, locationFromPosition(value.Pos))
+			}
 		case ast.FunctionDecl:
-			env := envFromParams(value.Params)
+			a.validateRoutineSignature(value.Params, value.ReturnType, locationFromPosition(value.Pos))
+			env := a.envFromParams(value.Params)
 			for _, expr := range value.Requires {
 				a.inferExpr(expr, env)
 			}
@@ -199,7 +228,8 @@ func (a *Analyzer) validateModule(module *ast.Module) {
 			}
 			a.validateBlock(value.Body, env)
 		case ast.ProcedureDecl:
-			env := envFromParams(value.Params)
+			a.validateRoutineSignature(value.Params, "", locationFromPosition(value.Pos))
+			env := a.envFromParams(value.Params)
 			for _, expr := range value.Requires {
 				a.inferExpr(expr, env)
 			}
@@ -216,12 +246,31 @@ func (a *Analyzer) validateModule(module *ast.Module) {
 	}
 }
 
-func envFromParams(params []ast.Param) map[string]string {
+func (a *Analyzer) envFromParams(params []ast.Param) map[string]string {
 	env := map[string]string{}
 	for _, param := range params {
 		env[param.Name] = param.Type
 	}
 	return env
+}
+
+func (a *Analyzer) validateRoutineSignature(params []ast.Param, returnType string, returnLocation diagnostic.Location) {
+	seen := map[string]token.Position{}
+	for _, param := range params {
+		if firstPos, exists := seen[param.Name]; exists {
+			location := locationFromPosition(param.Pos)
+			if location.Line == 0 {
+				location = locationFromPosition(firstPos)
+			}
+			a.diagnostics = append(a.diagnostics, diagnostic.DuplicateParameterName(location, param.Name))
+		} else {
+			seen[param.Name] = param.Pos
+		}
+		a.validateTypeReference(param.Type, locationFromPosition(param.Pos))
+	}
+	if returnType != "" {
+		a.validateTypeReference(returnType, returnLocation)
+	}
 }
 
 func cloneEnv(env map[string]string) map[string]string {
@@ -236,11 +285,21 @@ func (a *Analyzer) validateBlock(body []ast.Stmt, env map[string]string) {
 	for _, stmt := range body {
 		switch value := stmt.(type) {
 		case ast.LetStmt:
-			a.inferExpr(value.Value, env)
+			a.validateTypeReference(value.Type, locationFromPosition(value.Pos))
+			valueType, valueOK := a.inferExpr(value.Value, env)
+			if _, exists := env[value.Name]; exists {
+				a.diagnostics = append(a.diagnostics, diagnostic.DuplicateLocalName(locationFromPosition(value.Pos), value.Name))
+			}
+			if valueOK && a.knownType(value.Type) && !sameType(value.Type, valueType) {
+				a.diagnostics = append(a.diagnostics, diagnostic.AssignmentTypeMismatch(locationFromPosition(value.Pos), value.Type, valueType))
+			}
 			env[value.Name] = value.Type
 		case ast.AssignmentStmt:
-			a.inferExpr(value.Target, env)
-			a.inferExpr(value.Value, env)
+			targetType, targetOK := a.inferAssignmentTarget(value.Target, env)
+			valueType, valueOK := a.inferExpr(value.Value, env)
+			if targetOK && valueOK && a.knownType(targetType) && !sameType(targetType, valueType) {
+				a.diagnostics = append(a.diagnostics, diagnostic.AssignmentTypeMismatch(locationFromPosition(value.Pos), targetType, valueType))
+			}
 		case ast.ReturnStmt:
 			a.inferExpr(value.Value, env)
 		case ast.CheckStmt:
@@ -290,6 +349,9 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 			return "Boolean", true
 		}
 		typeName, ok := env[value.Name]
+		if !ok {
+			a.diagnostics = append(a.diagnostics, diagnostic.UnknownVariable(locationFromPosition(value.Pos), value.Name))
+		}
 		return typeName, ok
 	case ast.FieldAccessExpr:
 		objectType, ok := a.inferExpr(value.Object, env)
@@ -359,7 +421,7 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 		if !elementOK {
 			return "", false
 		}
-		return elementType, true
+		return fmt.Sprintf("Array<%s, %d>", elementType, len(value.Elements)), true
 	case ast.AwaitExpr:
 		return a.inferExpr(value.Value, env)
 	case ast.OkExpr:
@@ -372,6 +434,80 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 		return value.Name, true
 	}
 	return "", false
+}
+
+func (a *Analyzer) inferAssignmentTarget(expr ast.Expr, env map[string]string) (string, bool) {
+	switch value := expr.(type) {
+	case ast.IdentifierExpr:
+		typeName, ok := env[value.Name]
+		if !ok {
+			a.diagnostics = append(a.diagnostics, diagnostic.UnknownAssignmentTarget(locationFromPosition(value.Pos), value.Name))
+		}
+		return typeName, ok
+	default:
+		return a.inferExpr(expr, env)
+	}
+}
+
+func (a *Analyzer) validateTypeReference(typeName string, location diagnostic.Location) {
+	if typeName == "" || a.knownType(typeName) {
+		return
+	}
+	a.diagnostics = append(a.diagnostics, diagnostic.UnknownTypeReference(location, typeName))
+}
+
+func (a *Analyzer) knownType(typeName string) bool {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" {
+		return true
+	}
+	if a.symbols.Types[typeName] {
+		return true
+	}
+	if _, ok := a.symbols.Records[typeName]; ok {
+		return true
+	}
+	if elementType, ok := arrayElementType(typeName); ok {
+		return a.knownType(elementType)
+	}
+	if strings.HasPrefix(typeName, "Result<") && strings.HasSuffix(typeName, ">") {
+		parts := splitTopLevel(typeName[len("Result<") : len(typeName)-1])
+		if len(parts) != 2 {
+			return false
+		}
+		return a.knownType(parts[0]) && a.knownType(parts[1])
+	}
+	return false
+}
+
+func builtinTypes() map[string]bool {
+	return map[string]bool{
+		"Boolean": true,
+		"Double":  true,
+		"Integer": true,
+		"String":  true,
+	}
+}
+
+func splitTopLevel(value string) []string {
+	var parts []string
+	start := 0
+	depth := 0
+	for index, char := range value {
+		switch char {
+		case '<':
+			depth++
+		case '>':
+			depth--
+		case ',':
+			if depth == 0 {
+				parts = append(parts, strings.TrimSpace(value[start:index]))
+				start = index + 1
+			}
+		}
+	}
+	parts = append(parts, strings.TrimSpace(value[start:]))
+	return parts
 }
 
 func (a *Analyzer) validateRecordLiteral(literal ast.RecordLiteralExpr, env map[string]string) {

@@ -419,6 +419,66 @@ var catalog = map[string]Definition{
 		Message:  "routine argument type mismatch",
 		Hint:     "Call arguments must match the declared parameter types.",
 	},
+	"unknown_type_reference": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "type",
+		Code:     "FH-TYP-2003",
+		Number:   2003,
+		Name:     "unknown_type_reference",
+		Message:  "unknown type reference",
+		Hint:     "Type annotations must reference a built-in or declared type.",
+	},
+	"duplicate_parameter_name": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1201",
+		Number:   1201,
+		Name:     "duplicate_parameter_name",
+		Message:  "duplicate parameter name",
+		Hint:     "Each routine parameter name must be unique.",
+	},
+	"unknown_assignment_target": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1301",
+		Number:   1301,
+		Name:     "unknown_assignment_target",
+		Message:  "unknown assignment target",
+		Hint:     "Assignments must target a declared local variable or field path.",
+	},
+	"assignment_type_mismatch": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "type",
+		Code:     "FH-TYP-2301",
+		Number:   2301,
+		Name:     "assignment_type_mismatch",
+		Message:  "assignment type mismatch",
+		Hint:     "Assignment values must match the target type.",
+	},
+	"duplicate_local_name": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1303",
+		Number:   1303,
+		Name:     "duplicate_local_name",
+		Message:  "duplicate local name",
+		Hint:     "Each local variable name must be unique in its visible scope.",
+	},
+	"unknown_variable": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1401",
+		Number:   1401,
+		Name:     "unknown_variable",
+		Message:  "unknown variable",
+		Hint:     "An expression may only reference variables that are in scope.",
+	},
 	"expected_token": {
 		Severity: "error",
 		Phase:    "parse",
@@ -560,6 +620,30 @@ func RoutineArgumentCountMismatch(location Location, routineName string, expecte
 
 func RoutineArgumentTypeMismatch(location Location, routineName string, argumentIndex int, expectedType string, foundType string) *Diagnostic {
 	return fromDefinition("routine_argument_type_mismatch", location, foundType, []string{fmt.Sprintf("argument %d as %s for %s", argumentIndex, expectedType, routineName)})
+}
+
+func UnknownTypeReference(location Location, typeName string) *Diagnostic {
+	return fromDefinition("unknown_type_reference", location, typeName, []string{"known type"})
+}
+
+func DuplicateParameterName(location Location, name string) *Diagnostic {
+	return fromDefinition("duplicate_parameter_name", location, name, []string{"unique parameter name"})
+}
+
+func UnknownAssignmentTarget(location Location, name string) *Diagnostic {
+	return fromDefinition("unknown_assignment_target", location, name, []string{"declared local variable"})
+}
+
+func AssignmentTypeMismatch(location Location, expectedType string, foundType string) *Diagnostic {
+	return fromDefinition("assignment_type_mismatch", location, foundType, []string{expectedType})
+}
+
+func DuplicateLocalName(location Location, name string) *Diagnostic {
+	return fromDefinition("duplicate_local_name", location, name, []string{"unique local name"})
+}
+
+func UnknownVariable(location Location, name string) *Diagnostic {
+	return fromDefinition("unknown_variable", location, name, []string{"variable in scope"})
 }
 
 func MissingWhileInvariant(found token.Token) *Diagnostic {
