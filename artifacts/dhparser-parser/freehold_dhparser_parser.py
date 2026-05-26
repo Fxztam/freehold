@@ -158,7 +158,7 @@ class FreeholdGrammar(Grammar):
     stmt = Forward()
     type_ref = Forward()
     unary = Forward()
-    source_hash__ = "e5fa61cc3d0a26a57a06a9ddb17e87ea"
+    source_hash__ = "7c8d502ca123d174f9a483af91e1ce95"
     disposable__ = re.compile('$.')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
@@ -189,7 +189,7 @@ class FreeholdGrammar(Grammar):
     field_path = Synonym(FIELD_PATH)
     atom = Synonym(postfix_expr)
     primary = Alternative(STRING_LITERAL, DOUBLE_LITERAL, INTEGER_LITERAL, array_literal, Series(Series(Text("scope"), wsp__), Series(Text("("), wsp__), Option(arg_list), Series(Text(")"), wsp__)), Series(IDENT, type_arg_list, Series(Text("("), wsp__), Option(arg_list), Series(Text(")"), wsp__)), Series(IDENT, Series(Text("{"), wsp__), named_arg_list, Series(Text("}"), wsp__)), Series(type_ref, Series(Text("{"), wsp__), named_arg_list, Series(Text("}"), wsp__)), IDENT, Series(Series(Text("("), wsp__), expr, Series(Text(")"), wsp__)), Series(Text("true"), wsp__), Series(Text("false"), wsp__), Series(Text("success"), wsp__), Series(Text("failure"), wsp__), Series(Text("value"), wsp__), Series(Text("error"), wsp__))
-    member_name = Alternative(IDENT, Series(Text("spawn"), wsp__), Series(Text("join"), wsp__))
+    member_name = Alternative(IDENT, Series(Text("spawn"), wsp__), Series(Text("join"), wsp__), Series(Text("value"), wsp__), Series(Text("error"), wsp__))
     postfix = Alternative(Series(Option(type_arg_list), Series(Text("("), wsp__), Option(arg_list), Series(Text(")"), wsp__)), Series(Series(Text("["), wsp__), expr, Series(Text("]"), wsp__)), Series(Series(Text("."), wsp__), member_name))
     proto_field_id = Series(Series(Text("proto"), wsp__), INTEGER_LITERAL)
     array_type = Series(Series(Text("Array"), wsp__), Series(Text("<"), wsp__), type_ref, Series(Text(","), wsp__), INTEGER_LITERAL, Series(Text(">"), wsp__))
