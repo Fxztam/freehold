@@ -92,7 +92,8 @@ The normal single-module Go semantic gate remains intentionally narrow and uncha
 
 3. Go Codegen V1 Runtime-Breite weiter ausbauen.
    - Erledigt: `15_result_abort_array_runtime_builtins` prueft `Result<Array<imported Record, 3>, imported Error>`, eine abortende importierte Domain-Routine, komplexere `requires`/`ensures` und Math/String/Json/Big-Builtins in einem echten Mehr-Package-Beispiel mit `verify-compiler-examples.cmd`-Ausgabevergleich.
-   - Naechste Runtime-Smokes koennen gezielt die noch offenen Grenzen wie abortende Calls im Runtime-Ausdruckspfad oder `value[index]`-Contracts fuer Result-Array-Payloads adressieren.
+   - Erledigt: Result-Array-Contracts koennen im Python-Frontend und Go-Codegen `value[index].field` nutzen; Beispiel 15 prueft diese Form im Mehr-Package-Runtime-Smoke.
+   - Naechste Runtime-Smokes koennen gezielt die noch offenen Grenzen wie abortende Calls im Runtime-Ausdruckspfad adressieren.
 
 4. Spaeter groessere Bootstrap-Bloecke angehen.
    - Go-native Control-Flow-V0 analog Python-CFlow.

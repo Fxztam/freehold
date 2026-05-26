@@ -24,6 +24,7 @@ from freehold.core.ast import (
     FieldAssignStmt,
     IfStmt,
     ImportDecl,
+    IndexedFieldAccessExpr,
     IndexExpr,
     LetStmt,
     NamedArg,
@@ -842,7 +843,12 @@ class GoGenerator:
                 return ".".join([self.contract_bindings[head]] + [go_exported_name(part) for part in tail])
             return ".".join([go_local_name(head)] + [go_exported_name(part) for part in tail])
         if isinstance(expr, IndexExpr):
-            return f"{go_local_name(expr.name)}[{self.expr(expr.index)}]"
+            base = self.contract_bindings.get(expr.name, go_local_name(expr.name))
+            return f"{base}[{self.expr(expr.index)}]"
+        if isinstance(expr, IndexedFieldAccessExpr):
+            base = self.contract_bindings.get(expr.name, go_local_name(expr.name))
+            indexed = f"{base}[{self.expr(expr.index)}]"
+            return ".".join([indexed] + [go_exported_name(field) for field in expr.fields])
         if isinstance(expr, UnaryExpr):
             precedence = unary_precedence(expr.op)
             rendered = f"{go_operator(expr.op)}{self.expr_at(expr.expr, precedence)}"

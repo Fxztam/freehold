@@ -342,6 +342,8 @@ class Verifier:
             return left.name == right.name
         if isinstance(left, FieldAccessExpr):
             return left.path == right.path
+        if isinstance(left, IndexedFieldAccessExpr):
+            return left.name == right.name and left.fields == right.fields and self.same_expr(left.index, right.index)
         if isinstance(left, SpecialResultExpr):
             return left.name == right.name
         if isinstance(left, UnaryExpr):
@@ -519,6 +521,35 @@ class Verifier:
 
     def infer_field_path(self, e, env, ctx, allow_result=False, result_type=None):
         return self.infer_field_path_obj(e.path, e.pos, env, ctx, allow_result, result_type)
+
+    def infer_index_target(self, name, index, pos, env, ctx, allow_result, result_type):
+        if name == "value" and allow_result and isinstance(result_type, ResultTypeName):
+            arr_t = result_type.ok_type
+        elif name in {"result", "value", "error"}:
+            raise TypeCheckError(f"{pos.text()}: Result contract expression {name} is only available in ensures")
+        else:
+            if name not in env:
+                raise TypeCheckError(f"{pos.text()}: unknown array: {name}")
+            arr_t = env[name]
+        if not isinstance(arr_t, ArrayTypeName):
+            raise TypeCheckError(f"{pos.text()}: index access requires Array, got {type_to_string(arr_t)}")
+        index_type = self.infer(index, env, ctx, allow_result, result_type)
+        if self.base(index_type, ctx) != "Integer":
+            raise TypeCheckError(f"{index.pos.text()}: array index must be Integer, got {type_to_string(index_type)}")
+        if isinstance(index, NumberExpr) and not (0 <= index.value < arr_t.size):
+            raise TypeCheckError(f"{pos.text()}: array index out of bounds: {index.value} for size {arr_t.size}")
+        return TypeName(arr_t.element_type)
+
+    def infer_indexed_field_access(self, e, env, ctx, allow_result, result_type):
+        t = self.infer_index_target(e.name, e.index, e.pos, env, ctx, allow_result, result_type)
+        for field in e.fields:
+            if not isinstance(t, TypeName) or t.name not in ctx.records:
+                raise TypeCheckError(f"{e.pos.text()}: field access requires record before .{field}, got {type_to_string(t)}")
+            rec = ctx.records[t.name]
+            if field not in rec.fields:
+                raise TypeCheckError(f"{e.pos.text()}: unknown field {field} for record {t.name}")
+            t = TypeName(rec.fields[field])
+        return t
 
     def builtin_call_type(self, e, env, ctx, allow_result, result_type):
         def expect_count(n):
@@ -793,6 +824,7 @@ class Verifier:
         if isinstance(e, DoubleExpr): return TypeName("Double")
         if isinstance(e, BoolExpr): return TypeName("Boolean")
         if isinstance(e, FieldAccessExpr): return self.infer_field_path(e, env, ctx, allow_result, result_type)
+        if isinstance(e, IndexedFieldAccessExpr): return self.infer_indexed_field_access(e, env, ctx, allow_result, result_type)
         if isinstance(e, RecordLiteralExpr):
             if e.type_name not in ctx.records:
                 ctx.require_type_or_record(e.type_name, e.pos)
@@ -818,17 +850,7 @@ class Verifier:
                     raise TypeCheckError(f"{e.pos.text()}: array literal has mixed element types")
             return ArrayLiteralType(first.name, len(e.items))
         if isinstance(e, IndexExpr):
-            if e.name not in env:
-                raise TypeCheckError(f"{e.pos.text()}: unknown array: {e.name}")
-            arr_t = env[e.name]
-            if not isinstance(arr_t, ArrayTypeName):
-                raise TypeCheckError(f"{e.pos.text()}: index access requires Array, got {type_to_string(arr_t)}")
-            index_type = self.infer(e.index, env, ctx, allow_result, result_type)
-            if self.base(index_type, ctx) != "Integer":
-                raise TypeCheckError(f"{e.index.pos.text()}: array index must be Integer, got {type_to_string(index_type)}")
-            if isinstance(e.index, NumberExpr) and not (0 <= e.index.value < arr_t.size):
-                raise TypeCheckError(f"{e.pos.text()}: array index out of bounds: {e.index.value} for size {arr_t.size}")
-            return TypeName(arr_t.element_type)
+            return self.infer_index_target(e.name, e.index, e.pos, env, ctx, allow_result, result_type)
         if isinstance(e, SpecialResultExpr):
             if not allow_result or not isinstance(result_type, ResultTypeName):
                 raise TypeCheckError(f"{e.pos.text()}: Result contract expression {e.name} is only available in Result ensures")

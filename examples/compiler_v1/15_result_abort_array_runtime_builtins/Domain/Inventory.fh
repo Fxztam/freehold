@@ -14,7 +14,7 @@ end build_item
 
 function load_stock(seed: Integer) returns Result<Array<StockItem, 3>, StockMissing>
 requires seed > 0, seed >= 1
-ensures success
+ensures success, value[0].quantity >= seed, value[1].warehouse.id = value[0].warehouse.id, value[2].warehouse.id = 2
 is
     let primary: StockItem = build_item("SKU-001", seed + 2, 1, "north")
     let secondary: StockItem = build_item("SKU-002", seed + 3, 1, "north")

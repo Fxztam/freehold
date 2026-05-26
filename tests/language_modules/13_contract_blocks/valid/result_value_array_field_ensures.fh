@@ -1,0 +1,24 @@
+module result_value_array_field_ensures
+
+error NotFound
+
+type Address is record
+    city_id: Integer
+end record
+
+type Customer is record
+    id: Integer
+    address: Address
+end record
+
+function load() returns Result<Array<Customer, 2>, NotFound>
+ensures success
+ensures value[0].id = 1
+ensures value[1].address.city_id = 7
+is
+    let first: Customer = Customer { id: 1, address: Address { city_id: 42 } }
+    let second: Customer = Customer { id: 2, address: Address { city_id: 7 } }
+    return ok [first, second]
+end load
+
+end result_value_array_field_ensures

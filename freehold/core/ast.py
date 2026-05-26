@@ -224,6 +224,10 @@ class IndexExpr:
     name: str; index: Any; pos: SourcePos
 
 @dataclass(frozen=True)
+class IndexedFieldAccessExpr:
+    name: str; index: Any; fields: list[str]; pos: SourcePos
+
+@dataclass(frozen=True)
 class UnaryExpr:
     op: str; expr: Any; pos: SourcePos
 
