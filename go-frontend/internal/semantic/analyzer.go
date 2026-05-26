@@ -15,6 +15,7 @@ type RecordType struct {
 type RoutineType struct {
 	Name          string
 	QualifiedName string
+	Params        []ast.Param
 	ReturnType    string
 }
 
@@ -48,7 +49,11 @@ func BuildSymbolTable(module *ast.Module) SymbolTable {
 			symbols.Records[value.Name] = record
 			symbols.Records[record.QualifiedName] = record
 		case ast.FunctionDecl:
-			routine := RoutineType{Name: value.Name, QualifiedName: qualifiedName(module, value.Name), ReturnType: value.ReturnType}
+			routine := RoutineType{Name: value.Name, QualifiedName: qualifiedName(module, value.Name), Params: value.Params, ReturnType: value.ReturnType}
+			symbols.Routines[value.Name] = routine
+			symbols.Routines[routine.QualifiedName] = routine
+		case ast.ProcedureDecl:
+			routine := RoutineType{Name: value.Name, QualifiedName: qualifiedName(module, value.Name), Params: value.Params}
 			symbols.Routines[value.Name] = routine
 			symbols.Routines[routine.QualifiedName] = routine
 		}
@@ -239,7 +244,11 @@ func (a *Analyzer) validateBlock(body []ast.Stmt, env map[string]string) {
 		case ast.CheckStmt:
 			a.inferExpr(value.Condition, env)
 		case ast.CallStmt:
-			a.inferExpr(value.Call, env)
+			if call, ok := value.Call.(ast.CallExpr); ok {
+				a.validateCall(call, env, locationFromPosition(value.Pos))
+			} else {
+				a.inferExpr(value.Call, env)
+			}
 		case ast.IfStmt:
 			a.inferExpr(value.Condition, env)
 			a.validateBlock(value.ThenBody, cloneEnv(env))
@@ -321,10 +330,7 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 		}
 		return valueType, ok
 	case ast.CallExpr:
-		for _, arg := range value.Arguments {
-			a.inferExpr(arg, env)
-		}
-		return a.inferCall(value)
+		return a.validateCall(value, env, locationFromPosition(value.Pos))
 	case ast.NamedArgumentExpr:
 		return a.inferExpr(value.Value, env)
 	case ast.IndexExpr:
@@ -360,16 +366,75 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 	return "", false
 }
 
-func (a *Analyzer) inferCall(call ast.CallExpr) (string, bool) {
+func (a *Analyzer) validateCall(call ast.CallExpr, env map[string]string, location diagnostic.Location) (string, bool) {
+	argTypes := make([]string, len(call.Arguments))
+	argOK := make([]bool, len(call.Arguments))
+	for index, arg := range call.Arguments {
+		argTypes[index], argOK[index] = a.inferExpr(arg, env)
+	}
+
 	name, ok := callName(call.Callee)
 	if !ok {
 		return "", false
 	}
 	routine, ok := a.symbols.Routines[name]
 	if !ok {
+		if !isQualifiedCallName(name) {
+			a.diagnostics = append(a.diagnostics, diagnostic.UnknownRoutine(location, name))
+		}
 		return "", false
 	}
+	if len(call.Arguments) != len(routine.Params) {
+		a.diagnostics = append(a.diagnostics, diagnostic.RoutineArgumentCountMismatch(location, routine.Name, len(routine.Params), len(call.Arguments)))
+		return routine.ReturnType, routine.ReturnType != ""
+	}
+	for index, param := range routine.Params {
+		if !argOK[index] {
+			continue
+		}
+		if !sameType(param.Type, argTypes[index]) {
+			a.diagnostics = append(a.diagnostics, diagnostic.RoutineArgumentTypeMismatch(locationFromExpr(call.Arguments[index]), routine.Name, index+1, param.Type, argTypes[index]))
+		}
+	}
 	return routine.ReturnType, routine.ReturnType != ""
+}
+
+func sameType(expected string, found string) bool {
+	return expected == found
+}
+
+func locationFromExpr(expr ast.Expr) diagnostic.Location {
+	switch value := expr.(type) {
+	case ast.IdentifierExpr:
+		return locationFromPosition(value.Pos)
+	case ast.FieldAccessExpr:
+		return locationFromPosition(value.Pos)
+	case ast.IndexExpr:
+		return locationFromPosition(value.Pos)
+	case ast.ArrayLiteralExpr:
+		return locationFromPosition(value.Pos)
+	case ast.CallExpr:
+		return locationFromPosition(value.Pos)
+	case ast.AwaitExpr:
+		return locationFromPosition(value.Pos)
+	case ast.NamedArgumentExpr:
+		return locationFromPosition(value.Pos)
+	case ast.RecordLiteralExpr:
+		return locationFromPosition(value.Pos)
+	case ast.BinaryExpr:
+		return locationFromPosition(value.Pos)
+	case ast.UnaryExpr:
+		return locationFromPosition(value.Pos)
+	case ast.OkExpr:
+		return locationFromPosition(value.Pos)
+	case ast.NumberExpr:
+		return locationFromPosition(value.Pos)
+	case ast.StringExpr:
+		return locationFromPosition(value.Pos)
+	case ast.ErrorExpr:
+		return locationFromPosition(value.Pos)
+	}
+	return diagnostic.Location{}
 }
 
 func callName(expr ast.Expr) (string, bool) {
@@ -384,6 +449,15 @@ func callName(expr ast.Expr) (string, bool) {
 		return objectName + "." + value.Field, true
 	}
 	return "", false
+}
+
+func isQualifiedCallName(name string) bool {
+	for _, char := range name {
+		if char == '.' {
+			return true
+		}
+	}
+	return false
 }
 
 func isBooleanOperator(op string) bool {

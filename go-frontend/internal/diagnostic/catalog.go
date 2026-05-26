@@ -289,6 +289,36 @@ var catalog = map[string]Definition{
 		Message:  "unknown record field",
 		Hint:     "A record literal or field access may only use fields declared by the record type.",
 	},
+	"unknown_routine": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1204",
+		Number:   1204,
+		Name:     "unknown_routine",
+		Message:  "unknown routine",
+		Hint:     "Calls must reference a declared function or procedure.",
+	},
+	"routine_argument_count_mismatch": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-SEM-1205",
+		Number:   1205,
+		Name:     "routine_argument_count_mismatch",
+		Message:  "wrong routine argument count",
+		Hint:     "Pass exactly the parameters declared by the routine signature.",
+	},
+	"routine_argument_type_mismatch": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "type",
+		Code:     "FH-TYP-2201",
+		Number:   2201,
+		Name:     "routine_argument_type_mismatch",
+		Message:  "routine argument type mismatch",
+		Hint:     "Call arguments must match the declared parameter types.",
+	},
 	"expected_token": {
 		Severity: "error",
 		Phase:    "parse",
@@ -378,6 +408,18 @@ func FieldAccessRequiresRecord(location Location, foundType string, field string
 
 func UnknownRecordField(location Location, recordName string, field string) *Diagnostic {
 	return fromDefinition("unknown_record_field", location, field, []string{"declared field in " + recordName})
+}
+
+func UnknownRoutine(location Location, routineName string) *Diagnostic {
+	return fromDefinition("unknown_routine", location, routineName, []string{"declared routine"})
+}
+
+func RoutineArgumentCountMismatch(location Location, routineName string, expected int, found int) *Diagnostic {
+	return fromDefinition("routine_argument_count_mismatch", location, fmt.Sprintf("%d", found), []string{fmt.Sprintf("%d argument(s) for %s", expected, routineName)})
+}
+
+func RoutineArgumentTypeMismatch(location Location, routineName string, argumentIndex int, expectedType string, foundType string) *Diagnostic {
+	return fromDefinition("routine_argument_type_mismatch", location, foundType, []string{fmt.Sprintf("argument %d as %s for %s", argumentIndex, expectedType, routineName)})
 }
 
 func MissingWhileInvariant(found token.Token) *Diagnostic {

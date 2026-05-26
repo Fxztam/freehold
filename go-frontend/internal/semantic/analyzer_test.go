@@ -121,6 +121,100 @@ end UnknownFieldAccess`)
 	}
 }
 
+func TestValidateModuleRejectsUnknownRoutine(t *testing.T) {
+	module := parseModule(t, `module UnknownRoutineCall
+
+procedure main()
+is
+    call missing()
+end main
+
+end UnknownRoutineCall`)
+
+	diagnostics := ValidateModule(module)
+	if len(diagnostics) != 1 {
+		t.Fatalf("ValidateModule() diagnostics count = %d, want 1", len(diagnostics))
+	}
+	diag := diagnostics[0]
+	if diag.Code != "FH-SEM-1204" || diag.Name != "unknown_routine" {
+		t.Fatalf("diagnostic = %s/%s, want FH-SEM-1204/unknown_routine", diag.Code, diag.Name)
+	}
+	if diag.Found != "missing" {
+		t.Fatalf("diagnostic Found = %q, want missing", diag.Found)
+	}
+	if diag.Location.Line != 5 || diag.Location.Column != 5 {
+		t.Fatalf("diagnostic Location = line %d, column %d, want line 5, column 5", diag.Location.Line, diag.Location.Column)
+	}
+}
+
+func TestValidateModuleRejectsRoutineArgumentCountMismatch(t *testing.T) {
+	module := parseModule(t, `module WrongArgumentCount
+
+function add(left: Integer, right: Integer) returns Integer
+is
+    return left + right
+end add
+
+procedure main()
+is
+    check add(1) = 1
+end main
+
+end WrongArgumentCount`)
+
+	diagnostics := ValidateModule(module)
+	if len(diagnostics) != 1 {
+		t.Fatalf("ValidateModule() diagnostics count = %d, want 1", len(diagnostics))
+	}
+	diag := diagnostics[0]
+	if diag.Code != "FH-SEM-1205" || diag.Name != "routine_argument_count_mismatch" {
+		t.Fatalf("diagnostic = %s/%s, want FH-SEM-1205/routine_argument_count_mismatch", diag.Code, diag.Name)
+	}
+	if diag.Found != "1" {
+		t.Fatalf("diagnostic Found = %q, want 1", diag.Found)
+	}
+	if len(diag.Expected) != 1 || diag.Expected[0] != "2 argument(s) for add" {
+		t.Fatalf("diagnostic Expected = %#v, want 2 argument(s) for add", diag.Expected)
+	}
+	if diag.Location.Line != 10 || diag.Location.Column != 11 {
+		t.Fatalf("diagnostic Location = line %d, column %d, want line 10, column 11", diag.Location.Line, diag.Location.Column)
+	}
+}
+
+func TestValidateModuleRejectsRoutineArgumentTypeMismatch(t *testing.T) {
+	module := parseModule(t, `module WrongArgumentType
+
+function negate(flag: Boolean) returns Boolean
+is
+    return not flag
+end negate
+
+procedure main()
+is
+    check negate(1)
+end main
+
+end WrongArgumentType`)
+
+	diagnostics := ValidateModule(module)
+	if len(diagnostics) != 1 {
+		t.Fatalf("ValidateModule() diagnostics count = %d, want 1", len(diagnostics))
+	}
+	diag := diagnostics[0]
+	if diag.Code != "FH-TYP-2201" || diag.Name != "routine_argument_type_mismatch" {
+		t.Fatalf("diagnostic = %s/%s, want FH-TYP-2201/routine_argument_type_mismatch", diag.Code, diag.Name)
+	}
+	if diag.Found != "Integer" {
+		t.Fatalf("diagnostic Found = %q, want Integer", diag.Found)
+	}
+	if len(diag.Expected) != 1 || diag.Expected[0] != "argument 1 as Boolean for negate" {
+		t.Fatalf("diagnostic Expected = %#v, want argument 1 as Boolean for negate", diag.Expected)
+	}
+	if diag.Location.Line != 10 || diag.Location.Column != 18 {
+		t.Fatalf("diagnostic Location = line %d, column %d, want line 10, column 18", diag.Location.Line, diag.Location.Column)
+	}
+}
+
 func TestValidateModuleWithImportsAcceptsImportedNestedRecordFieldAccess(t *testing.T) {
 	typesModule := parseModule(t, `module Domain.Types
 
@@ -184,6 +278,40 @@ end App.Main`)
 	diagnostics := ValidateModuleWithImports(appModule, typesModule, shipmentsModule)
 	if len(diagnostics) != 0 {
 		t.Fatalf("ValidateModuleWithImports() diagnostics = %#v, want none", diagnostics)
+	}
+}
+
+func TestValidateModuleWithImportsRejectsImportedRoutineArgumentTypeMismatch(t *testing.T) {
+	domainModule := parseModule(t, `module Domain.Math
+
+function negate(flag: Boolean) returns Boolean
+is
+    return not flag
+end negate
+
+end Domain.Math`)
+
+	appModule := parseModule(t, `module App.Main
+
+import Domain.Math exposing negate
+
+procedure main()
+is
+    check negate(1)
+end main
+
+end App.Main`)
+
+	diagnostics := ValidateModuleWithImports(appModule, domainModule)
+	if len(diagnostics) != 1 {
+		t.Fatalf("ValidateModuleWithImports() diagnostics count = %d, want 1", len(diagnostics))
+	}
+	diag := diagnostics[0]
+	if diag.Code != "FH-TYP-2201" || diag.Name != "routine_argument_type_mismatch" {
+		t.Fatalf("diagnostic = %s/%s, want FH-TYP-2201/routine_argument_type_mismatch", diag.Code, diag.Name)
+	}
+	if diag.Found != "Integer" {
+		t.Fatalf("diagnostic Found = %q, want Integer", diag.Found)
 	}
 }
 
