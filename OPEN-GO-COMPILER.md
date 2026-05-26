@@ -1,10 +1,10 @@
 # Open: Go Compiler in Freehold
 
-Stand: 2026-05-25
+Stand: 2026-05-26
 
 Status: Compiler V1 Start-Slice plus Import-, Cross-Module-Call-, Cross-Module-Record-Type-, Cross-Module-Result-Error-Abort-, Cross-Module-Typkompositions-, Result-, Abort-, Multi-File-, Runtime-Builtin-, BigNumber-, Array- und Go-Projekt-Build-Slices implementiert; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
 
-Zusaetzlich ist der erste Go-native Semantikanker vorhanden: `go-frontend/internal/semantic` baut single-module Record-Symboltabellen aus dem Go-AST und validiert lokale Record-FieldAccess-Ausdruecke mit `FH-TYP-2101` und `FH-SEM-1105`. Relevante Go-AST-Decl-/Stmt-/Expr-Knoten tragen interne Source-Positionen fuer semantische Diagnostics, bleiben aber aus JSON-Artefakten ausgeblendet. Der Parser-CLI kann diesen Analyzer mit `--semantic` ausfuehren; `verify-go-semantic-diagnostics.cmd` erzeugt dafuer temporaere `.tmp/go-semantic`-Reports, sodass die normalen Go-AST-Goldens und eingefrorenen Artefakte stabil bleiben. Importaufloesung und vollstaendige Typinferenz bleiben Folgeslices.
+Zusaetzlich ist der erste Go-native Semantikanker vorhanden: `go-frontend/internal/semantic` baut Record-Symboltabellen aus dem Go-AST und validiert Record-FieldAccess-Ausdruecke mit `FH-TYP-2101` und `FH-SEM-1105`. Relevante Go-AST-Decl-/Stmt-/Expr-Knoten tragen interne Source-Positionen fuer semantische Diagnostics, bleiben aber aus JSON-Artefakten ausgeblendet. Der Analyzer besitzt neben dem single-module Pfad eine import-aware API fuer exposed importierte Records inklusive transitiver Record-Feldtypen. Der Parser-CLI kann den single-module Analyzer mit `--semantic` ausfuehren; `verify-go-semantic-diagnostics.cmd` erzeugt dafuer temporaere `.tmp/go-semantic`-Reports, sodass die normalen Go-AST-Goldens und eingefrorenen Artefakte stabil bleiben. Vollstaendige Typinferenz und ein CLI-Projektloader fuer Go-native Semantik bleiben Folgeslices.
 
 Dieses Dokument legt die Leitplanken fuer die naechste Implementierungsphase fest: einen Go-Compiler fuer Freehold, der auf dem bestehenden Parser/AST/Verifier/Spec-Fundament aufsetzt. Wichtigste Vorgabe: Der Compiler darf das Freehold-Modularitaetskonzept nicht aufweichen. Codegen muss Modulgrenzen, Imports, Exposing-Regeln und qualifizierte Namen respektieren.
 

@@ -7,8 +7,9 @@ import (
 )
 
 type RecordType struct {
-	Name   string
-	Fields map[string]string
+	Name          string
+	QualifiedName string
+	Fields        map[string]string
 }
 
 type SymbolTable struct {
@@ -35,13 +36,111 @@ func BuildSymbolTable(module *ast.Module) SymbolTable {
 		for _, field := range typeDecl.Fields {
 			fields[field.Name] = field.Type
 		}
-		symbols.Records[typeDecl.Name] = RecordType{Name: typeDecl.Name, Fields: fields}
+		record := RecordType{Name: typeDecl.Name, QualifiedName: qualifiedRecordName(module, typeDecl.Name), Fields: fields}
+		symbols.Records[typeDecl.Name] = record
+		symbols.Records[record.QualifiedName] = record
 	}
 	return symbols
 }
 
+func qualifiedRecordName(module *ast.Module, name string) string {
+	if module == nil || module.Name == "" {
+		return name
+	}
+	return module.Name + "." + name
+}
+
+func BuildSymbolTableWithImports(module *ast.Module, importedModules ...*ast.Module) SymbolTable {
+	importedByName := map[string]*ast.Module{}
+	for _, imported := range importedModules {
+		if imported != nil {
+			importedByName[imported.Name] = imported
+		}
+	}
+	return buildSymbolTableWithImports(module, importedByName, map[string]bool{})
+}
+
+func buildSymbolTableWithImports(module *ast.Module, importedByName map[string]*ast.Module, stack map[string]bool) SymbolTable {
+	symbols := BuildSymbolTable(module)
+	if module == nil || stack[module.Name] {
+		return symbols
+	}
+
+	stack[module.Name] = true
+	defer delete(stack, module.Name)
+
+	for _, decl := range module.Declarations {
+		importDecl, ok := decl.(ast.ImportDecl)
+		if !ok {
+			continue
+		}
+
+		imported := importedByName[importDecl.Module]
+		if imported == nil {
+			continue
+		}
+
+		importedSymbols := buildSymbolTableWithImports(imported, importedByName, stack)
+		for _, exposed := range importDecl.Exposing {
+			record, ok := importedSymbols.Records[exposed]
+			if ok {
+				addRecordWithDependencies(&symbols, importedSymbols, record, map[string]bool{})
+			}
+		}
+	}
+
+	return symbols
+}
+
+func addRecordWithDependencies(target *SymbolTable, source SymbolTable, record RecordType, seen map[string]bool) {
+	seenName := record.QualifiedName
+	if seenName == "" {
+		seenName = record.Name
+	}
+	if seen[seenName] {
+		return
+	}
+	seen[seenName] = true
+
+	record = resolveRecordFieldTypes(source, record)
+
+	if _, exists := target.Records[record.Name]; !exists {
+		target.Records[record.Name] = record
+	}
+	if record.QualifiedName != "" {
+		target.Records[record.QualifiedName] = record
+	}
+
+	for _, fieldType := range record.Fields {
+		dependency, ok := source.Records[fieldType]
+		if ok {
+			addRecordWithDependencies(target, source, dependency, seen)
+		}
+	}
+}
+
+func resolveRecordFieldTypes(source SymbolTable, record RecordType) RecordType {
+	fields := map[string]string{}
+	for fieldName, fieldType := range record.Fields {
+		resolved := fieldType
+		dependency, ok := source.Records[fieldType]
+		if ok && dependency.QualifiedName != "" {
+			resolved = dependency.QualifiedName
+		}
+		fields[fieldName] = resolved
+	}
+	record.Fields = fields
+	return record
+}
+
 func ValidateModule(module *ast.Module) []*diagnostic.Diagnostic {
 	analyzer := Analyzer{symbols: BuildSymbolTable(module)}
+	analyzer.validateModule(module)
+	return analyzer.diagnostics
+}
+
+func ValidateModuleWithImports(module *ast.Module, importedModules ...*ast.Module) []*diagnostic.Diagnostic {
+	analyzer := Analyzer{symbols: BuildSymbolTableWithImports(module, importedModules...)}
 	analyzer.validateModule(module)
 	return analyzer.diagnostics
 }

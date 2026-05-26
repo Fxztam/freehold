@@ -121,6 +121,105 @@ end UnknownFieldAccess`)
 	}
 }
 
+func TestValidateModuleWithImportsAcceptsImportedNestedRecordFieldAccess(t *testing.T) {
+	typesModule := parseModule(t, `module Domain.Types
+
+type Address is record
+    city_id: Integer
+end record
+
+type Customer is record
+    id: Integer
+    address: Address
+end record
+
+function make_address(city_id: Integer) returns Address
+is
+    return Address { city_id: city_id }
+end make_address
+
+function make_customer(id: Integer, address: Address) returns Customer
+is
+    return Customer { id: id, address: address }
+end make_customer
+
+end Domain.Types`)
+
+	shipmentsModule := parseModule(t, `module Domain.Shipments
+
+import Domain.Types exposing Address, Customer, make_address, make_customer
+
+type Shipment is record
+    customer: Customer
+    destination: Address
+end record
+
+function make_shipment(id: Integer, city_id: Integer) returns Shipment
+is
+    let destination: Address = make_address(city_id)
+    let customer: Customer = make_customer(id, destination)
+    return Shipment { customer: customer, destination: destination }
+end make_shipment
+
+end Domain.Shipments`)
+
+	appModule := parseModule(t, `module App.Main
+
+import Domain.Shipments exposing Shipment, make_shipment
+
+type Address is record
+    label: String
+end record
+
+procedure main()
+is
+    let shipment: Shipment = make_shipment(1001, 42)
+    check shipment.customer.id = 1001
+    check shipment.customer.address.city_id = shipment.destination.city_id
+end main
+
+end App.Main`)
+
+	diagnostics := ValidateModuleWithImports(appModule, typesModule, shipmentsModule)
+	if len(diagnostics) != 0 {
+		t.Fatalf("ValidateModuleWithImports() diagnostics = %#v, want none", diagnostics)
+	}
+}
+
+func TestValidateModuleWithImportsRejectsUnknownFieldOnImportedRecord(t *testing.T) {
+	domainModule := parseModule(t, `module Domain.Types
+
+type Account is record
+    id: Integer
+end record
+
+end Domain.Types`)
+
+	appModule := parseModule(t, `module App.Main
+
+import Domain.Types exposing Account
+
+procedure main()
+is
+    let account: Account = Account { id: 1 }
+    check account.active
+end main
+
+end App.Main`)
+
+	diagnostics := ValidateModuleWithImports(appModule, domainModule)
+	if len(diagnostics) != 1 {
+		t.Fatalf("ValidateModuleWithImports() diagnostics count = %d, want 1", len(diagnostics))
+	}
+	diag := diagnostics[0]
+	if diag.Code != "FH-SEM-1105" || diag.Name != "unknown_record_field" {
+		t.Fatalf("diagnostic = %s/%s, want FH-SEM-1105/unknown_record_field", diag.Code, diag.Name)
+	}
+	if diag.Found != "active" {
+		t.Fatalf("diagnostic Found = %q, want active", diag.Found)
+	}
+}
+
 func TestBuildSymbolTableRecordsFields(t *testing.T) {
 	module := parseModule(t, `module Records
 
@@ -145,5 +244,53 @@ end Records`)
 	customer := symbols.Records["Customer"]
 	if customer.Fields["address"] != "Address" {
 		t.Fatalf("Customer.address type = %q, want Address", customer.Fields["address"])
+	}
+}
+
+func TestBuildSymbolTableWithImportsIncludesTransitiveRecordDependencies(t *testing.T) {
+	typesModule := parseModule(t, `module Domain.Types
+
+type Address is record
+    city_id: Integer
+end record
+
+type Customer is record
+    address: Address
+end record
+
+end Domain.Types`)
+
+	shipmentsModule := parseModule(t, `module Domain.Shipments
+
+import Domain.Types exposing Address, Customer
+
+type Shipment is record
+    customer: Customer
+end record
+
+end Domain.Shipments`)
+
+	appModule := parseModule(t, `module App.Main
+
+import Domain.Shipments exposing Shipment
+
+type Address is record
+    label: String
+end record
+
+end App.Main`)
+
+	symbols := BuildSymbolTableWithImports(appModule, typesModule, shipmentsModule)
+	if _, ok := symbols.Records["Shipment"]; !ok {
+		t.Fatal("Shipment record missing from import-aware symbol table")
+	}
+	if _, ok := symbols.Records["Customer"]; !ok {
+		t.Fatal("Customer dependency missing from import-aware symbol table")
+	}
+	if _, ok := symbols.Records["Address"]; !ok {
+		t.Fatal("local Address record missing from import-aware symbol table")
+	}
+	if _, ok := symbols.Records["Domain.Types.Address"]; !ok {
+		t.Fatal("qualified Address transitive dependency missing from import-aware symbol table")
 	}
 }

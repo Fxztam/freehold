@@ -156,12 +156,12 @@ Go-Codegen-Rejection-Beweise:
 Erster Go-native Semantikanker:
 
 - Paket: `go-frontend/internal/semantic`
-- SymbolTable V0 sammelt single-module Record-Typen und deren Felder aus dem Go-AST.
-- `ValidateModule` prueft lokale Routine-Parameter, `let`-Bindings und verschachtelte FieldAccess-Ausdruecke.
+- SymbolTable V0 sammelt Record-Typen und deren Felder aus dem Go-AST; `BuildSymbolTableWithImports` ergaenzt exposed importierte Records inklusive transitiver Record-Feldtyp-Abhaengigkeiten.
+- `ValidateModule` prueft lokale Routine-Parameter, `let`-Bindings und verschachtelte FieldAccess-Ausdruecke; `ValidateModuleWithImports` nutzt dieselben Regeln mit import-aware SymbolLookup.
 - Abgedeckte Diagnostics: `FH-TYP-2101 field_access_requires_record` und `FH-SEM-1105 unknown_record_field`.
 - Relevante Go-AST-Decl-/Stmt-/Expr-Knoten tragen interne Source-Positionen (`json:"-"`), sodass Go-native Semantic-Diagnostics positionsgenau sein koennen, ohne AST-JSON-Goldens zu veraendern.
 - Der Parser-CLI `go-parse-tests-language-modules` kann den Analyzer optional mit `--semantic` nach erfolgreichem Parse ausfuehren. `verify-go-semantic-diagnostics.cmd` schreibt temporaere Artefakte nach `.tmp/go-semantic` und vergleicht nur die zwei V0-Diagnostics gegen `tests/language_modules/expected_go_semantic_diagnostics.json`.
-- Bewusste Grenze: keine Importaufloesung und keine vollstaendige Typinferenz.
+- Bewusste Grenze: noch kein CLI-Projektloader fuer Go-native Semantik und keine vollstaendige Typinferenz.
 
 ## Control Flow
 
