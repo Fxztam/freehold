@@ -1,0 +1,698 @@
+{
+  "schema": "fh-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "App.Main",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Big",
+        "exposing": []
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Std.IO",
+        "exposing": []
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RecordTypeDecl",
+        "name": "Person",
+        "fields": [
+          {
+            "name": "active",
+            "type": "Boolean"
+          },
+          {
+            "name": "age",
+            "type": "Integer"
+          },
+          {
+            "name": "name",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "person",
+            "type": {
+              "kind": "TypeName",
+              "name": "Person"
+            },
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Person",
+              "args": [
+                {
+                  "kind": "NamedArg",
+                  "name": "name",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Ada"
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "age",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 37
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "active",
+                  "value": {
+                    "kind": "BoolExpr",
+                    "value": true
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "encoded",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Json.stringify",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "person"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "message",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.template",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "name=${}, score=${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "person",
+                      "name"
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Math.floor",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "Math.sqrt",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "DoubleExpr",
+                                "value": 81.0
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "huge",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.mulInt",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Big.int",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "640320"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Big.fromInteger",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "NumberExpr",
+                          "value": 24
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "text",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.toString",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "huge"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.log",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "message"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "json=${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "encoded"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": ">=",
+              "left": {
+                "kind": "CallExpr",
+                "name": "String.instr",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "encoded"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "Ada"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": ">=",
+              "left": {
+                "kind": "CallExpr",
+                "name": "String.instr",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "text"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "15367680"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [
+      {
+        "name": "Person",
+        "fields": [
+          {
+            "name": "active",
+            "type": "Boolean"
+          },
+          {
+            "name": "age",
+            "type": "Integer"
+          },
+          {
+            "name": "name",
+            "type": "String"
+          }
+        ],
+        "proto_fields": []
+      }
+    ],
+    "errors": [],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "person",
+            "type": {
+              "kind": "TypeName",
+              "name": "Person"
+            },
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Person",
+              "args": [
+                {
+                  "kind": "NamedArg",
+                  "name": "name",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "Ada"
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "age",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 37
+                  }
+                },
+                {
+                  "kind": "NamedArg",
+                  "name": "active",
+                  "value": {
+                    "kind": "BoolExpr",
+                    "value": true
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "encoded",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Json.stringify",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "person"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "message",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.template",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "name=${}, score=${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "person",
+                      "name"
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Math.floor",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "Math.sqrt",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "DoubleExpr",
+                                "value": 81.0
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "huge",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.mulInt",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Big.int",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "640320"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Big.fromInteger",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "NumberExpr",
+                          "value": 24
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "text",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.toString",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "huge"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.log",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "message"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "json=${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "encoded"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": ">=",
+              "left": {
+                "kind": "CallExpr",
+                "name": "String.instr",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "encoded"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "Ada"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": ">=",
+              "left": {
+                "kind": "CallExpr",
+                "name": "String.instr",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "text"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "15367680"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "services": [],
+    "proof_obligations": [],
+    "flow_summaries": [
+      {
+        "routine_name": "main",
+        "routine_kind": "procedure",
+        "normal_return_possible": true,
+        "guaranteed_exit": false,
+        "declared_aborts": [],
+        "emitted_aborts": [],
+        "called_routines": [],
+        "propagated_aborts": []
+      }
+    ]
+  }
+}

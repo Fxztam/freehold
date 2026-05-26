@@ -1,0 +1,488 @@
+{
+  "schema": "fh-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "App.Main",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Domain.Shipments",
+        "exposing": [
+          "MissingShipment",
+          "load_shipment"
+        ]
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Domain.Types",
+        "exposing": [
+          "Shipment"
+        ]
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Std.IO",
+        "exposing": []
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "outcome",
+            "type": {
+              "kind": "ResultTypeName",
+              "ok_type": {
+                "kind": "TypeName",
+                "name": "Shipment"
+              },
+              "error_type": "MissingShipment"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "load_shipment",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 77
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "shipment",
+            "type": {
+              "kind": "TypeName",
+              "name": "Shipment"
+            },
+            "value": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "outcome",
+                "value"
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "shipment",
+                  "recipient",
+                  "address",
+                  "zone_id"
+                ]
+              },
+              "right": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "shipment",
+                  "destination",
+                  "zone_id"
+                ]
+              }
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "shipment id = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "shipment",
+                    "id"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "recipient = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "shipment",
+                    "recipient",
+                    "name"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "zone = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "shipment",
+                    "destination",
+                    "zone_id"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "destination = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "shipment",
+                    "destination",
+                    "label"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [
+      {
+        "name": "Place",
+        "fields": [
+          {
+            "name": "label",
+            "type": "String"
+          },
+          {
+            "name": "zone_id",
+            "type": "Integer"
+          }
+        ],
+        "proto_fields": []
+      },
+      {
+        "name": "Recipient",
+        "fields": [
+          {
+            "name": "address",
+            "type": "Place"
+          },
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "name",
+            "type": "String"
+          }
+        ],
+        "proto_fields": []
+      },
+      {
+        "name": "Shipment",
+        "fields": [
+          {
+            "name": "destination",
+            "type": "Place"
+          },
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "recipient",
+            "type": "Recipient"
+          }
+        ],
+        "proto_fields": []
+      }
+    ],
+    "errors": [
+      "MissingShipment"
+    ],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "outcome",
+            "type": {
+              "kind": "ResultTypeName",
+              "ok_type": {
+                "kind": "TypeName",
+                "name": "Shipment"
+              },
+              "error_type": "MissingShipment"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "load_shipment",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 77
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "shipment",
+            "type": {
+              "kind": "TypeName",
+              "name": "Shipment"
+            },
+            "value": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "outcome",
+                "value"
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "shipment",
+                  "recipient",
+                  "address",
+                  "zone_id"
+                ]
+              },
+              "right": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "shipment",
+                  "destination",
+                  "zone_id"
+                ]
+              }
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "shipment id = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "shipment",
+                    "id"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "recipient = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "shipment",
+                    "recipient",
+                    "name"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "zone = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "shipment",
+                    "destination",
+                    "zone_id"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "destination = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "shipment",
+                    "destination",
+                    "label"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "services": [],
+    "proof_obligations": [],
+    "flow_summaries": [
+      {
+        "routine_name": "main",
+        "routine_kind": "procedure",
+        "normal_return_possible": true,
+        "guaranteed_exit": false,
+        "declared_aborts": [],
+        "emitted_aborts": [],
+        "called_routines": [],
+        "propagated_aborts": []
+      }
+    ]
+  }
+}

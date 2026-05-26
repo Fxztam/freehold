@@ -88,12 +88,17 @@ call ".\compare-ast-semantic.cmd"
 if errorlevel 1 goto :fail
 
 echo.
-echo [18/19] Verify additive test line
+echo [18/20] Compare FH-IR
+call ".\compare-fhir.cmd"
+if errorlevel 1 goto :fail
+
+echo.
+echo [19/20] Verify additive test line
 call ".\verify-additive-test-line.cmd"
 if errorlevel 1 goto :fail
 
 echo.
-echo [19/19] Go tests
+echo [20/20] Go tests
 cmd /c "cd /d go-frontend && go test ./..."
 if errorlevel 1 goto :fail
 

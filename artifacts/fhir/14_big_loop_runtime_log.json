@@ -1,0 +1,707 @@
+{
+  "schema": "fh-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "App.Main",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Big",
+        "exposing": []
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Std.IO",
+        "exposing": []
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "accumulate",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "terms",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "BigInteger"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.fromInteger",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "i",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "WhileStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "<",
+              "left": {
+                "kind": "VarExpr",
+                "name": "i"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "terms"
+              }
+            },
+            "invariants": [
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": "<=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "terms"
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "terms"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 1
+                }
+              }
+            ],
+            "body": [
+              {
+                "kind": "LetStmt",
+                "name": "next_i",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "+",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "i"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "next_big",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "BigInteger"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.fromInteger",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "next_i"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "total",
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.addInt",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "total"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "next_big"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "i",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "next_i"
+                }
+              }
+            ],
+            "variant": {
+              "kind": "BinaryExpr",
+              "op": "-",
+              "left": {
+                "kind": "VarExpr",
+                "name": "terms"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "i"
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "VarExpr",
+                "name": "total"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "terms",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 4
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "accumulate",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "terms"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "text",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.toString",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "total"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "big sum = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "text"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "text"
+              },
+              "right": {
+                "kind": "StringExpr",
+                "value": "10"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [],
+    "errors": [],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "accumulate",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "terms",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "BigInteger"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.fromInteger",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "i",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "WhileStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "<",
+              "left": {
+                "kind": "VarExpr",
+                "name": "i"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "terms"
+              }
+            },
+            "invariants": [
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": "<=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "i"
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "terms"
+                }
+              },
+              {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "terms"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 1
+                }
+              }
+            ],
+            "body": [
+              {
+                "kind": "LetStmt",
+                "name": "next_i",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "+",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "i"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "next_big",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "BigInteger"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.fromInteger",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "next_i"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "total",
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "Big.addInt",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "total"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "next_big"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "AssignStmt",
+                "name": "i",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "next_i"
+                }
+              }
+            ],
+            "variant": {
+              "kind": "BinaryExpr",
+              "op": "-",
+              "left": {
+                "kind": "VarExpr",
+                "name": "terms"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "i"
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "VarExpr",
+                "name": "total"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "terms",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": 4
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": {
+              "kind": "TypeName",
+              "name": "BigInteger"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "accumulate",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "terms"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "text",
+            "type": {
+              "kind": "TypeName",
+              "name": "String"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "Big.toString",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "total"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "big sum = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "text"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "text"
+              },
+              "right": {
+                "kind": "StringExpr",
+                "value": "10"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "services": [],
+    "proof_obligations": [],
+    "flow_summaries": [
+      {
+        "routine_name": "accumulate",
+        "routine_kind": "function",
+        "normal_return_possible": true,
+        "guaranteed_exit": true,
+        "declared_aborts": [],
+        "emitted_aborts": [],
+        "called_routines": [],
+        "propagated_aborts": []
+      },
+      {
+        "routine_name": "main",
+        "routine_kind": "procedure",
+        "normal_return_possible": true,
+        "guaranteed_exit": false,
+        "declared_aborts": [],
+        "emitted_aborts": [],
+        "called_routines": [
+          "accumulate"
+        ],
+        "propagated_aborts": []
+      }
+    ]
+  }
+}

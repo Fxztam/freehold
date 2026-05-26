@@ -1,0 +1,481 @@
+{
+  "schema": "fh-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "App.Main",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Domain.Shipments",
+        "exposing": [
+          "Shipment",
+          "daily_shipments"
+        ]
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Std.IO",
+        "exposing": []
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "shipments",
+            "type": {
+              "kind": "ArrayTypeName",
+              "element_type": "Shipment",
+              "size": 2
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "daily_shipments",
+              "args": []
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "first",
+            "type": {
+              "kind": "TypeName",
+              "name": "Shipment"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "shipments",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "second",
+            "type": {
+              "kind": "TypeName",
+              "name": "Shipment"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "shipments",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 1
+              }
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "first customer = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "first",
+                    "customer",
+                    "name"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "first city = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "first",
+                    "customer",
+                    "address",
+                    "city_id"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "second city = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "second",
+                    "destination",
+                    "city_id"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "first",
+                  "customer",
+                  "address",
+                  "city_id"
+                ]
+              },
+              "right": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "first",
+                  "destination",
+                  "city_id"
+                ]
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "second",
+                  "customer",
+                  "id"
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 1002
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [
+      {
+        "name": "Address",
+        "fields": [
+          {
+            "name": "city_id",
+            "type": "Integer"
+          },
+          {
+            "name": "label",
+            "type": "String"
+          }
+        ],
+        "proto_fields": []
+      },
+      {
+        "name": "Customer",
+        "fields": [
+          {
+            "name": "address",
+            "type": "Address"
+          },
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "name",
+            "type": "String"
+          }
+        ],
+        "proto_fields": []
+      },
+      {
+        "name": "Shipment",
+        "fields": [
+          {
+            "name": "customer",
+            "type": "Customer"
+          },
+          {
+            "name": "destination",
+            "type": "Address"
+          }
+        ],
+        "proto_fields": []
+      }
+    ],
+    "errors": [],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "shipments",
+            "type": {
+              "kind": "ArrayTypeName",
+              "element_type": "Shipment",
+              "size": 2
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "daily_shipments",
+              "args": []
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "first",
+            "type": {
+              "kind": "TypeName",
+              "name": "Shipment"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "shipments",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "second",
+            "type": {
+              "kind": "TypeName",
+              "name": "Shipment"
+            },
+            "value": {
+              "kind": "IndexExpr",
+              "name": "shipments",
+              "index": {
+                "kind": "NumberExpr",
+                "value": 1
+              }
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "first customer = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "first",
+                    "customer",
+                    "name"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "first city = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "first",
+                    "customer",
+                    "address",
+                    "city_id"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "second city = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "second",
+                    "destination",
+                    "city_id"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "first",
+                  "customer",
+                  "address",
+                  "city_id"
+                ]
+              },
+              "right": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "first",
+                  "destination",
+                  "city_id"
+                ]
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "second",
+                  "customer",
+                  "id"
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 1002
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "services": [],
+    "proof_obligations": [],
+    "flow_summaries": [
+      {
+        "routine_name": "main",
+        "routine_kind": "procedure",
+        "normal_return_possible": true,
+        "guaranteed_exit": false,
+        "declared_aborts": [],
+        "emitted_aborts": [],
+        "called_routines": [],
+        "propagated_aborts": []
+      }
+    ]
+  }
+}

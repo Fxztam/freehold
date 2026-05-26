@@ -1,0 +1,290 @@
+{
+  "schema": "fh-ir-v0",
+  "language_version": "freehold-v1",
+  "module": {
+    "name": "App.Main",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Domain.Accounts",
+        "exposing": [
+          "NotFound",
+          "load_accounts",
+          "read_account"
+        ]
+      },
+      {
+        "kind": "ImportDecl",
+        "module": "Domain.Types",
+        "exposing": [
+          "Account"
+        ]
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "load_app",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "ResultTypeName",
+          "ok_type": {
+            "kind": "ArrayTypeName",
+            "element_type": "Account",
+            "size": 2
+          },
+          "error_type": "NotFound"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "load_accounts",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "read_app",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Account"
+        },
+        "requires": [],
+        "aborts": [
+          {
+            "error": "NotFound"
+          }
+        ],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "read_account",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "name": "BigFloat",
+        "base": "BigFloat"
+      },
+      {
+        "name": "BigInteger",
+        "base": "BigInteger"
+      },
+      {
+        "name": "Boolean",
+        "base": "Boolean"
+      },
+      {
+        "name": "Double",
+        "base": "Double"
+      },
+      {
+        "name": "Executor",
+        "base": "Executor"
+      },
+      {
+        "name": "Integer",
+        "base": "Integer"
+      },
+      {
+        "name": "Scope",
+        "base": "Scope"
+      },
+      {
+        "name": "String",
+        "base": "String"
+      }
+    ],
+    "records": [
+      {
+        "name": "Account",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "proto_fields": []
+      }
+    ],
+    "errors": [
+      "NotFound"
+    ],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "load_app",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "ResultTypeName",
+          "ok_type": {
+            "kind": "ArrayTypeName",
+            "element_type": "Account",
+            "size": 2
+          },
+          "error_type": "NotFound"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "load_accounts",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "read_app",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Account"
+        },
+        "requires": [],
+        "aborts": [
+          {
+            "error": "NotFound"
+          }
+        ],
+        "ensures": [],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "CallExpr",
+                "name": "read_account",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "services": [],
+    "proof_obligations": [],
+    "flow_summaries": [
+      {
+        "routine_name": "load_app",
+        "routine_kind": "function",
+        "normal_return_possible": true,
+        "guaranteed_exit": true,
+        "declared_aborts": [],
+        "emitted_aborts": [],
+        "called_routines": [],
+        "propagated_aborts": []
+      },
+      {
+        "routine_name": "read_app",
+        "routine_kind": "function",
+        "normal_return_possible": true,
+        "guaranteed_exit": true,
+        "declared_aborts": [
+          "NotFound"
+        ],
+        "emitted_aborts": [],
+        "called_routines": [],
+        "propagated_aborts": [
+          "NotFound"
+        ]
+      }
+    ]
+  }
+}

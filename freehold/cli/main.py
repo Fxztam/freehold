@@ -7,10 +7,13 @@ import sys
 from pathlib import Path
 
 from freehold.core.diagnostics import diagnose_exception
+from freehold.core.fhir import export_fhir_json
 from freehold.core.go_codegen import generate_go_file, generate_go_project, generate_go_project_build_files, project_result_json, result_json
 from freehold.core.grpc_codegen import generate_proto_file
 from freehold.core.grpc_go_codegen import generate_grpc_go_bindings_file
+from freehold.core.module_resolver import ModuleResolver
 from freehold.core.pipeline import verify_file, run_file, print_ast
+from freehold.core.go_codegen import GO_RUNTIME_MODULE_EXPORTS
 
 DIAGNOSTIC_ERROR_NAMES = {"UnexpectedToken", "UnexpectedCharacters", "UnexpectedEOF", "TypeCheckError"}
 
@@ -28,6 +31,19 @@ def cmd_verify(args):
 
 def cmd_ast(args):
     print_ast(args.file)
+    return 0
+
+def cmd_fhir(args):
+    resolver = ModuleResolver(runtime_modules=GO_RUNTIME_MODULE_EXPORTS)
+    verified = resolver.verify_entry(args.file)
+    fhir_json = export_fhir_json(verified)
+    if args.output:
+        out = Path(args.output)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(fhir_json, encoding="utf-8")
+        print(f"[OK] FH-IR JSON written: {out}")
+    else:
+        print(fhir_json, end="")
     return 0
 
 def cmd_grpc_proto(args):
@@ -203,6 +219,10 @@ def build_parser():
     p = sub.add_parser("run", help="Parse, verify, and run a .fh module"); p.add_argument("file"); p.set_defaults(func=cmd_run)
     p = sub.add_parser("verify", help="Parse and verify a .fh module"); p.add_argument("file"); p.set_defaults(func=cmd_verify)
     p = sub.add_parser("ast", help="Print parsed AST"); p.add_argument("file"); p.set_defaults(func=cmd_ast)
+    p = sub.add_parser("fhir", help="Export canonical FH-IR JSON from a verified Freehold module")
+    p.add_argument("file")
+    p.add_argument("--output", "-o", default=None)
+    p.set_defaults(func=cmd_fhir)
     p = sub.add_parser("grpc-proto", help="Generate a proto3 file from Freehold gRPC IDL")
     p.add_argument("file")
     p.add_argument("--output", "-o", default=None)
@@ -240,7 +260,7 @@ def main(argv=None):
     parser = build_parser(); args = parser.parse_args(argv)
     if args.version:
         print("Freehold CLI: toolchain frontend")
-        print("Commands: run, verify, test, ebnf, ast, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project")
+        print("Commands: run, verify, test, ebnf, ast, fhir, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project")
         return 0
     if not args.command:
         parser.print_help(); return 0
