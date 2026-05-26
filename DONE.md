@@ -50,3 +50,12 @@
 - Validation run:
   - `cmd /c verify-parser-conformance.cmd --disable-fhir-v1-gate`
   - Result: parser conformance verify passed.
+
+### Final closeout: all pending commits completed
+
+- User-requested closeout performed: all remaining pending workspace deltas were committed.
+- Included:
+  - remaining conformance artifact deltas
+  - pending Python FH-IR source delta
+  - pending Go parser/semantic source deltas
+  - V1 wrapper scripts (`compare-fhir-v1.cmd`, `compare-fhir-v1-update.cmd`)

@@ -76,19 +76,33 @@ NODE_ERROR_DEF = "ErrorDef"
 NODE_PROOF_OBLIGATION = "ProofObligation"
 NODE_FLOW_SUMMARY = "RoutineFlowSummary"
 NODE_CONTRACT_CLAUSE = "ContractClause"
+NODE_CONTRACT_BINDINGS = "ContractBindings"
+NODE_CONTRACT_BINDING = "ContractBinding"
 NODE_ABORT_CONTRACT_CLAUSE = "AbortContractClause"
 NODE_ERROR_REF = "ErrorRef"
+NODE_SOURCE_AST = "SourceAst"
+NODE_SEMANTIC_IR = "SemanticIr"
 
 
 def export_verified_program(verified: VerifiedProgram) -> dict[str, Any]:
+    source_ast = {
+        "node": NODE_SOURCE_AST,
+        "module": export_program(verified.ast),
+    }
+    semantic_ir = {
+        "node": NODE_SEMANTIC_IR,
+        "analysis": export_analysis(verified),
+    }
     return {
         "node": NODE_DOCUMENT_V0,
         "schema_profile": FH_IR_PROFILE,
         "schema": FH_IR_SCHEMA,
         "schema_version": dict(FH_IR_SCHEMA_VERSION_V0),
         "language_version": FREEHOLD_LANGUAGE_VERSION,
-        "module": export_program(verified.ast),
-        "analysis": export_analysis(verified),
+        "source_ast": source_ast,
+        "semantic_ir": semantic_ir,
+        "module": source_ast["module"],
+        "analysis": semantic_ir["analysis"],
     }
 
 
@@ -107,12 +121,22 @@ def export_verified_project(
     for module_name in module_names:
         resolved = resolved_modules[module_name]
         verified = resolved.verified
+        source_ast = {
+            "node": NODE_SOURCE_AST,
+            "module": export_program(verified.ast),
+        }
+        semantic_ir = {
+            "node": NODE_SEMANTIC_IR,
+            "analysis": export_analysis(verified),
+        }
         modules.append(
             {
                 "node": NODE_MODULE_ENTRY,
                 "name": module_name,
-                "module": export_program(verified.ast),
-                "analysis": export_analysis(verified),
+                "source_ast": source_ast,
+                "semantic_ir": semantic_ir,
+                "module": source_ast["module"],
+                "analysis": semantic_ir["analysis"],
             }
         )
 
@@ -343,6 +367,7 @@ def export_routine_decl(routine: RoutineDecl) -> dict[str, Any]:
     requires = [export_expr(expr) for expr in routine.requires]
     ensures = [export_expr(expr) for expr in routine.ensures]
     aborts = [export_abort_clause(clause) for clause in routine.aborts]
+    contract_bindings = export_contract_bindings(routine.return_type)
     return {
         "kind": "RoutineDecl",
         "routine_kind": routine.kind,
@@ -359,6 +384,7 @@ def export_routine_decl(routine: RoutineDecl) -> dict[str, Any]:
             "ensures": [export_contract_clause("ensures", index, condition) for index, condition in enumerate(ensures)],
             "aborts": aborts,
         },
+        "contract_bindings": contract_bindings,
         "body": [export_stmt(stmt) for stmt in routine.body],
     }
 
@@ -374,6 +400,92 @@ def export_contract_clause(role: str, index: int, condition: dict[str, Any]) -> 
         "index": index,
         "condition": condition,
     }
+
+
+def export_contract_bindings(return_type: TypeRef | None) -> dict[str, Any]:
+    ok_type, error_type = extract_result_type_components(return_type)
+    is_result = ok_type is not None and error_type is not None
+    result_binding_type = export_type_ref(return_type)
+    value_binding_type = export_type_ref(ok_type) if ok_type is not None else {"kind": "Void"}
+    error_binding_ref = export_error_ref(error_type) if error_type is not None else None
+
+    return {
+        "kind": NODE_CONTRACT_BINDINGS,
+        "is_result_return": is_result,
+        "contexts": {
+            "requires": {
+                "result": False,
+                "success": False,
+                "failure": False,
+                "value": False,
+                "error": False,
+            },
+            "ensures": {
+                "result": True,
+                "success": is_result,
+                "failure": is_result,
+                "value": is_result,
+                "error": is_result,
+            },
+            "aborts": {
+                "result": False,
+                "success": False,
+                "failure": False,
+                "value": False,
+                "error": False,
+            },
+        },
+        "bindings": [
+            {
+                "kind": NODE_CONTRACT_BINDING,
+                "name": "result",
+                "available": True,
+                "type": result_binding_type,
+            },
+            {
+                "kind": NODE_CONTRACT_BINDING,
+                "name": "success",
+                "available": is_result,
+                "type": {"kind": "TypeName", "name": "Boolean"},
+            },
+            {
+                "kind": NODE_CONTRACT_BINDING,
+                "name": "failure",
+                "available": is_result,
+                "type": {"kind": "TypeName", "name": "Boolean"},
+            },
+            {
+                "kind": NODE_CONTRACT_BINDING,
+                "name": "value",
+                "available": is_result,
+                "type": value_binding_type,
+            },
+            {
+                "kind": NODE_CONTRACT_BINDING,
+                "name": "error",
+                "available": is_result,
+                "type": export_type_name_ref(error_type) if error_type is not None else {"kind": "Void"},
+                "error_ref": error_binding_ref,
+            },
+        ],
+        "result_value_binding": {
+            "name": "value",
+            "available": is_result,
+            "type": value_binding_type,
+        },
+        "result_error_binding": {
+            "name": "error",
+            "available": is_result,
+            "type": export_type_name_ref(error_type) if error_type is not None else {"kind": "Void"},
+            "error_ref": error_binding_ref,
+        },
+    }
+
+
+def extract_result_type_components(return_type: TypeRef | None) -> tuple[TypeRef | None, str | None]:
+    if isinstance(return_type, ResultTypeName):
+        return return_type.ok_type, return_type.error_type
+    return None, None
 
 
 def export_abort_clause(clause: AbortClause) -> dict[str, Any]:

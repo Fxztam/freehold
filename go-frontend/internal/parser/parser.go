@@ -274,12 +274,21 @@ func (p *Parser) parseName() string {
 
 func (p *Parser) parseNameToken() token.Token {
 	tok := p.peek()
-	if tok.Kind == token.Ident || tok.Kind == token.Scope || tok.Kind == token.Spawn || tok.Kind == token.Join || tok.Kind == token.Result || tok.Kind == token.Value {
+	if tok.Kind == token.Ident || tok.Kind == token.Scope || tok.Kind == token.Spawn || tok.Kind == token.Join || tok.Kind == token.Result {
 		p.pos++
 		return tok
 	}
 
 	panic(diagnostic.ExpectedIdentifier(tok))
+}
+
+func (p *Parser) parseFieldMemberName() string {
+	tok := p.peek()
+	if tok.Kind == token.Value {
+		p.pos++
+		return tok.Lexeme
+	}
+	return p.parseName()
 }
 
 func (p *Parser) parseFunction() ast.FunctionDecl {
@@ -1044,7 +1053,7 @@ func (p *Parser) finishPostfix(expr ast.Expr) ast.Expr {
 			Kind:   "FieldAccessExpr",
 			Pos:    exprPos(expr),
 			Object: expr,
-			Field:  p.parseName(),
+			Field:  p.parseFieldMemberName(),
 		}
 	}
 
@@ -1089,7 +1098,7 @@ func (p *Parser) parseFieldAccess() ast.Expr {
 			Kind:   "FieldAccessExpr",
 			Pos:    exprPos(expr),
 			Object: expr,
-			Field:  p.parseName(),
+			Field:  p.parseFieldMemberName(),
 		}
 	}
 
