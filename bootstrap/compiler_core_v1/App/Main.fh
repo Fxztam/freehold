@@ -3,7 +3,7 @@ module App.Main
 import Compiler.Core.Ast exposing IdentifierNode, LiteralNode, ModuleNode, identifier_key, literal_text, make_identifier_node, make_literal_node, make_module_node, module_key, module_text
 import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic_text, make_diagnostic
 import Compiler.Core.Fixtures exposing CompilerFixtureResult, evaluate_fixture
-import Compiler.Core.Lexer exposing MiniModuleTokens, lex_mini_module, mini_module_lexer_summary, mini_module_token_count
+import Compiler.Core.Lexer exposing MiniModuleTokens, lex_mini_module, lex_mini_module_pair, mini_module_lexer_summary, mini_module_token_count
 import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, exported_go_name, make_module_name, make_symbol_name, module_to_go_package
 import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok, parse_result_summary
 import Compiler.Core.Parser exposing mini_module_parser_summary, parse_mini_module, parse_mini_module_result, parsed_module_name
@@ -60,6 +60,7 @@ is
     call Std.IO.logf("ast.module.text = ${}", module_text(module_node))
 
     let mini_tokens: MiniModuleTokens = lex_mini_module("mini_module.fh", "Demo")
+    let mismatch_tokens: MiniModuleTokens = lex_mini_module_pair("mini_module.fh", "Demo", "Other")
 
     call Std.IO.logf("lexer.count = ${}", mini_module_token_count(mini_tokens))
     call Std.IO.logf("lexer.first = ${}", token_text(mini_tokens.module_keyword))
@@ -69,10 +70,12 @@ is
 
     let parsed_module: ModuleNode = parse_mini_module(mini_tokens)
     let parsed_result: ParseResult = parse_mini_module_result(mini_tokens)
+    let mismatch_result: ParseResult = parse_mini_module_result(mismatch_tokens)
 
     call Std.IO.logf("parser.module = ${}", parsed_module_name(parsed_module))
     call Std.IO.logf("parser.summary = ${}", mini_module_parser_summary(parsed_module))
     call Std.IO.logf("parser.result = ${}", parse_result_summary(parsed_result))
+    call Std.IO.logf("parser.mismatch = ${}", parse_result_summary(mismatch_result))
 
     let ok_result: ParseResult = parse_ok(parsed_module)
     let mismatch_error_span: SourceSpan = make_source_span("mini_module.fh", 2, 5, 2, 10)

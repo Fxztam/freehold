@@ -13,6 +13,13 @@ function lex_mini_module(source_name: String, module_name: String) returns MiniM
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0
 ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name
 is
+    return lex_mini_module_pair(source_name, module_name, module_name)
+end lex_mini_module
+
+function lex_mini_module_pair(source_name: String, module_name: String, end_name: String) returns MiniModuleTokens
+requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(end_name, "") = 0
+ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name, result.end_name.lexeme = end_name
+is
     let keyword_module: TokenKind = make_token_kind("KeywordModule")
     let keyword_end: TokenKind = make_token_kind("KeywordEnd")
     let identifier: TokenKind = make_token_kind("Identifier")
@@ -20,7 +27,7 @@ is
     let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 1, 1, 1, 7), "module")
     let module_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 8, 1, 12), module_name)
     let end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 2, 1, 2, 4), "end")
-    let end_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 5, 2, 9), module_name)
+    let end_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 5, 2, 10), end_name)
 
     return MiniModuleTokens {
         module_keyword: module_keyword,
@@ -28,7 +35,7 @@ is
         end_keyword: end_keyword,
         end_name: end_name_token
     }
-end lex_mini_module
+end lex_mini_module_pair
 
 function mini_module_token_count(tokens: MiniModuleTokens) returns Integer
 ensures result = 4

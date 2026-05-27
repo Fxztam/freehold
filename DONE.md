@@ -918,3 +918,19 @@
   - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Parser.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched.
+
+## Stage-3 compiler_core_v1 negative parser fixture
+
+- Added the negative mini-module parser fixture for `module Demo` / `end Other`.
+- Extended `Compiler.Core.Lexer` with `lex_mini_module_pair`, so tests can create matching and mismatching mini-module token streams deterministically.
+- Updated `Compiler.Core.Parser` so `parse_mini_module_result` no longer requires matching module/end names; it now returns:
+  - `parse_ok(...)` for `module Demo` / `end Demo`.
+  - `parse_error_result(...)` with `FH-PARSE-0001` for `module Demo` / `end Other`.
+- Extended `App.Main` and the Stage-3 runtime Golden with `parser.mismatch`.
+- Updated `artifacts/stage3/compiler_core_v1/manifest.json` so the Stage-3 contract checks generated Go for `LexMiniModulePair`, `BuildMiniModuleNode`, and the parser error-result path.
+- Updated `OPEN-STAGE3-COMPILER-CORE.md`; next planned compiler-core step is extending the parser beyond the current mini-module fixture.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Lexer.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Parser.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 28/28 lines.
