@@ -461,6 +461,20 @@ class Verifier:
         if self.base(actual, ctx) != "Boolean":
             raise TypeCheckError(f"{expr.pos.text()}: contract {label} requires Boolean, got {type_to_string(actual)}")
 
+    def contract_value_type(self, name, pos, allow_result, result_type):
+        if not allow_result or result_type is None:
+            if name != "value":
+                raise TypeCheckError(f"{pos.text()}: Result contract expression {name} is only available in Result ensures")
+            raise TypeCheckError(f"{pos.text()}: contract expression {name} is only available in function ensures")
+        if name == "value":
+            return result_type.ok_type if isinstance(result_type, ResultTypeName) else result_type
+        if isinstance(result_type, ResultTypeName):
+            if name in ("success", "failure"):
+                return TypeName("Boolean")
+            if name == "error":
+                return TypeName(result_type.error_type)
+        raise TypeCheckError(f"{pos.text()}: Result contract expression {name} is only available in Result ensures")
+
     def ret(self, rv, expected, env, ctx):
         if expected is None:
             raise TypeCheckError(f"{rv.pos.text()}: procedure cannot return a value")
@@ -493,8 +507,8 @@ class Verifier:
         root = path[0]
         if root == "result" and allow_result and result_type is not None:
             t = result_type
-        elif root == "value" and allow_result and isinstance(result_type, ResultTypeName):
-            t = result_type.ok_type
+        elif root == "value" and allow_result and result_type is not None:
+            t = self.contract_value_type(root, pos, allow_result, result_type)
         elif root == "error" and allow_result and isinstance(result_type, ResultTypeName):
             t = TypeName(result_type.error_type)
         elif root in {"result", "value", "error"}:
@@ -523,8 +537,8 @@ class Verifier:
         return self.infer_field_path_obj(e.path, e.pos, env, ctx, allow_result, result_type)
 
     def infer_index_target(self, name, index, pos, env, ctx, allow_result, result_type):
-        if name == "value" and allow_result and isinstance(result_type, ResultTypeName):
-            arr_t = result_type.ok_type
+        if name == "value" and allow_result and result_type is not None:
+            arr_t = self.contract_value_type(name, pos, allow_result, result_type)
         elif name in {"result", "value", "error"}:
             raise TypeCheckError(f"{pos.text()}: Result contract expression {name} is only available in ensures")
         else:
@@ -852,10 +866,7 @@ class Verifier:
         if isinstance(e, IndexExpr):
             return self.infer_index_target(e.name, e.index, e.pos, env, ctx, allow_result, result_type)
         if isinstance(e, SpecialResultExpr):
-            if not allow_result or not isinstance(result_type, ResultTypeName):
-                raise TypeCheckError(f"{e.pos.text()}: Result contract expression {e.name} is only available in Result ensures")
-            if e.name in ("success","failure"): return TypeName("Boolean")
-            return result_type.ok_type if e.name == "value" else TypeName(result_type.error_type)
+            return self.contract_value_type(e.name, e.pos, allow_result, result_type)
         if isinstance(e, VarExpr):
             if e.name in ctx.errors: return TypeName(e.name)
             if e.name == "result" and allow_result and result_type: return result_type

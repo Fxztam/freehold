@@ -296,3 +296,141 @@
 - Re-ran `cmd /c compare-ir-compiler-v1.cmd` for Stage 1 regression coverage.
 - Stage 1 remains green across generated parity and both frozen baseline checks: 18 total, 15 matching, 0 mismatching, 3 skipped.
 - No additional Go/Python IR changes were required because the current comparer and frontend outputs already converge to 0 mismatches.
+
+### Language modules 02 test branch
+
+- Added a second language-module test branch at `tests/language_modules_02`.
+- Added initial `01_core` smoke module with `valid/minimal_module_02.fh` and a manifest-owned valid verification case.
+- Added branch-local docs and metadata:
+  - `tests/language_modules_02/README.md`
+  - `tests/language_modules_02/positive_feature_matrix.json`
+  - `tests/language_modules_02/expected_semantic_diagnostics.json`
+- Extended `python -m freehold test-language` with `--root` so the stable `tests/language_modules` tree and the new `tests/language_modules_02` tree can run through the same runner.
+- Extended `tools/test_steps.py` with `--language-root` for targeted test-step runs against the second branch.
+- Added wrappers:
+  - `tests/language_modules_02/01_core/test.cmd`
+  - `tests/language_modules_02/01_core/test.ps1`
+  - `compare-semantic-diagnostics-02.cmd`
+  - `dhparser-parse-tests-language-modules-02.cmd`
+- Validation passed:
+  - `python -m py_compile freehold\tests\language_runner.py freehold\cli\main.py tools\test_steps.py`
+  - `python -m freehold test-language --root tests\language_modules_02`
+  - `python -m freehold test-language --module 01_core`
+  - `cmd /c compare-semantic-diagnostics-02.cmd`
+  - `cmd /c tests\language_modules_02\01_core\test.cmd`
+  - `cmd /c dhparser-parse-tests-language-modules-02.cmd`
+  - `python tools\test_steps.py 01_core --language-root tests\language_modules_02 --quick --no-demos`
+
+### Language modules 02 package import
+
+- Copied the package README to the repository root as `README.md`.
+- Extracted `files-V2.zip` and the nested `freehold-tests-split.zip` package into a temporary import area.
+- Imported the package into `tests/language_modules_02` using the requested numbered module layout:
+  - `00_support`
+  - `01_lex` through `17_stdlib_args`
+- Split `_pos.fh` files into `valid/*_pos.fh` cases with `expected_ast` targets.
+- Split `_neg.fh` files into one invalid case per embedded module, using `invalid_syntax` for `[FAIL SYN]` and `invalid_semantics` for the other annotated fail types.
+- Generated expected artifacts with `python -m freehold test-language --root tests\language_modules_02 --update --json-summary .tmp\language_modules_02_summary.json`.
+- Re-ran only this branch without update: `python -m freehold test-language --root tests\language_modules_02 --json-summary .tmp\language_modules_02_summary_no_update.json`.
+- Current imported status:
+  - 94 total cases.
+  - 79 passing cases.
+  - 15 failing positive package cases.
+  - 3 expected AST files generated.
+  - 76 expected error files generated.
+- Package-count note: root `README.md` lists 75 negative cases, but the package source contains 76 `[FAIL ...]` modules; `14_control_flow` has 8 negative modules while the README table lists 7.
+
+### Language modules 02 positive multi-module split
+
+- Split `_pos` multi-module files for:
+  - `tests/language_modules_02/02_module/valid/mod_pos.fh`
+  - `tests/language_modules_02/03_imports/valid/imp_pos.fh`
+- Replaced each aggregate positive case with one `valid/*.fh` case per embedded module and separate `expected_ast/*.ast.json` targets.
+- Updated manifests for `02_module` and `03_imports`.
+- Validation passed for `02_module`: 5/5.
+- Validation for `03_imports` improved to 6/7; the remaining positive failure is `Test.Imp.Pos.Exposed`, which still needs project/support import resolution for `Point`.
+- Re-ran only `tests/language_modules_02`: 84/98 passing, 14 failing.
+- Expected artifacts now include 8 AST files and 76 error files.
+
+### Language modules 02 Test.Support project resolution
+
+- Solved the remaining `03_imports` support-resolution failure by adding resolver-backed valid cases.
+- Extended `valid` language-runner cases so they can optionally use `root` and `entry` while still comparing an `expected_ast` for the resolved entry module.
+- Added a branch-local project fixture for `03_imports`:
+  - `tests/language_modules_02/03_imports/fixtures/valid/support_imports/Test/Support.fh`
+  - `tests/language_modules_02/03_imports/fixtures/valid/support_imports/Test/Imp/Pos/Simple.fh`
+  - `tests/language_modules_02/03_imports/fixtures/valid/support_imports/Test/Imp/Pos/Exposed.fh`
+  - `tests/language_modules_02/03_imports/fixtures/valid/support_imports/Test/Imp/Pos/Multi.fh`
+- Updated `03_imports` manifest to run the three positive import cases through project resolution.
+- Adjusted branch-local `Test.Support` to use `amount` instead of the reserved keyword `value`.
+- Validation passed:
+  - `python -m py_compile freehold\tests\language_runner.py`
+  - `python -m freehold test-language --root tests\language_modules_02 --module 00_support --update --json-summary .tmp\language_modules_02_00_support_update.json`
+  - `python -m freehold test-language --root tests\language_modules_02 --module 03_imports --update --json-summary .tmp\language_modules_02_03_imports_project_update.json`
+  - `python -m freehold test-language --root tests\language_modules_02 --json-summary .tmp\language_modules_02_summary_after_support_resolution.json`
+- New status: 86/98 passing, 12 failing; `00_support` is 1/1 and `03_imports` is 7/7.
+- Expected artifacts now include 10 AST files and 76 error files.
+
+### General function ensures `value` binding
+
+- Extended the language so `value` is available as a general function-ensures return binding:
+  - for non-Result functions, `value` is an alias for the returned value;
+  - for `Result<T,E>` functions, `value` remains the successful payload `T`;
+  - `success`, `failure`, and `error` remain Result-only contract bindings;
+  - `value` remains unavailable in `requires` and function bodies.
+- Updated the Python verifier for scalar, field, and index access forms:
+  - `ensures value = ...`
+  - `ensures value.field = ...`
+  - `ensures value[index] = ...`
+- Updated Python FH-IR/FHIR metadata, Go frontend semantic contract env, Go Compare-IR contract binding metadata, and Python Go codegen ensures bindings.
+- Added focused coverage in `tests/language_modules/13_contract_blocks`:
+  - `valid/non_result_value_ensures.fh`
+  - `invalid_semantics/requires_cannot_use_value.fh`
+  - matching expected AST, Go, and semantic error artifacts.
+- Updated compiler V1 Compare-IR baselines intentionally because `contract_bindings.value` is now available for non-Result functions.
+- Validation passed:
+  - `python -m py_compile freehold\core\verifier.py freehold\core\fhir.py freehold\core\go_codegen.py`
+  - `python -m freehold test-language --module 13_contract_blocks --update --json-summary .tmp\language_13_contract_value_summary.json` -> 39/39
+  - `python -m freehold test-language --json-summary .tmp\language_modules_summary_after_value_binding.json` -> 466/466
+  - `cmd /c "cd /d D:\works\Work-VeraFlow\freehold\go-frontend && gofmt -w internal\semantic\analyzer.go internal\semantic\compare_ir.go && go test ./..."`
+  - `cmd /c compare-ir-compiler-v1-update.cmd`
+  - `cmd /c compare-ir-compiler-v1.cmd` -> Stage 1 green: 18 total, 15 matching, 0 mismatching, 3 skipped across generated parity and both frozen baselines.
+- Package branch impact:
+  - `05_generics` no longer fails on `ensures value...`.
+  - The positive generics case now reaches the next independent issue: `plain function must return expression` at `return ok [...]` for a plain Array return.
+  - Overall `tests/language_modules_02` remains 86/98, with the failure reason in `05_generics` advanced to the next compatibility point.
+
+### Language modules 02 shared support project fixture
+
+- Added a shared resolver-backed project fixture for branch-02 package positives that import `Test.Support`:
+  - `tests/language_modules_02/fixtures/support_project/Test/Support.fh`
+  - `tests/language_modules_02/fixtures/support_project/Test/Requires/Pos.fh`
+  - `tests/language_modules_02/fixtures/support_project/Test/Ensures/Pos.fh`
+  - `tests/language_modules_02/fixtures/support_project/Test/Aborts/Pos.fh`
+  - `tests/language_modules_02/fixtures/support_project/Test/Control/Pos.fh`
+- Switched positive cases in `09_requires`, `10_ensures`, `11_aborts`, and `14_control_flow` from isolated single-file validation to `root`/`entry` project validation.
+- Validation results:
+  - `09_requires`: 5/5
+  - `11_aborts`: 5/5
+  - `14_control_flow`: 9/9
+  - `10_ensures`: advanced past `Test.Support` resolution and now fails on the independent `return ok [...]` vs plain Array-return question.
+- Full branch status after this batch:
+  - `python -m freehold test-language --root tests\language_modules_02 --json-summary .tmp\language_modules_02_summary_after_support_project_batch.json`
+  - 89/98 passing, 9 failing.
+  - Expected artifacts: 13 AST files and 76 error files.
+
+### Language modules 02 package `ok` normalization
+
+- Chose package normalization instead of extending `ok` as a general success wrapper:
+  - `ok` remains Result-return syntax.
+  - Plain Array returns now use `[a, b]` / `[a, b, c]` directly.
+  - Array `let` initialization now uses a plain Array literal.
+- Updated branch-02 positive package cases and shared fixtures:
+  - `05_generics`: plain Array returns no longer use `ok`, and generic parameter `value` was renamed to `amount`.
+  - `10_ensures`: plain Array returns no longer use `ok`.
+  - `13_let_mutation`: Array `let` no longer uses `ok`; Result `let` now initializes from a Result-returning helper instead of `ok` as an expression.
+- Added `Test/LetMut/Pos.fh` to the shared support project fixture and switched `13_let_mutation` to resolver-backed `root`/`entry` validation.
+- Validation:
+  - `python -m freehold test-language --root tests\language_modules_02`
+  - New branch status: 92/98 passing, 6 failing.
+  - Fully green after this batch: `05_generics`, `10_ensures`, `13_let_mutation`.

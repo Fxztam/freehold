@@ -274,6 +274,7 @@ func contractEnv(env map[string]string, returnType string) map[string]string {
 		return contract
 	}
 	contract["result"] = returnType
+	contract["value"] = returnType
 	if okType, errorType, ok := resultTypes(returnType); ok {
 		contract["value"] = okType
 		contract["error"] = errorType

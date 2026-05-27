@@ -1,0 +1,480 @@
+{
+  "declarations": [
+    {
+      "name": "NotFound",
+      "node": "ErrorDecl"
+    },
+    {
+      "name": "InvalidInput",
+      "node": "ErrorDecl"
+    },
+    {
+      "name": "Overflow",
+      "node": "ErrorDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "x",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Integer"
+        },
+        {
+          "name": "y",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Integer"
+        }
+      ],
+      "name": "Point",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "origin",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Point"
+        },
+        {
+          "name": "width",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Integer"
+        },
+        {
+          "name": "height",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Integer"
+        }
+      ],
+      "name": "Box",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "name",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "String"
+        },
+        {
+          "name": "amount",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Integer"
+        }
+      ],
+      "name": "Labeled",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "args": [
+                {
+                  "expr": {
+                    "name": "x",
+                    "node": "VarExpr"
+                  },
+                  "name": "x",
+                  "node": "NamedArg"
+                },
+                {
+                  "expr": {
+                    "name": "y",
+                    "node": "VarExpr"
+                  },
+                  "name": "y",
+                  "node": "NamedArg"
+                }
+              ],
+              "node": "RecordLiteralExpr",
+              "type_name": "Point"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "result",
+              "x"
+            ]
+          },
+          "node": "BinaryExpr",
+          "op": "=",
+          "right": {
+            "name": "x",
+            "node": "VarExpr"
+          }
+        },
+        {
+          "left": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "result",
+              "y"
+            ]
+          },
+          "node": "BinaryExpr",
+          "op": "=",
+          "right": {
+            "name": "y",
+            "node": "VarExpr"
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "make_point",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "x",
+          "node": "Param",
+          "type_name": "Integer"
+        },
+        {
+          "name": "y",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "x",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        },
+        {
+          "left": {
+            "name": "y",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Point",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "args": [
+              {
+                "name": "ox",
+                "node": "VarExpr"
+              },
+              {
+                "name": "oy",
+                "node": "VarExpr"
+              }
+            ],
+            "name": "make_point",
+            "node": "CallExpr"
+          },
+          "name": "origin",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Point",
+            "node": "TypeName"
+          }
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "args": [
+                {
+                  "expr": {
+                    "name": "origin",
+                    "node": "VarExpr"
+                  },
+                  "name": "origin",
+                  "node": "NamedArg"
+                },
+                {
+                  "expr": {
+                    "name": "w",
+                    "node": "VarExpr"
+                  },
+                  "name": "width",
+                  "node": "NamedArg"
+                },
+                {
+                  "expr": {
+                    "name": "h",
+                    "node": "VarExpr"
+                  },
+                  "name": "height",
+                  "node": "NamedArg"
+                }
+              ],
+              "node": "RecordLiteralExpr",
+              "type_name": "Box"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "result",
+              "width"
+            ]
+          },
+          "node": "BinaryExpr",
+          "op": "=",
+          "right": {
+            "name": "w",
+            "node": "VarExpr"
+          }
+        },
+        {
+          "left": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "result",
+              "height"
+            ]
+          },
+          "node": "BinaryExpr",
+          "op": "=",
+          "right": {
+            "name": "h",
+            "node": "VarExpr"
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "make_box",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "ox",
+          "node": "Param",
+          "type_name": "Integer"
+        },
+        {
+          "name": "oy",
+          "node": "Param",
+          "type_name": "Integer"
+        },
+        {
+          "name": "w",
+          "node": "Param",
+          "type_name": "Integer"
+        },
+        {
+          "name": "h",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "ox",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        },
+        {
+          "left": {
+            "name": "oy",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        },
+        {
+          "left": {
+            "name": "w",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        },
+        {
+          "left": {
+            "name": "h",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Box",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "args": [
+                {
+                  "expr": {
+                    "name": "name",
+                    "node": "VarExpr"
+                  },
+                  "name": "name",
+                  "node": "NamedArg"
+                },
+                {
+                  "expr": {
+                    "name": "amount",
+                    "node": "VarExpr"
+                  },
+                  "name": "amount",
+                  "node": "NamedArg"
+                }
+              ],
+              "node": "RecordLiteralExpr",
+              "type_name": "Labeled"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "result",
+              "name"
+            ]
+          },
+          "node": "BinaryExpr",
+          "op": "=",
+          "right": {
+            "name": "name",
+            "node": "VarExpr"
+          }
+        },
+        {
+          "left": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "result",
+              "amount"
+            ]
+          },
+          "node": "BinaryExpr",
+          "op": "=",
+          "right": {
+            "name": "amount",
+            "node": "VarExpr"
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "make_labeled",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "name",
+          "node": "Param",
+          "type_name": "String"
+        },
+        {
+          "name": "amount",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "args": [
+              {
+                "name": "name",
+                "node": "VarExpr"
+              },
+              {
+                "node": "StringExpr",
+                "value": ""
+              }
+            ],
+            "name": "String.instr",
+            "node": "CallExpr"
+          },
+          "node": "BinaryExpr",
+          "op": "=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        },
+        {
+          "left": {
+            "name": "amount",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Labeled",
+        "node": "TypeName"
+      }
+    }
+  ],
+  "imports": [],
+  "module_name": "Test.Support",
+  "node": "Program"
+}

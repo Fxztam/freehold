@@ -1,0 +1,63 @@
+-- ============================================================
+-- test-12-result_pos.fh  –  Result PASS-Tests (RES-01..07)
+-- ============================================================
+module Test.Result.Pos
+
+import Test.Support exposing Point, make_point, NotFound, InvalidInput
+
+-- RES-01: return ok expr
+function ok_integer(n: Integer) returns Result<Integer, NotFound>
+requires n >= 0
+ensures success, value = n
+is
+    return ok n
+end ok_integer
+
+-- RES-01: return ok array-literal
+function ok_array(a: Integer, b: Integer) returns Result<Array<Integer, 2>, NotFound>
+requires a >= 0, b >= 0
+ensures success, value[0] = a, value[1] = b
+is
+    return ok [a, b]
+end ok_array
+
+-- RES-02: return error IDENT
+function fail_on_zero(n: Integer) returns Result<Integer, NotFound>
+requires n >= 0
+aborts NotFound
+ensures success, value >= 0
+is
+    if n = 0 then
+        return error NotFound
+    end if
+    return ok n
+end fail_on_zero
+
+-- RES-03: .value Accessor
+function extract_value(n: Integer) returns Integer
+requires n > 0
+ensures result > 0
+is
+    let r: Result<Integer, NotFound> = ok_integer(n)
+    let v: Integer = r.value
+    return v
+end extract_value
+
+-- RES-04: .error Accessor
+function extract_error() returns Integer
+is
+    let r: Result<Integer, NotFound> = fail_on_zero(0)
+    return 0
+end extract_error
+
+-- RES-07: value / error / success / failure als Primärausdrücke
+function keyword_primaries(n: Integer) returns Result<Integer, NotFound>
+requires n >= 0
+ensures success, value >= 0
+is
+    let s: Boolean = success
+    let f: Boolean = failure
+    return ok n
+end keyword_primaries
+
+end Test.Result.Pos

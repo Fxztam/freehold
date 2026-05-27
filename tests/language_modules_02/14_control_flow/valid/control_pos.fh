@@ -1,0 +1,140 @@
+-- ============================================================
+-- test-14-control_pos.fh  –  Kontrollfluss PASS-Tests
+--   (CTL-01..04, WHL-01..03, CAS-01..02, RET-01..04, CHK-01..03)
+-- ============================================================
+module Test.Control.Pos
+
+import Test.Support exposing NotFound, InvalidInput, Overflow
+
+-- CTL-01: if … then … end if
+function abs_val(n: Integer) returns Integer
+requires n >= -1000
+ensures result >= 0
+is
+    let r: Integer = n
+    if n < 0 then
+        r := 0 - n
+    end if
+    return r
+end abs_val
+
+-- CTL-02: if … then … else … end if
+function max_of(a: Integer, b: Integer) returns Integer
+requires a >= 0, b >= 0
+ensures result >= a, result >= b
+is
+    if a >= b then
+        return a
+    else
+        return b
+    end if
+end max_of
+
+-- CTL-02: verschachtelte if-else
+function classify(n: Integer) returns String
+requires n >= 0
+is
+    if n = 0 then
+        return "zero"
+    else
+        if n < 10 then
+            return "small"
+        else
+            return "large"
+        end if
+    end if
+end classify
+
+-- CTL-04: abort im if-Zweig
+function require_pos(n: Integer) returns Integer
+requires n >= 0
+aborts InvalidInput
+ensures result > 0
+is
+    if n = 0 then
+        abort InvalidInput
+    end if
+    return n
+end require_pos
+
+-- WHL-01/02: while mit mehreren invariants
+function sum_to(n: Integer) returns Integer
+requires n >= 0
+ensures result >= 0
+is
+    let total: Integer = 0
+    let i: Integer = 0
+    while i <= n
+    invariant total >= 0
+    invariant i >= 0
+    variant n - i
+    do
+        total := total + i
+        i := i + 1
+    end while
+    return total
+end sum_to
+
+-- WHL-03: variant als Terminierungsmaß
+function count_down(n: Integer) returns Integer
+requires n >= 0
+ensures result = 0
+is
+    let c: Integer = n
+    while c > 0
+    invariant c >= 0
+    invariant c <= n
+    variant c
+    do
+        c := c - 1
+    end while
+    return c
+end count_down
+
+-- CAS-01/02: case mit when und default
+function day_name(d: Integer) returns String
+requires d >= 1, d <= 7
+is
+    case d is
+        when 1 => return "Montag"
+        when 2 => return "Dienstag"
+        when 3 => return "Mittwoch"
+        when 4 => return "Donnerstag"
+        when 5 => return "Freitag"
+        when 6 => return "Samstag"
+        when 7 => return "Sonntag"
+        default => return "Unbekannt"
+    end case
+end day_name
+
+-- RET-01/02/03/04: alle return-Formen
+function ret_ok(n: Integer) returns Result<Integer, NotFound>
+requires n >= 0
+aborts NotFound
+ensures success, value >= 0
+is
+    if n = 0 then
+        return error NotFound
+    end if
+    return ok n
+end ret_ok
+
+-- CHK-01: check als Runtime-Assertion
+function checked_add(a: Integer, b: Integer) returns Integer
+requires a >= 0, b >= 0
+ensures result >= a
+is
+    let total: Integer = a + b
+    check total >= a
+    check total >= b
+    return total
+end checked_add
+
+-- CHK-03: check true (immer erfüllt)
+function check_always_true() returns Integer
+is
+    check true
+    return 1
+end check_always_true
+
+end Test.Control.Pos

@@ -1,0 +1,51 @@
+-- ============================================================
+-- test-01-lex_pos.fh  –  Lexer PASS-Tests  (LEX-01..11)
+-- ============================================================
+module Test.Lex.Pos
+
+-- LEX-01: Einzeiliger Kommentar (wird ignoriert)
+-- LEX-02: Mehrzeiliger Kommentar
+/* Block-Kommentar über
+   mehrere Zeilen */
+
+function lex_integers() returns Integer
+-- LEX-04: positive INTEGER_LITERAL
+-- LEX-05: negative INTEGER_LITERAL
+is
+    let a: Integer = 42
+    let b: Integer = 0
+    let c: Integer = 1000000
+    let neg: Integer = 0 - 7
+    return a
+end lex_integers
+
+function lex_doubles() returns Double
+-- LEX-06: DOUBLE_LITERAL
+is
+    let x: Double = 3.14
+    let y: Double = 0.0
+    let z: Double = 2.718
+    return x
+end lex_doubles
+
+function lex_strings() returns String
+-- LEX-08: STRING_LITERAL mit Escape
+is
+    let s1: String = "Hallo Welt"
+    let s2: String = "mit \"Anführungszeichen\""
+    let s3: String = "Backslash: \\"
+    let empty: String = ""
+    return s1
+end lex_strings
+
+function lex_ident() returns Integer
+-- LEX-11: Bezeichner mit Unterstrich und Ziffern
+is
+    let my_var: Integer    = 1
+    let _private: Integer  = 2
+    let value2: Integer    = 3
+    let a1_b2_c3: Integer  = 4
+    return my_var
+end lex_ident
+
+end Test.Lex.Pos

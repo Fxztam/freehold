@@ -1,0 +1,88 @@
+-- ============================================================
+-- test-15-scope_pos.fh  –  scope/spawn/join/await PASS-Tests
+--   (SCP-01..03, SCP-06..08)
+-- ============================================================
+module Test.Scope.Pos
+
+-- SCP-08: async function mit await
+async function fetch_value(id: Integer) returns Integer
+requires id > 0
+ensures result >= 0
+is
+    return id * 2
+end fetch_value
+
+async function fetch_sum(a: Integer, b: Integer) returns Integer
+requires a > 0, b > 0
+ensures result > 0
+is
+    let va: Integer = await fetch_value(a)
+    let vb: Integer = await fetch_value(b)
+    return va + vb
+end fetch_sum
+
+-- SCP-01: scope … spawn … join … result … end scope
+async procedure run_tasks()
+is
+    scope worker do
+        spawn
+            let n: Integer = await fetch_value(1)
+            call Std.IO.logf("spawned: ${}", n)
+        join
+            call Std.IO.logf("joined", )
+        result
+            call Std.IO.logf("done", )
+    end scope
+end run_tasks
+
+-- SCP-03: leerer spawn-Block
+async procedure empty_spawn()
+is
+    scope empty_w do
+        spawn
+        join
+            call Std.IO.logf("after empty spawn", )
+        result
+            call Std.IO.logf("result", )
+    end scope
+end empty_spawn
+
+-- SCP-02: scope(args) als Ausdruck
+async function scope_expr(n: Integer) returns Integer
+requires n > 0
+ensures result >= 0
+is
+    let handle: Integer = scope(n, 42)
+    return handle
+end scope_expr
+
+-- SCP-06: .spawn / .join als Member-Zugriff
+async procedure member_access(n: Integer)
+requires n > 0
+is
+    let handle: Integer = scope(n)
+    let s: Integer = handle.spawn
+    let j: Integer = handle.join
+    call Std.IO.logf("s=${}, j=${}", s, j)
+end member_access
+
+-- SCP-01 PASS: Scope mit Datenaustausch
+async function parallel(a: Integer, b: Integer) returns Integer
+requires a > 0, b > 0
+ensures result > 0
+is
+    let total: Integer = 0
+    scope fetch do
+        spawn
+            let va: Integer = await fetch_value(a)
+            let vb: Integer = await fetch_value(b)
+            total := va + vb
+        join
+            check total >= 0
+        result
+            call Std.IO.logf("total = ${}", total)
+    end scope
+    return total
+end parallel
+
+end Test.Scope.Pos

@@ -1,0 +1,34 @@
+-- ============================================================
+-- test-07-procedures_pos.fh  –  Prozeduren PASS-Tests (PRO-01..02)
+-- ============================================================
+module Test.Procedures.Pos
+
+import Test.Support exposing Point, make_point
+
+-- PRO-01: Prozedur ohne Parameter
+procedure hello()
+is
+    call Std.IO.logf("Hello from procedure", )
+end hello
+
+-- PRO-01: Prozedur mit Parameter
+procedure log_point(p: Point)
+is
+    call Std.IO.logf("x=${}, y=${}", p.x, p.y)
+end log_point
+
+-- PRO-02: call mit qualifiziertem Namen
+procedure run_all()
+is
+    let p: Point = make_point(10, 20)
+    call log_point(p)
+    call Std.IO.logf("done", )
+end run_all
+
+-- PRO-02: call mit mehreren Argumenten
+procedure log_two(a: Integer, b: Integer)
+is
+    call Std.IO.logf("a=${}, b=${}", a, b)
+end log_two
+
+end Test.Procedures.Pos

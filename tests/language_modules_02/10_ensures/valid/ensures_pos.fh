@@ -1,0 +1,82 @@
+-- ============================================================
+-- test-10-ensures_pos.fh  –  ensures PASS-Tests (ENS-01..09)
+-- ============================================================
+module Test.Ensures.Pos
+
+import Test.Support exposing Point, make_point
+
+error NotFound
+
+-- ENS-01: Einfache ensures
+function double_it(n: Integer) returns Integer
+requires n >= 0
+ensures result >= n
+is
+    return n + n
+end double_it
+
+-- ENS-02: result auf Record-Typ
+function make_origin() returns Point
+ensures result.x = 0, result.y = 0
+is
+    return make_point(0, 0)
+end make_origin
+
+-- ENS-02: result mit Arithmetik
+function increment(n: Integer) returns Integer
+requires n >= 0
+ensures result = n + 1
+is
+    return n + 1
+end increment
+
+-- ENS-03: success in ensures
+function always_ok(n: Integer) returns Result<Integer, NotFound>
+requires n >= 0
+ensures success, value >= n
+is
+    return ok n
+end always_ok
+
+-- ENS-04: failure in ensures
+function always_fail(n: Integer) returns Result<Integer, NotFound>
+requires n >= 0
+aborts NotFound
+ensures failure
+is
+    abort NotFound
+end always_fail
+
+-- ENS-05: Array-Index in ensures
+function make_pair(a: Integer, b: Integer) returns Array<Integer, 2>
+requires a >= 0, b >= 0
+ensures value[0] = a, value[1] = b
+is
+    return [a, b]
+end make_pair
+
+-- ENS-05 EDGE: letzter gültiger Index
+function make_triple(a: Integer, b: Integer, c: Integer) returns Array<Integer, 3>
+requires a >= 0, b >= 0, c >= 0
+ensures value[0] >= 0, value[2] >= 0
+is
+    return [a, b, c]
+end make_triple
+
+-- ENS-06: Mehrfeldiger Pfad
+function point_with_x(x: Integer) returns Point
+requires x > 0
+ensures result.x = x, result.y >= 0
+is
+    return make_point(x, 0)
+end point_with_x
+
+-- ENS-07: Bibliotheksaufruf in ensures
+function tag_string(s: String) returns String
+requires String.instr(s, "") = 0
+ensures String.instr(result, "TAG") >= 0
+is
+    return String.replace(s, "X", "TAG")
+end tag_string
+
+end Test.Ensures.Pos

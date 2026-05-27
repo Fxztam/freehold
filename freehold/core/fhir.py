@@ -405,8 +405,9 @@ def export_contract_clause(role: str, index: int, condition: dict[str, Any]) -> 
 def export_contract_bindings(return_type: TypeRef | None) -> dict[str, Any]:
     ok_type, error_type = extract_result_type_components(return_type)
     is_result = ok_type is not None and error_type is not None
+    has_return = return_type is not None
     result_binding_type = export_type_ref(return_type)
-    value_binding_type = export_type_ref(ok_type) if ok_type is not None else {"kind": "Void"}
+    value_binding_type = export_type_ref(ok_type if ok_type is not None else return_type)
     error_binding_ref = export_error_ref(error_type) if error_type is not None else None
 
     return {
@@ -424,7 +425,7 @@ def export_contract_bindings(return_type: TypeRef | None) -> dict[str, Any]:
                 "result": True,
                 "success": is_result,
                 "failure": is_result,
-                "value": is_result,
+                "value": has_return,
                 "error": is_result,
             },
             "aborts": {
@@ -457,7 +458,7 @@ def export_contract_bindings(return_type: TypeRef | None) -> dict[str, Any]:
             {
                 "kind": NODE_CONTRACT_BINDING,
                 "name": "value",
-                "available": is_result,
+                "available": has_return,
                 "type": value_binding_type,
             },
             {
@@ -470,7 +471,7 @@ def export_contract_bindings(return_type: TypeRef | None) -> dict[str, Any]:
         ],
         "result_value_binding": {
             "name": "value",
-            "available": is_result,
+            "available": has_return,
             "type": value_binding_type,
         },
         "result_error_binding": {

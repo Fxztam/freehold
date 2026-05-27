@@ -911,17 +911,20 @@ func isResultType(ref typeRefIR) bool {
 
 func buildContractBindings(returnType typeRefIR) contractBindingsIR {
 	isResult := isResultType(returnType)
+	hasReturn := returnType.Kind != "Void"
 	ensuresCtx := contractContextIR{Result: true}
+	ensuresCtx.Value = hasReturn
 	if isResult {
 		ensuresCtx.Success = true
 		ensuresCtx.Failure = true
-		ensuresCtx.Value = true
 		ensuresCtx.Error = true
 	}
 
-	valueType := voidTypeRef()
+	valueType := returnType
 	if isResult && returnType.OkType != nil {
 		valueType = *returnType.OkType
+	} else if !hasReturn {
+		valueType = voidTypeRef()
 	}
 
 	errorType := voidTypeRef()
@@ -935,7 +938,7 @@ func buildContractBindings(returnType typeRefIR) contractBindingsIR {
 		contractBindingIR{Kind: "ContractBinding", Name: "result", Available: true, Type: returnType},
 		contractBindingIR{Kind: "ContractBinding", Name: "success", Available: isResult, Type: boolTypeRef()},
 		contractBindingIR{Kind: "ContractBinding", Name: "failure", Available: isResult, Type: boolTypeRef()},
-		contractBindingIR{Kind: "ContractBinding", Name: "value", Available: isResult, Type: valueType},
+		contractBindingIR{Kind: "ContractBinding", Name: "value", Available: hasReturn, Type: valueType},
 		errorContractBindingIR{Kind: "ContractBinding", Name: "error", Available: isResult, Type: errorType, ErrorRef: errorRef},
 	}
 
@@ -948,7 +951,7 @@ func buildContractBindings(returnType typeRefIR) contractBindingsIR {
 			Aborts:   contractContextIR{},
 		},
 		Bindings:           bindings,
-		ResultValueBinding: resultBindingIR{Name: "value", Available: isResult, Type: valueType},
+		ResultValueBinding: resultBindingIR{Name: "value", Available: hasReturn, Type: valueType},
 		ResultErrorBinding: resultErrorBindingIR{Name: "error", Available: isResult, Type: errorType, ErrorRef: errorRef},
 	}
 }

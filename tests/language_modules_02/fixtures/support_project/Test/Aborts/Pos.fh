@@ -1,0 +1,69 @@
+module Test.Aborts.Pos
+
+import Test.Support exposing NotFound, InvalidInput, Overflow
+
+function lookup(id: Integer) returns String
+requires id >= 0
+aborts NotFound
+ensures String.instr(result, "item") >= 0
+is
+    if id = 0 then
+        abort NotFound
+    end if
+    return "item-found"
+end lookup
+
+function safe_sqrt(n: Integer) returns Integer
+requires n >= 0
+aborts InvalidInput when n < 0
+ensures result >= 0
+is
+    if n < 0 then
+        abort InvalidInput
+    end if
+    return n
+end safe_sqrt
+
+function divide(a: Integer, b: Integer) returns Integer
+requires a >= 0
+aborts Overflow when b = 0
+ensures result >= 0
+is
+    if b = 0 then
+        abort Overflow
+    end if
+    return a
+end divide
+
+function strict_lookup(id: Integer) returns String
+requires id > 0
+aborts NotFound
+aborts InvalidInput when id > 1000
+ensures String.instr(result, "id") >= 0
+is
+    if id > 1000 then
+        abort InvalidInput
+    end if
+    return "id-ok"
+end strict_lookup
+
+function never_aborts(n: Integer) returns Integer
+requires n > 0
+aborts NotFound
+ensures result > 0
+is
+    return n
+end never_aborts
+
+function find_or_fail(id: Integer) returns Result<String, NotFound>
+requires id >= 0
+aborts NotFound
+ensures success, String.instr(value, "item") >= 0
+is
+    if id = 0 then
+        abort NotFound
+    end if
+    return ok "item"
+end find_or_fail
+
+end Test.Aborts.Pos

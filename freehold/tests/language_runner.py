@@ -53,8 +53,15 @@ def run_case(module_dir: Path, case: dict, update: bool = False):
     kind = case["kind"]
 
     if kind == "valid":
-        source = (module_dir / case["file"]).read_text(encoding="utf-8")
-        ast, _ = parse_and_verify(source)
+        if "root" in case and "entry" in case:
+            resolved = resolve_fixture(module_dir, case)
+            entry = next((module for module in resolved.values() if module.path == (module_dir / case["root"] / case["entry"]).resolve()), None)
+            if entry is None:
+                return False, f"Project entry not resolved: {case['name']}"
+            ast = entry.ast
+        else:
+            source = (module_dir / case["file"]).read_text(encoding="utf-8")
+            ast, _ = parse_and_verify(source)
         if "expected_ast" not in case:
             return True, f"valid OK: {case['name']}"
         actual = json.dumps(canonical(ast), indent=2, sort_keys=True)
@@ -204,8 +211,8 @@ def run_case(module_dir: Path, case: dict, update: bool = False):
 
     return False, f"Unknown case kind: {kind}"
 
-def iter_modules(selected: str | None):
-    dirs = [LANGUAGE_MODULES_ROOT / selected] if selected else [p for p in sorted(LANGUAGE_MODULES_ROOT.iterdir()) if p.is_dir()]
+def iter_modules(root: Path, selected: str | None):
+    dirs = [root / selected] if selected else [p for p in sorted(root.iterdir()) if p.is_dir()]
     for d in dirs:
         manifest = d / "manifest.json"
         if manifest.exists():
@@ -214,21 +221,33 @@ def iter_modules(selected: str | None):
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Run Freehold modular language conformance tests")
     ap.add_argument("--module", default=None)
+    ap.add_argument("--root", default=str(LANGUAGE_MODULES_ROOT), help="language modules root")
     ap.add_argument("--update", action="store_true")
     ap.add_argument("--json-summary", default=None)
     args = ap.parse_args(argv)
 
+    modules_root = Path(args.root)
+    if not modules_root.is_absolute():
+        modules_root = PROJECT_ROOT / modules_root
+    if not modules_root.is_dir():
+        print(f"Unknown language modules root: {modules_root}")
+        return 2
+
     total = passed = 0
     failures = []
     modules = {}
-    for module_dir, manifest in iter_modules(args.module):
+    for module_dir, manifest in iter_modules(modules_root, args.module):
         name = module_dir.name
         modules[name] = {"passed": 0, "total": 0}
         print(f"\n[{name}] {manifest.get('title', name)}")
         for case in manifest.get("cases", []):
             total += 1
             modules[name]["total"] += 1
-            ok, msg = run_case(module_dir, case, args.update)
+            try:
+                ok, msg = run_case(module_dir, case, args.update)
+            except Exception as exc:
+                ok = False
+                msg = f"Unexpected exception: {case.get('name', '<unnamed>')}\n{type(exc).__name__}: {exc}"
             if ok:
                 passed += 1
                 modules[name]["passed"] += 1

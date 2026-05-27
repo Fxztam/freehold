@@ -1,0 +1,49 @@
+-- ============================================================
+-- test-support.fh  –  Gemeinsame Typen für alle Test-Module
+-- ============================================================
+
+module Test.Support
+
+error NotFound
+error InvalidInput
+error Overflow
+
+type Point is record
+    x: Integer
+    y: Integer
+end record
+
+type Box is record
+    origin: Point
+    width:  Integer
+    height: Integer
+end record
+
+type Labeled is record
+    name:  String
+    amount: Integer
+end record
+
+function make_point(x: Integer, y: Integer) returns Point
+requires x >= 0, y >= 0
+ensures result.x = x, result.y = y
+is
+    return Point { x: x, y: y }
+end make_point
+
+function make_box(ox: Integer, oy: Integer, w: Integer, h: Integer) returns Box
+requires ox >= 0, oy >= 0, w > 0, h > 0
+ensures result.width = w, result.height = h
+is
+    let origin: Point = make_point(ox, oy)
+    return Box { origin: origin, width: w, height: h }
+end make_box
+
+function make_labeled(name: String, amount: Integer) returns Labeled
+requires String.instr(name, "") = 0, amount >= 0
+ensures result.name = name, result.amount = amount
+is
+    return Labeled { name: name, amount: amount }
+end make_labeled
+
+end Test.Support

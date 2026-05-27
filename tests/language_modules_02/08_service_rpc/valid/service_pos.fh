@@ -1,0 +1,26 @@
+-- ============================================================
+-- test-08-service_pos.fh  –  Service/RPC PASS-Tests (SVC-01..04)
+-- ============================================================
+module Test.Service.Pos
+
+import Test.Support exposing Point, Labeled, NotFound, InvalidInput
+
+-- SVC-01/02: Service mit einem RPC
+service PointService is
+    rpc GetPoint(id: Integer): Point
+end PointService
+
+-- SVC-01/02: Service mit mehreren RPCs
+service LabelService is
+    rpc GetLabeled(id: Integer):     Labeled
+    rpc CountLabels(prefix: String): Integer
+    rpc FindByValue(val: Integer):   Labeled
+end LabelService
+
+-- SVC-02: RPC mit Result-Rückgabetyp
+service SafeService is
+    rpc FindPoint(id: Integer):   Result<Point, NotFound>
+    rpc CreatePoint(n: Integer):  Result<Point, InvalidInput>
+end SafeService
+
+end Test.Service.Pos

@@ -1,0 +1,70 @@
+module Test.Ensures.Pos
+
+import Test.Support exposing Point, make_point
+
+error NotFound
+
+function double_it(n: Integer) returns Integer
+requires n >= 0
+ensures result >= n
+is
+    return n + n
+end double_it
+
+function make_origin() returns Point
+ensures result.x = 0, result.y = 0
+is
+    return make_point(0, 0)
+end make_origin
+
+function increment(n: Integer) returns Integer
+requires n >= 0
+ensures result = n + 1
+is
+    return n + 1
+end increment
+
+function always_ok(n: Integer) returns Result<Integer, NotFound>
+requires n >= 0
+ensures success, value >= n
+is
+    return ok n
+end always_ok
+
+function always_fail(n: Integer) returns Result<Integer, NotFound>
+requires n >= 0
+aborts NotFound
+ensures failure
+is
+    abort NotFound
+end always_fail
+
+function make_pair(a: Integer, b: Integer) returns Array<Integer, 2>
+requires a >= 0, b >= 0
+ensures value[0] = a, value[1] = b
+is
+    return [a, b]
+end make_pair
+
+function make_triple(a: Integer, b: Integer, c: Integer) returns Array<Integer, 3>
+requires a >= 0, b >= 0, c >= 0
+ensures value[0] >= 0, value[2] >= 0
+is
+    return [a, b, c]
+end make_triple
+
+function point_with_x(x: Integer) returns Point
+requires x > 0
+ensures result.x = x, result.y >= 0
+is
+    return make_point(x, 0)
+end point_with_x
+
+function tag_string(s: String) returns String
+requires String.instr(s, "") = 0
+ensures String.instr(result, "TAG") >= 0
+is
+    return String.replace(s, "X", "TAG")
+end tag_string
+
+end Test.Ensures.Pos

@@ -1,0 +1,20 @@
+module Test.RES.06
+
+import Test.Support exposing NotFound
+function fail_on_zero(n: Integer) returns Result<Integer, NotFound>
+requires n >= 0
+aborts NotFound
+is
+    if n = 0 then
+        return error NotFound
+    end if
+    return ok n
+end fail_on_zero
+function unsafe_value(n: Integer) returns Integer
+requires n >= 0
+is
+    let r: Result<Integer, NotFound> = fail_on_zero(n)
+    return r.value
+end unsafe_value
+
+end Test.RES.06

@@ -1,0 +1,75 @@
+-- ============================================================
+-- test-05-generics_pos.fh  –  Generics PASS-Tests (GEN-01..07)
+-- ============================================================
+module Test.Generics.Pos
+
+import Test.Support exposing NotFound
+
+type SimpleColor is record
+    red:   Integer
+    green: Integer
+    blue:  Integer
+end record
+
+error DbError
+
+function make_color(r: Integer, g: Integer, b: Integer) returns SimpleColor
+requires r >= 0, g >= 0, b >= 0
+ensures result.red = r
+is
+    return SimpleColor { red: r, green: g, blue: b }
+end make_color
+
+-- GEN-01: Result<T, E>
+function find_color(id: Integer) returns Result<SimpleColor, DbError>
+requires id > 0
+aborts DbError when id > 999
+ensures success, value.red >= 0
+is
+    if id > 999 then
+        abort DbError
+    end if
+    return ok make_color(id, 0, 0)
+end find_color
+
+-- GEN-02: Array<T, N>
+function make_palette() returns Array<SimpleColor, 3>
+ensures value[0].red >= 0
+is
+    let c0: SimpleColor = make_color(255, 0, 0)
+    let c1: SimpleColor = make_color(0, 255, 0)
+    let c2: SimpleColor = make_color(0, 0, 255)
+    return [c0, c1, c2]
+end make_palette
+
+-- GEN-02 EDGE: Size=1 Array
+function singleton_array() returns Array<Integer, 1>
+ensures value[0] >= 0
+is
+    return [42]
+end singleton_array
+
+-- GEN-03: Result<Array<T,N>, E>
+function load_palette() returns Result<Array<SimpleColor, 3>, DbError>
+ensures success, value[0].red >= 0
+is
+    let arr: Array<SimpleColor, 3> = make_palette()
+    return ok arr
+end load_palette
+
+-- GEN-06: Generische Funktion
+function wrap_value<T>(amount: Integer) returns Integer
+requires amount >= 0
+ensures result >= 0
+is
+    return amount
+end wrap_value
+
+-- GEN-07: Instanziierung generischer Funktion
+procedure use_generic()
+is
+    let n: Integer = wrap_value<Integer>(10)
+    call Std.IO.logf("wrapped = ${}", n)
+end use_generic
+
+end Test.Generics.Pos

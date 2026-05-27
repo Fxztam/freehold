@@ -218,6 +218,8 @@ def cmd_test_language(args):
     argv = []
     if getattr(args, "module", None):
         argv += ["--module", args.module]
+    if getattr(args, "root", None):
+        argv += ["--root", args.root]
     if getattr(args, "update", False):
         argv.append("--update")
     if getattr(args, "json_summary", None):
@@ -278,6 +280,7 @@ def build_parser():
     p.set_defaults(func=cmd_ebnf)
     p_lang = sub.add_parser("test-language", help="Run modular language conformance tests")
     p_lang.add_argument("--module", default=None)
+    p_lang.add_argument("--root", default=None, help="language modules root, default tests/language_modules")
     p_lang.add_argument("--update", action="store_true")
     p_lang.add_argument("--json-summary", default=None)
     p_lang.set_defaults(func=cmd_test_language)

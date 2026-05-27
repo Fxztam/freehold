@@ -1,0 +1,144 @@
+-- ============================================================
+-- test-17-stdlib_pos.fh  –  Standardbibliothek PASS-Tests
+--   (STR, MTH, BIG, JSN, IO, ARG)
+-- ============================================================
+module Test.Stdlib.Pos
+
+import Test.Support exposing Point, make_point
+
+-- STR-01: String.replace
+function strip_dashes(sku: String) returns String
+requires String.instr(sku, "SKU") >= 0
+ensures String.instr(result, "SKU") >= 0
+is
+    return String.replace(sku, "-", "")
+end strip_dashes
+
+-- STR-01 EDGE: Ersetzen mit leerem Ziel
+function remove_spaces(s: String) returns String
+is
+    return String.replace(s, " ", "")
+end remove_spaces
+
+-- STR-02: String.instr
+function contains_sku(s: String) returns Boolean
+is
+    return String.instr(s, "SKU") >= 0
+end contains_sku
+
+-- STR-05 EDGE: leeres Pattern (immer 0)
+function instr_empty(s: String) returns Integer
+is
+    return String.instr(s, "")
+end instr_empty
+
+-- STR-03: String.template mit benannten Argumenten
+function format_item(sku: String, zone: String) returns String
+requires String.instr(sku, "SKU") >= 0
+ensures String.instr(result, "SKU") >= 0
+is
+    let cleaned: String = String.replace(sku, "-", "")
+    return String.template("${sku}@${zone}", sku: cleaned, zone: zone)
+end format_item
+
+-- STR-03: Template mit drei Platzhaltern
+function format_triple(a: String, b: String, c: String) returns String
+is
+    return String.template("${x}-${y}-${z}", x: a, y: b, z: c)
+end format_triple
+
+-- MTH-01: Math.max
+function higher(a: Double, b: Double) returns Double
+ensures result >= a, result >= b
+is
+    return Math.max(a, b)
+end higher
+
+-- MTH-02: Math.floor
+function floor_val(d: Double) returns Integer
+is
+    return Math.floor(Math.max(d, 0.0))
+end floor_val
+
+-- MTH-02 EDGE: negativer Double
+function floor_negative() returns Integer
+is
+    return Math.floor(-2.9)
+end floor_negative
+
+-- BIG-01: Big.fromInteger
+function to_big(n: Integer) returns BigInteger
+requires n >= 0
+is
+    return Big.fromInteger(n)
+end to_big
+
+-- BIG-01 EDGE: maximaler Wert
+function big_max_int() returns BigInteger
+is
+    return Big.fromInteger(2147483647)
+end big_max_int
+
+-- BIG-02: Big.addInt
+function big_sum(a: Integer, b: Integer) returns BigInteger
+requires a >= 0, b >= 0
+is
+    let ba: BigInteger = Big.fromInteger(a)
+    let bb: BigInteger = Big.fromInteger(b)
+    return Big.addInt(ba, bb)
+end big_sum
+
+-- BIG-03: Big.toString
+function big_text(n: Integer) returns String
+requires n >= 0
+is
+    let big_n: BigInteger = Big.fromInteger(n)
+    return Big.toString(big_n)
+end big_text
+
+-- JSN-01: Json.stringify auf Record
+function point_json(p: Point) returns String
+is
+    return Json.stringify(p)
+end point_json
+
+-- JSN-02 EDGE: stringify auf primitiven Typ
+function int_json(n: Integer) returns String
+is
+    return Json.stringify(n)
+end int_json
+
+-- IO-01: logf mit einem Platzhalter
+procedure log_integer(n: Integer)
+is
+    call Std.IO.logf("n = ${}", n)
+end log_integer
+
+-- IO-02: logf mit mehreren Platzhaltern
+procedure log_two(a: Integer, b: String)
+is
+    call Std.IO.logf("a=${}, b=${}", a, b)
+end log_two
+
+-- IO-01: logf ohne Platzhalter
+procedure log_static()
+is
+    call Std.IO.logf("Programm gestartet", )
+end log_static
+
+-- ARG-01: Positionale Argumente
+function pos_args(a: Integer, b: Integer, c: Integer) returns Integer
+requires a >= 0, b >= 0, c >= 0
+ensures result >= 0
+is
+    return a + b + c
+end pos_args
+
+-- ARG-02/03: Benannte Argumente
+function named_tmpl(name: String, count: Integer) returns String
+requires String.instr(name, "") = 0, count >= 0
+is
+    return String.template("${n} hat ${c} Eintraege", n: name, c: count)
+end named_tmpl
+
+end Test.Stdlib.Pos

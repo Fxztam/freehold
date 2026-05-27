@@ -1,0 +1,28 @@
+module NonResultValueEnsures
+
+type Point is record
+    x: Integer
+    y: Integer
+end record
+
+function increment(amount: Integer) returns Integer
+ensures value = amount + 1
+is
+    return amount + 1
+end increment
+
+function make_point(x: Integer, y: Integer) returns Point
+ensures value.x = x
+ensures value.y = y
+is
+    return Point { x: x, y: y }
+end make_point
+
+function make_pair(a: Integer, b: Integer) returns Array<Integer, 2>
+ensures value[0] = a
+ensures value[1] = b
+is
+    return [a, b]
+end make_pair
+
+end NonResultValueEnsures

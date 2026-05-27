@@ -1,0 +1,69 @@
+-- ============================================================
+-- test-06-functions_pos.fh  –  Funktionen PASS-Tests (FUN-01..09)
+-- ============================================================
+module Test.Functions.Pos
+
+import Test.Support exposing Point, make_point
+
+-- FUN-01/02/03: Funktion mit mehreren Parametern
+function add(a: Integer, b: Integer) returns Integer
+requires a >= 0, b >= 0
+ensures result >= a
+is
+    return a + b
+end add
+
+-- FUN-01: Funktion mit einem Parameter
+function double_val(n: Integer) returns Integer
+requires n >= 0
+ensures result >= n
+is
+    return n + n
+end double_val
+
+-- FUN-01: Funktion ohne Parameter
+function answer() returns Integer
+ensures result > 0
+is
+    return 42
+end answer
+
+-- FUN-04: end-Marker stimmt mit Name überein
+function named_end() returns String
+ensures String.instr(result, "ok") >= 0
+is
+    return "ok"
+end named_end
+
+-- FUN-07: async function
+async function fetch_value(id: Integer) returns Integer
+requires id > 0
+ensures result >= 0
+is
+    return id + 1
+end fetch_value
+
+-- FUN-08: async function mit await
+async function fetch_double(id: Integer) returns Integer
+requires id > 0
+ensures result >= 0
+is
+    let v: Integer = await fetch_value(id)
+    return v + v
+end fetch_double
+
+-- FUN-09: Generische Funktion
+function clamp(val: Integer, lo: Integer, hi: Integer) returns Integer
+requires lo <= hi
+ensures result >= lo, result <= hi
+is
+    if val < lo then
+        return lo
+    end if
+    if val > hi then
+        return hi
+    end if
+    return val
+end clamp
+
+end Test.Functions.Pos

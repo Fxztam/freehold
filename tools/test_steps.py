@@ -21,6 +21,7 @@ def run_step(number: int, title: str, command: list[str]) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run Freehold tests step by step from the source directory")
     parser.add_argument("target", nargs="?", help="Optional language module name, for example 01_core")
+    parser.add_argument("--language-root", default="tests/language_modules", help="language modules root")
     parser.add_argument("--quick", action="store_true", help="Run only CLI, core language tests, and the hello demo")
     parser.add_argument("--no-regression", action="store_true", help="Skip the full regression suite")
     parser.add_argument("--no-demos", action="store_true", help="Skip example demo verification")
@@ -30,16 +31,17 @@ def main(argv: list[str] | None = None) -> int:
     step = 1
 
     if args.target:
-        module_dir = PROJECT_ROOT / "tests" / "language_modules" / args.target
+        language_root = PROJECT_ROOT / args.language_root
+        module_dir = language_root / args.target
         if not module_dir.is_dir():
             print(f"Unknown test target: {args.target}", file=sys.stderr)
             print("Known language modules:", file=sys.stderr)
-            modules_root = PROJECT_ROOT / "tests" / "language_modules"
+            modules_root = language_root
             for path in sorted(modules_root.iterdir()):
                 if path.is_dir():
                     print(f"  {path.name}", file=sys.stderr)
             return 2
-        run_step(step, f"Language module tests: {args.target}", [py, "-m", "freehold", "test-language", "--module", args.target])
+        run_step(step, f"Language module tests: {args.target}", [py, "-m", "freehold", "test-language", "--root", args.language_root, "--module", args.target])
         print("")
         print("All requested Freehold test steps passed.")
         return 0
@@ -47,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
     run_step(step, "CLI smoke test", [py, "-m", "freehold", "--version"])
     step += 1
 
-    run_step(step, "Core language module tests", [py, "-m", "freehold", "test-language", "--module", "01_core"])
+    run_step(step, "Core language module tests", [py, "-m", "freehold", "test-language", "--root", args.language_root, "--module", "01_core"])
     step += 1
 
     if not args.quick and not args.no_regression:

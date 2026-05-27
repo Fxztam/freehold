@@ -1,0 +1,884 @@
+{
+  "declarations": [
+    {
+      "body": [
+        {
+          "expr": {
+            "node": "NumberExpr",
+            "value": 42
+          },
+          "name": "i",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "node": "DoubleExpr",
+            "value": 3.14
+          },
+          "name": "d",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Double",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "node": "StringExpr",
+            "value": "hallo"
+          },
+          "name": "s",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "String",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "node": "BoolExpr",
+            "value": true
+          },
+          "name": "b",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Boolean",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "args": [
+              {
+                "node": "NumberExpr",
+                "value": 99
+              }
+            ],
+            "name": "Big.fromInteger",
+            "node": "CallExpr"
+          },
+          "name": "big",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "BigInteger",
+            "node": "TypeName"
+          }
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "i",
+              "node": "VarExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [],
+      "kind": "function",
+      "name": "all_let_types",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "p",
+              "x"
+            ]
+          },
+          "name": "x",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "p",
+              "y"
+            ]
+          },
+          "name": "y",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "left": {
+                "name": "x",
+                "node": "VarExpr"
+              },
+              "node": "BinaryExpr",
+              "op": "+",
+              "right": {
+                "name": "y",
+                "node": "VarExpr"
+              }
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "name": "result",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "let_field",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "p",
+          "node": "Param",
+          "type_name": "Point"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "p",
+              "x"
+            ]
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "args": [
+              {
+                "name": "n",
+                "node": "VarExpr"
+              },
+              {
+                "name": "n",
+                "node": "VarExpr"
+              }
+            ],
+            "name": "make_point",
+            "node": "CallExpr"
+          },
+          "name": "p",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Point",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "p",
+              "x"
+            ]
+          },
+          "name": "x",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "x",
+              "node": "VarExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "name": "result",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "let_call",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "n",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "n",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "n",
+              "node": "VarExpr"
+            },
+            "node": "ReturnOk"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "name": "success",
+          "node": "SpecialResultExpr"
+        },
+        {
+          "left": {
+            "name": "value",
+            "node": "SpecialResultExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "make_result",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "n",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "n",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "error_type": "NotFound",
+        "node": "ResultTypeName",
+        "ok_type": {
+          "name": "Integer",
+          "node": "TypeName"
+        }
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "args": [
+              {
+                "name": "n",
+                "node": "VarExpr"
+              }
+            ],
+            "name": "make_result",
+            "node": "CallExpr"
+          },
+          "name": "r",
+          "node": "LetStmt",
+          "type_ref": {
+            "error_type": "NotFound",
+            "node": "ResultTypeName",
+            "ok_type": {
+              "name": "Integer",
+              "node": "TypeName"
+            }
+          }
+        },
+        {
+          "expr": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "r",
+              "value"
+            ]
+          },
+          "name": "v",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "v",
+              "node": "VarExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "name": "result",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "let_result",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "n",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "n",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "items": [
+              {
+                "name": "a",
+                "node": "VarExpr"
+              },
+              {
+                "name": "b",
+                "node": "VarExpr"
+              }
+            ],
+            "node": "ArrayLiteralExpr"
+          },
+          "name": "arr",
+          "node": "LetStmt",
+          "type_ref": {
+            "element_type": "Integer",
+            "node": "ArrayTypeName",
+            "size": 2
+          }
+        },
+        {
+          "expr": {
+            "index": {
+              "node": "NumberExpr",
+              "value": 0
+            },
+            "name": "arr",
+            "node": "IndexExpr"
+          },
+          "name": "first",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "first",
+              "node": "VarExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "name": "result",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "let_array",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "a",
+          "node": "Param",
+          "type_name": "Integer"
+        },
+        {
+          "name": "b",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "a",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        },
+        {
+          "left": {
+            "name": "b",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "node": "NumberExpr",
+            "value": 0
+          },
+          "name": "counter",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "name": "n",
+            "node": "VarExpr"
+          },
+          "name": "counter",
+          "node": "AssignStmt"
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "counter",
+              "node": "VarExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "name": "result",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "assign_var",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "n",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "n",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "node": "NumberExpr",
+            "value": 0
+          },
+          "name": "total",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "left": {
+              "name": "total",
+              "node": "VarExpr"
+            },
+            "node": "BinaryExpr",
+            "op": "+",
+            "right": {
+              "name": "n",
+              "node": "VarExpr"
+            }
+          },
+          "name": "total",
+          "node": "AssignStmt"
+        },
+        {
+          "expr": {
+            "left": {
+              "name": "total",
+              "node": "VarExpr"
+            },
+            "node": "BinaryExpr",
+            "op": "+",
+            "right": {
+              "node": "NumberExpr",
+              "value": 1
+            }
+          },
+          "name": "total",
+          "node": "AssignStmt"
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "total",
+              "node": "VarExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "name": "result",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "accumulate",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "n",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "n",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "name": "new_x",
+            "node": "VarExpr"
+          },
+          "node": "FieldAssignStmt",
+          "path": [
+            "p",
+            "x"
+          ]
+        },
+        {
+          "args": [
+            {
+              "node": "StringExpr",
+              "value": "x = ${}"
+            },
+            {
+              "node": "FieldAccessExpr",
+              "path": [
+                "p",
+                "x"
+              ]
+            }
+          ],
+          "name": "Std.IO.logf",
+          "node": "CallStmt"
+        }
+      ],
+      "ensures": [],
+      "kind": "procedure",
+      "name": "update_x",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "p",
+          "node": "Param",
+          "type_name": "Point"
+        },
+        {
+          "name": "new_x",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "new_x",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": null
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "args": [
+              {
+                "node": "NumberExpr",
+                "value": 0
+              },
+              {
+                "node": "NumberExpr",
+                "value": 0
+              }
+            ],
+            "name": "make_point",
+            "node": "CallExpr"
+          },
+          "name": "p",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Point",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "name": "n",
+            "node": "VarExpr"
+          },
+          "node": "FieldAssignStmt",
+          "path": [
+            "p",
+            "x"
+          ]
+        },
+        {
+          "args": [
+            {
+              "node": "StringExpr",
+              "value": "updated x = ${}"
+            },
+            {
+              "node": "FieldAccessExpr",
+              "path": [
+                "p",
+                "x"
+              ]
+            }
+          ],
+          "name": "Std.IO.logf",
+          "node": "CallStmt"
+        }
+      ],
+      "ensures": [],
+      "kind": "procedure",
+      "name": "deep_update",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "n",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "n",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": null
+    }
+  ],
+  "imports": [
+    {
+      "exposing": [
+        "Point",
+        "make_point",
+        "NotFound"
+      ],
+      "module_name": "Test.Support",
+      "node": "ImportDecl"
+    }
+  ],
+  "module_name": "Test.LetMut.Pos",
+  "node": "Program"
+}

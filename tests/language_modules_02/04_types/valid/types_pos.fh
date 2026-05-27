@@ -1,0 +1,98 @@
+-- ============================================================
+-- test-04-types_pos.fh  –  Typen PASS-Tests
+--   (TYP-01..05, RNG-01..02, PRI-01..06, ERR-01..03)
+-- ============================================================
+module Test.Types.Pos
+
+-- TYP-01: Einfacher Record
+type Color is record
+    red:   Integer
+    green: Integer
+    blue:  Integer
+end record
+
+-- TYP-02: Record mit allen Primitivtypen
+type Metrics is record
+    count:   Integer
+    ratio:   Double
+    label:   String
+    active:  Boolean
+    big_val: BigInteger
+end record
+
+-- TYP-03: Geschachtelter Record
+type Pixel is record
+    position: Color
+    alpha:    Integer
+end record
+
+-- TYP-04: Generischer Record
+type Container<T> is record
+    item:  T
+    count: Integer
+end record
+
+-- TYP-05: Proto-Field-IDs
+type ProtoMsg is record
+    id:      Integer proto 1
+    payload: String  proto 2
+    status:  Integer proto 3
+end record
+
+-- ERR-01: Error-Typen
+error DatabaseError
+error NetworkTimeout
+error ValidationFailed
+
+-- RNG-01: Typ-Alias ohne Range
+type Score is Integer
+
+-- RNG-02: Typen mit Range-Constraints
+type Percentage  is Integer range 0..100
+type Temperature is Double  range 0.0..100.0
+type ByteVal     is Integer range 0..255
+
+-- PRI-01..06: Primitive Typen in Feldern
+function use_primitives(
+    i: Integer,
+    d: Double,
+    s: String,
+    b: Boolean,
+    big: BigInteger
+) returns Integer
+requires i >= 0
+ensures result >= 0
+is
+    return i
+end use_primitives
+
+-- TYP-01 Konstruktion
+function make_color(r: Integer, g: Integer, bl: Integer) returns Color
+requires r >= 0, r <= 255, g >= 0, g <= 255, bl >= 0, bl <= 255
+ensures result.red = r, result.green = g, result.blue = bl
+is
+    return Color { red: r, green: g, blue: bl }
+end make_color
+
+-- TYP-03 Schachtelung
+function make_pixel(r: Integer, g: Integer, bl: Integer, a: Integer) returns Pixel
+requires r >= 0, g >= 0, bl >= 0, a >= 0, a <= 255
+ensures result.alpha = a
+is
+    let col: Color = make_color(r, g, bl)
+    return Pixel { position: col, alpha: a }
+end make_pixel
+
+-- ERR-03: Error-Typ in Result
+function safe_op(n: Integer) returns Result<Integer, DatabaseError>
+requires n >= 0
+aborts DatabaseError when n = 0
+ensures success, value >= 0
+is
+    if n = 0 then
+        abort DatabaseError
+    end if
+    return ok n
+end safe_op
+
+end Test.Types.Pos

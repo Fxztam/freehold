@@ -1313,7 +1313,7 @@ class GoGenerator:
 
     def ensure_checks_for_value(self, result_expr: str) -> list[str]:
         previous = self.contract_bindings
-        self.contract_bindings = {**previous, "result": result_expr}
+        self.contract_bindings = {**previous, "result": result_expr, "value": result_expr}
         lines = self.contract_checks(self.current_ensures(), "ensures")
         self.contract_bindings = previous
         return lines

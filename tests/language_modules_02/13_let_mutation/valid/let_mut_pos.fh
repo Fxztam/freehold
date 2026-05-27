@@ -1,0 +1,105 @@
+-- ============================================================
+-- test-13-let-mut_pos.fh  –  let & Mutation PASS-Tests
+--   (LET-01..07, MUT-01..03)
+-- ============================================================
+module Test.LetMut.Pos
+
+import Test.Support exposing Point, make_point, NotFound
+
+-- LET-01: Alle Basistypen
+function all_let_types() returns Integer
+is
+    let i:   Integer    = 42
+    let d:   Double     = 3.14
+    let s:   String     = "hallo"
+    let b:   Boolean    = true
+    let big: BigInteger = Big.fromInteger(99)
+    return i
+end all_let_types
+
+-- LET-02: Feldzugriff als Initialwert
+function let_field(p: Point) returns Integer
+requires p.x >= 0
+ensures result >= 0
+is
+    let x: Integer = p.x
+    let y: Integer = p.y
+    return x + y
+end let_field
+
+-- LET-03: Funktionsaufruf als Initialwert
+function let_call(n: Integer) returns Integer
+requires n > 0
+ensures result > 0
+is
+    let p: Point   = make_point(n, n)
+    let x: Integer = p.x
+    return x
+end let_call
+
+function make_result(n: Integer) returns Result<Integer, NotFound>
+requires n > 0
+ensures success, value > 0
+is
+    return ok n
+end make_result
+
+-- LET-07: let mit Result-Typ
+function let_result(n: Integer) returns Integer
+requires n > 0
+ensures result > 0
+is
+    let r: Result<Integer, NotFound> = make_result(n)
+    let v: Integer = r.value
+    return v
+end let_result
+
+-- LET-07: let mit Array-Typ
+function let_array(a: Integer, b: Integer) returns Integer
+requires a >= 0, b >= 0
+ensures result >= 0
+is
+    let arr: Array<Integer, 2> = [a, b]
+    let first: Integer = arr[0]
+    return first
+end let_array
+
+-- MUT-01: Variable-Zuweisung x := expr
+function assign_var(n: Integer) returns Integer
+requires n >= 0
+ensures result >= 0
+is
+    let counter: Integer = 0
+    counter := n
+    return counter
+end assign_var
+
+-- MUT-01: Akkumulator
+function accumulate(n: Integer) returns Integer
+requires n > 0
+ensures result > 0
+is
+    let total: Integer = 0
+    total := total + n
+    total := total + 1
+    return total
+end accumulate
+
+-- MUT-02: Feldzuweisung x.f := expr
+procedure update_x(p: Point, new_x: Integer)
+requires new_x >= 0
+is
+    p.x := new_x
+    call Std.IO.logf("x = ${}", p.x)
+end update_x
+
+-- MUT-03: Tief geschachtelter Pfad
+procedure deep_update(n: Integer)
+requires n >= 0
+is
+    let p: Point = make_point(0, 0)
+    p.x := n
+    call Std.IO.logf("updated x = ${}", p.x)
+end deep_update
+
+end Test.LetMut.Pos

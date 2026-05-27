@@ -1,0 +1,80 @@
+-- ============================================================
+-- test-09-requires_pos.fh  –  requires PASS-Tests (REQ-01..08)
+-- ============================================================
+module Test.Requires.Pos
+
+import Test.Support exposing Point, make_point
+
+-- REQ-01: Einfache requires
+function positive(n: Integer) returns Integer
+requires n > 0
+ensures result > 0
+is
+    return n
+end positive
+
+-- REQ-01 EDGE: Grenzwert exakt 1 (kleinster erlaubter Wert)
+function min_positive() returns Integer
+ensures result > 0
+is
+    return positive(1)
+end min_positive
+
+-- REQ-02: Mehrere Bedingungen
+function bounded(n: Integer, lo: Integer, hi: Integer) returns Integer
+requires n >= lo, n <= hi, lo <= hi
+ensures result >= lo, result <= hi
+is
+    return n
+end bounded
+
+-- REQ-03: Feldzugriff in requires
+function get_x(p: Point) returns Integer
+requires p.x >= 0, p.y >= 0
+ensures result >= 0
+is
+    return p.x
+end get_x
+
+-- REQ-04: Bibliotheksaufruf in requires
+function require_sku(sku: String) returns String
+requires String.instr(sku, "SKU") >= 0
+ensures String.instr(result, "SKU") >= 0
+is
+    return sku
+end require_sku
+
+-- REQ-04 EDGE: leerer Suchstring
+function require_nonempty(s: String) returns String
+requires String.instr(s, "") = 0
+is
+    return s
+end require_nonempty
+
+-- REQ-07: Redundante Bedingungen (beide korrekt)
+function redundant(seed: Integer) returns Integer
+requires seed > 0, seed >= 1
+ensures result > 0
+is
+    return seed
+end redundant
+
+-- REQ-08: requires mit and / or
+function requires_and(a: Integer, b: Integer) returns Integer
+requires a > 0 and b > 0
+ensures result > 0
+is
+    return a + b
+end requires_and
+
+function requires_or(a: Integer, b: Integer) returns Integer
+requires a > 0 or b > 0
+ensures result >= 0
+is
+    if a > 0 then
+        return a
+    end if
+    return b
+end requires_or
+
+end Test.Requires.Pos

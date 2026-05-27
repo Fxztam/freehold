@@ -1,0 +1,638 @@
+{
+  "declarations": [
+    {
+      "fields": [
+        {
+          "name": "red",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Integer"
+        },
+        {
+          "name": "green",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Integer"
+        },
+        {
+          "name": "blue",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "Integer"
+        }
+      ],
+      "name": "SimpleColor",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "name": "DbError",
+      "node": "ErrorDecl"
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "args": [
+                {
+                  "expr": {
+                    "name": "r",
+                    "node": "VarExpr"
+                  },
+                  "name": "red",
+                  "node": "NamedArg"
+                },
+                {
+                  "expr": {
+                    "name": "g",
+                    "node": "VarExpr"
+                  },
+                  "name": "green",
+                  "node": "NamedArg"
+                },
+                {
+                  "expr": {
+                    "name": "b",
+                    "node": "VarExpr"
+                  },
+                  "name": "blue",
+                  "node": "NamedArg"
+                }
+              ],
+              "node": "RecordLiteralExpr",
+              "type_name": "SimpleColor"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "result",
+              "red"
+            ]
+          },
+          "node": "BinaryExpr",
+          "op": "=",
+          "right": {
+            "name": "r",
+            "node": "VarExpr"
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "make_color",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "r",
+          "node": "Param",
+          "type_name": "Integer"
+        },
+        {
+          "name": "g",
+          "node": "Param",
+          "type_name": "Integer"
+        },
+        {
+          "name": "b",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "r",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        },
+        {
+          "left": {
+            "name": "g",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        },
+        {
+          "left": {
+            "name": "b",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "SimpleColor",
+        "node": "TypeName"
+      }
+    },
+    {
+      "aborts": [
+        {
+          "condition": {
+            "left": {
+              "name": "id",
+              "node": "VarExpr"
+            },
+            "node": "BinaryExpr",
+            "op": ">",
+            "right": {
+              "node": "NumberExpr",
+              "value": 999
+            }
+          },
+          "error_name": "DbError",
+          "node": "AbortClause"
+        }
+      ],
+      "body": [
+        {
+          "condition": {
+            "left": {
+              "name": "id",
+              "node": "VarExpr"
+            },
+            "node": "BinaryExpr",
+            "op": ">",
+            "right": {
+              "node": "NumberExpr",
+              "value": 999
+            }
+          },
+          "else_body": [],
+          "node": "IfStmt",
+          "then_body": [
+            {
+              "error_name": "DbError",
+              "node": "AbortStmt"
+            }
+          ]
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "args": [
+                {
+                  "name": "id",
+                  "node": "VarExpr"
+                },
+                {
+                  "node": "NumberExpr",
+                  "value": 0
+                },
+                {
+                  "node": "NumberExpr",
+                  "value": 0
+                }
+              ],
+              "name": "make_color",
+              "node": "CallExpr"
+            },
+            "node": "ReturnOk"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "name": "success",
+          "node": "SpecialResultExpr"
+        },
+        {
+          "left": {
+            "node": "FieldAccessExpr",
+            "path": [
+              "value",
+              "red"
+            ]
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "find_color",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "id",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "id",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "error_type": "DbError",
+        "node": "ResultTypeName",
+        "ok_type": {
+          "name": "SimpleColor",
+          "node": "TypeName"
+        }
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "args": [
+              {
+                "node": "NumberExpr",
+                "value": 255
+              },
+              {
+                "node": "NumberExpr",
+                "value": 0
+              },
+              {
+                "node": "NumberExpr",
+                "value": 0
+              }
+            ],
+            "name": "make_color",
+            "node": "CallExpr"
+          },
+          "name": "c0",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "SimpleColor",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "args": [
+              {
+                "node": "NumberExpr",
+                "value": 0
+              },
+              {
+                "node": "NumberExpr",
+                "value": 255
+              },
+              {
+                "node": "NumberExpr",
+                "value": 0
+              }
+            ],
+            "name": "make_color",
+            "node": "CallExpr"
+          },
+          "name": "c1",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "SimpleColor",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "args": [
+              {
+                "node": "NumberExpr",
+                "value": 0
+              },
+              {
+                "node": "NumberExpr",
+                "value": 0
+              },
+              {
+                "node": "NumberExpr",
+                "value": 255
+              }
+            ],
+            "name": "make_color",
+            "node": "CallExpr"
+          },
+          "name": "c2",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "SimpleColor",
+            "node": "TypeName"
+          }
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "items": [
+                {
+                  "name": "c0",
+                  "node": "VarExpr"
+                },
+                {
+                  "name": "c1",
+                  "node": "VarExpr"
+                },
+                {
+                  "name": "c2",
+                  "node": "VarExpr"
+                }
+              ],
+              "node": "ArrayLiteralExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "fields": [
+              "red"
+            ],
+            "index": {
+              "node": "NumberExpr",
+              "value": 0
+            },
+            "name": "value",
+            "node": "IndexedFieldAccessExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "make_palette",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": {
+        "element_type": "SimpleColor",
+        "node": "ArrayTypeName",
+        "size": 3
+      }
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "items": [
+                {
+                  "node": "NumberExpr",
+                  "value": 42
+                }
+              ],
+              "node": "ArrayLiteralExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "index": {
+              "node": "NumberExpr",
+              "value": 0
+            },
+            "name": "value",
+            "node": "IndexExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "singleton_array",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": {
+        "element_type": "Integer",
+        "node": "ArrayTypeName",
+        "size": 1
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "args": [],
+            "name": "make_palette",
+            "node": "CallExpr"
+          },
+          "name": "arr",
+          "node": "LetStmt",
+          "type_ref": {
+            "element_type": "SimpleColor",
+            "node": "ArrayTypeName",
+            "size": 3
+          }
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "arr",
+              "node": "VarExpr"
+            },
+            "node": "ReturnOk"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "name": "success",
+          "node": "SpecialResultExpr"
+        },
+        {
+          "left": {
+            "fields": [
+              "red"
+            ],
+            "index": {
+              "node": "NumberExpr",
+              "value": 0
+            },
+            "name": "value",
+            "node": "IndexedFieldAccessExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "load_palette",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": {
+        "error_type": "DbError",
+        "node": "ResultTypeName",
+        "ok_type": {
+          "element_type": "SimpleColor",
+          "node": "ArrayTypeName",
+          "size": 3
+        }
+      }
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "amount",
+              "node": "VarExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "name": "result",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "wrap_value",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "amount",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "amount",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      },
+      "type_params": [
+        "T"
+      ]
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "args": [
+              {
+                "node": "NumberExpr",
+                "value": 10
+              }
+            ],
+            "name": "wrap_value",
+            "node": "CallExpr",
+            "type_args": [
+              "Integer"
+            ]
+          },
+          "name": "n",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "args": [
+            {
+              "node": "StringExpr",
+              "value": "wrapped = ${}"
+            },
+            {
+              "name": "n",
+              "node": "VarExpr"
+            }
+          ],
+          "name": "Std.IO.logf",
+          "node": "CallStmt"
+        }
+      ],
+      "ensures": [],
+      "kind": "procedure",
+      "name": "use_generic",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": null
+    }
+  ],
+  "imports": [
+    {
+      "exposing": [
+        "NotFound"
+      ],
+      "module_name": "Test.Support",
+      "node": "ImportDecl"
+    }
+  ],
+  "module_name": "Test.Generics.Pos",
+  "node": "Program"
+}
