@@ -757,3 +757,24 @@
   - `python .\tools\verify_compiler_examples.py` -> exit 0; compiler example smoke passed, including package and executable runtime-log checks for the restored demo.
   - `cmd /c compare-fhir.cmd` -> exit 0; module-v0 33/33 matching.
   - `cmd /c compare-fhir-v1.cmd` -> exit 0; project-v1 33/33 matching.
+
+## Stage-2 continuation plan toward Stage 3
+
+- Reviewed Stage-2 docs, coverage matrix, manifest, and gate after the 16-21 expansion.
+- Updated `OPEN-COMPARE-IR-STAGE2.md` so it reflects the current 6 active Stage-2 IR samples and 3 Go project contracts instead of the older 16-18-only status.
+- Updated `COMPARE-IR-COVERAGE-MATRIX.md` to include:
+  - Stage-2 samples 19/20/21.
+  - Async/Scope, Channel, and gRPC IDL/project-binding coverage.
+  - Updated deferred gaps: user-defined generics, full async/channel runtime execution, and full gRPC server/client runtime.
+- Stage-2 exit criterion for starting real Stage 3:
+  - keep Stage 1 frozen;
+  - keep Stage 2 opt-in and green;
+  - use Stage 2 as safety net while Stage 3 starts with a deliberately small Freehold compiler-core slice.
+- Recommended first Stage-3 slice:
+  - `compiler_core_v1` mini-project in Freehold;
+  - module/symbol/diagnostic data structures;
+  - helper functions for Go package paths and exported Go names;
+  - Mini-fixtures with normalized JSON/text goldens;
+  - Stage0 Go-codegen project contract for building that Freehold compiler-core artifact.
+- Validation:
+  - `compare-ir-compiler-v1-stage2.cmd` -> exit 0; generated 6, skipped 0, semantic 6/6, full JSON 6/6, Go project contracts 3/3.
