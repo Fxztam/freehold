@@ -32,6 +32,18 @@ type ModuleWithRecordNode is record
     record_type: RecordTypeNode
 end record
 
+type FunctionNode is record
+    span: SourceSpan
+    name: IdentifierNode
+    return_type: IdentifierNode
+    return_literal: LiteralNode
+end record
+
+type ModuleWithFunctionNode is record
+    module_node: ModuleNode
+    routine: FunctionNode
+end record
+
 function make_ast_node_kind(name: String) returns AstNodeKind
 requires String.instr(name, "") = 0
 ensures result.name = name
@@ -74,6 +86,20 @@ is
     return ModuleWithRecordNode { module_node: module_node, record_type: record_type }
 end make_module_with_record_node
 
+function make_function_node(span: SourceSpan, name: IdentifierNode, return_type: IdentifierNode, return_literal: LiteralNode) returns FunctionNode
+requires String.instr(name.name, "") = 0, String.instr(return_type.name, "") = 0
+ensures result.name.name = name.name, result.return_type.name = return_type.name
+is
+    return FunctionNode { span: span, name: name, return_type: return_type, return_literal: return_literal }
+end make_function_node
+
+function make_module_with_function_node(module_node: ModuleNode, routine: FunctionNode) returns ModuleWithFunctionNode
+requires String.instr(module_node.name.name, "") = 0, String.instr(routine.name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name, result.routine.name.name = routine.name.name
+is
+    return ModuleWithFunctionNode { module_node: module_node, routine: routine }
+end make_module_with_function_node
+
 function identifier_key(identifier: IdentifierNode) returns String
 requires String.instr(identifier.name, "") = 0
 ensures String.instr(result, identifier.name) >= 0
@@ -115,5 +141,19 @@ ensures String.instr(result, module_node.record_type.name.name) >= 0
 is
     return String.template("${module}:record=${record}", module: module_text(module_node.module_node), record: record_type_text(module_node.record_type))
 end module_with_record_text
+
+function function_text(routine: FunctionNode) returns String
+requires String.instr(routine.name.name, "") = 0, String.instr(routine.return_type.name, "") = 0
+ensures String.instr(result, routine.name.name) >= 0
+is
+    return String.template("Function:${name}@${source}:${line}:${column}:returns=${return_type}:return=${literal}", name: routine.name.name, source: routine.span.source_name, line: routine.span.start_line, column: routine.span.start_column, return_type: routine.return_type.name, literal: literal_text(routine.return_literal))
+end function_text
+
+function module_with_function_text(module_node: ModuleWithFunctionNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.routine.name.name, "") = 0
+ensures String.instr(result, module_node.routine.name.name) >= 0
+is
+    return String.template("${module}:function=${routine}", module: module_text(module_node.module_node), routine: function_text(module_node.routine))
+end module_with_function_text
 
 end Compiler.Core.Ast

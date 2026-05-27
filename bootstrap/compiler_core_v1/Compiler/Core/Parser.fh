@@ -1,7 +1,7 @@
 module Compiler.Core.Parser
 
-import Compiler.Core.Ast exposing IdentifierNode, ModuleNode, ModuleWithRecordNode, RecordTypeNode, make_identifier_node, make_module_node, make_module_with_record_node, make_record_type_node, module_text, module_with_record_text
-import Compiler.Core.Lexer exposing MiniModuleTokens, MiniRecordModuleTokens
+import Compiler.Core.Ast exposing FunctionNode, IdentifierNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithRecordNode, RecordTypeNode, make_function_node, make_identifier_node, make_literal_node, make_module_node, make_module_with_function_node, make_module_with_record_node, make_record_type_node, module_text, module_with_function_text, module_with_record_text
+import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniModuleTokens, MiniRecordModuleTokens
 import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok
 
 function build_mini_module_node(tokens: MiniModuleTokens) returns ModuleNode
@@ -59,6 +59,27 @@ is
     end if
 end parse_mini_record_module_result
 
+function parse_mini_function_module(tokens: MiniFunctionModuleTokens) returns ModuleWithFunctionNode
+requires tokens.module_keyword.lexeme = "module", tokens.function_keyword.lexeme = "function", tokens.open_paren.lexeme = "(", tokens.close_paren.lexeme = ")", tokens.returns_keyword.lexeme = "returns", tokens.is_keyword.lexeme = "is", tokens.return_keyword.lexeme = "return", tokens.routine_end_keyword.lexeme = "end", tokens.module_end_keyword.lexeme = "end", tokens.routine_name.lexeme = tokens.routine_end_name.lexeme, tokens.module_name.lexeme = tokens.module_end_name.lexeme
+ensures result.module_node.name.name = tokens.module_name.lexeme, result.routine.name.name = tokens.routine_name.lexeme
+is
+    let module_identifier: IdentifierNode = make_identifier_node(tokens.module_name.span, tokens.module_name.lexeme)
+    let module_node: ModuleNode = make_module_node(tokens.module_keyword.span, module_identifier)
+    let routine_identifier: IdentifierNode = make_identifier_node(tokens.routine_name.span, tokens.routine_name.lexeme)
+    let return_type_identifier: IdentifierNode = make_identifier_node(tokens.return_type.span, tokens.return_type.lexeme)
+    let return_literal: LiteralNode = make_literal_node(tokens.return_literal.span, "Integer", tokens.return_literal.lexeme)
+    let routine: FunctionNode = make_function_node(tokens.function_keyword.span, routine_identifier, return_type_identifier, return_literal)
+    return make_module_with_function_node(module_node, routine)
+end parse_mini_function_module
+
+function parse_mini_function_module_result(tokens: MiniFunctionModuleTokens) returns ParseResult
+requires tokens.module_keyword.lexeme = "module", tokens.function_keyword.lexeme = "function", tokens.open_paren.lexeme = "(", tokens.close_paren.lexeme = ")", tokens.returns_keyword.lexeme = "returns", tokens.is_keyword.lexeme = "is", tokens.return_keyword.lexeme = "return", tokens.routine_end_keyword.lexeme = "end", tokens.module_end_keyword.lexeme = "end", tokens.routine_name.lexeme = tokens.routine_end_name.lexeme, tokens.module_name.lexeme = tokens.module_end_name.lexeme
+ensures result.module_node.name.name = tokens.module_name.lexeme
+is
+    let parsed_module: ModuleWithFunctionNode = parse_mini_function_module(tokens)
+    return parse_ok(parsed_module.module_node)
+end parse_mini_function_module_result
+
 function parsed_module_name(module_node: ModuleNode) returns String
 requires String.instr(module_node.name.name, "") = 0
 ensures result = module_node.name.name
@@ -79,5 +100,12 @@ ensures String.instr(result, module_node.record_type.name.name) >= 0
 is
     return String.template("ParsedRecordModule:${module}", module: module_with_record_text(module_node))
 end mini_record_module_parser_summary
+
+function mini_function_module_parser_summary(module_node: ModuleWithFunctionNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.routine.name.name, "") = 0
+ensures String.instr(result, module_node.routine.name.name) >= 0
+is
+    return String.template("ParsedFunctionModule:${module}", module: module_with_function_text(module_node))
+end mini_function_module_parser_summary
 
 end Compiler.Core.Parser

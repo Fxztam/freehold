@@ -38,12 +38,16 @@
             "lexer.summary = %v",
             "lexer.record.count = %v",
             "lexer.record.summary = %v",
+            "lexer.function.count = %v",
+            "lexer.function.summary = %v",
             "parser.module = %v",
             "parser.summary = %v",
             "parser.result = %v",
             "parser.mismatch = %v",
             "parser.record.summary = %v",
             "parser.record.result = %v",
+            "parser.function.summary = %v",
+            "parser.function.result = %v",
             "parse.ok = %v",
             "parse.error = %v"
           ]
@@ -59,13 +63,18 @@
             "type ModuleNode struct",
             "type RecordTypeNode struct",
             "type ModuleWithRecordNode struct",
+            "type FunctionNode struct",
+            "type ModuleWithFunctionNode struct",
             "func MakeIdentifierNode(span compiler_core_token.SourceSpan, name string) IdentifierNode",
             "func MakeLiteralNode(span compiler_core_token.SourceSpan, literalKind string, text string) LiteralNode",
             "func MakeModuleNode(span compiler_core_token.SourceSpan, name IdentifierNode) ModuleNode",
             "func MakeRecordTypeNode(span compiler_core_token.SourceSpan, name IdentifierNode) RecordTypeNode",
             "func MakeModuleWithRecordNode(moduleNode ModuleNode, recordType RecordTypeNode) ModuleWithRecordNode",
+            "func MakeFunctionNode(span compiler_core_token.SourceSpan, name IdentifierNode, returnType IdentifierNode, returnLiteral LiteralNode) FunctionNode",
+            "func MakeModuleWithFunctionNode(moduleNode ModuleNode, routine FunctionNode) ModuleWithFunctionNode",
             "func ModuleText(moduleNode ModuleNode) string",
-            "func ModuleWithRecordText(moduleNode ModuleWithRecordNode) string"
+            "func ModuleWithRecordText(moduleNode ModuleWithRecordNode) string",
+            "func ModuleWithFunctionText(moduleNode ModuleWithFunctionNode) string"
           ]
         },
         {
@@ -87,13 +96,17 @@
           "must_contain": [
             "type MiniModuleTokens struct",
             "type MiniRecordModuleTokens struct",
+            "type MiniFunctionModuleTokens struct",
             "func LexMiniModule(sourceName string, moduleName string) MiniModuleTokens",
             "func LexMiniModulePair(sourceName string, moduleName string, endName string) MiniModuleTokens",
             "func LexMiniRecordModule(sourceName string, moduleName string, recordName string) MiniRecordModuleTokens",
+            "func LexMiniFunctionModule(sourceName string, moduleName string, routineName string) MiniFunctionModuleTokens",
             "func MiniModuleTokenCount(tokens MiniModuleTokens) int64",
             "func MiniRecordModuleTokenCount(tokens MiniRecordModuleTokens) int64",
+            "func MiniFunctionModuleTokenCount(tokens MiniFunctionModuleTokens) int64",
             "func MiniModuleLexerSummary(tokens MiniModuleTokens) string",
             "func MiniRecordModuleLexerSummary(tokens MiniRecordModuleTokens) string",
+            "func MiniFunctionModuleLexerSummary(tokens MiniFunctionModuleTokens) string",
             "compiler_core_token.MakeToken"
           ]
         },
@@ -106,13 +119,17 @@
             "func ParseMiniModuleResult(tokens compiler_core_lexer.MiniModuleTokens) compiler_core_parseresult.ParseResult",
             "func ParseMiniRecordModule(tokens compiler_core_lexer.MiniRecordModuleTokens) compiler_core_ast.ModuleWithRecordNode",
             "func ParseMiniRecordModuleResult(tokens compiler_core_lexer.MiniRecordModuleTokens) compiler_core_parseresult.ParseResult",
+            "func ParseMiniFunctionModule(tokens compiler_core_lexer.MiniFunctionModuleTokens) compiler_core_ast.ModuleWithFunctionNode",
+            "func ParseMiniFunctionModuleResult(tokens compiler_core_lexer.MiniFunctionModuleTokens) compiler_core_parseresult.ParseResult",
             "func BuildMiniModuleNode(tokens compiler_core_lexer.MiniModuleTokens) compiler_core_ast.ModuleNode",
             "func ParsedModuleName(moduleNode compiler_core_ast.ModuleNode) string",
             "func MiniModuleParserSummary(moduleNode compiler_core_ast.ModuleNode) string",
             "func MiniRecordModuleParserSummary(moduleNode compiler_core_ast.ModuleWithRecordNode) string",
+            "func MiniFunctionModuleParserSummary(moduleNode compiler_core_ast.ModuleWithFunctionNode) string",
             "compiler_core_parseresult.ParseOk(moduleNode)",
             "compiler_core_parseresult.ParseErrorResult(issue, moduleNode)",
             "compiler_core_ast.MakeModuleWithRecordNode(moduleNode, recordType)",
+            "compiler_core_ast.MakeModuleWithFunctionNode(moduleNode, routine)",
             "compiler_core_ast.MakeModuleNode(tokens.ModuleKeyword.Span, moduleIdentifier)"
           ]
         },

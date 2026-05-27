@@ -51,17 +51,22 @@ bootstrap/compiler_core_v1/
   - `ModuleNode`
   - `RecordTypeNode`
   - `ModuleWithRecordNode`
+  - `FunctionNode`
+  - `ModuleWithFunctionNode`
   - Helper fuer Identifier-, Literal- und Module-Key/Text-Ausgaben
 - `Compiler.Core.Lexer`
   - `MiniModuleTokens`
   - `MiniRecordModuleTokens`
+  - `MiniFunctionModuleTokens`
   - kontrollierter Fixture-Lexer fuer `module Demo` / `end Demo` und `module Demo` / `end Other`
   - kontrollierter Fixture-Lexer fuer `module Demo type X is record end record end Demo`
+  - kontrollierter Fixture-Lexer fuer `module Demo function answer() returns Integer is return 42 end answer end Demo`
   - Helper fuer Tokenanzahl und deterministische Lexer-Summary
 - `Compiler.Core.Parser`
   - kontrollierter Fixture-Parser fuer `module <Identifier>` / `end <Identifier>`
   - kontrollierter Fixture-Parser fuer ein Modul mit einer leeren Record-Typdeklaration
-  - baut aus `MiniModuleTokens` einen `ModuleNode` und aus `MiniRecordModuleTokens` einen `ModuleWithRecordNode`
+  - kontrollierter Fixture-Parser fuer ein Modul mit einer einfachen Function-Deklaration
+  - baut aus `MiniModuleTokens` einen `ModuleNode`, aus `MiniRecordModuleTokens` einen `ModuleWithRecordNode` und aus `MiniFunctionModuleTokens` einen `ModuleWithFunctionNode`
   - Helper fuer parsed module name, deterministische Parser-Summary und OK-/Fehler-`ParseResult`-Rueckgabe
 - `Compiler.Core.ParseResult`
   - `ParseStatus`
@@ -96,6 +101,6 @@ Das Manifest beschreibt den ersten Contract `compiler_core_v1_go_project`.
 
 ## Naechste Schritte
 
-1. Als naechste Syntaxform `function` oder `procedure` als kontrolliertes Fixture ergaenzen.
+1. Als naechste Syntaxform `procedure` als kontrolliertes Fixture ergaenzen.
 2. Danach Imports als eigenen, manifest-geprueften Slice vorbereiten.
 3. Stage1-Ausfuehrung erst beginnen, wenn die Mini-Fixtures stabil sind.
