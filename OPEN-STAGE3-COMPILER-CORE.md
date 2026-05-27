@@ -55,23 +55,28 @@ bootstrap/compiler_core_v1/
   - `ModuleWithFunctionNode`
   - `ProcedureNode`
   - `ModuleWithProcedureNode`
+  - `ImportNode`
+  - `ModuleWithImportNode`
   - Helper fuer Identifier-, Literal- und Module-Key/Text-Ausgaben
 - `Compiler.Core.Lexer`
   - `MiniModuleTokens`
   - `MiniRecordModuleTokens`
   - `MiniFunctionModuleTokens`
   - `MiniProcedureModuleTokens`
+  - `MiniImportModuleTokens`
   - kontrollierter Fixture-Lexer fuer `module Demo` / `end Demo` und `module Demo` / `end Other`
   - kontrollierter Fixture-Lexer fuer `module Demo type X is record end record end Demo`
   - kontrollierter Fixture-Lexer fuer `module Demo function answer() returns Integer is return 42 end answer end Demo`
   - kontrollierter Fixture-Lexer fuer `module Demo procedure run() is end run end Demo`
+  - kontrollierter Fixture-Lexer fuer `import Demo.Support exposing answer` vor `module Demo end Demo`
   - Helper fuer Tokenanzahl und deterministische Lexer-Summary
 - `Compiler.Core.Parser`
   - kontrollierter Fixture-Parser fuer `module <Identifier>` / `end <Identifier>`
   - kontrollierter Fixture-Parser fuer ein Modul mit einer leeren Record-Typdeklaration
   - kontrollierter Fixture-Parser fuer ein Modul mit einer einfachen Function-Deklaration
   - kontrollierter Fixture-Parser fuer ein Modul mit einer einfachen Procedure-Deklaration
-  - baut aus `MiniModuleTokens` einen `ModuleNode`, aus `MiniRecordModuleTokens` einen `ModuleWithRecordNode`, aus `MiniFunctionModuleTokens` einen `ModuleWithFunctionNode` und aus `MiniProcedureModuleTokens` einen `ModuleWithProcedureNode`
+  - kontrollierter Fixture-Parser fuer ein Modul mit einer Import-Praeambel
+  - baut aus `MiniModuleTokens` einen `ModuleNode`, aus `MiniRecordModuleTokens` einen `ModuleWithRecordNode`, aus `MiniFunctionModuleTokens` einen `ModuleWithFunctionNode`, aus `MiniProcedureModuleTokens` einen `ModuleWithProcedureNode` und aus `MiniImportModuleTokens` einen `ModuleWithImportNode`
   - Helper fuer parsed module name, deterministische Parser-Summary und OK-/Fehler-`ParseResult`-Rueckgabe
 - `Compiler.Core.ParseResult`
   - `ParseStatus`
@@ -106,6 +111,6 @@ Das Manifest beschreibt den ersten Contract `compiler_core_v1_go_project`.
 
 ## Naechste Schritte
 
-1. Imports als eigenen, manifest-geprueften Slice vorbereiten.
-2. Danach moduluebergreifende Referenzen gegen die vorhandenen Mini-Fixtures absichern.
+1. Moduluebergreifende Referenzen gegen die vorhandenen Mini-Fixtures absichern.
+2. Danach negative Import-/Exposing-Fixtures ergaenzen.
 3. Stage1-Ausfuehrung erst beginnen, wenn die Mini-Fixtures stabil sind.

@@ -1,7 +1,7 @@
 module Compiler.Core.Parser
 
-import Compiler.Core.Ast exposing FunctionNode, IdentifierNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithProcedureNode, ModuleWithRecordNode, ProcedureNode, RecordTypeNode, make_function_node, make_identifier_node, make_literal_node, make_module_node, make_module_with_function_node, make_module_with_procedure_node, make_module_with_record_node, make_procedure_node, make_record_type_node, module_text, module_with_function_text, module_with_procedure_text, module_with_record_text
-import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens
+import Compiler.Core.Ast exposing FunctionNode, IdentifierNode, ImportNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithProcedureNode, ModuleWithRecordNode, ProcedureNode, RecordTypeNode, make_function_node, make_identifier_node, make_import_node, make_literal_node, make_module_node, make_module_with_function_node, make_module_with_import_node, make_module_with_procedure_node, make_module_with_record_node, make_procedure_node, make_record_type_node, module_text, module_with_function_text, module_with_import_text, module_with_procedure_text, module_with_record_text
+import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens
 import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok
 
 function build_mini_module_node(tokens: MiniModuleTokens) returns ModuleNode
@@ -99,6 +99,26 @@ is
     return parse_ok(parsed_module.module_node)
 end parse_mini_procedure_module_result
 
+function parse_mini_import_module(tokens: MiniImportModuleTokens) returns ModuleWithImportNode
+requires tokens.import_keyword.lexeme = "import", tokens.exposing_keyword.lexeme = "exposing", tokens.module_keyword.lexeme = "module", tokens.end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.end_name.lexeme
+ensures result.module_node.name.name = tokens.module_name.lexeme, result.import_decl.module_name.name = tokens.import_module_name.lexeme
+is
+    let import_module_identifier: IdentifierNode = make_identifier_node(tokens.import_module_name.span, tokens.import_module_name.lexeme)
+    let exposed_identifier: IdentifierNode = make_identifier_node(tokens.exposed_name.span, tokens.exposed_name.lexeme)
+    let import_decl: ImportNode = make_import_node(tokens.import_keyword.span, import_module_identifier, exposed_identifier)
+    let module_identifier: IdentifierNode = make_identifier_node(tokens.module_name.span, tokens.module_name.lexeme)
+    let module_node: ModuleNode = make_module_node(tokens.module_keyword.span, module_identifier)
+    return make_module_with_import_node(module_node, import_decl)
+end parse_mini_import_module
+
+function parse_mini_import_module_result(tokens: MiniImportModuleTokens) returns ParseResult
+requires tokens.import_keyword.lexeme = "import", tokens.exposing_keyword.lexeme = "exposing", tokens.module_keyword.lexeme = "module", tokens.end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.end_name.lexeme
+ensures result.module_node.name.name = tokens.module_name.lexeme
+is
+    let parsed_module: ModuleWithImportNode = parse_mini_import_module(tokens)
+    return parse_ok(parsed_module.module_node)
+end parse_mini_import_module_result
+
 function parsed_module_name(module_node: ModuleNode) returns String
 requires String.instr(module_node.name.name, "") = 0
 ensures result = module_node.name.name
@@ -133,5 +153,12 @@ ensures String.instr(result, module_node.routine.name.name) >= 0
 is
     return String.template("ParsedProcedureModule:${module}", module: module_with_procedure_text(module_node))
 end mini_procedure_module_parser_summary
+
+function mini_import_module_parser_summary(module_node: ModuleWithImportNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.import_decl.module_name.name, "") = 0
+ensures String.instr(result, module_node.import_decl.module_name.name) >= 0
+is
+    return String.template("ParsedImportModule:${module}", module: module_with_import_text(module_node))
+end mini_import_module_parser_summary
 
 end Compiler.Core.Parser

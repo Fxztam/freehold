@@ -54,6 +54,17 @@ type ModuleWithProcedureNode is record
     routine: ProcedureNode
 end record
 
+type ImportNode is record
+    span: SourceSpan
+    module_name: IdentifierNode
+    exposed_name: IdentifierNode
+end record
+
+type ModuleWithImportNode is record
+    module_node: ModuleNode
+    import_decl: ImportNode
+end record
+
 function make_ast_node_kind(name: String) returns AstNodeKind
 requires String.instr(name, "") = 0
 ensures result.name = name
@@ -124,6 +135,20 @@ is
     return ModuleWithProcedureNode { module_node: module_node, routine: routine }
 end make_module_with_procedure_node
 
+function make_import_node(span: SourceSpan, module_name: IdentifierNode, exposed_name: IdentifierNode) returns ImportNode
+requires String.instr(module_name.name, "") = 0, String.instr(exposed_name.name, "") = 0
+ensures result.module_name.name = module_name.name, result.exposed_name.name = exposed_name.name
+is
+    return ImportNode { span: span, module_name: module_name, exposed_name: exposed_name }
+end make_import_node
+
+function make_module_with_import_node(module_node: ModuleNode, import_decl: ImportNode) returns ModuleWithImportNode
+requires String.instr(module_node.name.name, "") = 0, String.instr(import_decl.module_name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name, result.import_decl.module_name.name = import_decl.module_name.name
+is
+    return ModuleWithImportNode { module_node: module_node, import_decl: import_decl }
+end make_module_with_import_node
+
 function identifier_key(identifier: IdentifierNode) returns String
 requires String.instr(identifier.name, "") = 0
 ensures String.instr(result, identifier.name) >= 0
@@ -193,5 +218,19 @@ ensures String.instr(result, module_node.routine.name.name) >= 0
 is
     return String.template("${module}:procedure=${routine}", module: module_text(module_node.module_node), routine: procedure_text(module_node.routine))
 end module_with_procedure_text
+
+function import_text(import_decl: ImportNode) returns String
+requires String.instr(import_decl.module_name.name, "") = 0, String.instr(import_decl.exposed_name.name, "") = 0
+ensures String.instr(result, import_decl.exposed_name.name) >= 0
+is
+    return String.template("Import:${module}@${source}:${line}:${column}:exposing=${exposed}", module: import_decl.module_name.name, source: import_decl.span.source_name, line: import_decl.span.start_line, column: import_decl.span.start_column, exposed: import_decl.exposed_name.name)
+end import_text
+
+function module_with_import_text(module_node: ModuleWithImportNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.import_decl.module_name.name, "") = 0
+ensures String.instr(result, module_node.import_decl.module_name.name) >= 0
+is
+    return String.template("${module}:import=${import_decl}", module: module_text(module_node.module_node), import_decl: import_text(module_node.import_decl))
+end module_with_import_text
 
 end Compiler.Core.Ast
