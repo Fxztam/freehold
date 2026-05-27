@@ -74,6 +74,7 @@ bootstrap/compiler_core_v1/
   - kontrollierter Fixture-Lexer fuer `module Demo procedure run() is end run end Demo`
   - kontrollierter Fixture-Lexer fuer `import Demo.Support exposing answer` vor `module Demo end Demo`
   - kontrollierter Fixture-Lexer fuer eine Function, die `answer` aus `import Demo.Support exposing answer` referenziert
+  - kontrollierter Fixture-Lexer fuer negative Import-/Exposing-Referenzen mit unterschiedlichem exposed Symbol und Return-Symbol
   - Helper fuer Tokenanzahl und deterministische Lexer-Summary
 - `Compiler.Core.Parser`
   - kontrollierter Fixture-Parser fuer `module <Identifier>` / `end <Identifier>`
@@ -82,6 +83,7 @@ bootstrap/compiler_core_v1/
   - kontrollierter Fixture-Parser fuer ein Modul mit einer einfachen Procedure-Deklaration
   - kontrollierter Fixture-Parser fuer ein Modul mit einer Import-Praeambel
   - kontrollierter Fixture-Parser fuer eine Function-Return-Referenz auf ein exposed Import-Symbol
+  - negativer Import-/Exposing-Result-Pfad fuer `exposing answer` mit `return missing` (`FH-PARSE-0002`)
   - baut aus `MiniModuleTokens` einen `ModuleNode`, aus `MiniRecordModuleTokens` einen `ModuleWithRecordNode`, aus `MiniFunctionModuleTokens` einen `ModuleWithFunctionNode`, aus `MiniProcedureModuleTokens` einen `ModuleWithProcedureNode`, aus `MiniImportModuleTokens` einen `ModuleWithImportNode` und aus `MiniImportReferenceModuleTokens` einen `ModuleWithImportReferenceNode`
   - Helper fuer parsed module name, deterministische Parser-Summary und OK-/Fehler-`ParseResult`-Rueckgabe
 - `Compiler.Core.ParseResult`
@@ -117,6 +119,6 @@ Das Manifest beschreibt den ersten Contract `compiler_core_v1_go_project`.
 
 ## Naechste Schritte
 
-1. Negative Import-/Exposing-Fixtures ergaenzen.
-2. Danach moduluebergreifende Referenzdiagnostik fuer unbekannte exposed Symbole vorbereiten.
+1. Moduluebergreifende Referenzdiagnostik fuer unbekannte exposed Symbole vorbereiten.
+2. Danach die Import-/Exposing-Diagnostik aus dem kontrollierten Fixture in die breitere Stage-3-Namensauflösung ueberfuehren.
 3. Stage1-Ausfuehrung erst beginnen, wenn die Mini-Fixtures stabil sind.

@@ -137,11 +137,19 @@ is
 end parse_mini_import_reference_module
 
 function parse_mini_import_reference_module_result(tokens: MiniImportReferenceModuleTokens) returns ParseResult
-requires tokens.import_keyword.lexeme = "import", tokens.exposing_keyword.lexeme = "exposing", tokens.module_keyword.lexeme = "module", tokens.function_keyword.lexeme = "function", tokens.open_paren.lexeme = "(", tokens.close_paren.lexeme = ")", tokens.returns_keyword.lexeme = "returns", tokens.is_keyword.lexeme = "is", tokens.return_keyword.lexeme = "return", tokens.routine_end_keyword.lexeme = "end", tokens.module_end_keyword.lexeme = "end", tokens.exposed_name.lexeme = tokens.return_symbol.lexeme, tokens.routine_name.lexeme = tokens.routine_end_name.lexeme, tokens.module_name.lexeme = tokens.module_end_name.lexeme
+requires tokens.import_keyword.lexeme = "import", tokens.exposing_keyword.lexeme = "exposing", tokens.module_keyword.lexeme = "module", tokens.function_keyword.lexeme = "function", tokens.open_paren.lexeme = "(", tokens.close_paren.lexeme = ")", tokens.returns_keyword.lexeme = "returns", tokens.is_keyword.lexeme = "is", tokens.return_keyword.lexeme = "return", tokens.routine_end_keyword.lexeme = "end", tokens.module_end_keyword.lexeme = "end", tokens.routine_name.lexeme = tokens.routine_end_name.lexeme, tokens.module_name.lexeme = tokens.module_end_name.lexeme
 ensures result.module_node.name.name = tokens.module_name.lexeme
 is
-    let parsed_module: ModuleWithImportReferenceNode = parse_mini_import_reference_module(tokens)
-    return parse_ok(parsed_module.module_node)
+    let module_identifier: IdentifierNode = make_identifier_node(tokens.module_name.span, tokens.module_name.lexeme)
+    let module_node: ModuleNode = make_module_node(tokens.module_keyword.span, module_identifier)
+    if tokens.exposed_name.lexeme = tokens.return_symbol.lexeme then
+        let parsed_module: ModuleWithImportReferenceNode = parse_mini_import_reference_module(tokens)
+        return parse_ok(parsed_module.module_node)
+    else
+        let message: String = String.template("import exposing mismatch: expected ${expected}, got ${actual}", expected: tokens.exposed_name.lexeme, actual: tokens.return_symbol.lexeme)
+        let issue: ParseError = make_parse_error("FH-PARSE-0002", message, tokens.return_symbol.span)
+        return parse_error_result(issue, module_node)
+    end if
 end parse_mini_import_reference_module_result
 
 function parsed_module_name(module_node: ModuleNode) returns String

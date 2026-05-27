@@ -1047,3 +1047,21 @@
   - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Parser.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 48/48 lines.
+
+## Stage-3 compiler_core_v1 negative import/exposing fixture
+
+- Added the controlled negative Import-/Exposing fixture for `import Demo.Support exposing answer` with a local `return missing` reference.
+- Extended `Compiler.Core.Lexer` with `lex_mini_import_reference_module_pair`, so positive and negative import-reference token streams can differ only in the returned symbol.
+- Updated `Compiler.Core.Parser` so `parse_mini_import_reference_module_result` no longer requires `exposed_name = return_symbol`; it now returns:
+  - `parse_ok(...)` for `exposing answer` / `return answer`.
+  - `parse_error_result(...)` with `FH-PARSE-0002` for `exposing answer` / `return missing`.
+- Extended `App.Main` and the Stage-3 runtime Golden with:
+  - `lexer.import_ref.missing.summary`.
+  - `parser.import_ref.missing`.
+- Updated `artifacts/stage3/compiler_core_v1/manifest.json` so the Stage-3 contract checks generated Go for `LexMiniImportReferenceModulePair`, the new runtime lines, and the `FH-PARSE-0002` parser branch.
+- Updated `OPEN-STAGE3-COMPILER-CORE.md`; next planned compiler-core step is moduluebergreifende Referenzdiagnostik fuer unbekannte exposed Symbole.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Lexer.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Parser.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 50/50 lines.

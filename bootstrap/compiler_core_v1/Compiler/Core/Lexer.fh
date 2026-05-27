@@ -342,6 +342,13 @@ function lex_mini_import_reference_module(source_name: String, module_name: Stri
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(import_module_name, "") = 0, String.instr(exposed_name, "") = 0, String.instr(routine_name, "") = 0
 ensures result.import_keyword.lexeme = "import", result.return_symbol.lexeme = exposed_name, result.routine_name.lexeme = routine_name
 is
+    return lex_mini_import_reference_module_pair(source_name, module_name, import_module_name, exposed_name, routine_name, exposed_name)
+end lex_mini_import_reference_module
+
+function lex_mini_import_reference_module_pair(source_name: String, module_name: String, import_module_name: String, exposed_name: String, routine_name: String, return_symbol_name: String) returns MiniImportReferenceModuleTokens
+requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(import_module_name, "") = 0, String.instr(exposed_name, "") = 0, String.instr(routine_name, "") = 0, String.instr(return_symbol_name, "") = 0
+ensures result.import_keyword.lexeme = "import", result.exposed_name.lexeme = exposed_name, result.return_symbol.lexeme = return_symbol_name, result.routine_name.lexeme = routine_name
+is
     let keyword_import: TokenKind = make_token_kind("KeywordImport")
     let keyword_exposing: TokenKind = make_token_kind("KeywordExposing")
     let keyword_module: TokenKind = make_token_kind("KeywordModule")
@@ -370,7 +377,7 @@ is
     let return_type_token: Token = make_token(type_name, make_source_span(source_name, 3, 24, 3, 31), "Integer")
     let is_keyword: Token = make_token(keyword_is, make_source_span(source_name, 3, 32, 3, 34), "is")
     let return_keyword: Token = make_token(keyword_return, make_source_span(source_name, 4, 1, 4, 7), "return")
-    let return_symbol: Token = make_token(identifier, make_source_span(source_name, 4, 8, 4, 14), exposed_name)
+    let return_symbol: Token = make_token(identifier, make_source_span(source_name, 4, 8, 4, 14), return_symbol_name)
     let routine_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 5, 1, 5, 4), "end")
     let routine_end_name: Token = make_token(identifier, make_source_span(source_name, 5, 5, 5, 8), routine_name)
     let module_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 6, 1, 6, 4), "end")
@@ -397,7 +404,7 @@ is
         module_end_keyword: module_end_keyword,
         module_end_name: module_end_name
     }
-end lex_mini_import_reference_module
+end lex_mini_import_reference_module_pair
 
 function mini_import_reference_module_token_count(tokens: MiniImportReferenceModuleTokens) returns Integer
 ensures result = 19
