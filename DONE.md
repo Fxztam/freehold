@@ -906,3 +906,15 @@
   - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\ParseResult.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 26/26 lines.
+
+## Stage-3 compiler_core_v1 parser ParseResult path
+
+- Extended `Compiler.Core.Parser` with `parse_mini_module_result`.
+- The existing `parse_mini_module` still returns `ModuleNode`; the new function wraps that happy path in `parse_ok` and returns `ParseResult` directly.
+- Extended `App.Main` and the Stage-3 runtime Golden with `parser.result` to prove the direct Parser -> ParseResult path.
+- Updated `artifacts/stage3/compiler_core_v1/manifest.json` so the Stage-3 contract now checks generated Go for `ParseMiniModuleResult` and the call to `compiler_core_parseresult.ParseOk`.
+- Updated `OPEN-STAGE3-COMPILER-CORE.md`; next planned compiler-core step is a negative parser fixture for `module Demo` / `end Other`.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Parser.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched.

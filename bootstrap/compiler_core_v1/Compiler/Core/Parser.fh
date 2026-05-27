@@ -2,6 +2,7 @@ module Compiler.Core.Parser
 
 import Compiler.Core.Ast exposing IdentifierNode, ModuleNode, make_identifier_node, make_module_node, module_text
 import Compiler.Core.Lexer exposing MiniModuleTokens
+import Compiler.Core.ParseResult exposing ParseResult, parse_ok
 
 function parse_mini_module(tokens: MiniModuleTokens) returns ModuleNode
 requires tokens.module_keyword.lexeme = "module", tokens.end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.end_name.lexeme
@@ -10,6 +11,14 @@ is
     let module_identifier: IdentifierNode = make_identifier_node(tokens.module_name.span, tokens.module_name.lexeme)
     return make_module_node(tokens.module_keyword.span, module_identifier)
 end parse_mini_module
+
+function parse_mini_module_result(tokens: MiniModuleTokens) returns ParseResult
+requires tokens.module_keyword.lexeme = "module", tokens.end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.end_name.lexeme
+ensures result.status.name = "ok", result.module_node.name.name = tokens.module_name.lexeme
+is
+    let module_node: ModuleNode = parse_mini_module(tokens)
+    return parse_ok(module_node)
+end parse_mini_module_result
 
 function parsed_module_name(module_node: ModuleNode) returns String
 requires String.instr(module_node.name.name, "") = 0

@@ -57,7 +57,7 @@ bootstrap/compiler_core_v1/
 - `Compiler.Core.Parser`
   - kontrollierter Fixture-Parser fuer `module <Identifier>` / `end <Identifier>`
   - baut aus `MiniModuleTokens` einen `ModuleNode`
-  - Helper fuer parsed module name und deterministische Parser-Summary
+  - Helper fuer parsed module name, deterministische Parser-Summary und `ParseResult`-Rueckgabe
 - `Compiler.Core.ParseResult`
   - `ParseStatus`
   - `ParseError`
@@ -91,7 +91,6 @@ Das Manifest beschreibt den ersten Contract `compiler_core_v1_go_project`.
 
 ## Naechste Schritte
 
-1. `parse_mini_module_result` ergaenzen, damit der Parser direkt `ParseResult` liefert.
-2. Danach einen negativen Parser-Fixture-Fall fuer `module Demo` / `end Other` ergaenzen.
-3. Danach erst den Parser-Slice ueber das Mini-Modul hinaus erweitern.
-4. Stage1-Ausfuehrung erst beginnen, wenn die Mini-Fixtures stabil sind.
+1. Einen negativen Parser-Fixture-Fall fuer `module Demo` / `end Other` ergaenzen.
+2. Danach erst den Parser-Slice ueber das Mini-Modul hinaus erweitern.
+3. Stage1-Ausfuehrung erst beginnen, wenn die Mini-Fixtures stabil sind.
