@@ -1,0 +1,46 @@
+module Compiler.Core.Lexer
+
+import Compiler.Core.Token exposing Token, TokenKind, make_source_span, make_token, make_token_kind, token_text
+
+type MiniModuleTokens is record
+    module_keyword: Token
+    module_name: Token
+    end_keyword: Token
+    end_name: Token
+end record
+
+function lex_mini_module(source_name: String, module_name: String) returns MiniModuleTokens
+requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0
+ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name
+is
+    let keyword_module: TokenKind = make_token_kind("KeywordModule")
+    let keyword_end: TokenKind = make_token_kind("KeywordEnd")
+    let identifier: TokenKind = make_token_kind("Identifier")
+
+    let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 1, 1, 1, 7), "module")
+    let module_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 8, 1, 12), module_name)
+    let end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 2, 1, 2, 4), "end")
+    let end_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 5, 2, 9), module_name)
+
+    return MiniModuleTokens {
+        module_keyword: module_keyword,
+        module_name: module_name_token,
+        end_keyword: end_keyword,
+        end_name: end_name_token
+    }
+end lex_mini_module
+
+function mini_module_token_count(tokens: MiniModuleTokens) returns Integer
+ensures result = 4
+is
+    return 4
+end mini_module_token_count
+
+function mini_module_lexer_summary(tokens: MiniModuleTokens) returns String
+requires String.instr(tokens.module_name.lexeme, "") = 0
+ensures String.instr(result, tokens.module_name.lexeme) >= 0
+is
+    return String.template("${first}|${name}|${end}|${end_name}", first: token_text(tokens.module_keyword), name: token_text(tokens.module_name), end: token_text(tokens.end_keyword), end_name: token_text(tokens.end_name))
+end mini_module_lexer_summary
+
+end Compiler.Core.Lexer

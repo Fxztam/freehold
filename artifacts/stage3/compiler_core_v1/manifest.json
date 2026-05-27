@@ -13,7 +13,7 @@
       "source_file": "bootstrap/compiler_core_v1/App/Main.fh",
       "expected": {
         "module_path": "freehold.local",
-        "total_files": 6,
+        "total_files": 7,
         "total_build_files": 3,
         "total_extra_files": 0,
         "supported": true
@@ -33,7 +33,9 @@
             "token.key = %v",
             "token.text = %v",
             "ast.identifier = %v",
-            "ast.module.text = %v"
+            "ast.module.text = %v",
+            "lexer.count = %v",
+            "lexer.summary = %v"
           ]
         },
         {
@@ -61,6 +63,18 @@
             "type GoPackagePath struct",
             "func ModuleToGoPackage(moduleName ModuleName) GoPackagePath",
             "strings.ReplaceAll(moduleName.Full, \".\", \"/\")"
+          ]
+        },
+        {
+          "output_path": "compiler/core/lexer/lexer.go",
+          "module": "Compiler.Core.Lexer",
+          "supported": true,
+          "must_contain": [
+            "type MiniModuleTokens struct",
+            "func LexMiniModule(sourceName string, moduleName string) MiniModuleTokens",
+            "func MiniModuleTokenCount(tokens MiniModuleTokens) int64",
+            "func MiniModuleLexerSummary(tokens MiniModuleTokens) string",
+            "compiler_core_token.MakeToken"
           ]
         },
         {

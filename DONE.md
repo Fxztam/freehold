@@ -851,3 +851,20 @@
 - Validation:
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched.
+
+## Stage-3 compiler_core_v1 Lexer fixture
+
+- Added `Compiler.Core.Lexer` as the first lexer-facing compiler-core behavior slice.
+- The lexer is deliberately controlled and fixture-sized, not a general scanner yet.
+- New Freehold record:
+  - `MiniModuleTokens` with `module_keyword`, `module_name`, `end_keyword`, and `end_name` tokens.
+- New helpers:
+  - `lex_mini_module` for the fixed mini module shape `module <Name>` / `end <Name>`.
+  - `mini_module_token_count`.
+  - `mini_module_lexer_summary`.
+- Extended `App.Main` and the Stage-3 runtime Golden with deterministic lexer lines for `module Demo` / `end Demo`.
+- Updated `artifacts/stage3/compiler_core_v1/manifest.json` so the Stage-3 contract now checks generated Go for `compiler/core/lexer/lexer.go`.
+- Updated `OPEN-STAGE3-COMPILER-CORE.md`; next planned compiler-core step is the controlled fixture parser for `module <Identifier> end <Identifier>`.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched.
