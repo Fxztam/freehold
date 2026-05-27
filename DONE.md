@@ -1100,3 +1100,16 @@
   - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Resolve.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 53/53 lines.
+
+## Stage-3 compiler_core_v1 resolver result model surface
+
+- Stabilized the public resolver result Golden labels around the dedicated `ResolveResult` model.
+- Kept the resolver model separate from `ParseResult` with `ResolveStatus`, `ResolveResult`, `resolve_ok`, `resolve_error`, and `resolve_result_summary`.
+- Updated the negative resolver output label from `resolver.import_ref.missing` to `resolver.import_ref.unknown`, matching the intended diagnostic phase vocabulary:
+  - `resolver.import_ref.result = ok:Demo.Support.answer`.
+  - `resolver.import_ref.unknown = error:FH-REF-1001:Demo.Support.missing:unknown exposed symbol missing in Demo.Support`.
+- Updated `App.Main`, the Stage-3 runtime Golden, `manifest.json`, and `OPEN-STAGE3-COMPILER-CORE.md` for the stable result surface.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Resolve.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 53/53 lines.

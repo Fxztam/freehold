@@ -97,6 +97,7 @@ bootstrap/compiler_core_v1/
   - `ResolveStatus`
   - `ResolveResult`
   - Mini-Resolver fuer kontrollierte Import-Reference-Tokens
+  - stabile Resolver-Summary-Zeilen fuer `resolver.import_ref.result` und `resolver.import_ref.unknown`
   - OK-Ausgang fuer `import Demo.Support exposing answer` / `return answer`
   - Diagnostic-Ausgang mit `FH-REF-1001` fuer `return missing`
 - `App.Main`
