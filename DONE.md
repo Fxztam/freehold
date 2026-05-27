@@ -793,3 +793,17 @@
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `python -m py_compile .\tools\verify_stage3_compiler_core_contracts.py` -> exit 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project `go test ./...` and executable build passed.
+
+## Stage-3 compiler_core_v1 Golden fixtures
+
+- Added `Compiler.Core.Fixtures` to turn small compiler-core inputs into deterministic result records.
+- Added two initial fixture cases through `App.Main`:
+  - `Compiler.Core.Names` / `module_to_go_package` -> package path, export name, diagnostic key/text.
+  - `Compiler.Core.Diagnostics` / `diagnostic_text` -> package path, export name, diagnostic key/text.
+- Added the expected stdout Golden at `artifacts/stage3/compiler_core_v1/expected/compiler_core_results.expected.txt`.
+- Extended `tools/verify_stage3_compiler_core_contracts.py` so `verify-stage3-compiler-core-v1.cmd` now also runs the generated executable and compares normalized stdout against the Golden.
+- Updated `OPEN-STAGE3-COMPILER-CORE.md` to describe the fixture module and Runtime-Golden gate.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m py_compile .\tools\verify_stage3_compiler_core_contracts.py` -> exit 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, runtime Golden stdout matched 10/10 lines.

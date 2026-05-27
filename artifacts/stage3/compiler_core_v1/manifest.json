@@ -4,7 +4,7 @@
   "entry": "bootstrap/compiler_core_v1/App/Main.fh",
   "policy": {
     "slice": "first Freehold compiler-core artifact",
-    "purpose": "prove Stage0 can build a small Freehold compiler-core project",
+    "purpose": "prove Stage0 can build a small Freehold compiler-core project with deterministic compiler-core fixture results",
     "total_contracts": 1
   },
   "contracts": [
@@ -13,7 +13,7 @@
       "source_file": "bootstrap/compiler_core_v1/App/Main.fh",
       "expected": {
         "module_path": "freehold.local",
-        "total_files": 3,
+        "total_files": 4,
         "total_build_files": 3,
         "total_extra_files": 0,
         "supported": true
@@ -27,7 +27,9 @@
             "func BuildSampleDiagnostic() compiler_core_diagnostics.Diagnostic",
             "func Main()",
             "stage3.package = %v",
-            "stage3.diag.text = %v"
+            "stage3.diag.text = %v",
+            "fixture.names.diag = %v",
+            "fixture.diagnostics.diag = %v"
           ]
         },
         {
@@ -52,6 +54,17 @@
             "func DiagnosticKey(diagnostic Diagnostic) string",
             "func DiagnosticText(diagnostic Diagnostic) string"
           ]
+        },
+        {
+          "output_path": "compiler/core/fixtures/fixtures.go",
+          "module": "Compiler.Core.Fixtures",
+          "supported": true,
+          "must_contain": [
+            "type CompilerFixtureResult struct",
+            "func EvaluateFixture(moduleFull string, symbolRaw string, code string, message string) CompilerFixtureResult",
+            "PackagePath: packagePath.Path",
+            "DiagnosticText: compiler_core_diagnostics.DiagnosticText(diagnostic)"
+          ]
         }
       ],
       "build_files": [
@@ -71,7 +84,11 @@
           "must_contain": ["go test ./...", "stage3_compiler_core_v1.exe"]
         }
       ],
-      "extra_files": []
+      "extra_files": [],
+      "runtime_golden": {
+        "executable": "bin/stage3_compiler_core_v1.exe",
+        "expected_stdout_file": "artifacts/stage3/compiler_core_v1/expected/compiler_core_results.expected.txt"
+      }
     }
   ]
 }

@@ -1,6 +1,7 @@
 module App.Main
 
 import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic_text, make_diagnostic
+import Compiler.Core.Fixtures exposing CompilerFixtureResult, evaluate_fixture
 import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, exported_go_name, make_module_name, make_symbol_name, module_to_go_package
 import Std.IO
 
@@ -23,6 +24,16 @@ is
     call Std.IO.logf("stage3.export = ${}", exported)
     call Std.IO.logf("stage3.diag.key = ${}", diagnostic_key(diagnostic))
     call Std.IO.logf("stage3.diag.text = ${}", diagnostic_text(diagnostic))
+
+    let names_fixture: CompilerFixtureResult = evaluate_fixture("Compiler.Core.Names", "module_to_go_package", "FH-BLD-9001", "package path is stable")
+    let diagnostics_fixture: CompilerFixtureResult = evaluate_fixture("Compiler.Core.Diagnostics", "diagnostic_text", "FH-BLD-9002", "diagnostic text is stable")
+
+    call Std.IO.logf("fixture.names.package = ${}", names_fixture.package_path)
+    call Std.IO.logf("fixture.names.export = ${}", names_fixture.exported_name)
+    call Std.IO.logf("fixture.names.diag = ${}", names_fixture.diagnostic_text)
+    call Std.IO.logf("fixture.diagnostics.package = ${}", diagnostics_fixture.package_path)
+    call Std.IO.logf("fixture.diagnostics.export = ${}", diagnostics_fixture.exported_name)
+    call Std.IO.logf("fixture.diagnostics.diag = ${}", diagnostics_fixture.diagnostic_text)
 end main
 
 end App.Main

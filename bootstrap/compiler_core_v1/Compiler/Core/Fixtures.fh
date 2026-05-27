@@ -1,0 +1,29 @@
+module Compiler.Core.Fixtures
+
+import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic_text, make_diagnostic
+import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, exported_go_name, make_module_name, make_symbol_name, module_to_go_package
+
+type CompilerFixtureResult is record
+    package_path: String
+    exported_name: String
+    diagnostic_key: String
+    diagnostic_text: String
+end record
+
+function evaluate_fixture(module_full: String, symbol_raw: String, code: String, message: String) returns CompilerFixtureResult
+requires String.instr(code, "FH-") = 0
+ensures String.instr(result.diagnostic_key, code) = 0
+is
+    let module_name: ModuleName = make_module_name(module_full)
+    let symbol_name: SymbolName = make_symbol_name(symbol_raw)
+    let package_path: GoPackagePath = module_to_go_package(module_name)
+    let diagnostic: Diagnostic = make_diagnostic(code, message, module_name, symbol_name)
+    return CompilerFixtureResult {
+        package_path: package_path.path,
+        exported_name: exported_go_name(symbol_name),
+        diagnostic_key: diagnostic_key(diagnostic),
+        diagnostic_text: diagnostic_text(diagnostic)
+    }
+end evaluate_fixture
+
+end Compiler.Core.Fixtures

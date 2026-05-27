@@ -96,6 +96,7 @@ def verify_contract(contract: dict[str, Any], build_root: Path) -> dict[str, Any
         "build_files": {file.output_path: file for file in build_files},
         "extra_files": {file.output_path: file for file in extra_files},
     }
+    runtime_golden_result: dict[str, Any] | None = None
     check_project_values(contract, project, failures)
     check_codegen_files(contract.get("files", []), project["files"], "files", failures)
     check_text_files(contract.get("build_files", []), project["build_files"], "build_files", failures)
@@ -106,6 +107,8 @@ def verify_contract(contract: dict[str, Any], build_root: Path) -> dict[str, Any
         build_result = subprocess.run(["cmd", "/c", "build.cmd"], cwd=build_root, text=True)
         if build_result.returncode != 0:
             failures.append(f"generated Go project build failed with exit code {build_result.returncode}")
+        else:
+            runtime_golden_result = check_runtime_golden(contract, build_root, failures)
 
     return contract_row(
         name,
@@ -118,9 +121,56 @@ def verify_contract(contract: dict[str, Any], build_root: Path) -> dict[str, Any
             "file_paths": sorted(project["files"]),
             "build_file_paths": sorted(project["build_files"]),
             "extra_file_paths": sorted(project["extra_files"]),
+            "runtime_golden": runtime_golden_result,
         },
         failures,
     )
+
+
+def check_runtime_golden(contract: dict[str, Any], build_root: Path, failures: list[str]) -> dict[str, Any] | None:
+    runtime_golden = contract.get("runtime_golden")
+    if runtime_golden is None:
+        return None
+    executable = runtime_golden.get("executable")
+    expected_stdout_file = runtime_golden.get("expected_stdout_file")
+    if not executable:
+        failures.append("runtime_golden: missing executable")
+        return {"status": "mismatch"}
+    if not expected_stdout_file:
+        failures.append("runtime_golden: missing expected_stdout_file")
+        return {"status": "mismatch", "executable": executable}
+
+    executable_path = build_root / executable
+    expected_path = REPO_ROOT / expected_stdout_file
+    if not executable_path.exists():
+        failures.append(f"runtime_golden: missing executable {executable}")
+        return {"status": "mismatch", "executable": executable, "expected_stdout_file": expected_stdout_file}
+    if not expected_path.exists():
+        failures.append(f"runtime_golden: missing expected stdout file {expected_stdout_file}")
+        return {"status": "mismatch", "executable": executable, "expected_stdout_file": expected_stdout_file}
+
+    result = subprocess.run([str(executable_path)], cwd=build_root, capture_output=True, text=True)
+    actual_stdout = normalize_text(result.stdout)
+    expected_stdout = normalize_text(expected_path.read_text(encoding="utf-8"))
+    status = "match"
+    if result.returncode != 0:
+        failures.append(f"runtime_golden: executable failed with exit code {result.returncode}")
+        status = "mismatch"
+    if actual_stdout != expected_stdout:
+        failures.append(f"runtime_golden: stdout mismatch for {expected_stdout_file}")
+        status = "mismatch"
+    return {
+        "status": status,
+        "executable": executable,
+        "expected_stdout_file": expected_stdout_file,
+        "actual_stdout_lines": len(actual_stdout.splitlines()),
+        "expected_stdout_lines": len(expected_stdout.splitlines()),
+    }
+
+
+def normalize_text(text: str) -> str:
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    return normalized if normalized.endswith("\n") else normalized + "\n"
 
 
 def check_project_values(contract: dict[str, Any], project: dict[str, Any], failures: list[str]) -> None:
