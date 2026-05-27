@@ -1065,3 +1065,17 @@
   - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Parser.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 50/50 lines.
+
+## Stage-3 compiler_core_v1 unknown exposed symbol diagnostic prep
+
+- Prepared the cross-module reference diagnostic path for unknown exposed symbols.
+- Extended `Compiler.Core.Diagnostics` with `make_unknown_exposed_symbol_diagnostic`, producing stable `FH-REF-1001` diagnostics keyed by imported module and missing symbol.
+- Wired the existing negative import-reference fixture (`exposing answer` / `return missing`) through the new diagnostic helper in `App.Main`.
+- Extended the Stage-3 runtime Golden with `diag.import_ref.unknown`:
+  - `FH-REF-1001:Demo.Support.missing:unknown exposed symbol missing in Demo.Support`.
+- Updated `artifacts/stage3/compiler_core_v1/manifest.json` so the Stage-3 contract checks generated Go for `MakeUnknownExposedSymbolDiagnostic`, `FH-REF-1001`, and the new runtime line.
+- Updated `OPEN-STAGE3-COMPILER-CORE.md`; next planned compiler-core step is moving this diagnostic from the controlled fixture into the broader Stage-3 name-resolution slice.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Diagnostics.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 51/51 lines.

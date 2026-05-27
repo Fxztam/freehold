@@ -36,6 +36,7 @@ bootstrap/compiler_core_v1/
 - `Compiler.Core.Diagnostics`
   - `Diagnostic`
   - Diagnostic-Key/Text-Helfer
+  - `FH-REF-1001`-Helper fuer unbekannte exposed Symbole in importierten Modulen
 - `Compiler.Core.Fixtures`
   - `CompilerFixtureResult`
   - deterministische Mini-Fixture-Auswertung fuer Package-Pfad, Exportname und Diagnostic-Text
@@ -119,6 +120,6 @@ Das Manifest beschreibt den ersten Contract `compiler_core_v1_go_project`.
 
 ## Naechste Schritte
 
-1. Moduluebergreifende Referenzdiagnostik fuer unbekannte exposed Symbole vorbereiten.
-2. Danach die Import-/Exposing-Diagnostik aus dem kontrollierten Fixture in die breitere Stage-3-Namensauflösung ueberfuehren.
+1. Die `FH-REF-1001`-Diagnostik aus dem kontrollierten Fixture in die breitere Stage-3-Namensauflösung ueberfuehren.
+2. Danach Import-/Exposing-Diagnostik und Parser-Result-Pfad konsolidieren, sobald ein Resolver-Slice existiert.
 3. Stage1-Ausfuehrung erst beginnen, wenn die Mini-Fixtures stabil sind.

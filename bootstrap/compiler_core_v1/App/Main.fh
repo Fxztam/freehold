@@ -1,7 +1,7 @@
 module App.Main
 
 import Compiler.Core.Ast exposing IdentifierNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, identifier_key, literal_text, make_identifier_node, make_literal_node, make_module_node, module_key, module_text
-import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic_text, make_diagnostic
+import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic_text, make_diagnostic, make_unknown_exposed_symbol_diagnostic
 import Compiler.Core.Fixtures exposing CompilerFixtureResult, evaluate_fixture
 import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, lex_mini_function_module, lex_mini_import_module, lex_mini_import_reference_module, lex_mini_import_reference_module_pair, lex_mini_module, lex_mini_module_pair, lex_mini_procedure_module, lex_mini_record_module, mini_function_module_lexer_summary, mini_function_module_token_count, mini_import_module_lexer_summary, mini_import_module_token_count, mini_import_reference_module_lexer_summary, mini_import_reference_module_token_count, mini_module_lexer_summary, mini_module_token_count, mini_procedure_module_lexer_summary, mini_procedure_module_token_count, mini_record_module_lexer_summary, mini_record_module_token_count
 import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, exported_go_name, make_module_name, make_symbol_name, module_to_go_package
@@ -99,6 +99,7 @@ is
     let parsed_import_reference_module: ModuleWithImportReferenceNode = parse_mini_import_reference_module(import_reference_tokens)
     let parsed_import_reference_result: ParseResult = parse_mini_import_reference_module_result(import_reference_tokens)
     let missing_import_reference_result: ParseResult = parse_mini_import_reference_module_result(missing_import_reference_tokens)
+    let missing_import_reference_diagnostic: Diagnostic = make_unknown_exposed_symbol_diagnostic(missing_import_reference_tokens.import_module_name.lexeme, missing_import_reference_tokens.return_symbol.lexeme)
 
     call Std.IO.logf("parser.module = ${}", parsed_module_name(parsed_module))
     call Std.IO.logf("parser.summary = ${}", mini_module_parser_summary(parsed_module))
@@ -115,6 +116,7 @@ is
     call Std.IO.logf("parser.import_ref.summary = ${}", mini_import_reference_module_parser_summary(parsed_import_reference_module))
     call Std.IO.logf("parser.import_ref.result = ${}", parse_result_summary(parsed_import_reference_result))
     call Std.IO.logf("parser.import_ref.missing = ${}", parse_result_summary(missing_import_reference_result))
+    call Std.IO.logf("diag.import_ref.unknown = ${}", diagnostic_text(missing_import_reference_diagnostic))
 
     let ok_result: ParseResult = parse_ok(parsed_module)
     let mismatch_error_span: SourceSpan = make_source_span("mini_module.fh", 2, 5, 2, 10)

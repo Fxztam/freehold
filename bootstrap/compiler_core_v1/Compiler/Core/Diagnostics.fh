@@ -1,6 +1,6 @@
 module Compiler.Core.Diagnostics
 
-import Compiler.Core.Names exposing ModuleName, SymbolName
+import Compiler.Core.Names exposing ModuleName, SymbolName, make_module_name, make_symbol_name
 
 type Diagnostic is record
     code: String
@@ -29,5 +29,15 @@ ensures String.instr(result, diagnostic.message) >= 0
 is
     return String.template("${key}:${message}", key: diagnostic_key(diagnostic), message: diagnostic.message)
 end diagnostic_text
+
+function make_unknown_exposed_symbol_diagnostic(import_module_full: String, symbol_raw: String) returns Diagnostic
+requires String.instr(import_module_full, "") = 0, String.instr(symbol_raw, "") = 0
+ensures result.code = "FH-REF-1001", result.module_name.full = import_module_full, result.symbol_name.raw = symbol_raw
+is
+    let module_name: ModuleName = make_module_name(import_module_full)
+    let symbol_name: SymbolName = make_symbol_name(symbol_raw)
+    let message: String = String.template("unknown exposed symbol ${symbol} in ${module}", symbol: symbol_raw, module: import_module_full)
+    return make_diagnostic("FH-REF-1001", message, module_name, symbol_name)
+end make_unknown_exposed_symbol_diagnostic
 
 end Compiler.Core.Diagnostics
