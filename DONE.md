@@ -235,3 +235,14 @@
   - `cmd /c compare-ir-compiler-v1-stage2.cmd` passed: 3 total, 3 matching, 0 mismatching, 0 skipped.
   - `cmd /c compare-ir-compiler-v1.cmd` still passed: 18 total, 15 matching, 0 mismatching, 3 skipped across all Stage-1 checks.
   - `cmd /c "cd /d D:\works\Work-VeraFlow\freehold\go-frontend && go test ./..."` passed.
+
+### EBNF rule comparison tool
+
+- Added `tools/compare_ebnf_rules.py` to compare `freehold.generated.ebnf` against `freehold.dhparser.ebnf` on rule-set and normalized rule-body level.
+- The tool writes a JSON report under `.tmp/ebnf-rule-compare/` and supports `--strict` for unexpected deltas.
+- Current intentional deltas are allowlisted:
+  - generated-only ISO/token helper rules such as `DIGIT`, `LETTER`, `TYPE_ARG_START`, string/comment character helpers;
+  - DHParser-only parser helpers `EOF`, `FIELD_PATH`, `member_name`, `postfix`, `postfix_expr`, `primary`;
+  - known body differences for DHParser postfix handling, regex tokens, whitespace markers, expression associativity spelling, and type argument spelling.
+- Validation:
+  - `python .\tools\compare_ebnf_rules.py --strict --out .tmp\ebnf-rule-compare\strict-report.json` passed with 97 generated rules, 85 DHParser rules, 79 common rules, 0 unexpected generated-only, 0 unexpected DHParser-only, 0 unexpected body diffs.
