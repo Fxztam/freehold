@@ -65,6 +65,25 @@ type ModuleWithImportNode is record
     import_decl: ImportNode
 end record
 
+type ImportReferenceNode is record
+    span: SourceSpan
+    import_decl: ImportNode
+    symbol_name: IdentifierNode
+end record
+
+type FunctionImportReferenceNode is record
+    span: SourceSpan
+    name: IdentifierNode
+    return_type: IdentifierNode
+    return_symbol: ImportReferenceNode
+end record
+
+type ModuleWithImportReferenceNode is record
+    module_node: ModuleNode
+    import_decl: ImportNode
+    routine: FunctionImportReferenceNode
+end record
+
 function make_ast_node_kind(name: String) returns AstNodeKind
 requires String.instr(name, "") = 0
 ensures result.name = name
@@ -149,6 +168,27 @@ is
     return ModuleWithImportNode { module_node: module_node, import_decl: import_decl }
 end make_module_with_import_node
 
+function make_import_reference_node(span: SourceSpan, import_decl: ImportNode, symbol_name: IdentifierNode) returns ImportReferenceNode
+requires String.instr(import_decl.module_name.name, "") = 0, String.instr(symbol_name.name, "") = 0
+ensures result.import_decl.module_name.name = import_decl.module_name.name, result.symbol_name.name = symbol_name.name
+is
+    return ImportReferenceNode { span: span, import_decl: import_decl, symbol_name: symbol_name }
+end make_import_reference_node
+
+function make_function_import_reference_node(span: SourceSpan, name: IdentifierNode, return_type: IdentifierNode, return_symbol: ImportReferenceNode) returns FunctionImportReferenceNode
+requires String.instr(name.name, "") = 0, String.instr(return_type.name, "") = 0, String.instr(return_symbol.symbol_name.name, "") = 0
+ensures result.name.name = name.name, result.return_symbol.symbol_name.name = return_symbol.symbol_name.name
+is
+    return FunctionImportReferenceNode { span: span, name: name, return_type: return_type, return_symbol: return_symbol }
+end make_function_import_reference_node
+
+function make_module_with_import_reference_node(module_node: ModuleNode, import_decl: ImportNode, routine: FunctionImportReferenceNode) returns ModuleWithImportReferenceNode
+requires String.instr(module_node.name.name, "") = 0, String.instr(import_decl.module_name.name, "") = 0, String.instr(routine.name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name, result.routine.name.name = routine.name.name
+is
+    return ModuleWithImportReferenceNode { module_node: module_node, import_decl: import_decl, routine: routine }
+end make_module_with_import_reference_node
+
 function identifier_key(identifier: IdentifierNode) returns String
 requires String.instr(identifier.name, "") = 0
 ensures String.instr(result, identifier.name) >= 0
@@ -232,5 +272,26 @@ ensures String.instr(result, module_node.import_decl.module_name.name) >= 0
 is
     return String.template("${module}:import=${import_decl}", module: module_text(module_node.module_node), import_decl: import_text(module_node.import_decl))
 end module_with_import_text
+
+function import_reference_text(import_reference: ImportReferenceNode) returns String
+requires String.instr(import_reference.import_decl.module_name.name, "") = 0, String.instr(import_reference.symbol_name.name, "") = 0
+ensures String.instr(result, import_reference.symbol_name.name) >= 0
+is
+    return String.template("ImportRef:${symbol}@${source}:${line}:${column}:from=${module}", symbol: import_reference.symbol_name.name, source: import_reference.span.source_name, line: import_reference.span.start_line, column: import_reference.span.start_column, module: import_reference.import_decl.module_name.name)
+end import_reference_text
+
+function function_import_reference_text(routine: FunctionImportReferenceNode) returns String
+requires String.instr(routine.name.name, "") = 0, String.instr(routine.return_type.name, "") = 0
+ensures String.instr(result, routine.return_symbol.symbol_name.name) >= 0
+is
+    return String.template("Function:${name}@${source}:${line}:${column}:returns=${return_type}:return=${symbol}", name: routine.name.name, source: routine.span.source_name, line: routine.span.start_line, column: routine.span.start_column, return_type: routine.return_type.name, symbol: import_reference_text(routine.return_symbol))
+end function_import_reference_text
+
+function module_with_import_reference_text(module_node: ModuleWithImportReferenceNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.routine.name.name, "") = 0
+ensures String.instr(result, module_node.routine.return_symbol.symbol_name.name) >= 0
+is
+    return String.template("${module}:import=${import_decl}:function=${routine}", module: module_text(module_node.module_node), import_decl: import_text(module_node.import_decl), routine: function_import_reference_text(module_node.routine))
+end module_with_import_reference_text
 
 end Compiler.Core.Ast

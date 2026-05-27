@@ -1022,3 +1022,28 @@
   - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Parser.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 44/44 lines.
+
+## Stage-3 compiler_core_v1 import reference fixture
+
+- Added the first controlled cross-module reference form: `import Demo.Support exposing answer` plus a local `function use() returns Integer` that returns the exposed symbol `answer`.
+- Extended `Compiler.Core.Ast` with:
+  - `ImportReferenceNode`.
+  - `FunctionImportReferenceNode`.
+  - `ModuleWithImportReferenceNode`.
+  - `make_import_reference_node`.
+  - `make_function_import_reference_node`.
+  - `make_module_with_import_reference_node`.
+  - `import_reference_text`.
+  - `function_import_reference_text`.
+  - `module_with_import_reference_text`.
+- Extended `Compiler.Core.Lexer` with `MiniImportReferenceModuleTokens`, `lex_mini_import_reference_module`, token count, and deterministic lexer summary.
+- Extended `Compiler.Core.Parser` with `parse_mini_import_reference_module`, `parse_mini_import_reference_module_result`, and `mini_import_reference_module_parser_summary`.
+- Extended `App.Main` and the Stage-3 runtime Golden with lexer/parser lines for the import-reference fixture.
+- Updated `artifacts/stage3/compiler_core_v1/manifest.json` so the Stage-3 contract checks generated Go for the new AST nodes, import-reference lexer helpers, parser helpers, and parser output lines.
+- Updated `OPEN-STAGE3-COMPILER-CORE.md`; next planned compiler-core step is negative Import-/Exposing-Fixtures.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Ast.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Lexer.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Parser.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 48/48 lines.

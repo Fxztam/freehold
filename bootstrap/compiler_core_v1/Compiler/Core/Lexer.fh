@@ -65,6 +65,28 @@ type MiniImportModuleTokens is record
     end_name: Token
 end record
 
+type MiniImportReferenceModuleTokens is record
+    import_keyword: Token
+    import_module_name: Token
+    exposing_keyword: Token
+    exposed_name: Token
+    module_keyword: Token
+    module_name: Token
+    function_keyword: Token
+    routine_name: Token
+    open_paren: Token
+    close_paren: Token
+    returns_keyword: Token
+    return_type: Token
+    is_keyword: Token
+    return_keyword: Token
+    return_symbol: Token
+    routine_end_keyword: Token
+    routine_end_name: Token
+    module_end_keyword: Token
+    module_end_name: Token
+end record
+
 function lex_mini_module(source_name: String, module_name: String) returns MiniModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0
 ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name
@@ -315,5 +337,79 @@ ensures String.instr(result, tokens.import_module_name.lexeme) >= 0
 is
     return String.template("${import_kw}|${import_module}|${exposing_kw}|${exposed}|${module_kw}|${module_name}|${end_kw}|${end_name}", import_kw: token_text(tokens.import_keyword), import_module: token_text(tokens.import_module_name), exposing_kw: token_text(tokens.exposing_keyword), exposed: token_text(tokens.exposed_name), module_kw: token_text(tokens.module_keyword), module_name: token_text(tokens.module_name), end_kw: token_text(tokens.end_keyword), end_name: token_text(tokens.end_name))
 end mini_import_module_lexer_summary
+
+function lex_mini_import_reference_module(source_name: String, module_name: String, import_module_name: String, exposed_name: String, routine_name: String) returns MiniImportReferenceModuleTokens
+requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(import_module_name, "") = 0, String.instr(exposed_name, "") = 0, String.instr(routine_name, "") = 0
+ensures result.import_keyword.lexeme = "import", result.return_symbol.lexeme = exposed_name, result.routine_name.lexeme = routine_name
+is
+    let keyword_import: TokenKind = make_token_kind("KeywordImport")
+    let keyword_exposing: TokenKind = make_token_kind("KeywordExposing")
+    let keyword_module: TokenKind = make_token_kind("KeywordModule")
+    let keyword_function: TokenKind = make_token_kind("KeywordFunction")
+    let keyword_returns: TokenKind = make_token_kind("KeywordReturns")
+    let keyword_is: TokenKind = make_token_kind("KeywordIs")
+    let keyword_return: TokenKind = make_token_kind("KeywordReturn")
+    let keyword_end: TokenKind = make_token_kind("KeywordEnd")
+    let identifier: TokenKind = make_token_kind("Identifier")
+    let qualified_name: TokenKind = make_token_kind("QualifiedName")
+    let type_name: TokenKind = make_token_kind("TypeName")
+    let open_paren_kind: TokenKind = make_token_kind("SymbolOpenParen")
+    let close_paren_kind: TokenKind = make_token_kind("SymbolCloseParen")
+
+    let import_keyword: Token = make_token(keyword_import, make_source_span(source_name, 1, 1, 1, 7), "import")
+    let import_module_name_token: Token = make_token(qualified_name, make_source_span(source_name, 1, 8, 1, 20), import_module_name)
+    let exposing_keyword: Token = make_token(keyword_exposing, make_source_span(source_name, 1, 21, 1, 29), "exposing")
+    let exposed_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 30, 1, 36), exposed_name)
+    let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 2, 1, 2, 7), "module")
+    let module_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 8, 2, 12), module_name)
+    let function_keyword: Token = make_token(keyword_function, make_source_span(source_name, 3, 1, 3, 9), "function")
+    let routine_name_token: Token = make_token(identifier, make_source_span(source_name, 3, 10, 3, 13), routine_name)
+    let open_paren: Token = make_token(open_paren_kind, make_source_span(source_name, 3, 13, 3, 14), "(")
+    let close_paren: Token = make_token(close_paren_kind, make_source_span(source_name, 3, 14, 3, 15), ")")
+    let returns_keyword: Token = make_token(keyword_returns, make_source_span(source_name, 3, 16, 3, 23), "returns")
+    let return_type_token: Token = make_token(type_name, make_source_span(source_name, 3, 24, 3, 31), "Integer")
+    let is_keyword: Token = make_token(keyword_is, make_source_span(source_name, 3, 32, 3, 34), "is")
+    let return_keyword: Token = make_token(keyword_return, make_source_span(source_name, 4, 1, 4, 7), "return")
+    let return_symbol: Token = make_token(identifier, make_source_span(source_name, 4, 8, 4, 14), exposed_name)
+    let routine_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 5, 1, 5, 4), "end")
+    let routine_end_name: Token = make_token(identifier, make_source_span(source_name, 5, 5, 5, 8), routine_name)
+    let module_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 6, 1, 6, 4), "end")
+    let module_end_name: Token = make_token(identifier, make_source_span(source_name, 6, 5, 6, 9), module_name)
+
+    return MiniImportReferenceModuleTokens {
+        import_keyword: import_keyword,
+        import_module_name: import_module_name_token,
+        exposing_keyword: exposing_keyword,
+        exposed_name: exposed_name_token,
+        module_keyword: module_keyword,
+        module_name: module_name_token,
+        function_keyword: function_keyword,
+        routine_name: routine_name_token,
+        open_paren: open_paren,
+        close_paren: close_paren,
+        returns_keyword: returns_keyword,
+        return_type: return_type_token,
+        is_keyword: is_keyword,
+        return_keyword: return_keyword,
+        return_symbol: return_symbol,
+        routine_end_keyword: routine_end_keyword,
+        routine_end_name: routine_end_name,
+        module_end_keyword: module_end_keyword,
+        module_end_name: module_end_name
+    }
+end lex_mini_import_reference_module
+
+function mini_import_reference_module_token_count(tokens: MiniImportReferenceModuleTokens) returns Integer
+ensures result = 19
+is
+    return 19
+end mini_import_reference_module_token_count
+
+function mini_import_reference_module_lexer_summary(tokens: MiniImportReferenceModuleTokens) returns String
+requires String.instr(tokens.import_module_name.lexeme, "") = 0, String.instr(tokens.return_symbol.lexeme, "") = 0
+ensures String.instr(result, tokens.return_symbol.lexeme) >= 0
+is
+    return String.template("${import_kw}|${import_module}|${exposing_kw}|${exposed}|${module_kw}|${module_name}|${function_kw}|${routine}|${open_paren}|${close_paren}|${returns_kw}|${return_type}|${is_kw}|${return_kw}|${return_symbol}|${routine_end}|${routine_end_name}|${module_end}|${module_end_name}", import_kw: token_text(tokens.import_keyword), import_module: token_text(tokens.import_module_name), exposing_kw: token_text(tokens.exposing_keyword), exposed: token_text(tokens.exposed_name), module_kw: token_text(tokens.module_keyword), module_name: token_text(tokens.module_name), function_kw: token_text(tokens.function_keyword), routine: token_text(tokens.routine_name), open_paren: token_text(tokens.open_paren), close_paren: token_text(tokens.close_paren), returns_kw: token_text(tokens.returns_keyword), return_type: token_text(tokens.return_type), is_kw: token_text(tokens.is_keyword), return_kw: token_text(tokens.return_keyword), return_symbol: token_text(tokens.return_symbol), routine_end: token_text(tokens.routine_end_keyword), routine_end_name: token_text(tokens.routine_end_name), module_end: token_text(tokens.module_end_keyword), module_end_name: token_text(tokens.module_end_name))
+end mini_import_reference_module_lexer_summary
 
 end Compiler.Core.Lexer

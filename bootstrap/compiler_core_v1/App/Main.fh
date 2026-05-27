@@ -1,12 +1,12 @@
 module App.Main
 
-import Compiler.Core.Ast exposing IdentifierNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithProcedureNode, ModuleWithRecordNode, identifier_key, literal_text, make_identifier_node, make_literal_node, make_module_node, module_key, module_text
+import Compiler.Core.Ast exposing IdentifierNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, identifier_key, literal_text, make_identifier_node, make_literal_node, make_module_node, module_key, module_text
 import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic_text, make_diagnostic
 import Compiler.Core.Fixtures exposing CompilerFixtureResult, evaluate_fixture
-import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, lex_mini_function_module, lex_mini_import_module, lex_mini_module, lex_mini_module_pair, lex_mini_procedure_module, lex_mini_record_module, mini_function_module_lexer_summary, mini_function_module_token_count, mini_import_module_lexer_summary, mini_import_module_token_count, mini_module_lexer_summary, mini_module_token_count, mini_procedure_module_lexer_summary, mini_procedure_module_token_count, mini_record_module_lexer_summary, mini_record_module_token_count
+import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, lex_mini_function_module, lex_mini_import_module, lex_mini_import_reference_module, lex_mini_module, lex_mini_module_pair, lex_mini_procedure_module, lex_mini_record_module, mini_function_module_lexer_summary, mini_function_module_token_count, mini_import_module_lexer_summary, mini_import_module_token_count, mini_import_reference_module_lexer_summary, mini_import_reference_module_token_count, mini_module_lexer_summary, mini_module_token_count, mini_procedure_module_lexer_summary, mini_procedure_module_token_count, mini_record_module_lexer_summary, mini_record_module_token_count
 import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, exported_go_name, make_module_name, make_symbol_name, module_to_go_package
 import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok, parse_result_summary
-import Compiler.Core.Parser exposing mini_function_module_parser_summary, mini_import_module_parser_summary, mini_module_parser_summary, mini_procedure_module_parser_summary, mini_record_module_parser_summary, parse_mini_function_module, parse_mini_function_module_result, parse_mini_import_module, parse_mini_import_module_result, parse_mini_module, parse_mini_module_result, parse_mini_procedure_module, parse_mini_procedure_module_result, parse_mini_record_module, parse_mini_record_module_result, parsed_module_name
+import Compiler.Core.Parser exposing mini_function_module_parser_summary, mini_import_module_parser_summary, mini_import_reference_module_parser_summary, mini_module_parser_summary, mini_procedure_module_parser_summary, mini_record_module_parser_summary, parse_mini_function_module, parse_mini_function_module_result, parse_mini_import_module, parse_mini_import_module_result, parse_mini_import_reference_module, parse_mini_import_reference_module_result, parse_mini_module, parse_mini_module_result, parse_mini_procedure_module, parse_mini_procedure_module_result, parse_mini_record_module, parse_mini_record_module_result, parsed_module_name
 import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_source_span, make_token, make_token_kind, token_key, token_text
 import Std.IO
 
@@ -65,6 +65,7 @@ is
     let function_tokens: MiniFunctionModuleTokens = lex_mini_function_module("mini_function_module.fh", "Demo", "answer")
     let procedure_tokens: MiniProcedureModuleTokens = lex_mini_procedure_module("mini_procedure_module.fh", "Demo", "run")
     let import_tokens: MiniImportModuleTokens = lex_mini_import_module("mini_import_module.fh", "Demo", "Demo.Support", "answer")
+    let import_reference_tokens: MiniImportReferenceModuleTokens = lex_mini_import_reference_module("mini_import_reference_module.fh", "Demo", "Demo.Support", "answer", "use")
 
     call Std.IO.logf("lexer.count = ${}", mini_module_token_count(mini_tokens))
     call Std.IO.logf("lexer.first = ${}", token_text(mini_tokens.module_keyword))
@@ -79,6 +80,8 @@ is
     call Std.IO.logf("lexer.procedure.summary = ${}", mini_procedure_module_lexer_summary(procedure_tokens))
     call Std.IO.logf("lexer.import.count = ${}", mini_import_module_token_count(import_tokens))
     call Std.IO.logf("lexer.import.summary = ${}", mini_import_module_lexer_summary(import_tokens))
+    call Std.IO.logf("lexer.import_ref.count = ${}", mini_import_reference_module_token_count(import_reference_tokens))
+    call Std.IO.logf("lexer.import_ref.summary = ${}", mini_import_reference_module_lexer_summary(import_reference_tokens))
 
     let parsed_module: ModuleNode = parse_mini_module(mini_tokens)
     let parsed_result: ParseResult = parse_mini_module_result(mini_tokens)
@@ -91,6 +94,8 @@ is
     let parsed_procedure_result: ParseResult = parse_mini_procedure_module_result(procedure_tokens)
     let parsed_import_module: ModuleWithImportNode = parse_mini_import_module(import_tokens)
     let parsed_import_result: ParseResult = parse_mini_import_module_result(import_tokens)
+    let parsed_import_reference_module: ModuleWithImportReferenceNode = parse_mini_import_reference_module(import_reference_tokens)
+    let parsed_import_reference_result: ParseResult = parse_mini_import_reference_module_result(import_reference_tokens)
 
     call Std.IO.logf("parser.module = ${}", parsed_module_name(parsed_module))
     call Std.IO.logf("parser.summary = ${}", mini_module_parser_summary(parsed_module))
@@ -104,6 +109,8 @@ is
     call Std.IO.logf("parser.procedure.result = ${}", parse_result_summary(parsed_procedure_result))
     call Std.IO.logf("parser.import.summary = ${}", mini_import_module_parser_summary(parsed_import_module))
     call Std.IO.logf("parser.import.result = ${}", parse_result_summary(parsed_import_result))
+    call Std.IO.logf("parser.import_ref.summary = ${}", mini_import_reference_module_parser_summary(parsed_import_reference_module))
+    call Std.IO.logf("parser.import_ref.result = ${}", parse_result_summary(parsed_import_reference_result))
 
     let ok_result: ParseResult = parse_ok(parsed_module)
     let mismatch_error_span: SourceSpan = make_source_span("mini_module.fh", 2, 5, 2, 10)
