@@ -5,6 +5,7 @@ import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic
 import Compiler.Core.Fixtures exposing CompilerFixtureResult, evaluate_fixture
 import Compiler.Core.Lexer exposing MiniModuleTokens, lex_mini_module, mini_module_lexer_summary, mini_module_token_count
 import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, exported_go_name, make_module_name, make_symbol_name, module_to_go_package
+import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok, parse_result_summary
 import Compiler.Core.Parser exposing mini_module_parser_summary, parse_mini_module, parsed_module_name
 import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_source_span, make_token, make_token_kind, token_key, token_text
 import Std.IO
@@ -70,6 +71,14 @@ is
 
     call Std.IO.logf("parser.module = ${}", parsed_module_name(parsed_module))
     call Std.IO.logf("parser.summary = ${}", mini_module_parser_summary(parsed_module))
+
+    let ok_result: ParseResult = parse_ok(parsed_module)
+    let mismatch_error_span: SourceSpan = make_source_span("mini_module.fh", 2, 5, 2, 10)
+    let mismatch_error: ParseError = make_parse_error("FH-PARSE-0001", "end module name mismatch: expected Demo, got Other", mismatch_error_span)
+    let error_result: ParseResult = parse_error_result(mismatch_error, parsed_module)
+
+    call Std.IO.logf("parse.ok = ${}", parse_result_summary(ok_result))
+    call Std.IO.logf("parse.error = ${}", parse_result_summary(error_result))
 end main
 
 end App.Main

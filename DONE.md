@@ -883,3 +883,26 @@
 - Validation:
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched.
+
+## Stage-3 compiler_core_v1 ParseResult model
+
+- Added `Compiler.Core.ParseResult` as the parser/lexer result and diagnostic model slice.
+- New Freehold records:
+  - `ParseStatus`.
+  - `ParseError`.
+  - `ParseResult`.
+- New helpers:
+  - `make_parse_status`.
+  - `make_parse_error`.
+  - `parse_ok`.
+  - `parse_error_result`.
+  - `parse_error_text`.
+  - `parse_result_summary`.
+- Note: constructors use `make_parse_status` / `make_parse_error` instead of `parse_status` / `parse_error` to avoid generated Go name collisions with the `ParseStatus` / `ParseError` types.
+- Extended `App.Main` and the Stage-3 runtime Golden with deterministic OK and error ParseResult summaries.
+- Updated `artifacts/stage3/compiler_core_v1/manifest.json` so the Stage-3 contract now checks generated Go for `compiler/core/parseresult/parseresult.go`.
+- Updated `OPEN-STAGE3-COMPILER-CORE.md`; next planned compiler-core step is `parse_mini_module_result`, then a negative parser fixture for `module Demo` / `end Other`.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\ParseResult.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 26/26 lines.

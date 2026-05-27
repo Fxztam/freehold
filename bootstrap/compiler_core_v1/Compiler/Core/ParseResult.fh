@@ -1,0 +1,72 @@
+module Compiler.Core.ParseResult
+
+import Compiler.Core.Ast exposing ModuleNode, module_text
+import Compiler.Core.Token exposing SourceSpan
+
+type ParseStatus is record
+    name: String
+end record
+
+type ParseError is record
+    code: String
+    message: String
+    span: SourceSpan
+end record
+
+type ParseResult is record
+    status: ParseStatus
+    module_node: ModuleNode
+    issue: ParseError
+end record
+
+function make_parse_status(name: String) returns ParseStatus
+requires String.instr(name, "") = 0
+ensures result.name = name
+is
+    return ParseStatus { name: name }
+end make_parse_status
+
+function make_parse_error(code: String, message: String, span: SourceSpan) returns ParseError
+requires String.instr(code, "FH-PARSE-") = 0
+ensures result.code = code, result.message = message
+is
+    return ParseError { code: code, message: message, span: span }
+end make_parse_error
+
+function parse_ok(module_node: ModuleNode) returns ParseResult
+requires String.instr(module_node.name.name, "") = 0
+ensures result.status.name = "ok"
+is
+    let status: ParseStatus = make_parse_status("ok")
+    let empty_span: SourceSpan = SourceSpan { source_name: module_node.span.source_name, start_line: module_node.span.start_line, start_column: module_node.span.start_column, end_line: module_node.span.end_line, end_column: module_node.span.end_column }
+    let empty_error: ParseError = ParseError { code: "", message: "", span: empty_span }
+    return ParseResult { status: status, module_node: module_node, issue: empty_error }
+end parse_ok
+
+function parse_error_result(issue: ParseError, module_node: ModuleNode) returns ParseResult
+requires String.instr(issue.code, "FH-PARSE-") = 0
+ensures result.status.name = "error", result.issue.code = issue.code
+is
+    let status: ParseStatus = make_parse_status("error")
+    return ParseResult { status: status, module_node: module_node, issue: issue }
+end parse_error_result
+
+function parse_error_text(issue: ParseError) returns String
+requires String.instr(issue.code, "FH-PARSE-") = 0
+ensures String.instr(result, issue.code) = 0
+is
+    return String.template("${code}@${source}:${line}:${column}:${message}", code: issue.code, source: issue.span.source_name, line: issue.span.start_line, column: issue.span.start_column, message: issue.message)
+end parse_error_text
+
+function parse_result_summary(parse_result: ParseResult) returns String
+requires String.instr(parse_result.status.name, "") = 0
+ensures String.instr(result, parse_result.status.name) = 0
+is
+    if parse_result.status.name = "ok" then
+        return String.template("ok:${module}", module: module_text(parse_result.module_node))
+    else
+        return String.template("error:${err}", err: parse_error_text(parse_result.issue))
+    end if
+end parse_result_summary
+
+end Compiler.Core.ParseResult

@@ -13,7 +13,7 @@
       "source_file": "bootstrap/compiler_core_v1/App/Main.fh",
       "expected": {
         "module_path": "freehold.local",
-        "total_files": 8,
+        "total_files": 9,
         "total_build_files": 3,
         "total_extra_files": 0,
         "supported": true
@@ -37,7 +37,9 @@
             "lexer.count = %v",
             "lexer.summary = %v",
             "parser.module = %v",
-            "parser.summary = %v"
+            "parser.summary = %v",
+            "parse.ok = %v",
+            "parse.error = %v"
           ]
         },
         {
@@ -88,6 +90,21 @@
             "func ParsedModuleName(moduleNode compiler_core_ast.ModuleNode) string",
             "func MiniModuleParserSummary(moduleNode compiler_core_ast.ModuleNode) string",
             "compiler_core_ast.MakeModuleNode(tokens.ModuleKeyword.Span, moduleIdentifier)"
+          ]
+        },
+        {
+          "output_path": "compiler/core/parseresult/parseresult.go",
+          "module": "Compiler.Core.ParseResult",
+          "supported": true,
+          "must_contain": [
+            "type ParseStatus struct",
+            "type ParseError struct",
+            "type ParseResult struct",
+            "func MakeParseStatus(name string) ParseStatus",
+            "func MakeParseError(code string, message string, span compiler_core_token.SourceSpan) ParseError",
+            "func ParseOk(moduleNode compiler_core_ast.ModuleNode) ParseResult",
+            "func ParseErrorResult(issue ParseError, moduleNode compiler_core_ast.ModuleNode) ParseResult",
+            "func ParseResultSummary(parseResult ParseResult) string"
           ]
         },
         {
