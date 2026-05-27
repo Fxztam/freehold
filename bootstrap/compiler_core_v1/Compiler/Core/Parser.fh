@@ -1,0 +1,28 @@
+module Compiler.Core.Parser
+
+import Compiler.Core.Ast exposing IdentifierNode, ModuleNode, make_identifier_node, make_module_node, module_text
+import Compiler.Core.Lexer exposing MiniModuleTokens
+
+function parse_mini_module(tokens: MiniModuleTokens) returns ModuleNode
+requires tokens.module_keyword.lexeme = "module", tokens.end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.end_name.lexeme
+ensures result.name.name = tokens.module_name.lexeme
+is
+    let module_identifier: IdentifierNode = make_identifier_node(tokens.module_name.span, tokens.module_name.lexeme)
+    return make_module_node(tokens.module_keyword.span, module_identifier)
+end parse_mini_module
+
+function parsed_module_name(module_node: ModuleNode) returns String
+requires String.instr(module_node.name.name, "") = 0
+ensures result = module_node.name.name
+is
+    return module_node.name.name
+end parsed_module_name
+
+function mini_module_parser_summary(module_node: ModuleNode) returns String
+requires String.instr(module_node.name.name, "") = 0
+ensures String.instr(result, module_node.name.name) >= 0
+is
+    return String.template("ParsedMiniModule:${module}", module: module_text(module_node))
+end mini_module_parser_summary
+
+end Compiler.Core.Parser

@@ -868,3 +868,18 @@
 - Validation:
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched.
+
+## Stage-3 compiler_core_v1 Parser fixture
+
+- Added `Compiler.Core.Parser` as the first parser-facing compiler-core behavior slice.
+- The parser is deliberately controlled and fixture-sized, not a general parser yet.
+- New helpers:
+  - `parse_mini_module` converts `MiniModuleTokens` into a `ModuleNode`.
+  - `parsed_module_name` extracts the module name from the parsed AST node.
+  - `mini_module_parser_summary` produces a deterministic parser summary.
+- Extended `App.Main` and the Stage-3 runtime Golden with deterministic parser lines for `module Demo` / `end Demo`.
+- Updated `artifacts/stage3/compiler_core_v1/manifest.json` so the Stage-3 contract now checks generated Go for `compiler/core/parser/parser.go`.
+- Updated `OPEN-STAGE3-COMPILER-CORE.md`; next planned compiler-core step is a small Diagnostic/Result form for parser errors before expanding beyond the mini module.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched.

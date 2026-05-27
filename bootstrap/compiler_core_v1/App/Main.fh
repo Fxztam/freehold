@@ -5,6 +5,7 @@ import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic
 import Compiler.Core.Fixtures exposing CompilerFixtureResult, evaluate_fixture
 import Compiler.Core.Lexer exposing MiniModuleTokens, lex_mini_module, mini_module_lexer_summary, mini_module_token_count
 import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, exported_go_name, make_module_name, make_symbol_name, module_to_go_package
+import Compiler.Core.Parser exposing mini_module_parser_summary, parse_mini_module, parsed_module_name
 import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_source_span, make_token, make_token_kind, token_key, token_text
 import Std.IO
 
@@ -64,6 +65,11 @@ is
     call Std.IO.logf("lexer.name = ${}", token_text(mini_tokens.module_name))
     call Std.IO.logf("lexer.end = ${}", token_text(mini_tokens.end_keyword))
     call Std.IO.logf("lexer.summary = ${}", mini_module_lexer_summary(mini_tokens))
+
+    let parsed_module: ModuleNode = parse_mini_module(mini_tokens)
+
+    call Std.IO.logf("parser.module = ${}", parsed_module_name(parsed_module))
+    call Std.IO.logf("parser.summary = ${}", mini_module_parser_summary(parsed_module))
 end main
 
 end App.Main
