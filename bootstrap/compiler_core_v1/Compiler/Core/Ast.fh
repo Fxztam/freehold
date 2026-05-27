@@ -44,6 +44,16 @@ type ModuleWithFunctionNode is record
     routine: FunctionNode
 end record
 
+type ProcedureNode is record
+    span: SourceSpan
+    name: IdentifierNode
+end record
+
+type ModuleWithProcedureNode is record
+    module_node: ModuleNode
+    routine: ProcedureNode
+end record
+
 function make_ast_node_kind(name: String) returns AstNodeKind
 requires String.instr(name, "") = 0
 ensures result.name = name
@@ -100,6 +110,20 @@ is
     return ModuleWithFunctionNode { module_node: module_node, routine: routine }
 end make_module_with_function_node
 
+function make_procedure_node(span: SourceSpan, name: IdentifierNode) returns ProcedureNode
+requires String.instr(name.name, "") = 0
+ensures result.name.name = name.name
+is
+    return ProcedureNode { span: span, name: name }
+end make_procedure_node
+
+function make_module_with_procedure_node(module_node: ModuleNode, routine: ProcedureNode) returns ModuleWithProcedureNode
+requires String.instr(module_node.name.name, "") = 0, String.instr(routine.name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name, result.routine.name.name = routine.name.name
+is
+    return ModuleWithProcedureNode { module_node: module_node, routine: routine }
+end make_module_with_procedure_node
+
 function identifier_key(identifier: IdentifierNode) returns String
 requires String.instr(identifier.name, "") = 0
 ensures String.instr(result, identifier.name) >= 0
@@ -155,5 +179,19 @@ ensures String.instr(result, module_node.routine.name.name) >= 0
 is
     return String.template("${module}:function=${routine}", module: module_text(module_node.module_node), routine: function_text(module_node.routine))
 end module_with_function_text
+
+function procedure_text(routine: ProcedureNode) returns String
+requires String.instr(routine.name.name, "") = 0
+ensures String.instr(result, routine.name.name) >= 0
+is
+    return String.template("Procedure:${name}@${source}:${line}:${column}", name: routine.name.name, source: routine.span.source_name, line: routine.span.start_line, column: routine.span.start_column)
+end procedure_text
+
+function module_with_procedure_text(module_node: ModuleWithProcedureNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.routine.name.name, "") = 0
+ensures String.instr(result, module_node.routine.name.name) >= 0
+is
+    return String.template("${module}:procedure=${routine}", module: module_text(module_node.module_node), routine: procedure_text(module_node.routine))
+end module_with_procedure_text
 
 end Compiler.Core.Ast

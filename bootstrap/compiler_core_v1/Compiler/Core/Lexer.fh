@@ -40,6 +40,20 @@ type MiniFunctionModuleTokens is record
     module_end_name: Token
 end record
 
+type MiniProcedureModuleTokens is record
+    module_keyword: Token
+    module_name: Token
+    procedure_keyword: Token
+    routine_name: Token
+    open_paren: Token
+    close_paren: Token
+    is_keyword: Token
+    routine_end_keyword: Token
+    routine_end_name: Token
+    module_end_keyword: Token
+    module_end_name: Token
+end record
+
 function lex_mini_module(source_name: String, module_name: String) returns MiniModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0
 ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name
@@ -193,5 +207,57 @@ ensures String.instr(result, tokens.routine_name.lexeme) >= 0
 is
     return String.template("${module}|${name}|${function_kw}|${routine}|${open_paren}|${close_paren}|${returns_kw}|${return_type}|${is_kw}|${return_kw}|${literal}|${routine_end}|${routine_end_name}|${module_end}|${module_end_name}", module: token_text(tokens.module_keyword), name: token_text(tokens.module_name), function_kw: token_text(tokens.function_keyword), routine: token_text(tokens.routine_name), open_paren: token_text(tokens.open_paren), close_paren: token_text(tokens.close_paren), returns_kw: token_text(tokens.returns_keyword), return_type: token_text(tokens.return_type), is_kw: token_text(tokens.is_keyword), return_kw: token_text(tokens.return_keyword), literal: token_text(tokens.return_literal), routine_end: token_text(tokens.routine_end_keyword), routine_end_name: token_text(tokens.routine_end_name), module_end: token_text(tokens.module_end_keyword), module_end_name: token_text(tokens.module_end_name))
 end mini_function_module_lexer_summary
+
+function lex_mini_procedure_module(source_name: String, module_name: String, routine_name: String) returns MiniProcedureModuleTokens
+requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(routine_name, "") = 0
+ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name, result.routine_name.lexeme = routine_name
+is
+    let keyword_module: TokenKind = make_token_kind("KeywordModule")
+    let keyword_procedure: TokenKind = make_token_kind("KeywordProcedure")
+    let keyword_is: TokenKind = make_token_kind("KeywordIs")
+    let keyword_end: TokenKind = make_token_kind("KeywordEnd")
+    let identifier: TokenKind = make_token_kind("Identifier")
+    let open_paren_kind: TokenKind = make_token_kind("SymbolOpenParen")
+    let close_paren_kind: TokenKind = make_token_kind("SymbolCloseParen")
+
+    let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 1, 1, 1, 7), "module")
+    let module_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 8, 1, 12), module_name)
+    let procedure_keyword: Token = make_token(keyword_procedure, make_source_span(source_name, 2, 1, 2, 10), "procedure")
+    let routine_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 11, 2, 14), routine_name)
+    let open_paren: Token = make_token(open_paren_kind, make_source_span(source_name, 2, 14, 2, 15), "(")
+    let close_paren: Token = make_token(close_paren_kind, make_source_span(source_name, 2, 15, 2, 16), ")")
+    let is_keyword: Token = make_token(keyword_is, make_source_span(source_name, 2, 17, 2, 19), "is")
+    let routine_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 3, 1, 3, 4), "end")
+    let routine_end_name: Token = make_token(identifier, make_source_span(source_name, 3, 5, 3, 8), routine_name)
+    let module_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 4, 1, 4, 4), "end")
+    let module_end_name: Token = make_token(identifier, make_source_span(source_name, 4, 5, 4, 9), module_name)
+
+    return MiniProcedureModuleTokens {
+        module_keyword: module_keyword,
+        module_name: module_name_token,
+        procedure_keyword: procedure_keyword,
+        routine_name: routine_name_token,
+        open_paren: open_paren,
+        close_paren: close_paren,
+        is_keyword: is_keyword,
+        routine_end_keyword: routine_end_keyword,
+        routine_end_name: routine_end_name,
+        module_end_keyword: module_end_keyword,
+        module_end_name: module_end_name
+    }
+end lex_mini_procedure_module
+
+function mini_procedure_module_token_count(tokens: MiniProcedureModuleTokens) returns Integer
+ensures result = 11
+is
+    return 11
+end mini_procedure_module_token_count
+
+function mini_procedure_module_lexer_summary(tokens: MiniProcedureModuleTokens) returns String
+requires String.instr(tokens.module_name.lexeme, "") = 0, String.instr(tokens.routine_name.lexeme, "") = 0
+ensures String.instr(result, tokens.routine_name.lexeme) >= 0
+is
+    return String.template("${module}|${name}|${procedure_kw}|${routine}|${open_paren}|${close_paren}|${is_kw}|${routine_end}|${routine_end_name}|${module_end}|${module_end_name}", module: token_text(tokens.module_keyword), name: token_text(tokens.module_name), procedure_kw: token_text(tokens.procedure_keyword), routine: token_text(tokens.routine_name), open_paren: token_text(tokens.open_paren), close_paren: token_text(tokens.close_paren), is_kw: token_text(tokens.is_keyword), routine_end: token_text(tokens.routine_end_keyword), routine_end_name: token_text(tokens.routine_end_name), module_end: token_text(tokens.module_end_keyword), module_end_name: token_text(tokens.module_end_name))
+end mini_procedure_module_lexer_summary
 
 end Compiler.Core.Lexer
