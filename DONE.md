@@ -246,3 +246,53 @@
   - known body differences for DHParser postfix handling, regex tokens, whitespace markers, expression associativity spelling, and type argument spelling.
 - Validation:
   - `python .\tools\compare_ebnf_rules.py --strict --out .tmp\ebnf-rule-compare\strict-report.json` passed with 97 generated rules, 85 DHParser rules, 79 common rules, 0 unexpected generated-only, 0 unexpected DHParser-only, 0 unexpected body diffs.
+
+### Compare-IR coverage matrix
+
+- Added `COMPARE-IR-COVERAGE-MATRIX.md` as a compact feature/sample/IR-node coverage map for compiler V1 Compare-IR.
+- Matrix covers Stage 1 samples `01` through `15` and Stage 2 samples `16` through `18`.
+- Feature rows include Records, Arrays, Result success/error, Abort contracts, Requires/ensures, Imports/exposed symbols, Qualified calls, Runtime calls, Control-flow if/while/case, Mutation/field assignment, Error constants, cross-module type composition, and name conflicts.
+- Added a gap section for Generics, Async/Scope runtime, gRPC bindings, and broader abort handling.
+
+### Compare-IR Stage 2 enrichment sample selection
+
+- Marked Stage-2 demos 16, 17 and 18 as deliberate enrichment samples in `artifacts/fhir-samples/compiler_v1_stage2/manifest.json`.
+- Added explicit selection reasons:
+  - `16_abort_propagation_runtime_log`: aborting call propagation and `Main() error` surface.
+  - `17_record_mutation_runtime_log`: assignment and field assignment surface.
+  - `18_result_error_branch_runtime_log`: Result error branch and imported error constant surface.
+- Updated `OPEN-COMPARE-IR-STAGE2.md` and `COMPARE-IR-COVERAGE-MATRIX.md` so Stage 2 is documented as intentional enrichment, not blind demo growth.
+
+### Compare-IR readable mismatch diffs
+
+- Enhanced `tools/compare_ir_hashes.py` so hash mismatches include the first differing JSON path.
+- The mismatch report now records compact Python/Go values, the first differing JSON path, and up to 5 path-based differences per mismatch by default.
+- Difference reason codes include `value_mismatch`, `type_mismatch`, `missing_in_python`, `missing_in_go`, `list_length_mismatch`, parse errors, and byte-only JSON hash differences.
+- Added sorted mismatch output in `_mismatches.json`, richer `_mismatches.txt`, and optional console output via `--compact-mismatches`.
+- Validation passed:
+  - `python -m py_compile tools\compare_ir_hashes.py`
+  - `cmd /c compare-ir-compiler-v1-stage2.cmd`
+  - Temporary mismatch smoke test reported first difference `$.root.items[1].value` with Python value `2` and Go value `3`, plus a compact path-diff list including `$.root.status`.
+
+### Compare-IR Stage 2 semantic field priority
+
+- Added `--comparison semantic` to `tools/compare_ir_hashes.py`.
+- Stage 2 now compares a compiler-contract projection instead of treating every AST-adjacent JSON detail as equally important.
+- The semantic projection prioritizes import closure, routine signatures, contracts and bindings, abort effects, result payload/error shape, control-flow skeleton, and mutation targets.
+- Updated `compare-ir-compiler-v1-stage2.cmd` to run semantic comparison and the full JSON hash comparison in parallel.
+- Documented the policy in `OPEN-COMPARE-IR-STAGE2.md`, `COMPARE-IR-COVERAGE-MATRIX.md`, and the Stage-2 manifest.
+- Validation passed:
+  - `python -m py_compile tools\compare_ir_hashes.py`
+  - `cmd /c compare-ir-compiler-v1-stage2.cmd` with semantic comparison and parallel full JSON hash comparison; both reported 3 matching, 0 mismatching, 0 skipped.
+  - `cmd /c compare-ir-compiler-v1.cmd`
+  - Semantic smoke test ignored source-span-only differences and reported a routine signature mismatch at `$.module.declarations[0].return_type.name`.
+
+### Go/Python Compare-IR mismatch status
+
+- Re-ran `cmd /c compare-ir-compiler-v1-stage2.cmd` after restoring the parallel full hash check.
+- Stage 2 now reports 0 mismatches in both comparison modes:
+  - semantic compiler-contract projection: 3 matching, 0 mismatching, 0 skipped.
+  - full JSON hash: 3 matching, 0 mismatching, 0 skipped.
+- Re-ran `cmd /c compare-ir-compiler-v1.cmd` for Stage 1 regression coverage.
+- Stage 1 remains green across generated parity and both frozen baseline checks: 18 total, 15 matching, 0 mismatching, 3 skipped.
+- No additional Go/Python IR changes were required because the current comparer and frontend outputs already converge to 0 mismatches.

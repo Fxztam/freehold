@@ -19,8 +19,13 @@ echo [mode] temporary output: %TMP_ROOT%
 if errorlevel 1 goto :fail
 
 echo.
-echo [check] Stage 2 generated Python IR vs generated Go IR
-%PYTHON% .\tools\compare_ir_hashes.py --manifest "%MANIFEST%" --python-root "%TMP_PYTHON_ROOT%" --go-root "%TMP_GO_ROOT%" --out "%TMP_REPORT_ROOT%\generated-parity"
+echo [check] Stage 2 generated Python IR vs generated Go IR ^(semantic compiler-contract projection^)
+%PYTHON% .\tools\compare_ir_hashes.py --comparison semantic --manifest "%MANIFEST%" --python-root "%TMP_PYTHON_ROOT%" --go-root "%TMP_GO_ROOT%" --out "%TMP_REPORT_ROOT%\generated-parity-semantic"
+if errorlevel 1 goto :fail
+
+echo.
+echo [check] Stage 2 generated Python IR vs generated Go IR ^(full JSON hash^)
+%PYTHON% .\tools\compare_ir_hashes.py --comparison full --manifest "%MANIFEST%" --python-root "%TMP_PYTHON_ROOT%" --go-root "%TMP_GO_ROOT%" --out "%TMP_REPORT_ROOT%\generated-parity-full"
 if errorlevel 1 goto :fail
 
 if exist "%TMP_ROOT%" rmdir /s /q "%TMP_ROOT%"

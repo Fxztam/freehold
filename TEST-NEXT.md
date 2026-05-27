@@ -12,6 +12,12 @@ Der Beispielprojekt-Spielplatz steht unter:
 examples/compiler_v1/
 ```
 
+Die Compare-IR-Abdeckung der Compiler-V1-Samples ist als Feature/Sample/IR-Knoten-Matrix dokumentiert in:
+
+```text
+COMPARE-IR-COVERAGE-MATRIX.md
+```
+
 Der Standard-Command ist:
 
 ```text
