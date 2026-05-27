@@ -827,3 +827,27 @@
 - Validation:
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched.
+
+## Stage-3 compiler_core_v1 AST minimum
+
+- Added `Compiler.Core.Ast` as the first parser-facing AST data-model slice.
+- New Freehold records:
+  - `AstNodeKind` for stable AST node kind names.
+  - `IdentifierNode` with `SourceSpan` and name.
+  - `LiteralNode` with `SourceSpan`, literal kind, and text.
+  - `ModuleNode` with `SourceSpan` and module-name identifier.
+- New helpers:
+  - `make_ast_node_kind`.
+  - `make_identifier_node`.
+  - `make_literal_node`.
+  - `make_module_node`.
+  - `identifier_key`.
+  - `literal_text`.
+  - `module_key`.
+  - `module_text`.
+- Extended `App.Main` and the Stage-3 runtime Golden with deterministic AST fixture lines for identifier, literal, and module summary.
+- Updated `artifacts/stage3/compiler_core_v1/manifest.json` so the Stage-3 contract now checks generated Go for `compiler/core/ast/ast.go`.
+- Updated `OPEN-STAGE3-COMPILER-CORE.md`; next planned compiler-core step is the controlled fixture lexer for a mini module.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched.

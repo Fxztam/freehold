@@ -1,5 +1,6 @@
 module App.Main
 
+import Compiler.Core.Ast exposing IdentifierNode, LiteralNode, ModuleNode, identifier_key, literal_text, make_identifier_node, make_literal_node, make_module_node, module_key, module_text
 import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic_text, make_diagnostic
 import Compiler.Core.Fixtures exposing CompilerFixtureResult, evaluate_fixture
 import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, exported_go_name, make_module_name, make_symbol_name, module_to_go_package
@@ -43,6 +44,17 @@ is
     call Std.IO.logf("token.kind = ${}", module_token.kind.name)
     call Std.IO.logf("token.key = ${}", token_key(module_token))
     call Std.IO.logf("token.text = ${}", token_text(module_token))
+
+    let module_identifier_span: SourceSpan = make_source_span("mini_module.fh", 1, 8, 1, 12)
+    let module_identifier: IdentifierNode = make_identifier_node(module_identifier_span, "Demo")
+    let module_node: ModuleNode = make_module_node(module_span, module_identifier)
+    let literal_span: SourceSpan = make_source_span("mini_module.fh", 2, 1, 2, 8)
+    let literal_node: LiteralNode = make_literal_node(literal_span, "String", "hello")
+
+    call Std.IO.logf("ast.identifier = ${}", identifier_key(module_identifier))
+    call Std.IO.logf("ast.literal = ${}", literal_text(literal_node))
+    call Std.IO.logf("ast.module.key = ${}", module_key(module_node))
+    call Std.IO.logf("ast.module.text = ${}", module_text(module_node))
 end main
 
 end App.Main

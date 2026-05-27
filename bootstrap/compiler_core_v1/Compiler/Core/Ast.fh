@@ -1,0 +1,81 @@
+module Compiler.Core.Ast
+
+import Compiler.Core.Token exposing SourceSpan
+
+type AstNodeKind is record
+    name: String
+end record
+
+type IdentifierNode is record
+    span: SourceSpan
+    name: String
+end record
+
+type LiteralNode is record
+    span: SourceSpan
+    literal_kind: String
+    text: String
+end record
+
+type ModuleNode is record
+    span: SourceSpan
+    name: IdentifierNode
+end record
+
+function make_ast_node_kind(name: String) returns AstNodeKind
+requires String.instr(name, "") = 0
+ensures result.name = name
+is
+    return AstNodeKind { name: name }
+end make_ast_node_kind
+
+function make_identifier_node(span: SourceSpan, name: String) returns IdentifierNode
+requires String.instr(name, "") = 0
+ensures result.name = name
+is
+    return IdentifierNode { span: span, name: name }
+end make_identifier_node
+
+function make_literal_node(span: SourceSpan, literal_kind: String, text: String) returns LiteralNode
+requires String.instr(literal_kind, "") = 0
+ensures result.literal_kind = literal_kind, result.text = text
+is
+    return LiteralNode { span: span, literal_kind: literal_kind, text: text }
+end make_literal_node
+
+function make_module_node(span: SourceSpan, name: IdentifierNode) returns ModuleNode
+requires String.instr(name.name, "") = 0
+ensures result.name.name = name.name
+is
+    return ModuleNode { span: span, name: name }
+end make_module_node
+
+function identifier_key(identifier: IdentifierNode) returns String
+requires String.instr(identifier.name, "") = 0
+ensures String.instr(result, identifier.name) >= 0
+is
+    return String.template("Identifier@${source}:${line}:${column}:${name}", source: identifier.span.source_name, line: identifier.span.start_line, column: identifier.span.start_column, name: identifier.name)
+end identifier_key
+
+function literal_text(literal: LiteralNode) returns String
+requires String.instr(literal.literal_kind, "") = 0
+ensures String.instr(result, literal.text) >= 0
+is
+    return String.template("Literal.${kind}:${text}", kind: literal.literal_kind, text: literal.text)
+end literal_text
+
+function module_key(module_node: ModuleNode) returns String
+requires String.instr(module_node.name.name, "") = 0
+ensures String.instr(result, module_node.name.name) >= 0
+is
+    return String.template("Module:${name}@${source}:${line}:${column}", name: module_node.name.name, source: module_node.span.source_name, line: module_node.span.start_line, column: module_node.span.start_column)
+end module_key
+
+function module_text(module_node: ModuleNode) returns String
+requires String.instr(module_node.name.name, "") = 0
+ensures String.instr(result, module_node.name.name) >= 0
+is
+    return String.template("${key}:identifier=${identifier}", key: module_key(module_node), identifier: identifier_key(module_node.name))
+end module_text
+
+end Compiler.Core.Ast

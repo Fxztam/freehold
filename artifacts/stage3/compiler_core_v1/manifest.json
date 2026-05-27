@@ -13,7 +13,7 @@
       "source_file": "bootstrap/compiler_core_v1/App/Main.fh",
       "expected": {
         "module_path": "freehold.local",
-        "total_files": 5,
+        "total_files": 6,
         "total_build_files": 3,
         "total_extra_files": 0,
         "supported": true
@@ -31,7 +31,24 @@
             "fixture.names.diag = %v",
             "fixture.diagnostics.diag = %v",
             "token.key = %v",
-            "token.text = %v"
+            "token.text = %v",
+            "ast.identifier = %v",
+            "ast.module.text = %v"
+          ]
+        },
+        {
+          "output_path": "compiler/core/ast/ast.go",
+          "module": "Compiler.Core.Ast",
+          "supported": true,
+          "must_contain": [
+            "type AstNodeKind struct",
+            "type IdentifierNode struct",
+            "type LiteralNode struct",
+            "type ModuleNode struct",
+            "func MakeIdentifierNode(span compiler_core_token.SourceSpan, name string) IdentifierNode",
+            "func MakeLiteralNode(span compiler_core_token.SourceSpan, literalKind string, text string) LiteralNode",
+            "func MakeModuleNode(span compiler_core_token.SourceSpan, name IdentifierNode) ModuleNode",
+            "func ModuleText(moduleNode ModuleNode) string"
           ]
         },
         {
