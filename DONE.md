@@ -623,6 +623,21 @@
   - `python -m freehold test-language` -> exit 0; 466/466.
   - `python -m freehold test-language --root tests\language_modules_02` -> exit 0; 98/98.
 
+## Stage-2 Compare-IR status review
+
+- Reviewed `compare-ir-compiler-v1-stage2.cmd`, `artifacts/fhir-samples/compiler_v1_stage2/manifest.json`, and the three active Stage-2 samples.
+- Current Stage-2 mode is baseline-free check-only: it generates Python IR and Go IR into a temporary directory, then compares them directly using both semantic compiler-contract projection and full JSON hash.
+- Active samples:
+  - `16_abort_propagation_runtime_log` for abort propagation and Main error surface.
+  - `17_record_mutation_runtime_log` for assignment and field assignment surface.
+  - `18_result_error_branch_runtime_log` for Result error branch and imported error constant surface.
+- There is currently no `artifacts/compare-ir/compiler_v1_stage2` frozen baseline directory; that matches the Stage-2 command design.
+- Semantic projection currently covers module/import shape, declarations, routine signatures, `is_async`, contracts/bindings, statement skeletons, mutation targets, result/abort/control-flow values, and strips source-location noise. Unknown declaration kinds currently collapse to `{kind, name}`.
+- Validation:
+  - `compare-ir-compiler-v1-stage2.cmd` -> exit 0.
+  - Semantic comparison -> 3 matching, 0 mismatching, 0 skipped.
+  - Full JSON comparison -> 3 matching, 0 mismatching, 0 skipped.
+
 ## Promoted solved compiler-v1 demos to 19/20/21
 
 - Moved the solved compiler-v1 demos out of `unsupported` and into numbered compiler examples:
@@ -639,3 +654,69 @@
   - `verify-go-feature-matrix.cmd` -> Mismatches: 0.
   - `python -m freehold test-language` -> 466/466.
   - `python -m freehold test-language --root tests\language_modules_02` -> 98/98.
+
+## Stage-2 Go project contract gate
+
+- Added a Stage-2 contract gate for Go project codegen structure, focused on the newly solved compiler-v1 surfaces.
+- New tool: `tools/verify_stage2_go_project_contracts.py`.
+  - Reads `go_project_contracts` from `artifacts/fhir-samples/compiler_v1_stage2/manifest.json`.
+  - Generates Go projects in memory using the normal project codegen path.
+  - Verifies project shape without adding large Go source baselines: module path, supported flag, file/build/extra-file counts, expected output paths, build-file kinds, extra-file kinds, and required snippets in generated source/content.
+  - Writes check reports under the requested report root (`_all.json`, `_summary.json`, `_failures.txt`).
+- Wired the contract gate into:
+  - `compare-ir-compiler-v1-stage2.cmd` after semantic/full IR parity.
+  - `compare-ir-compiler-v1-stage2-update.cmd` so baseline-update runs also include the contract report.
+- Added three manifest contracts:
+  - `19_async_scope_runtime_project`: verifies async/scope/JoinHandle lowering and no gRPC extras.
+  - `20_grpc_binding_project`: verifies gRPC pb stub, binding wrapper, `google.golang.org/grpc` dependency, and `go mod tidy` build command.
+  - `21_concurrent_grpc_channel_demo_project`: verifies combined gRPC extras, Scope/JoinHandle lowering, Channel/Sender/Receiver wrappers, channel send/receive helpers, and endpoint construction.
+- Validation:
+  - `python -m py_compile tools\verify_stage2_go_project_contracts.py` -> exit 0.
+  - `python tools\verify_stage2_go_project_contracts.py --manifest .\artifacts\fhir-samples\compiler_v1_stage2\manifest.json --out .tmp\stage2-go-project-contracts` -> 3/3 matching, exit 0.
+  - `compare-ir-compiler-v1-stage2.cmd` -> exit 0; semantic 3/3, full JSON 3/3, Go project contracts 3/3.
+  - `verify-compiler-examples.cmd` -> exit 0.
+  - `verify-go-feature-matrix.cmd` -> Mismatches: 0.
+
+## Stage-2 IR promotion for compiler-v1 19/20/21
+
+- Checked whether the solved compiler-v1 examples 19/20/21 can become active Stage-2 Compare-IR samples.
+- Initial probe:
+  - Python Compare-IR exported all three samples.
+  - Go Compare-IR exported `20_grpc_binding` immediately.
+  - Go Compare-IR initially rejected `19_async_scope_runtime` and `21_concurrent_grpc_channel_demo` because the project qualified-call pass treated `request_scope.spawn` / `quote_scope.spawn` as unknown module-qualified routines.
+- Fixed the Go frontend Compare-IR path:
+  - `go-frontend/internal/semantic/project.go` now skips Scope runtime method calls (`*.spawn`, `*.join`) in the project-level qualified-call module diagnostic pass.
+  - `go-frontend/internal/semantic/compare_ir.go` now exports generic type refs as `GenericTypeName` with `args`/`text`, record field `proto_id`, and RPC request/response `type_repr` fields so Python and Go IR stay full-JSON aligned for async/channel/gRPC surfaces.
+- Promoted these active Stage-2 IR samples in `artifacts/fhir-samples/compiler_v1_stage2/manifest.json`:
+  - `19_async_scope_runtime` for async routine surface plus Scope spawn/join and JoinHandle type refs.
+  - `20_grpc_binding` for gRPC service declaration, proto field ids, and RPC request/response type refs.
+  - `21_concurrent_grpc_channel_demo` for combined gRPC IDL, async Scope/JoinHandle, and Channel/Sender/Receiver generic type refs.
+- Stage-2 IR policy now has 6 active samples and 0 skipped samples.
+- Validation:
+  - `go test ./...` under `go-frontend` -> exit 0.
+  - Temporary 19/20/21 Python-vs-Go IR probe -> semantic 3/3, full JSON 3/3.
+  - `compare-ir-compiler-v1-stage2.cmd` -> exit 0; generated 6, skipped 0, semantic 6/6, full JSON 6/6, Go project contracts 3/3.
+  - `compare-ir-compiler-v1.cmd` -> exit 0; Stage-1 remains 15 matching, 0 mismatching, 3 skipped.
+  - `verify-go-semantic-projects.cmd` -> Mismatches: 0.
+  - `verify-go-project-semantic-diagnostics.cmd` -> Mismatches: 0.
+  - `verify-parser-conformance.cmd` was also tried before the FH-IR baseline update; it failed at its existing `Compare FH-IR` baseline step with 18 FH-IR mismatches, outside the Stage-2 Compare-IR path.
+
+## FH-IR baseline update after parser-conformance failure
+
+- Investigated the remaining `verify-parser-conformance.cmd` failure at step `[18/22] Compare FH-IR`.
+- Root cause:
+  - `16_abort_propagation_runtime_log` through `21_concurrent_grpc_channel_demo` were now supported compiler examples, but had no committed FH-IR baselines in `artifacts/fhir` or `artifacts/fhir-v1`.
+  - Existing baseline diffs were consistent with the current exporter typing contract `value` bindings correctly instead of leaving them unavailable/Void.
+- Updated module-v0 FH-IR baselines in `artifacts/fhir`:
+  - Added new baselines for compiler-v1 16/17/18/19/20/21.
+  - Refreshed existing baselines whose contract `value` binding surface changed.
+- Updated project-v1 FH-IR baselines in `artifacts/fhir-v1`:
+  - Added new baselines for compiler-v1 16/17/18/19/20/21.
+  - Refreshed existing baselines affected by the same contract binding/export surface.
+- Validation:
+  - `cmd /c compare-fhir.cmd` -> exit 0; module-v0 32/32 matching, 0 mismatching.
+  - `cmd /c compare-fhir-v1.cmd` -> exit 0; project-v1 32/32 matching, 0 mismatching.
+  - `cmd /c verify-parser-conformance.cmd` now passes both FH-IR steps: module-v0 32/32, determinism 6/6, language modules 10/10, project-v1 32/32.
+  - The full parser-conformance run now reaches `[21/22] Verify additive test line` and stops there because the baseline update intentionally modifies existing protected artifact files in the working tree. This is expected until the baseline diff is reviewed/committed.
+- Cleanup:
+  - Removed two unrelated Go-codegen artifacts generated by the full conformance run: `artifacts/go-codegen/13_contract_blocks/valid/non_result_value_ensures.go` and `.json`.

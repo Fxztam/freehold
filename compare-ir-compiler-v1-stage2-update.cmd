@@ -19,6 +19,9 @@ if errorlevel 1 goto :fail
 %PYTHON% .\tools\compare_ir_hashes.py --manifest "%MANIFEST%" --python-root "%BASELINE_PYTHON_ROOT%" --go-root "%BASELINE_GO_ROOT%" --out "%REPORT_ROOT%"
 if errorlevel 1 goto :fail
 
+%PYTHON% .\tools\verify_stage2_go_project_contracts.py --manifest "%MANIFEST%" --out "%REPORT_ROOT%\go-project-contracts"
+if errorlevel 1 goto :fail
+
 popd
 exit /b 0
 

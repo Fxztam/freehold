@@ -2,11 +2,12 @@
   "schema": "fhir-samples-v1",
   "policy": {
     "stage": "compare-ir-compiler-v1-stage-2",
-    "active_samples": 3,
+    "active_samples": 6,
     "skipped_samples": [],
     "sample_growth": "opt-in only; Stage 2 expands independently from the frozen Stage 1 manifest",
     "selection": "deliberate enrichment samples selected for new IR surface, not automatic demo growth",
-    "comparison": "semantic compiler-contract projection plus parallel full JSON hash: import closure, routine signatures, contracts and bindings, abort effects, result payload/error shape, control-flow skeleton, mutation targets"
+    "comparison": "semantic compiler-contract projection plus parallel full JSON hash: import closure, routine signatures, contracts and bindings, abort effects, result payload/error shape, control-flow skeleton, mutation targets",
+    "go_project_contracts": 3
   },
   "samples": [
     {
@@ -32,6 +33,177 @@
       "source_file": "examples/compiler_v1/18_result_error_branch_runtime_log/App/Main.fh",
       "python_ir_file": "18_result_error_branch_runtime_log.json",
       "go_ir_file": "18_result_error_branch_runtime_log.json"
+    },
+    {
+      "name": "19_async_scope_runtime",
+      "stage_role": "enrichment",
+      "selection_reason": "async routine surface plus Scope spawn/join and JoinHandle type refs",
+      "source_file": "examples/compiler_v1/19_async_scope_runtime/App/Main.fh",
+      "python_ir_file": "19_async_scope_runtime.json",
+      "go_ir_file": "19_async_scope_runtime.json"
+    },
+    {
+      "name": "20_grpc_binding",
+      "stage_role": "enrichment",
+      "selection_reason": "gRPC service declaration, proto field ids, and RPC request/response type refs",
+      "source_file": "examples/compiler_v1/20_grpc_binding/App/Main.fh",
+      "python_ir_file": "20_grpc_binding.json",
+      "go_ir_file": "20_grpc_binding.json"
+    },
+    {
+      "name": "21_concurrent_grpc_channel_demo",
+      "stage_role": "enrichment",
+      "selection_reason": "combined gRPC IDL, async Scope/JoinHandle, and Channel/Sender/Receiver generic type refs",
+      "source_file": "examples/compiler_v1/21_concurrent_grpc_channel_demo/App/Main.fh",
+      "python_ir_file": "21_concurrent_grpc_channel_demo.json",
+      "go_ir_file": "21_concurrent_grpc_channel_demo.json"
+    }
+  ],
+  "go_project_contracts": [
+    {
+      "name": "19_async_scope_runtime_project",
+      "stage_role": "go-project-contract",
+      "selection_reason": "async/scope/JoinHandle lowering without gRPC project extras",
+      "source_file": "examples/compiler_v1/19_async_scope_runtime/App/Main.fh",
+      "expected": {
+        "module_path": "freehold.local",
+        "total_files": 1,
+        "total_build_files": 2,
+        "total_extra_files": 0,
+        "supported": true
+      },
+      "files": [
+        {
+          "output_path": "app/main/main.go",
+          "module": "App.Main",
+          "supported": true,
+          "must_contain": [
+            "type FreeholdScope struct{}",
+            "type FreeholdJoinHandle[T any] struct",
+            "requestScope := FreeholdScope{}",
+            "FreeholdJoinHandle[Invoice]{value: LoadInvoice(id)}",
+            "FreeholdJoinHandle[Customer]{value: LoadCustomer(id)}"
+          ]
+        }
+      ],
+      "build_files": [
+        {
+          "output_path": "go.mod",
+          "kind": "go_mod",
+          "must_contain": ["module freehold.local", "go 1.22"]
+        },
+        {
+          "output_path": "build.cmd",
+          "kind": "build_cmd",
+          "must_contain": ["go test ./..."]
+        }
+      ],
+      "extra_files": []
+    },
+    {
+      "name": "20_grpc_binding_project",
+      "stage_role": "go-project-contract",
+      "selection_reason": "gRPC service project extras and dependency-aware build file",
+      "source_file": "examples/compiler_v1/20_grpc_binding/App/Main.fh",
+      "expected": {
+        "module_path": "freehold.local",
+        "total_files": 1,
+        "total_build_files": 2,
+        "total_extra_files": 2,
+        "supported": true
+      },
+      "files": [
+        {
+          "output_path": "app/main/main.go",
+          "module": "App.Main",
+          "supported": true,
+          "must_contain": ["// Service UserService is emitted through the generated gRPC binding file."]
+        }
+      ],
+      "build_files": [
+        {
+          "output_path": "go.mod",
+          "kind": "go_mod",
+          "must_contain": ["module freehold.local", "require google.golang.org/grpc v1.64.0"]
+        },
+        {
+          "output_path": "build.cmd",
+          "kind": "build_cmd",
+          "must_contain": ["go mod tidy", "go test ./..."]
+        }
+      ],
+      "extra_files": [
+        {
+          "output_path": "grpc/app/mainpb/mainpb.go",
+          "kind": "grpc_go_pb_stub",
+          "must_contain": ["type UserServiceServer interface", "func RegisterUserServiceServer(registrar grpc.ServiceRegistrar, server UserServiceServer)"]
+        },
+        {
+          "output_path": "grpc/app/main/main_grpc.go",
+          "kind": "grpc_go_bindings",
+          "must_contain": ["type UserServiceHandler interface", "func RegisterUserServiceServer(registrar grpc.ServiceRegistrar, handler UserServiceHandler)"]
+        }
+      ]
+    },
+    {
+      "name": "21_concurrent_grpc_channel_demo_project",
+      "stage_role": "go-project-contract",
+      "selection_reason": "combined gRPC extras, async/scope lowering, JoinHandle, and channel runtime wrappers",
+      "source_file": "examples/compiler_v1/21_concurrent_grpc_channel_demo/App/Main.fh",
+      "expected": {
+        "module_path": "freehold.local",
+        "total_files": 1,
+        "total_build_files": 2,
+        "total_extra_files": 2,
+        "supported": true
+      },
+      "files": [
+        {
+          "output_path": "app/main/main.go",
+          "module": "App.Main",
+          "supported": true,
+          "must_contain": [
+            "type FreeholdScope struct{}",
+            "type FreeholdJoinHandle[T any] struct",
+            "type FreeholdChannel[T any] struct",
+            "type FreeholdSender[T any] struct",
+            "type FreeholdReceiver[T any] struct",
+            "func freeholdChannelSend[T any](sender FreeholdSender[T], value T) bool",
+            "func freeholdChannelReceive[T any](receiver FreeholdReceiver[T]) T",
+            "quoteScope := FreeholdScope{}",
+            "FreeholdJoinHandle[int64]{value: LoadUnitPrice(request.Sku)}",
+            "FreeholdJoinHandle[AuditEvent]{value: AuditRoundtrip(sender, receiver, request.TraceId)}",
+            "FreeholdChannel[AuditEvent]{ch: make(chan AuditEvent, int(8))}",
+            "sender := FreeholdSender[AuditEvent]{ch: auditChannel.ch}",
+            "receiver := FreeholdReceiver[AuditEvent]{ch: auditChannel.ch}",
+            "// Service PricingService is emitted through the generated gRPC binding file."
+          ]
+        }
+      ],
+      "build_files": [
+        {
+          "output_path": "go.mod",
+          "kind": "go_mod",
+          "must_contain": ["module freehold.local", "require google.golang.org/grpc v1.64.0"]
+        },
+        {
+          "output_path": "build.cmd",
+          "kind": "build_cmd",
+          "must_contain": ["go mod tidy", "go test ./..."]
+        }
+      ],
+      "extra_files": [
+        {
+          "output_path": "grpc/app/mainpb/mainpb.go",
+          "kind": "grpc_go_pb_stub",
+          "must_contain": ["type PricingServiceServer interface", "func RegisterPricingServiceServer(registrar grpc.ServiceRegistrar, server PricingServiceServer)"]
+        },
+        {
+          "output_path": "grpc/app/main/main_grpc.go",
+          "kind": "grpc_go_bindings",
+          "must_contain": ["type PricingServiceHandler interface", "func RegisterPricingServiceServer(registrar grpc.ServiceRegistrar, handler PricingServiceHandler)"]
+        }
+      ]
     }
   ]
 }

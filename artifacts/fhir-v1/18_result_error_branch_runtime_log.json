@@ -13,7 +13,7 @@
     "node": "ProjectGraph",
     "module_order": [
       "App.Main",
-      "Domain.Rules"
+      "Domain.Payments"
     ],
     "modules": [
       {
@@ -27,10 +27,16 @@
             "imports": [
               {
                 "kind": "ImportDecl",
-                "module": "Domain.Rules",
+                "module": "Domain.Payments",
                 "exposing": [
-                  "is_valid"
+                  "PaymentDeclined",
+                  "authorize"
                 ]
+              },
+              {
+                "kind": "ImportDecl",
+                "module": "Std.IO",
+                "exposing": []
               }
             ],
             "declarations": [
@@ -141,36 +147,104 @@
                 },
                 "body": [
                   {
-                    "kind": "CheckStmt",
-                    "condition": {
+                    "kind": "LetStmt",
+                    "name": "outcome",
+                    "type": {
+                      "kind": "ResultTypeName",
+                      "ok_type": {
+                        "kind": "TypeName",
+                        "name": "String"
+                      },
+                      "error_type": "PaymentDeclined",
+                      "error_ref": {
+                        "kind": "ErrorRef",
+                        "name": "PaymentDeclined"
+                      }
+                    },
+                    "value": {
                       "kind": "CallExpr",
-                      "name": "is_valid",
+                      "name": "authorize",
                       "args": [
                         {
                           "kind": "PositionalArg",
                           "value": {
                             "kind": "NumberExpr",
-                            "value": 7
+                            "value": 150
                           }
                         }
                       ]
                     }
                   },
                   {
-                    "kind": "CheckStmt",
+                    "kind": "IfStmt",
                     "condition": {
-                      "kind": "CallExpr",
-                      "name": "Domain.Rules.is_valid",
-                      "args": [
-                        {
-                          "kind": "PositionalArg",
-                          "value": {
-                            "kind": "NumberExpr",
-                            "value": 8
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "outcome",
+                          "error"
+                        ]
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "PaymentDeclined"
+                      }
+                    },
+                    "then_body": [
+                      {
+                        "kind": "CallStmt",
+                        "name": "Std.IO.log",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "status = failed"
+                            }
                           }
+                        ]
+                      }
+                    ],
+                    "else_body": [
+                      {
+                        "kind": "CallStmt",
+                        "name": "Std.IO.logf",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "status = ${}"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "FieldAccessExpr",
+                              "path": [
+                                "outcome",
+                                "value"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.log",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "error = PaymentDeclined"
                         }
-                      ]
-                    }
+                      }
+                    ]
                   }
                 ]
               }
@@ -256,8 +330,15 @@
               }
             ],
             "records": [],
-            "errors": [],
-            "error_defs": [],
+            "errors": [
+              "PaymentDeclined"
+            ],
+            "error_defs": [
+              {
+                "kind": "ErrorDef",
+                "name": "PaymentDeclined"
+              }
+            ],
             "routines": [
               {
                 "kind": "RoutineDecl",
@@ -366,36 +447,104 @@
                 },
                 "body": [
                   {
-                    "kind": "CheckStmt",
-                    "condition": {
+                    "kind": "LetStmt",
+                    "name": "outcome",
+                    "type": {
+                      "kind": "ResultTypeName",
+                      "ok_type": {
+                        "kind": "TypeName",
+                        "name": "String"
+                      },
+                      "error_type": "PaymentDeclined",
+                      "error_ref": {
+                        "kind": "ErrorRef",
+                        "name": "PaymentDeclined"
+                      }
+                    },
+                    "value": {
                       "kind": "CallExpr",
-                      "name": "is_valid",
+                      "name": "authorize",
                       "args": [
                         {
                           "kind": "PositionalArg",
                           "value": {
                             "kind": "NumberExpr",
-                            "value": 7
+                            "value": 150
                           }
                         }
                       ]
                     }
                   },
                   {
-                    "kind": "CheckStmt",
+                    "kind": "IfStmt",
                     "condition": {
-                      "kind": "CallExpr",
-                      "name": "Domain.Rules.is_valid",
-                      "args": [
-                        {
-                          "kind": "PositionalArg",
-                          "value": {
-                            "kind": "NumberExpr",
-                            "value": 8
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "outcome",
+                          "error"
+                        ]
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "PaymentDeclined"
+                      }
+                    },
+                    "then_body": [
+                      {
+                        "kind": "CallStmt",
+                        "name": "Std.IO.log",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "status = failed"
+                            }
                           }
+                        ]
+                      }
+                    ],
+                    "else_body": [
+                      {
+                        "kind": "CallStmt",
+                        "name": "Std.IO.logf",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "status = ${}"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "FieldAccessExpr",
+                              "path": [
+                                "outcome",
+                                "value"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.log",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "error = PaymentDeclined"
                         }
-                      ]
-                    }
+                      }
+                    ]
                   }
                 ]
               }
@@ -446,10 +595,16 @@
           "imports": [
             {
               "kind": "ImportDecl",
-              "module": "Domain.Rules",
+              "module": "Domain.Payments",
               "exposing": [
-                "is_valid"
+                "PaymentDeclined",
+                "authorize"
               ]
+            },
+            {
+              "kind": "ImportDecl",
+              "module": "Std.IO",
+              "exposing": []
             }
           ],
           "declarations": [
@@ -560,36 +715,104 @@
               },
               "body": [
                 {
-                  "kind": "CheckStmt",
-                  "condition": {
+                  "kind": "LetStmt",
+                  "name": "outcome",
+                  "type": {
+                    "kind": "ResultTypeName",
+                    "ok_type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    },
+                    "error_type": "PaymentDeclined",
+                    "error_ref": {
+                      "kind": "ErrorRef",
+                      "name": "PaymentDeclined"
+                    }
+                  },
+                  "value": {
                     "kind": "CallExpr",
-                    "name": "is_valid",
+                    "name": "authorize",
                     "args": [
                       {
                         "kind": "PositionalArg",
                         "value": {
                           "kind": "NumberExpr",
-                          "value": 7
+                          "value": 150
                         }
                       }
                     ]
                   }
                 },
                 {
-                  "kind": "CheckStmt",
+                  "kind": "IfStmt",
                   "condition": {
-                    "kind": "CallExpr",
-                    "name": "Domain.Rules.is_valid",
-                    "args": [
-                      {
-                        "kind": "PositionalArg",
-                        "value": {
-                          "kind": "NumberExpr",
-                          "value": 8
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "outcome",
+                        "error"
+                      ]
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "PaymentDeclined"
+                    }
+                  },
+                  "then_body": [
+                    {
+                      "kind": "CallStmt",
+                      "name": "Std.IO.log",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "status = failed"
+                          }
                         }
+                      ]
+                    }
+                  ],
+                  "else_body": [
+                    {
+                      "kind": "CallStmt",
+                      "name": "Std.IO.logf",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "status = ${}"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "FieldAccessExpr",
+                            "path": [
+                              "outcome",
+                              "value"
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.log",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "error = PaymentDeclined"
                       }
-                    ]
-                  }
+                    }
+                  ]
                 }
               ]
             }
@@ -672,8 +895,15 @@
             }
           ],
           "records": [],
-          "errors": [],
-          "error_defs": [],
+          "errors": [
+            "PaymentDeclined"
+          ],
+          "error_defs": [
+            {
+              "kind": "ErrorDef",
+              "name": "PaymentDeclined"
+            }
+          ],
           "routines": [
             {
               "kind": "RoutineDecl",
@@ -782,36 +1012,104 @@
               },
               "body": [
                 {
-                  "kind": "CheckStmt",
-                  "condition": {
+                  "kind": "LetStmt",
+                  "name": "outcome",
+                  "type": {
+                    "kind": "ResultTypeName",
+                    "ok_type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    },
+                    "error_type": "PaymentDeclined",
+                    "error_ref": {
+                      "kind": "ErrorRef",
+                      "name": "PaymentDeclined"
+                    }
+                  },
+                  "value": {
                     "kind": "CallExpr",
-                    "name": "is_valid",
+                    "name": "authorize",
                     "args": [
                       {
                         "kind": "PositionalArg",
                         "value": {
                           "kind": "NumberExpr",
-                          "value": 7
+                          "value": 150
                         }
                       }
                     ]
                   }
                 },
                 {
-                  "kind": "CheckStmt",
+                  "kind": "IfStmt",
                   "condition": {
-                    "kind": "CallExpr",
-                    "name": "Domain.Rules.is_valid",
-                    "args": [
-                      {
-                        "kind": "PositionalArg",
-                        "value": {
-                          "kind": "NumberExpr",
-                          "value": 8
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "outcome",
+                        "error"
+                      ]
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "PaymentDeclined"
+                    }
+                  },
+                  "then_body": [
+                    {
+                      "kind": "CallStmt",
+                      "name": "Std.IO.log",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "status = failed"
+                          }
                         }
+                      ]
+                    }
+                  ],
+                  "else_body": [
+                    {
+                      "kind": "CallStmt",
+                      "name": "Std.IO.logf",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "status = ${}"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "FieldAccessExpr",
+                            "path": [
+                              "outcome",
+                              "value"
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.log",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "error = PaymentDeclined"
                       }
-                    ]
-                  }
+                    }
+                  ]
                 }
               ]
             }
@@ -858,18 +1156,22 @@
       },
       {
         "node": "ModuleEntry",
-        "name": "Domain.Rules",
+        "name": "Domain.Payments",
         "source_ast": {
           "node": "SourceAst",
           "module": {
             "node": "Module",
-            "name": "Domain.Rules",
+            "name": "Domain.Payments",
             "imports": [],
             "declarations": [
               {
+                "kind": "ErrorDecl",
+                "name": "PaymentDeclined"
+              },
+              {
                 "kind": "RoutineDecl",
                 "routine_kind": "function",
-                "name": "is_valid",
+                "name": "authorize",
                 "type_params": [],
                 "is_async": false,
                 "params": [
@@ -883,20 +1185,106 @@
                   }
                 ],
                 "return_type": {
-                  "kind": "TypeName",
-                  "name": "Boolean"
+                  "kind": "ResultTypeName",
+                  "ok_type": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  },
+                  "error_type": "PaymentDeclined",
+                  "error_ref": {
+                    "kind": "ErrorRef",
+                    "name": "PaymentDeclined"
+                  }
                 },
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": ">",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "amount"
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 0
+                    }
+                  }
+                ],
                 "aborts": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "or",
+                    "left": {
+                      "kind": "SpecialResultExpr",
+                      "name": "success"
+                    },
+                    "right": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "SpecialResultExpr",
+                        "name": "error"
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "PaymentDeclined"
+                      }
+                    }
+                  }
+                ],
                 "contracts": {
-                  "requires": [],
-                  "ensures": [],
+                  "requires": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "requires",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": ">",
+                        "left": {
+                          "kind": "VarExpr",
+                          "name": "amount"
+                        },
+                        "right": {
+                          "kind": "NumberExpr",
+                          "value": 0
+                        }
+                      }
+                    }
+                  ],
+                  "ensures": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "or",
+                        "left": {
+                          "kind": "SpecialResultExpr",
+                          "name": "success"
+                        },
+                        "right": {
+                          "kind": "BinaryExpr",
+                          "op": "=",
+                          "left": {
+                            "kind": "SpecialResultExpr",
+                            "name": "error"
+                          },
+                          "right": {
+                            "kind": "VarExpr",
+                            "name": "PaymentDeclined"
+                          }
+                        }
+                      }
+                    }
+                  ],
                   "aborts": []
                 },
                 "contract_bindings": {
                   "kind": "ContractBindings",
-                  "is_result_return": false,
+                  "is_result_return": true,
                   "contexts": {
                     "requires": {
                       "result": false,
@@ -907,10 +1295,10 @@
                     },
                     "ensures": {
                       "result": true,
-                      "success": false,
-                      "failure": false,
+                      "success": true,
+                      "failure": true,
                       "value": true,
-                      "error": false
+                      "error": true
                     },
                     "aborts": {
                       "result": false,
@@ -926,14 +1314,22 @@
                       "name": "result",
                       "available": true,
                       "type": {
-                        "kind": "TypeName",
-                        "name": "Boolean"
+                        "kind": "ResultTypeName",
+                        "ok_type": {
+                          "kind": "TypeName",
+                          "name": "String"
+                        },
+                        "error_type": "PaymentDeclined",
+                        "error_ref": {
+                          "kind": "ErrorRef",
+                          "name": "PaymentDeclined"
+                        }
                       }
                     },
                     {
                       "kind": "ContractBinding",
                       "name": "success",
-                      "available": false,
+                      "available": true,
                       "type": {
                         "kind": "TypeName",
                         "name": "Boolean"
@@ -942,7 +1338,7 @@
                     {
                       "kind": "ContractBinding",
                       "name": "failure",
-                      "available": false,
+                      "available": true,
                       "type": {
                         "kind": "TypeName",
                         "name": "Boolean"
@@ -954,17 +1350,21 @@
                       "available": true,
                       "type": {
                         "kind": "TypeName",
-                        "name": "Boolean"
+                        "name": "String"
                       }
                     },
                     {
                       "kind": "ContractBinding",
                       "name": "error",
-                      "available": false,
+                      "available": true,
                       "type": {
-                        "kind": "Void"
+                        "kind": "TypeName",
+                        "name": "PaymentDeclined"
                       },
-                      "error_ref": null
+                      "error_ref": {
+                        "kind": "ErrorRef",
+                        "name": "PaymentDeclined"
+                      }
                     }
                   ],
                   "result_value_binding": {
@@ -972,34 +1372,75 @@
                     "available": true,
                     "type": {
                       "kind": "TypeName",
-                      "name": "Boolean"
+                      "name": "String"
                     }
                   },
                   "result_error_binding": {
                     "name": "error",
-                    "available": false,
+                    "available": true,
                     "type": {
-                      "kind": "Void"
+                      "kind": "TypeName",
+                      "name": "PaymentDeclined"
                     },
-                    "error_ref": null
+                    "error_ref": {
+                      "kind": "ErrorRef",
+                      "name": "PaymentDeclined"
+                    }
                   }
                 },
                 "body": [
                   {
+                    "kind": "IfStmt",
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": ">",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "amount"
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 100
+                      }
+                    },
+                    "then_body": [
+                      {
+                        "kind": "ReturnStmt",
+                        "value": {
+                          "kind": "ReturnError",
+                          "error": "PaymentDeclined",
+                          "error_ref": {
+                            "kind": "ErrorRef",
+                            "name": "PaymentDeclined"
+                          }
+                        }
+                      }
+                    ],
+                    "else_body": []
+                  },
+                  {
                     "kind": "ReturnStmt",
                     "value": {
-                      "kind": "ReturnPlain",
+                      "kind": "ReturnOk",
                       "value": {
-                        "kind": "BinaryExpr",
-                        "op": ">",
-                        "left": {
-                          "kind": "VarExpr",
-                          "name": "amount"
-                        },
-                        "right": {
-                          "kind": "NumberExpr",
-                          "value": 0
-                        }
+                        "kind": "CallExpr",
+                        "name": "String.template",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "approved-${}"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "amount"
+                            }
+                          }
+                        ]
                       }
                     }
                   }
@@ -1087,13 +1528,20 @@
               }
             ],
             "records": [],
-            "errors": [],
-            "error_defs": [],
+            "errors": [
+              "PaymentDeclined"
+            ],
+            "error_defs": [
+              {
+                "kind": "ErrorDef",
+                "name": "PaymentDeclined"
+              }
+            ],
             "routines": [
               {
                 "kind": "RoutineDecl",
                 "routine_kind": "function",
-                "name": "is_valid",
+                "name": "authorize",
                 "type_params": [],
                 "is_async": false,
                 "params": [
@@ -1107,20 +1555,106 @@
                   }
                 ],
                 "return_type": {
-                  "kind": "TypeName",
-                  "name": "Boolean"
+                  "kind": "ResultTypeName",
+                  "ok_type": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  },
+                  "error_type": "PaymentDeclined",
+                  "error_ref": {
+                    "kind": "ErrorRef",
+                    "name": "PaymentDeclined"
+                  }
                 },
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": ">",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "amount"
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 0
+                    }
+                  }
+                ],
                 "aborts": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "or",
+                    "left": {
+                      "kind": "SpecialResultExpr",
+                      "name": "success"
+                    },
+                    "right": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "SpecialResultExpr",
+                        "name": "error"
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "PaymentDeclined"
+                      }
+                    }
+                  }
+                ],
                 "contracts": {
-                  "requires": [],
-                  "ensures": [],
+                  "requires": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "requires",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": ">",
+                        "left": {
+                          "kind": "VarExpr",
+                          "name": "amount"
+                        },
+                        "right": {
+                          "kind": "NumberExpr",
+                          "value": 0
+                        }
+                      }
+                    }
+                  ],
+                  "ensures": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "or",
+                        "left": {
+                          "kind": "SpecialResultExpr",
+                          "name": "success"
+                        },
+                        "right": {
+                          "kind": "BinaryExpr",
+                          "op": "=",
+                          "left": {
+                            "kind": "SpecialResultExpr",
+                            "name": "error"
+                          },
+                          "right": {
+                            "kind": "VarExpr",
+                            "name": "PaymentDeclined"
+                          }
+                        }
+                      }
+                    }
+                  ],
                   "aborts": []
                 },
                 "contract_bindings": {
                   "kind": "ContractBindings",
-                  "is_result_return": false,
+                  "is_result_return": true,
                   "contexts": {
                     "requires": {
                       "result": false,
@@ -1131,10 +1665,10 @@
                     },
                     "ensures": {
                       "result": true,
-                      "success": false,
-                      "failure": false,
+                      "success": true,
+                      "failure": true,
                       "value": true,
-                      "error": false
+                      "error": true
                     },
                     "aborts": {
                       "result": false,
@@ -1150,14 +1684,22 @@
                       "name": "result",
                       "available": true,
                       "type": {
-                        "kind": "TypeName",
-                        "name": "Boolean"
+                        "kind": "ResultTypeName",
+                        "ok_type": {
+                          "kind": "TypeName",
+                          "name": "String"
+                        },
+                        "error_type": "PaymentDeclined",
+                        "error_ref": {
+                          "kind": "ErrorRef",
+                          "name": "PaymentDeclined"
+                        }
                       }
                     },
                     {
                       "kind": "ContractBinding",
                       "name": "success",
-                      "available": false,
+                      "available": true,
                       "type": {
                         "kind": "TypeName",
                         "name": "Boolean"
@@ -1166,7 +1708,7 @@
                     {
                       "kind": "ContractBinding",
                       "name": "failure",
-                      "available": false,
+                      "available": true,
                       "type": {
                         "kind": "TypeName",
                         "name": "Boolean"
@@ -1178,17 +1720,21 @@
                       "available": true,
                       "type": {
                         "kind": "TypeName",
-                        "name": "Boolean"
+                        "name": "String"
                       }
                     },
                     {
                       "kind": "ContractBinding",
                       "name": "error",
-                      "available": false,
+                      "available": true,
                       "type": {
-                        "kind": "Void"
+                        "kind": "TypeName",
+                        "name": "PaymentDeclined"
                       },
-                      "error_ref": null
+                      "error_ref": {
+                        "kind": "ErrorRef",
+                        "name": "PaymentDeclined"
+                      }
                     }
                   ],
                   "result_value_binding": {
@@ -1196,34 +1742,75 @@
                     "available": true,
                     "type": {
                       "kind": "TypeName",
-                      "name": "Boolean"
+                      "name": "String"
                     }
                   },
                   "result_error_binding": {
                     "name": "error",
-                    "available": false,
+                    "available": true,
                     "type": {
-                      "kind": "Void"
+                      "kind": "TypeName",
+                      "name": "PaymentDeclined"
                     },
-                    "error_ref": null
+                    "error_ref": {
+                      "kind": "ErrorRef",
+                      "name": "PaymentDeclined"
+                    }
                   }
                 },
                 "body": [
                   {
+                    "kind": "IfStmt",
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": ">",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "amount"
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 100
+                      }
+                    },
+                    "then_body": [
+                      {
+                        "kind": "ReturnStmt",
+                        "value": {
+                          "kind": "ReturnError",
+                          "error": "PaymentDeclined",
+                          "error_ref": {
+                            "kind": "ErrorRef",
+                            "name": "PaymentDeclined"
+                          }
+                        }
+                      }
+                    ],
+                    "else_body": []
+                  },
+                  {
                     "kind": "ReturnStmt",
                     "value": {
-                      "kind": "ReturnPlain",
+                      "kind": "ReturnOk",
                       "value": {
-                        "kind": "BinaryExpr",
-                        "op": ">",
-                        "left": {
-                          "kind": "VarExpr",
-                          "name": "amount"
-                        },
-                        "right": {
-                          "kind": "NumberExpr",
-                          "value": 0
-                        }
+                        "kind": "CallExpr",
+                        "name": "String.template",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "approved-${}"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "amount"
+                            }
+                          }
+                        ]
                       }
                     }
                   }
@@ -1235,7 +1822,7 @@
             "flow_summaries": [
               {
                 "kind": "RoutineFlowSummary",
-                "routine_name": "is_valid",
+                "routine_name": "authorize",
                 "routine_kind": "function",
                 "normal_return_possible": true,
                 "guaranteed_exit": true,
@@ -1254,7 +1841,7 @@
               "flow_summaries": [
                 {
                   "kind": "RoutineFlowSummary",
-                  "routine_name": "is_valid",
+                  "routine_name": "authorize",
                   "routine_kind": "function",
                   "normal_return_possible": true,
                   "guaranteed_exit": true,
@@ -1272,13 +1859,17 @@
         },
         "module": {
           "node": "Module",
-          "name": "Domain.Rules",
+          "name": "Domain.Payments",
           "imports": [],
           "declarations": [
             {
+              "kind": "ErrorDecl",
+              "name": "PaymentDeclined"
+            },
+            {
               "kind": "RoutineDecl",
               "routine_kind": "function",
-              "name": "is_valid",
+              "name": "authorize",
               "type_params": [],
               "is_async": false,
               "params": [
@@ -1292,20 +1883,106 @@
                 }
               ],
               "return_type": {
-                "kind": "TypeName",
-                "name": "Boolean"
+                "kind": "ResultTypeName",
+                "ok_type": {
+                  "kind": "TypeName",
+                  "name": "String"
+                },
+                "error_type": "PaymentDeclined",
+                "error_ref": {
+                  "kind": "ErrorRef",
+                  "name": "PaymentDeclined"
+                }
               },
-              "requires": [],
+              "requires": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": ">",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "amount"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              ],
               "aborts": [],
-              "ensures": [],
+              "ensures": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": "or",
+                  "left": {
+                    "kind": "SpecialResultExpr",
+                    "name": "success"
+                  },
+                  "right": {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "SpecialResultExpr",
+                      "name": "error"
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "PaymentDeclined"
+                    }
+                  }
+                }
+              ],
               "contracts": {
-                "requires": [],
-                "ensures": [],
+                "requires": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "requires",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": ">",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "amount"
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 0
+                      }
+                    }
+                  }
+                ],
+                "ensures": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "or",
+                      "left": {
+                        "kind": "SpecialResultExpr",
+                        "name": "success"
+                      },
+                      "right": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "SpecialResultExpr",
+                          "name": "error"
+                        },
+                        "right": {
+                          "kind": "VarExpr",
+                          "name": "PaymentDeclined"
+                        }
+                      }
+                    }
+                  }
+                ],
                 "aborts": []
               },
               "contract_bindings": {
                 "kind": "ContractBindings",
-                "is_result_return": false,
+                "is_result_return": true,
                 "contexts": {
                   "requires": {
                     "result": false,
@@ -1316,10 +1993,10 @@
                   },
                   "ensures": {
                     "result": true,
-                    "success": false,
-                    "failure": false,
+                    "success": true,
+                    "failure": true,
                     "value": true,
-                    "error": false
+                    "error": true
                   },
                   "aborts": {
                     "result": false,
@@ -1335,14 +2012,22 @@
                     "name": "result",
                     "available": true,
                     "type": {
-                      "kind": "TypeName",
-                      "name": "Boolean"
+                      "kind": "ResultTypeName",
+                      "ok_type": {
+                        "kind": "TypeName",
+                        "name": "String"
+                      },
+                      "error_type": "PaymentDeclined",
+                      "error_ref": {
+                        "kind": "ErrorRef",
+                        "name": "PaymentDeclined"
+                      }
                     }
                   },
                   {
                     "kind": "ContractBinding",
                     "name": "success",
-                    "available": false,
+                    "available": true,
                     "type": {
                       "kind": "TypeName",
                       "name": "Boolean"
@@ -1351,7 +2036,7 @@
                   {
                     "kind": "ContractBinding",
                     "name": "failure",
-                    "available": false,
+                    "available": true,
                     "type": {
                       "kind": "TypeName",
                       "name": "Boolean"
@@ -1363,17 +2048,21 @@
                     "available": true,
                     "type": {
                       "kind": "TypeName",
-                      "name": "Boolean"
+                      "name": "String"
                     }
                   },
                   {
                     "kind": "ContractBinding",
                     "name": "error",
-                    "available": false,
+                    "available": true,
                     "type": {
-                      "kind": "Void"
+                      "kind": "TypeName",
+                      "name": "PaymentDeclined"
                     },
-                    "error_ref": null
+                    "error_ref": {
+                      "kind": "ErrorRef",
+                      "name": "PaymentDeclined"
+                    }
                   }
                 ],
                 "result_value_binding": {
@@ -1381,34 +2070,75 @@
                   "available": true,
                   "type": {
                     "kind": "TypeName",
-                    "name": "Boolean"
+                    "name": "String"
                   }
                 },
                 "result_error_binding": {
                   "name": "error",
-                  "available": false,
+                  "available": true,
                   "type": {
-                    "kind": "Void"
+                    "kind": "TypeName",
+                    "name": "PaymentDeclined"
                   },
-                  "error_ref": null
+                  "error_ref": {
+                    "kind": "ErrorRef",
+                    "name": "PaymentDeclined"
+                  }
                 }
               },
               "body": [
                 {
+                  "kind": "IfStmt",
+                  "condition": {
+                    "kind": "BinaryExpr",
+                    "op": ">",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "amount"
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 100
+                    }
+                  },
+                  "then_body": [
+                    {
+                      "kind": "ReturnStmt",
+                      "value": {
+                        "kind": "ReturnError",
+                        "error": "PaymentDeclined",
+                        "error_ref": {
+                          "kind": "ErrorRef",
+                          "name": "PaymentDeclined"
+                        }
+                      }
+                    }
+                  ],
+                  "else_body": []
+                },
+                {
                   "kind": "ReturnStmt",
                   "value": {
-                    "kind": "ReturnPlain",
+                    "kind": "ReturnOk",
                     "value": {
-                      "kind": "BinaryExpr",
-                      "op": ">",
-                      "left": {
-                        "kind": "VarExpr",
-                        "name": "amount"
-                      },
-                      "right": {
-                        "kind": "NumberExpr",
-                        "value": 0
-                      }
+                      "kind": "CallExpr",
+                      "name": "String.template",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "approved-${}"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "amount"
+                          }
+                        }
+                      ]
                     }
                   }
                 }
@@ -1493,13 +2223,20 @@
             }
           ],
           "records": [],
-          "errors": [],
-          "error_defs": [],
+          "errors": [
+            "PaymentDeclined"
+          ],
+          "error_defs": [
+            {
+              "kind": "ErrorDef",
+              "name": "PaymentDeclined"
+            }
+          ],
           "routines": [
             {
               "kind": "RoutineDecl",
               "routine_kind": "function",
-              "name": "is_valid",
+              "name": "authorize",
               "type_params": [],
               "is_async": false,
               "params": [
@@ -1513,20 +2250,106 @@
                 }
               ],
               "return_type": {
-                "kind": "TypeName",
-                "name": "Boolean"
+                "kind": "ResultTypeName",
+                "ok_type": {
+                  "kind": "TypeName",
+                  "name": "String"
+                },
+                "error_type": "PaymentDeclined",
+                "error_ref": {
+                  "kind": "ErrorRef",
+                  "name": "PaymentDeclined"
+                }
               },
-              "requires": [],
+              "requires": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": ">",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "amount"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              ],
               "aborts": [],
-              "ensures": [],
+              "ensures": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": "or",
+                  "left": {
+                    "kind": "SpecialResultExpr",
+                    "name": "success"
+                  },
+                  "right": {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "SpecialResultExpr",
+                      "name": "error"
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "PaymentDeclined"
+                    }
+                  }
+                }
+              ],
               "contracts": {
-                "requires": [],
-                "ensures": [],
+                "requires": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "requires",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": ">",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "amount"
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 0
+                      }
+                    }
+                  }
+                ],
+                "ensures": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "or",
+                      "left": {
+                        "kind": "SpecialResultExpr",
+                        "name": "success"
+                      },
+                      "right": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "SpecialResultExpr",
+                          "name": "error"
+                        },
+                        "right": {
+                          "kind": "VarExpr",
+                          "name": "PaymentDeclined"
+                        }
+                      }
+                    }
+                  }
+                ],
                 "aborts": []
               },
               "contract_bindings": {
                 "kind": "ContractBindings",
-                "is_result_return": false,
+                "is_result_return": true,
                 "contexts": {
                   "requires": {
                     "result": false,
@@ -1537,10 +2360,10 @@
                   },
                   "ensures": {
                     "result": true,
-                    "success": false,
-                    "failure": false,
+                    "success": true,
+                    "failure": true,
                     "value": true,
-                    "error": false
+                    "error": true
                   },
                   "aborts": {
                     "result": false,
@@ -1556,14 +2379,22 @@
                     "name": "result",
                     "available": true,
                     "type": {
-                      "kind": "TypeName",
-                      "name": "Boolean"
+                      "kind": "ResultTypeName",
+                      "ok_type": {
+                        "kind": "TypeName",
+                        "name": "String"
+                      },
+                      "error_type": "PaymentDeclined",
+                      "error_ref": {
+                        "kind": "ErrorRef",
+                        "name": "PaymentDeclined"
+                      }
                     }
                   },
                   {
                     "kind": "ContractBinding",
                     "name": "success",
-                    "available": false,
+                    "available": true,
                     "type": {
                       "kind": "TypeName",
                       "name": "Boolean"
@@ -1572,7 +2403,7 @@
                   {
                     "kind": "ContractBinding",
                     "name": "failure",
-                    "available": false,
+                    "available": true,
                     "type": {
                       "kind": "TypeName",
                       "name": "Boolean"
@@ -1584,17 +2415,21 @@
                     "available": true,
                     "type": {
                       "kind": "TypeName",
-                      "name": "Boolean"
+                      "name": "String"
                     }
                   },
                   {
                     "kind": "ContractBinding",
                     "name": "error",
-                    "available": false,
+                    "available": true,
                     "type": {
-                      "kind": "Void"
+                      "kind": "TypeName",
+                      "name": "PaymentDeclined"
                     },
-                    "error_ref": null
+                    "error_ref": {
+                      "kind": "ErrorRef",
+                      "name": "PaymentDeclined"
+                    }
                   }
                 ],
                 "result_value_binding": {
@@ -1602,34 +2437,75 @@
                   "available": true,
                   "type": {
                     "kind": "TypeName",
-                    "name": "Boolean"
+                    "name": "String"
                   }
                 },
                 "result_error_binding": {
                   "name": "error",
-                  "available": false,
+                  "available": true,
                   "type": {
-                    "kind": "Void"
+                    "kind": "TypeName",
+                    "name": "PaymentDeclined"
                   },
-                  "error_ref": null
+                  "error_ref": {
+                    "kind": "ErrorRef",
+                    "name": "PaymentDeclined"
+                  }
                 }
               },
               "body": [
                 {
+                  "kind": "IfStmt",
+                  "condition": {
+                    "kind": "BinaryExpr",
+                    "op": ">",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "amount"
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 100
+                    }
+                  },
+                  "then_body": [
+                    {
+                      "kind": "ReturnStmt",
+                      "value": {
+                        "kind": "ReturnError",
+                        "error": "PaymentDeclined",
+                        "error_ref": {
+                          "kind": "ErrorRef",
+                          "name": "PaymentDeclined"
+                        }
+                      }
+                    }
+                  ],
+                  "else_body": []
+                },
+                {
                   "kind": "ReturnStmt",
                   "value": {
-                    "kind": "ReturnPlain",
+                    "kind": "ReturnOk",
                     "value": {
-                      "kind": "BinaryExpr",
-                      "op": ">",
-                      "left": {
-                        "kind": "VarExpr",
-                        "name": "amount"
-                      },
-                      "right": {
-                        "kind": "NumberExpr",
-                        "value": 0
-                      }
+                      "kind": "CallExpr",
+                      "name": "String.template",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "approved-${}"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "amount"
+                          }
+                        }
+                      ]
                     }
                   }
                 }
@@ -1641,7 +2517,7 @@
           "flow_summaries": [
             {
               "kind": "RoutineFlowSummary",
-              "routine_name": "is_valid",
+              "routine_name": "authorize",
               "routine_kind": "function",
               "normal_return_possible": true,
               "guaranteed_exit": true,
@@ -1660,7 +2536,7 @@
             "flow_summaries": [
               {
                 "kind": "RoutineFlowSummary",
-                "routine_name": "is_valid",
+                "routine_name": "authorize",
                 "routine_kind": "function",
                 "normal_return_possible": true,
                 "guaranteed_exit": true,
@@ -1681,16 +2557,38 @@
       {
         "node": "ImportEdge",
         "from_module": "App.Main",
-        "to_module": "Domain.Rules",
+        "to_module": "Domain.Payments",
         "is_runtime": false,
         "exposing": [
-          "is_valid"
+          "PaymentDeclined",
+          "authorize"
         ],
         "qualified_exposing": [
-          "Domain.Rules.is_valid"
+          "Domain.Payments.PaymentDeclined",
+          "Domain.Payments.authorize"
         ]
+      },
+      {
+        "node": "ImportEdge",
+        "from_module": "App.Main",
+        "to_module": "Std.IO",
+        "is_runtime": true,
+        "exposing": [],
+        "qualified_exposing": []
       }
     ],
-    "runtime_modules": []
+    "runtime_modules": [
+      {
+        "node": "RuntimeModule",
+        "name": "Std.IO",
+        "exports": [
+          "log",
+          "log_bool",
+          "log_double",
+          "log_int",
+          "logf"
+        ]
+      }
+    ]
   }
 }

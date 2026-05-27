@@ -101,11 +101,13 @@ type serviceDecl struct {
 }
 
 type rpcDecl struct {
-	Kind         string `json:"kind"`
-	Name         string `json:"name"`
-	RequestName  string `json:"request_name"`
-	RequestType  string `json:"request_type"`
-	ResponseType string `json:"response_type"`
+	Kind             string    `json:"kind"`
+	Name             string    `json:"name"`
+	RequestName      string    `json:"request_name"`
+	RequestType      string    `json:"request_type"`
+	RequestTypeRepr  typeRefIR `json:"request_type_repr"`
+	ResponseType     string    `json:"response_type"`
+	ResponseTypeRepr typeRefIR `json:"response_type_repr"`
 }
 
 type routineDecl struct {
@@ -128,11 +130,14 @@ type paramIR struct {
 	Name     string    `json:"name"`
 	Type     string    `json:"type"`
 	TypeRepr typeRefIR `json:"type_repr,omitempty"`
+	ProtoID  *int      `json:"proto_id,omitempty"`
 }
 
 type typeRefIR struct {
 	Kind            string      `json:"kind"`
 	Name            string      `json:"name,omitempty"`
+	Args            []typeRefIR `json:"args,omitempty"`
+	Text            string      `json:"text,omitempty"`
 	OkType          *typeRefIR  `json:"ok_type,omitempty"`
 	ErrorType       string      `json:"error_type,omitempty"`
 	ErrorRef        *errorRefIR `json:"error_ref,omitempty"`
@@ -548,7 +553,7 @@ func exportTypeDecl(value ast.TypeDecl) typeDeclIR {
 func exportRecordTypeDecl(value ast.TypeDecl) recordTypeDeclIR {
 	fields := make([]paramIR, 0, len(value.Fields))
 	for _, field := range sortedParams(value.Fields) {
-		fields = append(fields, paramIR{Name: field.Name, Type: field.Type, TypeRepr: typeRefFromName(field.Type)})
+		fields = append(fields, paramIR{Name: field.Name, Type: field.Type, TypeRepr: typeRefFromName(field.Type), ProtoID: field.ProtoID})
 	}
 	item := recordTypeDeclIR{Kind: "RecordTypeDecl", Name: value.Name, Fields: fields}
 	if len(value.TypeParams) > 0 {
@@ -594,7 +599,15 @@ func exportServiceDecl(value ast.ServiceDecl) serviceDecl {
 	sort.Slice(rpcs, func(i, j int) bool { return rpcs[i].Name < rpcs[j].Name })
 	items := make([]rpcDecl, 0, len(rpcs))
 	for _, rpc := range rpcs {
-		items = append(items, rpcDecl{Kind: "RpcDecl", Name: rpc.Name, RequestName: rpc.RequestName, RequestType: rpc.RequestType, ResponseType: rpc.ResponseType})
+		items = append(items, rpcDecl{
+			Kind:             "RpcDecl",
+			Name:             rpc.Name,
+			RequestName:      rpc.RequestName,
+			RequestType:      rpc.RequestType,
+			RequestTypeRepr:  typeRefFromName(rpc.RequestType),
+			ResponseType:     rpc.ResponseType,
+			ResponseTypeRepr: typeRefFromName(rpc.ResponseType),
+		})
 	}
 	return serviceDecl{Kind: "ServiceDecl", Name: value.Name, Rpcs: items}
 }
@@ -893,6 +906,13 @@ func typeRefFromName(name string) typeRefIR {
 				return typeRefIR{Kind: "ArrayTypeName", ElementType: elementName, ElementTypeRepr: &elementType, Size: &sizeValue}
 			}
 		}
+	}
+	if genericBase, genericArgs, ok := parseGenericType(name); ok {
+		args := make([]typeRefIR, 0, len(genericArgs))
+		for _, arg := range genericArgs {
+			args = append(args, typeRefFromName(arg))
+		}
+		return typeRefIR{Kind: "GenericTypeName", Name: genericBase, Args: args, Text: name}
 	}
 	return typeRefIR{Kind: "TypeName", Name: name}
 }

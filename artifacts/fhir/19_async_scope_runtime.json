@@ -1,0 +1,3465 @@
+{
+  "node": "FhirDocumentV0",
+  "schema_profile": "fh-ir",
+  "schema": "fh-ir-v0",
+  "schema_version": {
+    "major": 0,
+    "minor": 1,
+    "patch": 0
+  },
+  "language_version": "freehold-v1",
+  "source_ast": {
+    "node": "SourceAst",
+    "module": {
+      "node": "Module",
+      "name": "App.Main",
+      "imports": [],
+      "declarations": [
+        {
+          "kind": "RecordTypeDecl",
+          "name": "Customer",
+          "fields": [
+            {
+              "name": "id",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "RecordTypeDecl",
+          "name": "Invoice",
+          "fields": [
+            {
+              "name": "id",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "handle",
+          "type_params": [],
+          "is_async": true,
+          "params": [
+            {
+              "name": "id",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "Integer"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "ScopeStmt",
+              "name": "request_scope",
+              "spawn_body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "invoice_handle",
+                  "type": {
+                    "kind": "GenericTypeName",
+                    "name": "JoinHandle",
+                    "args": [
+                      {
+                        "kind": "TypeName",
+                        "name": "Invoice"
+                      }
+                    ],
+                    "text": "JoinHandle<Invoice>"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "request_scope.spawn",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "load_invoice",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "VarExpr",
+                                "name": "id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "Invoice"
+                    ]
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "customer_handle",
+                  "type": {
+                    "kind": "GenericTypeName",
+                    "name": "JoinHandle",
+                    "args": [
+                      {
+                        "kind": "TypeName",
+                        "name": "Customer"
+                      }
+                    ],
+                    "text": "JoinHandle<Customer>"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "request_scope.spawn",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "load_customer",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "VarExpr",
+                                "name": "id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "Customer"
+                    ]
+                  }
+                }
+              ],
+              "join_body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "invoice",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Invoice"
+                  },
+                  "value": {
+                    "kind": "AwaitExpr",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "request_scope.join",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "invoice_handle"
+                          }
+                        }
+                      ],
+                      "type_args": [
+                        "Invoice"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "customer",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Customer"
+                  },
+                  "value": {
+                    "kind": "AwaitExpr",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "request_scope.join",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "customer_handle"
+                          }
+                        }
+                      ],
+                      "type_args": [
+                        "Customer"
+                      ]
+                    }
+                  }
+                }
+              ],
+              "result_body": [
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "render_invoice",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "invoice"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "customer"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "load_customer",
+          "type_params": [],
+          "is_async": true,
+          "params": [
+            {
+              "name": "id",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "Customer"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Customer"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Customer"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Customer"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "RecordLiteralExpr",
+                  "type": "Customer",
+                  "args": [
+                    {
+                      "kind": "NamedArg",
+                      "name": "id",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "id"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "load_invoice",
+          "type_params": [],
+          "is_async": true,
+          "params": [
+            {
+              "name": "id",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "Invoice"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Invoice"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Invoice"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Invoice"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "RecordLiteralExpr",
+                  "type": "Invoice",
+                  "args": [
+                    {
+                      "kind": "NamedArg",
+                      "name": "id",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "id"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "render_invoice",
+          "type_params": [],
+          "is_async": false,
+          "params": [
+            {
+              "name": "invoice",
+              "type": "Invoice",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Invoice"
+              }
+            },
+            {
+              "name": "customer",
+              "type": "Customer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Customer"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "Integer"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "+",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "invoice",
+                      "id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "customer",
+                      "id"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "semantic_ir": {
+    "node": "SemanticIr",
+    "analysis": {
+      "node": "AnalysisReport",
+      "types": [
+        {
+          "kind": "TypeDef",
+          "name": "BigFloat",
+          "base": "BigFloat",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "BigFloat"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "BigInteger",
+          "base": "BigInteger",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "BigInteger"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Boolean",
+          "base": "Boolean",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Boolean"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Double",
+          "base": "Double",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Double"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Executor",
+          "base": "Executor",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Executor"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Integer",
+          "base": "Integer",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Integer"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Scope",
+          "base": "Scope",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Scope"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "String",
+          "base": "String",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "String"
+          }
+        }
+      ],
+      "records": [
+        {
+          "kind": "RecordDef",
+          "name": "Customer",
+          "fields": [
+            {
+              "kind": "RecordFieldDef",
+              "name": "id",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ],
+          "proto_fields": []
+        },
+        {
+          "kind": "RecordDef",
+          "name": "Invoice",
+          "fields": [
+            {
+              "kind": "RecordFieldDef",
+              "name": "id",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ],
+          "proto_fields": []
+        }
+      ],
+      "errors": [],
+      "error_defs": [],
+      "routines": [
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "handle",
+          "type_params": [],
+          "is_async": true,
+          "params": [
+            {
+              "name": "id",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "Integer"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "ScopeStmt",
+              "name": "request_scope",
+              "spawn_body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "invoice_handle",
+                  "type": {
+                    "kind": "GenericTypeName",
+                    "name": "JoinHandle",
+                    "args": [
+                      {
+                        "kind": "TypeName",
+                        "name": "Invoice"
+                      }
+                    ],
+                    "text": "JoinHandle<Invoice>"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "request_scope.spawn",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "load_invoice",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "VarExpr",
+                                "name": "id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "Invoice"
+                    ]
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "customer_handle",
+                  "type": {
+                    "kind": "GenericTypeName",
+                    "name": "JoinHandle",
+                    "args": [
+                      {
+                        "kind": "TypeName",
+                        "name": "Customer"
+                      }
+                    ],
+                    "text": "JoinHandle<Customer>"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "request_scope.spawn",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "load_customer",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "VarExpr",
+                                "name": "id"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "Customer"
+                    ]
+                  }
+                }
+              ],
+              "join_body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "invoice",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Invoice"
+                  },
+                  "value": {
+                    "kind": "AwaitExpr",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "request_scope.join",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "invoice_handle"
+                          }
+                        }
+                      ],
+                      "type_args": [
+                        "Invoice"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "customer",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Customer"
+                  },
+                  "value": {
+                    "kind": "AwaitExpr",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "request_scope.join",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "customer_handle"
+                          }
+                        }
+                      ],
+                      "type_args": [
+                        "Customer"
+                      ]
+                    }
+                  }
+                }
+              ],
+              "result_body": [
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "render_invoice",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "invoice"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "customer"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "load_customer",
+          "type_params": [],
+          "is_async": true,
+          "params": [
+            {
+              "name": "id",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "Customer"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Customer"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Customer"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Customer"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "RecordLiteralExpr",
+                  "type": "Customer",
+                  "args": [
+                    {
+                      "kind": "NamedArg",
+                      "name": "id",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "id"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "load_invoice",
+          "type_params": [],
+          "is_async": true,
+          "params": [
+            {
+              "name": "id",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "Invoice"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Invoice"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Invoice"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Invoice"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "RecordLiteralExpr",
+                  "type": "Invoice",
+                  "args": [
+                    {
+                      "kind": "NamedArg",
+                      "name": "id",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "id"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "render_invoice",
+          "type_params": [],
+          "is_async": false,
+          "params": [
+            {
+              "name": "invoice",
+              "type": "Invoice",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Invoice"
+              }
+            },
+            {
+              "name": "customer",
+              "type": "Customer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Customer"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "Integer"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "+",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "invoice",
+                      "id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "customer",
+                      "id"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "services": [],
+      "proof_obligations": [],
+      "flow_summaries": [
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "handle",
+          "routine_kind": "function",
+          "normal_return_possible": false,
+          "guaranteed_exit": false,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "load_customer",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "load_invoice",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "render_invoice",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        }
+      ],
+      "verifier": {
+        "node": "VerifierReport",
+        "proof_obligations": [],
+        "flow_summaries": [
+          {
+            "kind": "RoutineFlowSummary",
+            "routine_name": "handle",
+            "routine_kind": "function",
+            "normal_return_possible": false,
+            "guaranteed_exit": false,
+            "declared_aborts": [],
+            "declared_abort_refs": [],
+            "emitted_aborts": [],
+            "emitted_abort_refs": [],
+            "called_routines": [],
+            "propagated_aborts": [],
+            "propagated_abort_refs": []
+          },
+          {
+            "kind": "RoutineFlowSummary",
+            "routine_name": "load_customer",
+            "routine_kind": "function",
+            "normal_return_possible": true,
+            "guaranteed_exit": true,
+            "declared_aborts": [],
+            "declared_abort_refs": [],
+            "emitted_aborts": [],
+            "emitted_abort_refs": [],
+            "called_routines": [],
+            "propagated_aborts": [],
+            "propagated_abort_refs": []
+          },
+          {
+            "kind": "RoutineFlowSummary",
+            "routine_name": "load_invoice",
+            "routine_kind": "function",
+            "normal_return_possible": true,
+            "guaranteed_exit": true,
+            "declared_aborts": [],
+            "declared_abort_refs": [],
+            "emitted_aborts": [],
+            "emitted_abort_refs": [],
+            "called_routines": [],
+            "propagated_aborts": [],
+            "propagated_abort_refs": []
+          },
+          {
+            "kind": "RoutineFlowSummary",
+            "routine_name": "render_invoice",
+            "routine_kind": "function",
+            "normal_return_possible": true,
+            "guaranteed_exit": true,
+            "declared_aborts": [],
+            "declared_abort_refs": [],
+            "emitted_aborts": [],
+            "emitted_abort_refs": [],
+            "called_routines": [],
+            "propagated_aborts": [],
+            "propagated_abort_refs": []
+          }
+        ]
+      }
+    }
+  },
+  "module": {
+    "node": "Module",
+    "name": "App.Main",
+    "imports": [],
+    "declarations": [
+      {
+        "kind": "RecordTypeDecl",
+        "name": "Customer",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RecordTypeDecl",
+        "name": "Invoice",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "handle",
+        "type_params": [],
+        "is_async": true,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "ScopeStmt",
+            "name": "request_scope",
+            "spawn_body": [
+              {
+                "kind": "LetStmt",
+                "name": "invoice_handle",
+                "type": {
+                  "kind": "GenericTypeName",
+                  "name": "JoinHandle",
+                  "args": [
+                    {
+                      "kind": "TypeName",
+                      "name": "Invoice"
+                    }
+                  ],
+                  "text": "JoinHandle<Invoice>"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "request_scope.spawn",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "load_invoice",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "id"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "type_args": [
+                    "Invoice"
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "customer_handle",
+                "type": {
+                  "kind": "GenericTypeName",
+                  "name": "JoinHandle",
+                  "args": [
+                    {
+                      "kind": "TypeName",
+                      "name": "Customer"
+                    }
+                  ],
+                  "text": "JoinHandle<Customer>"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "request_scope.spawn",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "load_customer",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "id"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "type_args": [
+                    "Customer"
+                  ]
+                }
+              }
+            ],
+            "join_body": [
+              {
+                "kind": "LetStmt",
+                "name": "invoice",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Invoice"
+                },
+                "value": {
+                  "kind": "AwaitExpr",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "request_scope.join",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "invoice_handle"
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "Invoice"
+                    ]
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "customer",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Customer"
+                },
+                "value": {
+                  "kind": "AwaitExpr",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "request_scope.join",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "customer_handle"
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "Customer"
+                    ]
+                  }
+                }
+              }
+            ],
+            "result_body": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "ReturnPlain",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "render_invoice",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "invoice"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "customer"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "load_customer",
+        "type_params": [],
+        "is_async": true,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Customer"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Customer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Customer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Customer"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "RecordLiteralExpr",
+                "type": "Customer",
+                "args": [
+                  {
+                    "kind": "NamedArg",
+                    "name": "id",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "load_invoice",
+        "type_params": [],
+        "is_async": true,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Invoice"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Invoice"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Invoice"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Invoice"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "RecordLiteralExpr",
+                "type": "Invoice",
+                "args": [
+                  {
+                    "kind": "NamedArg",
+                    "name": "id",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "render_invoice",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "invoice",
+            "type": "Invoice",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Invoice"
+            }
+          },
+          {
+            "name": "customer",
+            "type": "Customer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Customer"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "BinaryExpr",
+                "op": "+",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "invoice",
+                    "id"
+                  ]
+                },
+                "right": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "customer",
+                    "id"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "node": "AnalysisReport",
+    "types": [
+      {
+        "kind": "TypeDef",
+        "name": "BigFloat",
+        "base": "BigFloat",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigFloat"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "BigInteger",
+        "base": "BigInteger",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigInteger"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Boolean",
+        "base": "Boolean",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Boolean"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Double",
+        "base": "Double",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Double"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Executor",
+        "base": "Executor",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Executor"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Integer",
+        "base": "Integer",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Scope",
+        "base": "Scope",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Scope"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "String",
+        "base": "String",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "String"
+        }
+      }
+    ],
+    "records": [
+      {
+        "kind": "RecordDef",
+        "name": "Customer",
+        "fields": [
+          {
+            "kind": "RecordFieldDef",
+            "name": "id",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ],
+        "proto_fields": []
+      },
+      {
+        "kind": "RecordDef",
+        "name": "Invoice",
+        "fields": [
+          {
+            "kind": "RecordFieldDef",
+            "name": "id",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ],
+        "proto_fields": []
+      }
+    ],
+    "errors": [],
+    "error_defs": [],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "handle",
+        "type_params": [],
+        "is_async": true,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "ScopeStmt",
+            "name": "request_scope",
+            "spawn_body": [
+              {
+                "kind": "LetStmt",
+                "name": "invoice_handle",
+                "type": {
+                  "kind": "GenericTypeName",
+                  "name": "JoinHandle",
+                  "args": [
+                    {
+                      "kind": "TypeName",
+                      "name": "Invoice"
+                    }
+                  ],
+                  "text": "JoinHandle<Invoice>"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "request_scope.spawn",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "load_invoice",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "id"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "type_args": [
+                    "Invoice"
+                  ]
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "customer_handle",
+                "type": {
+                  "kind": "GenericTypeName",
+                  "name": "JoinHandle",
+                  "args": [
+                    {
+                      "kind": "TypeName",
+                      "name": "Customer"
+                    }
+                  ],
+                  "text": "JoinHandle<Customer>"
+                },
+                "value": {
+                  "kind": "CallExpr",
+                  "name": "request_scope.spawn",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "load_customer",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "id"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "type_args": [
+                    "Customer"
+                  ]
+                }
+              }
+            ],
+            "join_body": [
+              {
+                "kind": "LetStmt",
+                "name": "invoice",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Invoice"
+                },
+                "value": {
+                  "kind": "AwaitExpr",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "request_scope.join",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "invoice_handle"
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "Invoice"
+                    ]
+                  }
+                }
+              },
+              {
+                "kind": "LetStmt",
+                "name": "customer",
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Customer"
+                },
+                "value": {
+                  "kind": "AwaitExpr",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "request_scope.join",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "customer_handle"
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "Customer"
+                    ]
+                  }
+                }
+              }
+            ],
+            "result_body": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "ReturnPlain",
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "render_invoice",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "invoice"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "customer"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "load_customer",
+        "type_params": [],
+        "is_async": true,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Customer"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Customer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Customer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Customer"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "RecordLiteralExpr",
+                "type": "Customer",
+                "args": [
+                  {
+                    "kind": "NamedArg",
+                    "name": "id",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "load_invoice",
+        "type_params": [],
+        "is_async": true,
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Invoice"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Invoice"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Invoice"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Invoice"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "RecordLiteralExpr",
+                "type": "Invoice",
+                "args": [
+                  {
+                    "kind": "NamedArg",
+                    "name": "id",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "render_invoice",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "invoice",
+            "type": "Invoice",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Invoice"
+            }
+          },
+          {
+            "name": "customer",
+            "type": "Customer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Customer"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "BinaryExpr",
+                "op": "+",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "invoice",
+                    "id"
+                  ]
+                },
+                "right": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "customer",
+                    "id"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "services": [],
+    "proof_obligations": [],
+    "flow_summaries": [
+      {
+        "kind": "RoutineFlowSummary",
+        "routine_name": "handle",
+        "routine_kind": "function",
+        "normal_return_possible": false,
+        "guaranteed_exit": false,
+        "declared_aborts": [],
+        "declared_abort_refs": [],
+        "emitted_aborts": [],
+        "emitted_abort_refs": [],
+        "called_routines": [],
+        "propagated_aborts": [],
+        "propagated_abort_refs": []
+      },
+      {
+        "kind": "RoutineFlowSummary",
+        "routine_name": "load_customer",
+        "routine_kind": "function",
+        "normal_return_possible": true,
+        "guaranteed_exit": true,
+        "declared_aborts": [],
+        "declared_abort_refs": [],
+        "emitted_aborts": [],
+        "emitted_abort_refs": [],
+        "called_routines": [],
+        "propagated_aborts": [],
+        "propagated_abort_refs": []
+      },
+      {
+        "kind": "RoutineFlowSummary",
+        "routine_name": "load_invoice",
+        "routine_kind": "function",
+        "normal_return_possible": true,
+        "guaranteed_exit": true,
+        "declared_aborts": [],
+        "declared_abort_refs": [],
+        "emitted_aborts": [],
+        "emitted_abort_refs": [],
+        "called_routines": [],
+        "propagated_aborts": [],
+        "propagated_abort_refs": []
+      },
+      {
+        "kind": "RoutineFlowSummary",
+        "routine_name": "render_invoice",
+        "routine_kind": "function",
+        "normal_return_possible": true,
+        "guaranteed_exit": true,
+        "declared_aborts": [],
+        "declared_abort_refs": [],
+        "emitted_aborts": [],
+        "emitted_abort_refs": [],
+        "called_routines": [],
+        "propagated_aborts": [],
+        "propagated_abort_refs": []
+      }
+    ],
+    "verifier": {
+      "node": "VerifierReport",
+      "proof_obligations": [],
+      "flow_summaries": [
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "handle",
+          "routine_kind": "function",
+          "normal_return_possible": false,
+          "guaranteed_exit": false,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "load_customer",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "load_invoice",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "render_invoice",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        }
+      ]
+    }
+  }
+}

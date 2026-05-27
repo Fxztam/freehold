@@ -221,7 +221,7 @@ func (p *Project) qualifiedCallDiagnostics(module *ast.Module) []*diagnostic.Dia
 	var diagnostics []*diagnostic.Diagnostic
 	forEachCall(module, func(call ast.CallExpr) {
 		name, ok := callName(call.Callee)
-		if !ok || !isQualifiedCallName(name) || hasRuntimePrefix(name) {
+		if !ok || !isQualifiedCallName(name) || hasRuntimePrefix(name) || isScopeRuntimeMethodName(name) {
 			return
 		}
 		moduleName, ok := p.qualifiedCallModule(name)
@@ -254,6 +254,14 @@ func moduleHasRoutine(module *ast.Module, qualifiedRoutine string) bool {
 	}
 	_, ok := BuildSymbolTable(module).Routines[qualifiedRoutine]
 	return ok
+}
+
+func isScopeRuntimeMethodName(name string) bool {
+	_, method, ok := strings.Cut(name, ".")
+	if !ok {
+		return false
+	}
+	return method == "spawn" || method == "join"
 }
 
 func hasRuntimePrefix(name string) bool {

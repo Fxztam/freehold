@@ -28,6 +28,11 @@ echo [check] Stage 2 generated Python IR vs generated Go IR ^(full JSON hash^)
 %PYTHON% .\tools\compare_ir_hashes.py --comparison full --manifest "%MANIFEST%" --python-root "%TMP_PYTHON_ROOT%" --go-root "%TMP_GO_ROOT%" --out "%TMP_REPORT_ROOT%\generated-parity-full"
 if errorlevel 1 goto :fail
 
+echo.
+echo [check] Stage 2 Go project structure contracts
+%PYTHON% .\tools\verify_stage2_go_project_contracts.py --manifest "%MANIFEST%" --out "%TMP_REPORT_ROOT%\go-project-contracts"
+if errorlevel 1 goto :fail
+
 if exist "%TMP_ROOT%" rmdir /s /q "%TMP_ROOT%"
 popd
 exit /b 0

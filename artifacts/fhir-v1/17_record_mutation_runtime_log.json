@@ -8,29 +8,35 @@
     "patch": 0
   },
   "language_version": "freehold-v1",
-  "entry_module": "examples.banking_records",
+  "entry_module": "App.Main",
   "project": {
     "node": "ProjectGraph",
     "module_order": [
-      "examples.banking_records"
+      "App.Main"
     ],
     "modules": [
       {
         "node": "ModuleEntry",
-        "name": "examples.banking_records",
+        "name": "App.Main",
         "source_ast": {
           "node": "SourceAst",
           "module": {
             "node": "Module",
-            "name": "examples.banking_records",
-            "imports": [],
+            "name": "App.Main",
+            "imports": [
+              {
+                "kind": "ImportDecl",
+                "module": "Std.IO",
+                "exposing": []
+              }
+            ],
             "declarations": [
               {
                 "kind": "RecordTypeDecl",
-                "name": "Address",
+                "name": "Counter",
                 "fields": [
                   {
-                    "name": "city_id",
+                    "name": "count",
                     "type": "Integer",
                     "type_repr": {
                       "kind": "TypeName",
@@ -38,41 +44,11 @@
                     }
                   },
                   {
-                    "name": "verified",
-                    "type": "Boolean",
+                    "name": "label",
+                    "type": "String",
                     "type_repr": {
                       "kind": "TypeName",
-                      "name": "Boolean"
-                    }
-                  }
-                ]
-              },
-              {
-                "kind": "RecordTypeDecl",
-                "name": "Customer",
-                "fields": [
-                  {
-                    "name": "active",
-                    "type": "Boolean",
-                    "type_repr": {
-                      "kind": "TypeName",
-                      "name": "Boolean"
-                    }
-                  },
-                  {
-                    "name": "address",
-                    "type": "Address",
-                    "type_repr": {
-                      "kind": "TypeName",
-                      "name": "Address"
-                    }
-                  },
-                  {
-                    "name": "id",
-                    "type": "Integer",
-                    "type_repr": {
-                      "kind": "TypeName",
-                      "name": "Integer"
+                      "name": "String"
                     }
                   }
                 ]
@@ -185,80 +161,199 @@
                 "body": [
                   {
                     "kind": "LetStmt",
-                    "name": "c",
+                    "name": "counter",
                     "type": {
                       "kind": "TypeName",
-                      "name": "Customer"
+                      "name": "Counter"
                     },
                     "value": {
                       "kind": "CallExpr",
-                      "name": "make_customer",
+                      "name": "make_counter",
                       "args": [
                         {
                           "kind": "PositionalArg",
                           "value": {
                             "kind": "NumberExpr",
-                            "value": 1001
+                            "value": 1
                           }
                         },
                         {
                           "kind": "PositionalArg",
                           "value": {
-                            "kind": "NumberExpr",
-                            "value": 42
+                            "kind": "StringExpr",
+                            "value": "cold-start"
                           }
                         }
                       ]
                     }
                   },
                   {
-                    "kind": "CheckStmt",
-                    "condition": {
+                    "kind": "FieldAssignStmt",
+                    "path": [
+                      "counter",
+                      "count"
+                    ],
+                    "value": {
                       "kind": "BinaryExpr",
-                      "op": "=",
+                      "op": "+",
                       "left": {
                         "kind": "FieldAccessExpr",
                         "path": [
-                          "c",
-                          "id"
+                          "counter",
+                          "count"
                         ]
                       },
                       "right": {
                         "kind": "NumberExpr",
-                        "value": 1001
+                        "value": 4
                       }
                     }
                   },
                   {
-                    "kind": "CheckStmt",
-                    "condition": {
-                      "kind": "BinaryExpr",
-                      "op": "=",
-                      "left": {
-                        "kind": "FieldAccessExpr",
-                        "path": [
-                          "c",
-                          "address",
-                          "city_id"
-                        ]
-                      },
-                      "right": {
-                        "kind": "NumberExpr",
-                        "value": 42
-                      }
+                    "kind": "FieldAssignStmt",
+                    "path": [
+                      "counter",
+                      "label"
+                    ],
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "String.replace",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "FieldAccessExpr",
+                            "path": [
+                              "counter",
+                              "label"
+                            ]
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "cold"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "warm"
+                          }
+                        }
+                      ]
                     }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "marker",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "String.instr",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "FieldAccessExpr",
+                            "path": [
+                              "counter",
+                              "label"
+                            ]
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "warm"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.logf",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "counter = ${}"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "counter",
+                            "count"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.logf",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "label = ${}"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "counter",
+                            "label"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.logf",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "marker = ${}"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "marker"
+                        }
+                      }
+                    ]
                   }
                 ]
               },
               {
                 "kind": "RoutineDecl",
                 "routine_kind": "function",
-                "name": "make_customer",
+                "name": "make_counter",
                 "type_params": [],
                 "is_async": false,
                 "params": [
                   {
-                    "name": "id",
+                    "name": "count",
                     "type": "Integer",
                     "type_repr": {
                       "kind": "TypeName",
@@ -266,19 +361,32 @@
                     }
                   },
                   {
-                    "name": "city_id",
-                    "type": "Integer",
+                    "name": "label",
+                    "type": "String",
                     "type_repr": {
                       "kind": "TypeName",
-                      "name": "Integer"
+                      "name": "String"
                     }
                   }
                 ],
                 "return_type": {
                   "kind": "TypeName",
-                  "name": "Customer"
+                  "name": "Counter"
                 },
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": ">=",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "count"
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 0
+                    }
+                  }
+                ],
                 "aborts": [],
                 "ensures": [
                   {
@@ -288,12 +396,12 @@
                       "kind": "FieldAccessExpr",
                       "path": [
                         "result",
-                        "id"
+                        "count"
                       ]
                     },
                     "right": {
                       "kind": "VarExpr",
-                      "name": "id"
+                      "name": "count"
                     }
                   },
                   {
@@ -303,18 +411,35 @@
                       "kind": "FieldAccessExpr",
                       "path": [
                         "result",
-                        "address",
-                        "city_id"
+                        "label"
                       ]
                     },
                     "right": {
                       "kind": "VarExpr",
-                      "name": "city_id"
+                      "name": "label"
                     }
                   }
                 ],
                 "contracts": {
-                  "requires": [],
+                  "requires": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "requires",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": ">=",
+                        "left": {
+                          "kind": "VarExpr",
+                          "name": "count"
+                        },
+                        "right": {
+                          "kind": "NumberExpr",
+                          "value": 0
+                        }
+                      }
+                    }
+                  ],
                   "ensures": [
                     {
                       "kind": "ContractClause",
@@ -327,12 +452,12 @@
                           "kind": "FieldAccessExpr",
                           "path": [
                             "result",
-                            "id"
+                            "count"
                           ]
                         },
                         "right": {
                           "kind": "VarExpr",
-                          "name": "id"
+                          "name": "count"
                         }
                       }
                     },
@@ -347,13 +472,12 @@
                           "kind": "FieldAccessExpr",
                           "path": [
                             "result",
-                            "address",
-                            "city_id"
+                            "label"
                           ]
                         },
                         "right": {
                           "kind": "VarExpr",
-                          "name": "city_id"
+                          "name": "label"
                         }
                       }
                     }
@@ -393,7 +517,7 @@
                       "available": true,
                       "type": {
                         "kind": "TypeName",
-                        "name": "Customer"
+                        "name": "Counter"
                       }
                     },
                     {
@@ -420,7 +544,7 @@
                       "available": true,
                       "type": {
                         "kind": "TypeName",
-                        "name": "Customer"
+                        "name": "Counter"
                       }
                     },
                     {
@@ -438,7 +562,7 @@
                     "available": true,
                     "type": {
                       "kind": "TypeName",
-                      "name": "Customer"
+                      "name": "Counter"
                     }
                   },
                   "result_error_binding": {
@@ -457,48 +581,22 @@
                       "kind": "ReturnPlain",
                       "value": {
                         "kind": "RecordLiteralExpr",
-                        "type": "Customer",
+                        "type": "Counter",
                         "args": [
                           {
                             "kind": "NamedArg",
-                            "name": "id",
+                            "name": "count",
                             "value": {
                               "kind": "VarExpr",
-                              "name": "id"
+                              "name": "count"
                             }
                           },
                           {
                             "kind": "NamedArg",
-                            "name": "active",
+                            "name": "label",
                             "value": {
-                              "kind": "BoolExpr",
-                              "value": true
-                            }
-                          },
-                          {
-                            "kind": "NamedArg",
-                            "name": "address",
-                            "value": {
-                              "kind": "RecordLiteralExpr",
-                              "type": "Address",
-                              "args": [
-                                {
-                                  "kind": "NamedArg",
-                                  "name": "city_id",
-                                  "value": {
-                                    "kind": "VarExpr",
-                                    "name": "city_id"
-                                  }
-                                },
-                                {
-                                  "kind": "NamedArg",
-                                  "name": "verified",
-                                  "value": {
-                                    "kind": "BoolExpr",
-                                    "value": true
-                                  }
-                                }
-                              ]
+                              "kind": "VarExpr",
+                              "name": "label"
                             }
                           }
                         ]
@@ -591,11 +689,11 @@
             "records": [
               {
                 "kind": "RecordDef",
-                "name": "Address",
+                "name": "Counter",
                 "fields": [
                   {
                     "kind": "RecordFieldDef",
-                    "name": "city_id",
+                    "name": "count",
                     "type": "Integer",
                     "type_repr": {
                       "kind": "TypeName",
@@ -604,45 +702,11 @@
                   },
                   {
                     "kind": "RecordFieldDef",
-                    "name": "verified",
-                    "type": "Boolean",
+                    "name": "label",
+                    "type": "String",
                     "type_repr": {
                       "kind": "TypeName",
-                      "name": "Boolean"
-                    }
-                  }
-                ],
-                "proto_fields": []
-              },
-              {
-                "kind": "RecordDef",
-                "name": "Customer",
-                "fields": [
-                  {
-                    "kind": "RecordFieldDef",
-                    "name": "active",
-                    "type": "Boolean",
-                    "type_repr": {
-                      "kind": "TypeName",
-                      "name": "Boolean"
-                    }
-                  },
-                  {
-                    "kind": "RecordFieldDef",
-                    "name": "address",
-                    "type": "Address",
-                    "type_repr": {
-                      "kind": "TypeName",
-                      "name": "Address"
-                    }
-                  },
-                  {
-                    "kind": "RecordFieldDef",
-                    "name": "id",
-                    "type": "Integer",
-                    "type_repr": {
-                      "kind": "TypeName",
-                      "name": "Integer"
+                      "name": "String"
                     }
                   }
                 ],
@@ -760,80 +824,199 @@
                 "body": [
                   {
                     "kind": "LetStmt",
-                    "name": "c",
+                    "name": "counter",
                     "type": {
                       "kind": "TypeName",
-                      "name": "Customer"
+                      "name": "Counter"
                     },
                     "value": {
                       "kind": "CallExpr",
-                      "name": "make_customer",
+                      "name": "make_counter",
                       "args": [
                         {
                           "kind": "PositionalArg",
                           "value": {
                             "kind": "NumberExpr",
-                            "value": 1001
+                            "value": 1
                           }
                         },
                         {
                           "kind": "PositionalArg",
                           "value": {
-                            "kind": "NumberExpr",
-                            "value": 42
+                            "kind": "StringExpr",
+                            "value": "cold-start"
                           }
                         }
                       ]
                     }
                   },
                   {
-                    "kind": "CheckStmt",
-                    "condition": {
+                    "kind": "FieldAssignStmt",
+                    "path": [
+                      "counter",
+                      "count"
+                    ],
+                    "value": {
                       "kind": "BinaryExpr",
-                      "op": "=",
+                      "op": "+",
                       "left": {
                         "kind": "FieldAccessExpr",
                         "path": [
-                          "c",
-                          "id"
+                          "counter",
+                          "count"
                         ]
                       },
                       "right": {
                         "kind": "NumberExpr",
-                        "value": 1001
+                        "value": 4
                       }
                     }
                   },
                   {
-                    "kind": "CheckStmt",
-                    "condition": {
-                      "kind": "BinaryExpr",
-                      "op": "=",
-                      "left": {
-                        "kind": "FieldAccessExpr",
-                        "path": [
-                          "c",
-                          "address",
-                          "city_id"
-                        ]
-                      },
-                      "right": {
-                        "kind": "NumberExpr",
-                        "value": 42
-                      }
+                    "kind": "FieldAssignStmt",
+                    "path": [
+                      "counter",
+                      "label"
+                    ],
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "String.replace",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "FieldAccessExpr",
+                            "path": [
+                              "counter",
+                              "label"
+                            ]
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "cold"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "warm"
+                          }
+                        }
+                      ]
                     }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "marker",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "String.instr",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "FieldAccessExpr",
+                            "path": [
+                              "counter",
+                              "label"
+                            ]
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "warm"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.logf",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "counter = ${}"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "counter",
+                            "count"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.logf",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "label = ${}"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "counter",
+                            "label"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.logf",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "marker = ${}"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "marker"
+                        }
+                      }
+                    ]
                   }
                 ]
               },
               {
                 "kind": "RoutineDecl",
                 "routine_kind": "function",
-                "name": "make_customer",
+                "name": "make_counter",
                 "type_params": [],
                 "is_async": false,
                 "params": [
                   {
-                    "name": "id",
+                    "name": "count",
                     "type": "Integer",
                     "type_repr": {
                       "kind": "TypeName",
@@ -841,19 +1024,32 @@
                     }
                   },
                   {
-                    "name": "city_id",
-                    "type": "Integer",
+                    "name": "label",
+                    "type": "String",
                     "type_repr": {
                       "kind": "TypeName",
-                      "name": "Integer"
+                      "name": "String"
                     }
                   }
                 ],
                 "return_type": {
                   "kind": "TypeName",
-                  "name": "Customer"
+                  "name": "Counter"
                 },
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": ">=",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "count"
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 0
+                    }
+                  }
+                ],
                 "aborts": [],
                 "ensures": [
                   {
@@ -863,12 +1059,12 @@
                       "kind": "FieldAccessExpr",
                       "path": [
                         "result",
-                        "id"
+                        "count"
                       ]
                     },
                     "right": {
                       "kind": "VarExpr",
-                      "name": "id"
+                      "name": "count"
                     }
                   },
                   {
@@ -878,18 +1074,35 @@
                       "kind": "FieldAccessExpr",
                       "path": [
                         "result",
-                        "address",
-                        "city_id"
+                        "label"
                       ]
                     },
                     "right": {
                       "kind": "VarExpr",
-                      "name": "city_id"
+                      "name": "label"
                     }
                   }
                 ],
                 "contracts": {
-                  "requires": [],
+                  "requires": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "requires",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": ">=",
+                        "left": {
+                          "kind": "VarExpr",
+                          "name": "count"
+                        },
+                        "right": {
+                          "kind": "NumberExpr",
+                          "value": 0
+                        }
+                      }
+                    }
+                  ],
                   "ensures": [
                     {
                       "kind": "ContractClause",
@@ -902,12 +1115,12 @@
                           "kind": "FieldAccessExpr",
                           "path": [
                             "result",
-                            "id"
+                            "count"
                           ]
                         },
                         "right": {
                           "kind": "VarExpr",
-                          "name": "id"
+                          "name": "count"
                         }
                       }
                     },
@@ -922,13 +1135,12 @@
                           "kind": "FieldAccessExpr",
                           "path": [
                             "result",
-                            "address",
-                            "city_id"
+                            "label"
                           ]
                         },
                         "right": {
                           "kind": "VarExpr",
-                          "name": "city_id"
+                          "name": "label"
                         }
                       }
                     }
@@ -968,7 +1180,7 @@
                       "available": true,
                       "type": {
                         "kind": "TypeName",
-                        "name": "Customer"
+                        "name": "Counter"
                       }
                     },
                     {
@@ -995,7 +1207,7 @@
                       "available": true,
                       "type": {
                         "kind": "TypeName",
-                        "name": "Customer"
+                        "name": "Counter"
                       }
                     },
                     {
@@ -1013,7 +1225,7 @@
                     "available": true,
                     "type": {
                       "kind": "TypeName",
-                      "name": "Customer"
+                      "name": "Counter"
                     }
                   },
                   "result_error_binding": {
@@ -1032,48 +1244,22 @@
                       "kind": "ReturnPlain",
                       "value": {
                         "kind": "RecordLiteralExpr",
-                        "type": "Customer",
+                        "type": "Counter",
                         "args": [
                           {
                             "kind": "NamedArg",
-                            "name": "id",
+                            "name": "count",
                             "value": {
                               "kind": "VarExpr",
-                              "name": "id"
+                              "name": "count"
                             }
                           },
                           {
                             "kind": "NamedArg",
-                            "name": "active",
+                            "name": "label",
                             "value": {
-                              "kind": "BoolExpr",
-                              "value": true
-                            }
-                          },
-                          {
-                            "kind": "NamedArg",
-                            "name": "address",
-                            "value": {
-                              "kind": "RecordLiteralExpr",
-                              "type": "Address",
-                              "args": [
-                                {
-                                  "kind": "NamedArg",
-                                  "name": "city_id",
-                                  "value": {
-                                    "kind": "VarExpr",
-                                    "name": "city_id"
-                                  }
-                                },
-                                {
-                                  "kind": "NamedArg",
-                                  "name": "verified",
-                                  "value": {
-                                    "kind": "BoolExpr",
-                                    "value": true
-                                  }
-                                }
-                              ]
+                              "kind": "VarExpr",
+                              "name": "label"
                             }
                           }
                         ]
@@ -1097,14 +1283,14 @@
                 "emitted_aborts": [],
                 "emitted_abort_refs": [],
                 "called_routines": [
-                  "make_customer"
+                  "make_counter"
                 ],
                 "propagated_aborts": [],
                 "propagated_abort_refs": []
               },
               {
                 "kind": "RoutineFlowSummary",
-                "routine_name": "make_customer",
+                "routine_name": "make_counter",
                 "routine_kind": "function",
                 "normal_return_possible": true,
                 "guaranteed_exit": true,
@@ -1132,14 +1318,14 @@
                   "emitted_aborts": [],
                   "emitted_abort_refs": [],
                   "called_routines": [
-                    "make_customer"
+                    "make_counter"
                   ],
                   "propagated_aborts": [],
                   "propagated_abort_refs": []
                 },
                 {
                   "kind": "RoutineFlowSummary",
-                  "routine_name": "make_customer",
+                  "routine_name": "make_counter",
                   "routine_kind": "function",
                   "normal_return_possible": true,
                   "guaranteed_exit": true,
@@ -1157,15 +1343,21 @@
         },
         "module": {
           "node": "Module",
-          "name": "examples.banking_records",
-          "imports": [],
+          "name": "App.Main",
+          "imports": [
+            {
+              "kind": "ImportDecl",
+              "module": "Std.IO",
+              "exposing": []
+            }
+          ],
           "declarations": [
             {
               "kind": "RecordTypeDecl",
-              "name": "Address",
+              "name": "Counter",
               "fields": [
                 {
-                  "name": "city_id",
+                  "name": "count",
                   "type": "Integer",
                   "type_repr": {
                     "kind": "TypeName",
@@ -1173,41 +1365,11 @@
                   }
                 },
                 {
-                  "name": "verified",
-                  "type": "Boolean",
+                  "name": "label",
+                  "type": "String",
                   "type_repr": {
                     "kind": "TypeName",
-                    "name": "Boolean"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "RecordTypeDecl",
-              "name": "Customer",
-              "fields": [
-                {
-                  "name": "active",
-                  "type": "Boolean",
-                  "type_repr": {
-                    "kind": "TypeName",
-                    "name": "Boolean"
-                  }
-                },
-                {
-                  "name": "address",
-                  "type": "Address",
-                  "type_repr": {
-                    "kind": "TypeName",
-                    "name": "Address"
-                  }
-                },
-                {
-                  "name": "id",
-                  "type": "Integer",
-                  "type_repr": {
-                    "kind": "TypeName",
-                    "name": "Integer"
+                    "name": "String"
                   }
                 }
               ]
@@ -1320,80 +1482,199 @@
               "body": [
                 {
                   "kind": "LetStmt",
-                  "name": "c",
+                  "name": "counter",
                   "type": {
                     "kind": "TypeName",
-                    "name": "Customer"
+                    "name": "Counter"
                   },
                   "value": {
                     "kind": "CallExpr",
-                    "name": "make_customer",
+                    "name": "make_counter",
                     "args": [
                       {
                         "kind": "PositionalArg",
                         "value": {
                           "kind": "NumberExpr",
-                          "value": 1001
+                          "value": 1
                         }
                       },
                       {
                         "kind": "PositionalArg",
                         "value": {
-                          "kind": "NumberExpr",
-                          "value": 42
+                          "kind": "StringExpr",
+                          "value": "cold-start"
                         }
                       }
                     ]
                   }
                 },
                 {
-                  "kind": "CheckStmt",
-                  "condition": {
+                  "kind": "FieldAssignStmt",
+                  "path": [
+                    "counter",
+                    "count"
+                  ],
+                  "value": {
                     "kind": "BinaryExpr",
-                    "op": "=",
+                    "op": "+",
                     "left": {
                       "kind": "FieldAccessExpr",
                       "path": [
-                        "c",
-                        "id"
+                        "counter",
+                        "count"
                       ]
                     },
                     "right": {
                       "kind": "NumberExpr",
-                      "value": 1001
+                      "value": 4
                     }
                   }
                 },
                 {
-                  "kind": "CheckStmt",
-                  "condition": {
-                    "kind": "BinaryExpr",
-                    "op": "=",
-                    "left": {
-                      "kind": "FieldAccessExpr",
-                      "path": [
-                        "c",
-                        "address",
-                        "city_id"
-                      ]
-                    },
-                    "right": {
-                      "kind": "NumberExpr",
-                      "value": 42
-                    }
+                  "kind": "FieldAssignStmt",
+                  "path": [
+                    "counter",
+                    "label"
+                  ],
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "String.replace",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "counter",
+                            "label"
+                          ]
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "cold"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "warm"
+                        }
+                      }
+                    ]
                   }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "marker",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "String.instr",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "counter",
+                            "label"
+                          ]
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "warm"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.logf",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "counter = ${}"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "counter",
+                          "count"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.logf",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "label = ${}"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "counter",
+                          "label"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.logf",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "marker = ${}"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "marker"
+                      }
+                    }
+                  ]
                 }
               ]
             },
             {
               "kind": "RoutineDecl",
               "routine_kind": "function",
-              "name": "make_customer",
+              "name": "make_counter",
               "type_params": [],
               "is_async": false,
               "params": [
                 {
-                  "name": "id",
+                  "name": "count",
                   "type": "Integer",
                   "type_repr": {
                     "kind": "TypeName",
@@ -1401,19 +1682,32 @@
                   }
                 },
                 {
-                  "name": "city_id",
-                  "type": "Integer",
+                  "name": "label",
+                  "type": "String",
                   "type_repr": {
                     "kind": "TypeName",
-                    "name": "Integer"
+                    "name": "String"
                   }
                 }
               ],
               "return_type": {
                 "kind": "TypeName",
-                "name": "Customer"
+                "name": "Counter"
               },
-              "requires": [],
+              "requires": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": ">=",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "count"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              ],
               "aborts": [],
               "ensures": [
                 {
@@ -1423,12 +1717,12 @@
                     "kind": "FieldAccessExpr",
                     "path": [
                       "result",
-                      "id"
+                      "count"
                     ]
                   },
                   "right": {
                     "kind": "VarExpr",
-                    "name": "id"
+                    "name": "count"
                   }
                 },
                 {
@@ -1438,18 +1732,35 @@
                     "kind": "FieldAccessExpr",
                     "path": [
                       "result",
-                      "address",
-                      "city_id"
+                      "label"
                     ]
                   },
                   "right": {
                     "kind": "VarExpr",
-                    "name": "city_id"
+                    "name": "label"
                   }
                 }
               ],
               "contracts": {
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "requires",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": ">=",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "count"
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 0
+                      }
+                    }
+                  }
+                ],
                 "ensures": [
                   {
                     "kind": "ContractClause",
@@ -1462,12 +1773,12 @@
                         "kind": "FieldAccessExpr",
                         "path": [
                           "result",
-                          "id"
+                          "count"
                         ]
                       },
                       "right": {
                         "kind": "VarExpr",
-                        "name": "id"
+                        "name": "count"
                       }
                     }
                   },
@@ -1482,13 +1793,12 @@
                         "kind": "FieldAccessExpr",
                         "path": [
                           "result",
-                          "address",
-                          "city_id"
+                          "label"
                         ]
                       },
                       "right": {
                         "kind": "VarExpr",
-                        "name": "city_id"
+                        "name": "label"
                       }
                     }
                   }
@@ -1528,7 +1838,7 @@
                     "available": true,
                     "type": {
                       "kind": "TypeName",
-                      "name": "Customer"
+                      "name": "Counter"
                     }
                   },
                   {
@@ -1555,7 +1865,7 @@
                     "available": true,
                     "type": {
                       "kind": "TypeName",
-                      "name": "Customer"
+                      "name": "Counter"
                     }
                   },
                   {
@@ -1573,7 +1883,7 @@
                   "available": true,
                   "type": {
                     "kind": "TypeName",
-                    "name": "Customer"
+                    "name": "Counter"
                   }
                 },
                 "result_error_binding": {
@@ -1592,48 +1902,22 @@
                     "kind": "ReturnPlain",
                     "value": {
                       "kind": "RecordLiteralExpr",
-                      "type": "Customer",
+                      "type": "Counter",
                       "args": [
                         {
                           "kind": "NamedArg",
-                          "name": "id",
+                          "name": "count",
                           "value": {
                             "kind": "VarExpr",
-                            "name": "id"
+                            "name": "count"
                           }
                         },
                         {
                           "kind": "NamedArg",
-                          "name": "active",
+                          "name": "label",
                           "value": {
-                            "kind": "BoolExpr",
-                            "value": true
-                          }
-                        },
-                        {
-                          "kind": "NamedArg",
-                          "name": "address",
-                          "value": {
-                            "kind": "RecordLiteralExpr",
-                            "type": "Address",
-                            "args": [
-                              {
-                                "kind": "NamedArg",
-                                "name": "city_id",
-                                "value": {
-                                  "kind": "VarExpr",
-                                  "name": "city_id"
-                                }
-                              },
-                              {
-                                "kind": "NamedArg",
-                                "name": "verified",
-                                "value": {
-                                  "kind": "BoolExpr",
-                                  "value": true
-                                }
-                              }
-                            ]
+                            "kind": "VarExpr",
+                            "name": "label"
                           }
                         }
                       ]
@@ -1723,11 +2007,11 @@
           "records": [
             {
               "kind": "RecordDef",
-              "name": "Address",
+              "name": "Counter",
               "fields": [
                 {
                   "kind": "RecordFieldDef",
-                  "name": "city_id",
+                  "name": "count",
                   "type": "Integer",
                   "type_repr": {
                     "kind": "TypeName",
@@ -1736,45 +2020,11 @@
                 },
                 {
                   "kind": "RecordFieldDef",
-                  "name": "verified",
-                  "type": "Boolean",
+                  "name": "label",
+                  "type": "String",
                   "type_repr": {
                     "kind": "TypeName",
-                    "name": "Boolean"
-                  }
-                }
-              ],
-              "proto_fields": []
-            },
-            {
-              "kind": "RecordDef",
-              "name": "Customer",
-              "fields": [
-                {
-                  "kind": "RecordFieldDef",
-                  "name": "active",
-                  "type": "Boolean",
-                  "type_repr": {
-                    "kind": "TypeName",
-                    "name": "Boolean"
-                  }
-                },
-                {
-                  "kind": "RecordFieldDef",
-                  "name": "address",
-                  "type": "Address",
-                  "type_repr": {
-                    "kind": "TypeName",
-                    "name": "Address"
-                  }
-                },
-                {
-                  "kind": "RecordFieldDef",
-                  "name": "id",
-                  "type": "Integer",
-                  "type_repr": {
-                    "kind": "TypeName",
-                    "name": "Integer"
+                    "name": "String"
                   }
                 }
               ],
@@ -1892,80 +2142,199 @@
               "body": [
                 {
                   "kind": "LetStmt",
-                  "name": "c",
+                  "name": "counter",
                   "type": {
                     "kind": "TypeName",
-                    "name": "Customer"
+                    "name": "Counter"
                   },
                   "value": {
                     "kind": "CallExpr",
-                    "name": "make_customer",
+                    "name": "make_counter",
                     "args": [
                       {
                         "kind": "PositionalArg",
                         "value": {
                           "kind": "NumberExpr",
-                          "value": 1001
+                          "value": 1
                         }
                       },
                       {
                         "kind": "PositionalArg",
                         "value": {
-                          "kind": "NumberExpr",
-                          "value": 42
+                          "kind": "StringExpr",
+                          "value": "cold-start"
                         }
                       }
                     ]
                   }
                 },
                 {
-                  "kind": "CheckStmt",
-                  "condition": {
+                  "kind": "FieldAssignStmt",
+                  "path": [
+                    "counter",
+                    "count"
+                  ],
+                  "value": {
                     "kind": "BinaryExpr",
-                    "op": "=",
+                    "op": "+",
                     "left": {
                       "kind": "FieldAccessExpr",
                       "path": [
-                        "c",
-                        "id"
+                        "counter",
+                        "count"
                       ]
                     },
                     "right": {
                       "kind": "NumberExpr",
-                      "value": 1001
+                      "value": 4
                     }
                   }
                 },
                 {
-                  "kind": "CheckStmt",
-                  "condition": {
-                    "kind": "BinaryExpr",
-                    "op": "=",
-                    "left": {
-                      "kind": "FieldAccessExpr",
-                      "path": [
-                        "c",
-                        "address",
-                        "city_id"
-                      ]
-                    },
-                    "right": {
-                      "kind": "NumberExpr",
-                      "value": 42
-                    }
+                  "kind": "FieldAssignStmt",
+                  "path": [
+                    "counter",
+                    "label"
+                  ],
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "String.replace",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "counter",
+                            "label"
+                          ]
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "cold"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "warm"
+                        }
+                      }
+                    ]
                   }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "marker",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Integer"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "String.instr",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "counter",
+                            "label"
+                          ]
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "warm"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.logf",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "counter = ${}"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "counter",
+                          "count"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.logf",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "label = ${}"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "counter",
+                          "label"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.logf",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "marker = ${}"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "marker"
+                      }
+                    }
+                  ]
                 }
               ]
             },
             {
               "kind": "RoutineDecl",
               "routine_kind": "function",
-              "name": "make_customer",
+              "name": "make_counter",
               "type_params": [],
               "is_async": false,
               "params": [
                 {
-                  "name": "id",
+                  "name": "count",
                   "type": "Integer",
                   "type_repr": {
                     "kind": "TypeName",
@@ -1973,19 +2342,32 @@
                   }
                 },
                 {
-                  "name": "city_id",
-                  "type": "Integer",
+                  "name": "label",
+                  "type": "String",
                   "type_repr": {
                     "kind": "TypeName",
-                    "name": "Integer"
+                    "name": "String"
                   }
                 }
               ],
               "return_type": {
                 "kind": "TypeName",
-                "name": "Customer"
+                "name": "Counter"
               },
-              "requires": [],
+              "requires": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": ">=",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "count"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              ],
               "aborts": [],
               "ensures": [
                 {
@@ -1995,12 +2377,12 @@
                     "kind": "FieldAccessExpr",
                     "path": [
                       "result",
-                      "id"
+                      "count"
                     ]
                   },
                   "right": {
                     "kind": "VarExpr",
-                    "name": "id"
+                    "name": "count"
                   }
                 },
                 {
@@ -2010,18 +2392,35 @@
                     "kind": "FieldAccessExpr",
                     "path": [
                       "result",
-                      "address",
-                      "city_id"
+                      "label"
                     ]
                   },
                   "right": {
                     "kind": "VarExpr",
-                    "name": "city_id"
+                    "name": "label"
                   }
                 }
               ],
               "contracts": {
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "requires",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": ">=",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "count"
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 0
+                      }
+                    }
+                  }
+                ],
                 "ensures": [
                   {
                     "kind": "ContractClause",
@@ -2034,12 +2433,12 @@
                         "kind": "FieldAccessExpr",
                         "path": [
                           "result",
-                          "id"
+                          "count"
                         ]
                       },
                       "right": {
                         "kind": "VarExpr",
-                        "name": "id"
+                        "name": "count"
                       }
                     }
                   },
@@ -2054,13 +2453,12 @@
                         "kind": "FieldAccessExpr",
                         "path": [
                           "result",
-                          "address",
-                          "city_id"
+                          "label"
                         ]
                       },
                       "right": {
                         "kind": "VarExpr",
-                        "name": "city_id"
+                        "name": "label"
                       }
                     }
                   }
@@ -2100,7 +2498,7 @@
                     "available": true,
                     "type": {
                       "kind": "TypeName",
-                      "name": "Customer"
+                      "name": "Counter"
                     }
                   },
                   {
@@ -2127,7 +2525,7 @@
                     "available": true,
                     "type": {
                       "kind": "TypeName",
-                      "name": "Customer"
+                      "name": "Counter"
                     }
                   },
                   {
@@ -2145,7 +2543,7 @@
                   "available": true,
                   "type": {
                     "kind": "TypeName",
-                    "name": "Customer"
+                    "name": "Counter"
                   }
                 },
                 "result_error_binding": {
@@ -2164,48 +2562,22 @@
                     "kind": "ReturnPlain",
                     "value": {
                       "kind": "RecordLiteralExpr",
-                      "type": "Customer",
+                      "type": "Counter",
                       "args": [
                         {
                           "kind": "NamedArg",
-                          "name": "id",
+                          "name": "count",
                           "value": {
                             "kind": "VarExpr",
-                            "name": "id"
+                            "name": "count"
                           }
                         },
                         {
                           "kind": "NamedArg",
-                          "name": "active",
+                          "name": "label",
                           "value": {
-                            "kind": "BoolExpr",
-                            "value": true
-                          }
-                        },
-                        {
-                          "kind": "NamedArg",
-                          "name": "address",
-                          "value": {
-                            "kind": "RecordLiteralExpr",
-                            "type": "Address",
-                            "args": [
-                              {
-                                "kind": "NamedArg",
-                                "name": "city_id",
-                                "value": {
-                                  "kind": "VarExpr",
-                                  "name": "city_id"
-                                }
-                              },
-                              {
-                                "kind": "NamedArg",
-                                "name": "verified",
-                                "value": {
-                                  "kind": "BoolExpr",
-                                  "value": true
-                                }
-                              }
-                            ]
+                            "kind": "VarExpr",
+                            "name": "label"
                           }
                         }
                       ]
@@ -2229,14 +2601,14 @@
               "emitted_aborts": [],
               "emitted_abort_refs": [],
               "called_routines": [
-                "make_customer"
+                "make_counter"
               ],
               "propagated_aborts": [],
               "propagated_abort_refs": []
             },
             {
               "kind": "RoutineFlowSummary",
-              "routine_name": "make_customer",
+              "routine_name": "make_counter",
               "routine_kind": "function",
               "normal_return_possible": true,
               "guaranteed_exit": true,
@@ -2264,14 +2636,14 @@
                 "emitted_aborts": [],
                 "emitted_abort_refs": [],
                 "called_routines": [
-                  "make_customer"
+                  "make_counter"
                 ],
                 "propagated_aborts": [],
                 "propagated_abort_refs": []
               },
               {
                 "kind": "RoutineFlowSummary",
-                "routine_name": "make_customer",
+                "routine_name": "make_counter",
                 "routine_kind": "function",
                 "normal_return_possible": true,
                 "guaranteed_exit": true,
@@ -2288,7 +2660,28 @@
         }
       }
     ],
-    "import_graph": [],
-    "runtime_modules": []
+    "import_graph": [
+      {
+        "node": "ImportEdge",
+        "from_module": "App.Main",
+        "to_module": "Std.IO",
+        "is_runtime": true,
+        "exposing": [],
+        "qualified_exposing": []
+      }
+    ],
+    "runtime_modules": [
+      {
+        "node": "RuntimeModule",
+        "name": "Std.IO",
+        "exports": [
+          "log",
+          "log_bool",
+          "log_double",
+          "log_int",
+          "logf"
+        ]
+      }
+    ]
   }
 }
