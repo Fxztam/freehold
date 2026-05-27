@@ -934,3 +934,25 @@
   - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Parser.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 28/28 lines.
+
+## Stage-3 compiler_core_v1 record module fixture
+
+- Added the next controlled parser form: `module Demo type X is record end record end Demo`.
+- Extended `Compiler.Core.Ast` with:
+  - `RecordTypeNode`.
+  - `ModuleWithRecordNode`.
+  - `make_record_type_node`.
+  - `make_module_with_record_node`.
+  - `record_type_text`.
+  - `module_with_record_text`.
+- Extended `Compiler.Core.Lexer` with `MiniRecordModuleTokens`, `lex_mini_record_module`, token count, and deterministic lexer summary.
+- Extended `Compiler.Core.Parser` with `parse_mini_record_module`, `parse_mini_record_module_result`, and `mini_record_module_parser_summary`.
+- Extended `App.Main` and the Stage-3 runtime Golden with lexer/parser lines for the record-module fixture.
+- Updated `artifacts/stage3/compiler_core_v1/manifest.json` so the Stage-3 contract checks generated Go for the new AST nodes, record-module lexer helpers, parser helpers, and parser output lines.
+- Updated `OPEN-STAGE3-COMPILER-CORE.md`; next planned compiler-core fixtures are function/procedure forms, with imports after that.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Ast.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Lexer.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Parser.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched.

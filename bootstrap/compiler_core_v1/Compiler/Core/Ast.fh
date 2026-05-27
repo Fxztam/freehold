@@ -22,6 +22,16 @@ type ModuleNode is record
     name: IdentifierNode
 end record
 
+type RecordTypeNode is record
+    span: SourceSpan
+    name: IdentifierNode
+end record
+
+type ModuleWithRecordNode is record
+    module_node: ModuleNode
+    record_type: RecordTypeNode
+end record
+
 function make_ast_node_kind(name: String) returns AstNodeKind
 requires String.instr(name, "") = 0
 ensures result.name = name
@@ -50,6 +60,20 @@ is
     return ModuleNode { span: span, name: name }
 end make_module_node
 
+function make_record_type_node(span: SourceSpan, name: IdentifierNode) returns RecordTypeNode
+requires String.instr(name.name, "") = 0
+ensures result.name.name = name.name
+is
+    return RecordTypeNode { span: span, name: name }
+end make_record_type_node
+
+function make_module_with_record_node(module_node: ModuleNode, record_type: RecordTypeNode) returns ModuleWithRecordNode
+requires String.instr(module_node.name.name, "") = 0, String.instr(record_type.name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name, result.record_type.name.name = record_type.name.name
+is
+    return ModuleWithRecordNode { module_node: module_node, record_type: record_type }
+end make_module_with_record_node
+
 function identifier_key(identifier: IdentifierNode) returns String
 requires String.instr(identifier.name, "") = 0
 ensures String.instr(result, identifier.name) >= 0
@@ -77,5 +101,19 @@ ensures String.instr(result, module_node.name.name) >= 0
 is
     return String.template("${key}:identifier=${identifier}", key: module_key(module_node), identifier: identifier_key(module_node.name))
 end module_text
+
+function record_type_text(record_type: RecordTypeNode) returns String
+requires String.instr(record_type.name.name, "") = 0
+ensures String.instr(result, record_type.name.name) >= 0
+is
+    return String.template("RecordType:${name}@${source}:${line}:${column}", name: record_type.name.name, source: record_type.span.source_name, line: record_type.span.start_line, column: record_type.span.start_column)
+end record_type_text
+
+function module_with_record_text(module_node: ModuleWithRecordNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.record_type.name.name, "") = 0
+ensures String.instr(result, module_node.record_type.name.name) >= 0
+is
+    return String.template("${module}:record=${record}", module: module_text(module_node.module_node), record: record_type_text(module_node.record_type))
+end module_with_record_text
 
 end Compiler.Core.Ast
