@@ -1,0 +1,77 @@
+{
+  "schema": "stage3-compiler-core-contracts-v1",
+  "stage": "stage3-compiler-core-v1",
+  "entry": "bootstrap/compiler_core_v1/App/Main.fh",
+  "policy": {
+    "slice": "first Freehold compiler-core artifact",
+    "purpose": "prove Stage0 can build a small Freehold compiler-core project",
+    "total_contracts": 1
+  },
+  "contracts": [
+    {
+      "name": "compiler_core_v1_go_project",
+      "source_file": "bootstrap/compiler_core_v1/App/Main.fh",
+      "expected": {
+        "module_path": "freehold.local",
+        "total_files": 3,
+        "total_build_files": 3,
+        "total_extra_files": 0,
+        "supported": true
+      },
+      "files": [
+        {
+          "output_path": "app/main/main.go",
+          "module": "App.Main",
+          "supported": true,
+          "must_contain": [
+            "func BuildSampleDiagnostic() compiler_core_diagnostics.Diagnostic",
+            "func Main()",
+            "stage3.package = %v",
+            "stage3.diag.text = %v"
+          ]
+        },
+        {
+          "output_path": "compiler/core/names/names.go",
+          "module": "Compiler.Core.Names",
+          "supported": true,
+          "must_contain": [
+            "type ModuleName struct",
+            "type SymbolName struct",
+            "type GoPackagePath struct",
+            "func ModuleToGoPackage(moduleName ModuleName) GoPackagePath",
+            "strings.ReplaceAll(moduleName.Full, \".\", \"/\")"
+          ]
+        },
+        {
+          "output_path": "compiler/core/diagnostics/diagnostics.go",
+          "module": "Compiler.Core.Diagnostics",
+          "supported": true,
+          "must_contain": [
+            "type Diagnostic struct",
+            "func MakeDiagnostic(code string, message string, moduleName compiler_core_names.ModuleName, symbolName compiler_core_names.SymbolName) Diagnostic",
+            "func DiagnosticKey(diagnostic Diagnostic) string",
+            "func DiagnosticText(diagnostic Diagnostic) string"
+          ]
+        }
+      ],
+      "build_files": [
+        {
+          "output_path": "go.mod",
+          "kind": "go_mod",
+          "must_contain": ["module freehold.local", "go 1.22"]
+        },
+        {
+          "output_path": "cmd/stage3_compiler_core_v1/main.go",
+          "kind": "go_main",
+          "must_contain": ["app_main.Main()"]
+        },
+        {
+          "output_path": "build.cmd",
+          "kind": "build_cmd",
+          "must_contain": ["go test ./...", "stage3_compiler_core_v1.exe"]
+        }
+      ],
+      "extra_files": []
+    }
+  ]
+}

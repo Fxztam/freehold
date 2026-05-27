@@ -778,3 +778,18 @@
   - Stage0 Go-codegen project contract for building that Freehold compiler-core artifact.
 - Validation:
   - `compare-ir-compiler-v1-stage2.cmd` -> exit 0; generated 6, skipped 0, semantic 6/6, full JSON 6/6, Go project contracts 3/3.
+
+## Stage-3 compiler_core_v1 first slice
+
+- Committed the Stage-2 exit-path documentation first as `93a248d Document Stage 2 exit path`.
+- Added the first real Stage-3 Freehold compiler-core mini-project under `bootstrap/compiler_core_v1`:
+  - `Compiler.Core.Names` with `ModuleName`, `SymbolName`, `GoPackagePath`, and helpers for Go package/export names.
+  - `Compiler.Core.Diagnostics` with `Diagnostic`, diagnostic-key, and diagnostic-text helpers.
+  - `App.Main` smoke entry using both compiler-core modules.
+- Added the Stage-3 contract manifest at `artifacts/stage3/compiler_core_v1/manifest.json`.
+- Added `tools/verify_stage3_compiler_core_contracts.py` and `verify-stage3-compiler-core-v1.cmd`.
+- Added `OPEN-STAGE3-COMPILER-CORE.md` to describe the Stage-3 slice, source layout, gate, manifest, and next steps.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m py_compile .\tools\verify_stage3_compiler_core_contracts.py` -> exit 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project `go test ./...` and executable build passed.

@@ -1,0 +1,33 @@
+module Compiler.Core.Diagnostics
+
+import Compiler.Core.Names exposing ModuleName, SymbolName
+
+type Diagnostic is record
+    code: String
+    message: String
+    module_name: ModuleName
+    symbol_name: SymbolName
+end record
+
+function make_diagnostic(code: String, message: String, module_name: ModuleName, symbol_name: SymbolName) returns Diagnostic
+requires String.instr(code, "FH-") = 0
+ensures result.code = code, result.message = message
+is
+    return Diagnostic { code: code, message: message, module_name: module_name, symbol_name: symbol_name }
+end make_diagnostic
+
+function diagnostic_key(diagnostic: Diagnostic) returns String
+requires String.instr(diagnostic.code, "FH-") = 0
+ensures String.instr(result, diagnostic.code) = 0
+is
+    return String.template("${code}:${module}.${symbol}", code: diagnostic.code, module: diagnostic.module_name.full, symbol: diagnostic.symbol_name.raw)
+end diagnostic_key
+
+function diagnostic_text(diagnostic: Diagnostic) returns String
+requires String.instr(diagnostic.code, "FH-") = 0
+ensures String.instr(result, diagnostic.message) >= 0
+is
+    return String.template("${key}:${message}", key: diagnostic_key(diagnostic), message: diagnostic.message)
+end diagnostic_text
+
+end Compiler.Core.Diagnostics

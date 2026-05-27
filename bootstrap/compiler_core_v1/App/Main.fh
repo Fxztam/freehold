@@ -1,0 +1,28 @@
+module App.Main
+
+import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic_text, make_diagnostic
+import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, exported_go_name, make_module_name, make_symbol_name, module_to_go_package
+import Std.IO
+
+function build_sample_diagnostic() returns Diagnostic
+is
+    let module_name: ModuleName = make_module_name("Compiler.Core.Names")
+    let symbol_name: SymbolName = make_symbol_name("module_to_go_package")
+    return make_diagnostic("FH-BLD-9001", "package path is stable", module_name, symbol_name)
+end build_sample_diagnostic
+
+procedure main()
+is
+    let diagnostic: Diagnostic = build_sample_diagnostic()
+    let module_name: ModuleName = make_module_name("Compiler.Core.Names")
+    let symbol_name: SymbolName = make_symbol_name("module_to_go_package")
+    let package_path: GoPackagePath = module_to_go_package(module_name)
+    let exported: String = exported_go_name(symbol_name)
+
+    call Std.IO.logf("stage3.package = ${}", package_path.path)
+    call Std.IO.logf("stage3.export = ${}", exported)
+    call Std.IO.logf("stage3.diag.key = ${}", diagnostic_key(diagnostic))
+    call Std.IO.logf("stage3.diag.text = ${}", diagnostic_text(diagnostic))
+end main
+
+end App.Main

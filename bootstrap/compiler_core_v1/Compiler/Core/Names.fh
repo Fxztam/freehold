@@ -1,0 +1,43 @@
+module Compiler.Core.Names
+
+type ModuleName is record
+    full: String
+end record
+
+type SymbolName is record
+    raw: String
+end record
+
+type GoPackagePath is record
+    path: String
+end record
+
+function make_module_name(full: String) returns ModuleName
+requires String.instr(full, "") = 0
+ensures result.full = full
+is
+    return ModuleName { full: full }
+end make_module_name
+
+function make_symbol_name(raw: String) returns SymbolName
+requires String.instr(raw, "") = 0
+ensures result.raw = raw
+is
+    return SymbolName { raw: raw }
+end make_symbol_name
+
+function module_to_go_package(module_name: ModuleName) returns GoPackagePath
+requires String.instr(module_name.full, "") = 0
+ensures String.instr(result.path, "/") >= 0
+is
+    return GoPackagePath { path: String.replace(module_name.full, ".", "/") }
+end module_to_go_package
+
+function exported_go_name(symbol_name: SymbolName) returns String
+requires String.instr(symbol_name.raw, "") = 0
+ensures result = symbol_name.raw
+is
+    return symbol_name.raw
+end exported_go_name
+
+end Compiler.Core.Names
