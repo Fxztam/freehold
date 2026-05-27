@@ -45,6 +45,7 @@ SUPPORTED_EXAMPLES = [
     SupportedExample("14_big_loop_runtime_log", "examples/compiler_v1/14_big_loop_runtime_log/App/Main.fh", "examples/expected_logs/compiler_v1_big_loop_runtime_log.expected.log"),
     SupportedExample("15_result_abort_array_runtime_builtins", "examples/compiler_v1/15_result_abort_array_runtime_builtins/App/Main.fh", "examples/expected_logs/compiler_v1_result_abort_array_runtime_builtins.expected.log"),
     SupportedExample("16_abort_propagation_runtime_log", "examples/compiler_v1/16_abort_propagation_runtime_log/App/Main.fh", "examples/expected_logs/compiler_v1_abort_propagation_runtime_log.expected.log"),
+    SupportedExample("17_mutation_record_runtime_log", "examples/compiler_v1/17_mutation_record_update_runtime_log/App/Main.fh", "examples/expected_logs/compiler_v1_mutation_record_update_runtime_log.expected.log"),
     SupportedExample("17_record_mutation_runtime_log", "examples/compiler_v1/17_record_mutation_runtime_log/App/Main.fh", "examples/expected_logs/compiler_v1_record_mutation_runtime_log.expected.log"),
     SupportedExample("18_result_error_branch_runtime_log", "examples/compiler_v1/18_result_error_branch_runtime_log/App/Main.fh", "examples/expected_logs/compiler_v1_result_error_branch_runtime_log.expected.log"),
     SupportedExample("19_async_scope_runtime", "examples/compiler_v1/19_async_scope_runtime/App/Main.fh"),

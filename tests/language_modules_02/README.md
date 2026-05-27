@@ -7,11 +7,11 @@ The original `tests/language_modules` tree remains the stable broad suite. This 
 Current imported status:
 
 ```text
-Total: 98
-Passed: 98
+Total: 107
+Passed: 107
 Failed: 0
-Expected AST files: 19
-Expected error files: 76
+Expected AST files: 20
+Expected error files: 84
 ```
 
 Update note:
@@ -29,6 +29,7 @@ Update note:
 - `07_procedures`, `12_result`, `16_expressions`, and `17_stdlib_args` now run their support-dependent positive cases through the shared resolver-backed fixture `fixtures/support_project` and are fully green.
 - `08_service_rpc` now keeps the strict gRPC V1 record-message policy: primitive request and `Result<...>` response shorthands were normalized to explicit request/response records with `proto` field ids, and the module is fully green.
 - `15_scope_async` is green after allowing `async procedure` syntax and normalizing the positive package case to the existing stable `Scope`/`JoinHandle<T>` API.
+- `18_feature_integration` imports the Work-Freehold FEAT-01..08 integration package as one positive feature-matrix case plus focused negative parser/semantic cases.
 - All imported branch-02 package cases are now green.
 
 The package README table lists 75 negative cases, but the imported source contains 76 `[FAIL ...]` modules. The additional case is in `14_control_flow`, where `test-14-control_neg.fh` contains 8 failure modules while the table lists 7.

@@ -1,0 +1,761 @@
+{
+  "declarations": [
+    {
+      "base": "Integer",
+      "max_value": 100,
+      "min_value": 0,
+      "name": "Percentage",
+      "node": "TypeDecl"
+    },
+    {
+      "base": "Double",
+      "max_value": 10.0,
+      "min_value": 0.0,
+      "name": "Score",
+      "node": "TypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "user_id",
+          "node": "RecordField",
+          "proto_id": 1,
+          "type_name": "Integer"
+        },
+        {
+          "name": "username",
+          "node": "RecordField",
+          "proto_id": 2,
+          "type_name": "String"
+        },
+        {
+          "name": "is_staff",
+          "node": "RecordField",
+          "proto_id": 3,
+          "type_name": "Boolean"
+        }
+      ],
+      "name": "UserProfile",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "item",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "T"
+        },
+        {
+          "name": "checksum",
+          "node": "RecordField",
+          "proto_id": null,
+          "type_name": "BigInteger"
+        }
+      ],
+      "name": "Container",
+      "node": "RecordTypeDecl",
+      "type_params": [
+        "T"
+      ]
+    },
+    {
+      "name": "ValidationError",
+      "node": "ErrorDecl"
+    },
+    {
+      "name": "ExecutionError",
+      "node": "ErrorDecl"
+    },
+    {
+      "name": "UserDeliveryService",
+      "node": "ServiceDecl",
+      "rpcs": [
+        {
+          "name": "FetchProfile",
+          "node": "RpcDecl",
+          "request_name": "request",
+          "request_type": "UserProfile",
+          "response_type": "UserProfile"
+        }
+      ]
+    },
+    {
+      "aborts": [
+        {
+          "condition": null,
+          "error_name": "ValidationError",
+          "node": "AbortClause"
+        }
+      ],
+      "body": [
+        {
+          "condition": {
+            "left": {
+              "left": {
+                "name": "input",
+                "node": "VarExpr"
+              },
+              "node": "BinaryExpr",
+              "op": "<",
+              "right": {
+                "node": "NumberExpr",
+                "value": 0
+              }
+            },
+            "node": "BinaryExpr",
+            "op": "or",
+            "right": {
+              "left": {
+                "name": "input",
+                "node": "VarExpr"
+              },
+              "node": "BinaryExpr",
+              "op": ">",
+              "right": {
+                "node": "NumberExpr",
+                "value": 100
+              }
+            }
+          },
+          "else_body": [],
+          "node": "IfStmt",
+          "then_body": [
+            {
+              "error_name": "ValidationError",
+              "node": "AbortStmt"
+            }
+          ]
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "input",
+              "node": "VarExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "name": "result",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": "=",
+          "right": {
+            "name": "input",
+            "node": "VarExpr"
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "process_percentage",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "input",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "input",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        },
+        {
+          "left": {
+            "name": "input",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": "<=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 100
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Percentage",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "node": "NumberExpr",
+            "value": 0
+          },
+          "name": "current",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "node": "NumberExpr",
+            "value": 0
+          },
+          "name": "total",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "body": [
+            {
+              "expr": {
+                "left": {
+                  "name": "current",
+                  "node": "VarExpr"
+                },
+                "node": "BinaryExpr",
+                "op": "+",
+                "right": {
+                  "node": "NumberExpr",
+                  "value": 1
+                }
+              },
+              "name": "current",
+              "node": "AssignStmt"
+            },
+            {
+              "expr": {
+                "left": {
+                  "name": "total",
+                  "node": "VarExpr"
+                },
+                "node": "BinaryExpr",
+                "op": "+",
+                "right": {
+                  "name": "current",
+                  "node": "VarExpr"
+                }
+              },
+              "name": "total",
+              "node": "AssignStmt"
+            }
+          ],
+          "condition": {
+            "left": {
+              "name": "current",
+              "node": "VarExpr"
+            },
+            "node": "BinaryExpr",
+            "op": "<",
+            "right": {
+              "name": "max",
+              "node": "VarExpr"
+            }
+          },
+          "invariants": [
+            {
+              "left": {
+                "name": "current",
+                "node": "VarExpr"
+              },
+              "node": "BinaryExpr",
+              "op": ">=",
+              "right": {
+                "node": "NumberExpr",
+                "value": 0
+              }
+            },
+            {
+              "left": {
+                "name": "current",
+                "node": "VarExpr"
+              },
+              "node": "BinaryExpr",
+              "op": "<=",
+              "right": {
+                "name": "max",
+                "node": "VarExpr"
+              }
+            }
+          ],
+          "node": "WhileStmt",
+          "variant": {
+            "left": {
+              "name": "max",
+              "node": "VarExpr"
+            },
+            "node": "BinaryExpr",
+            "op": "-",
+            "right": {
+              "name": "current",
+              "node": "VarExpr"
+            }
+          }
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "total",
+              "node": "VarExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "name": "result",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "name": "max",
+            "node": "VarExpr"
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "sum_up_to",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "max",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "max",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "node": "StringExpr",
+              "value": "Data"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [],
+      "is_async": true,
+      "kind": "function",
+      "name": "async_fetch_data",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": {
+        "name": "String",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "join_body": [
+            {
+              "expr": {
+                "expr": {
+                  "args": [
+                    {
+                      "name": "handle",
+                      "node": "VarExpr"
+                    }
+                  ],
+                  "name": "test_scope.join",
+                  "node": "CallExpr",
+                  "type_args": [
+                    "String"
+                  ]
+                },
+                "node": "AwaitExpr"
+              },
+              "name": "data",
+              "node": "LetStmt",
+              "type_ref": {
+                "name": "String",
+                "node": "TypeName"
+              }
+            }
+          ],
+          "name": "test_scope",
+          "node": "ScopeStmt",
+          "result_body": [
+            {
+              "node": "ReturnStmt",
+              "value": {
+                "expr": {
+                  "name": "data",
+                  "node": "VarExpr"
+                },
+                "node": "ReturnPlain"
+              }
+            }
+          ],
+          "spawn_body": [
+            {
+              "expr": {
+                "args": [
+                  {
+                    "args": [],
+                    "name": "async_fetch_data",
+                    "node": "CallExpr"
+                  }
+                ],
+                "name": "test_scope.spawn",
+                "node": "CallExpr",
+                "type_args": [
+                  "String"
+                ]
+              },
+              "name": "handle",
+              "node": "LetStmt",
+              "type_ref": {
+                "name": "JoinHandle<String>",
+                "node": "TypeName"
+              }
+            }
+          ]
+        }
+      ],
+      "ensures": [],
+      "is_async": true,
+      "kind": "function",
+      "name": "run_concurrent_tasks",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": {
+        "name": "String",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "items": [
+                {
+                  "node": "NumberExpr",
+                  "value": 90
+                },
+                {
+                  "node": "NumberExpr",
+                  "value": 95
+                },
+                {
+                  "node": "NumberExpr",
+                  "value": 100
+                }
+              ],
+              "node": "ArrayLiteralExpr"
+            },
+            "node": "ReturnOk"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "name": "success",
+          "node": "SpecialResultExpr"
+        },
+        {
+          "left": {
+            "index": {
+              "node": "NumberExpr",
+              "value": 0
+            },
+            "name": "value",
+            "node": "IndexExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "kind": "function",
+      "name": "load_scores",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": {
+        "error_type": "ExecutionError",
+        "node": "ResultTypeName",
+        "ok_type": {
+          "element_type": "Integer",
+          "node": "ArrayTypeName",
+          "size": 3
+        }
+      }
+    },
+    {
+      "aborts": [
+        {
+          "condition": null,
+          "error_name": "ValidationError",
+          "node": "AbortClause"
+        }
+      ],
+      "body": [
+        {
+          "expr": {
+            "items": [
+              {
+                "node": "NumberExpr",
+                "value": 90
+              },
+              {
+                "node": "NumberExpr",
+                "value": 95
+              },
+              {
+                "node": "NumberExpr",
+                "value": 100
+              }
+            ],
+            "node": "ArrayLiteralExpr"
+          },
+          "name": "scores",
+          "node": "LetStmt",
+          "type_ref": {
+            "element_type": "Integer",
+            "node": "ArrayTypeName",
+            "size": 3
+          }
+        },
+        {
+          "expr": {
+            "index": {
+              "node": "NumberExpr",
+              "value": 0
+            },
+            "name": "scores",
+            "node": "IndexExpr"
+          },
+          "name": "first_score",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "left": {
+              "name": "first_score",
+              "node": "VarExpr"
+            },
+            "node": "BinaryExpr",
+            "op": "=",
+            "right": {
+              "node": "NumberExpr",
+              "value": 90
+            }
+          },
+          "node": "CheckStmt"
+        },
+        {
+          "expr": {
+            "args": [
+              {
+                "expr": {
+                  "node": "NumberExpr",
+                  "value": 42
+                },
+                "name": "user_id",
+                "node": "NamedArg"
+              },
+              {
+                "expr": {
+                  "node": "StringExpr",
+                  "value": "Johann"
+                },
+                "name": "username",
+                "node": "NamedArg"
+              },
+              {
+                "expr": {
+                  "node": "BoolExpr",
+                  "value": true
+                },
+                "name": "is_staff",
+                "node": "NamedArg"
+              }
+            ],
+            "node": "RecordLiteralExpr",
+            "type_name": "UserProfile"
+          },
+          "name": "profile",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "UserProfile",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "left": {
+              "node": "FieldAccessExpr",
+              "path": [
+                "profile",
+                "user_id"
+              ]
+            },
+            "node": "BinaryExpr",
+            "op": "=",
+            "right": {
+              "node": "NumberExpr",
+              "value": 42
+            }
+          },
+          "node": "CheckStmt"
+        },
+        {
+          "expr": {
+            "left": {
+              "node": "FieldAccessExpr",
+              "path": [
+                "profile",
+                "is_staff"
+              ]
+            },
+            "node": "BinaryExpr",
+            "op": "=",
+            "right": {
+              "node": "BoolExpr",
+              "value": true
+            }
+          },
+          "node": "CheckStmt"
+        },
+        {
+          "expr": {
+            "args": [
+              {
+                "node": "NumberExpr",
+                "value": 50
+              }
+            ],
+            "name": "process_percentage",
+            "node": "CallExpr"
+          },
+          "name": "valid_pct",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Percentage",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "left": {
+              "name": "valid_pct",
+              "node": "VarExpr"
+            },
+            "node": "BinaryExpr",
+            "op": "=",
+            "right": {
+              "node": "NumberExpr",
+              "value": 50
+            }
+          },
+          "node": "CheckStmt"
+        },
+        {
+          "expr": {
+            "args": [
+              {
+                "node": "NumberExpr",
+                "value": 10
+              }
+            ],
+            "name": "sum_up_to",
+            "node": "CallExpr"
+          },
+          "name": "calculated_sum",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "left": {
+              "name": "calculated_sum",
+              "node": "VarExpr"
+            },
+            "node": "BinaryExpr",
+            "op": "=",
+            "right": {
+              "node": "NumberExpr",
+              "value": 55
+            }
+          },
+          "node": "CheckStmt"
+        },
+        {
+          "args": [
+            {
+              "node": "StringExpr",
+              "value": "All positive integration tests passed successfully."
+            }
+          ],
+          "name": "Std.IO.logf",
+          "node": "CallStmt"
+        }
+      ],
+      "ensures": [],
+      "kind": "procedure",
+      "name": "main",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": null
+    }
+  ],
+  "imports": [],
+  "module_name": "Test.FeatureIntegration.Pos",
+  "node": "Program"
+}

@@ -130,6 +130,11 @@ Fuer bewusst nicht unterstuetzte Beispiele prueft der Wrapper:
    - String-Runtime-Funktion in einer Feldzuweisung
    - Runtime-Smoke prueft mutierten Record-Zustand
 
+17b. `17_mutation_record_update_runtime_log`
+   - rekonstruiertes Demo im leeren 17er-Kontext
+   - Record-Update ueber Prozedurargument plus mehrere Field Assignments
+   - Runtime-Smoke prueft aktualisierte SKU, Menge, Reservierung, Boolean-Feld und String-Marker
+
 18. `18_result_error_branch_runtime_log`
    - normaler `Result`-Fehlerzweig ohne Abort-Propagation
    - `outcome.error` wird im App-Code ausgewertet und ausgegeben

@@ -1,0 +1,52 @@
+module App.Main
+
+import Std.IO
+
+type InventoryItem is record
+    sku: String
+    quantity: Integer
+    reserved: Integer
+    active: Boolean
+end record
+
+function make_item(sku: String, quantity: Integer) returns InventoryItem
+requires String.instr(sku, "SKU") >= 0, quantity >= 0
+ensures result.quantity = quantity, result.reserved = 0, result.active = true
+is
+    return InventoryItem { sku: sku, quantity: quantity, reserved: 0, active: true }
+end make_item
+
+function reserve(item: InventoryItem, amount: Integer) returns InventoryItem
+requires amount > 0, item.quantity >= amount
+is
+    let updated: InventoryItem = item
+    updated.reserved := updated.reserved + amount
+    updated.quantity := updated.quantity - amount
+    updated.sku := String.replace(updated.sku, "SKU", "ITEM")
+    return updated
+end reserve
+
+function deactivate_when_empty(item: InventoryItem) returns InventoryItem
+is
+    let updated: InventoryItem = item
+    if updated.quantity = 0 then
+        updated.active := false
+    end if
+    return updated
+end deactivate_when_empty
+
+procedure main()
+is
+    let item: InventoryItem = make_item("SKU-017", 7)
+    let reserved_item: InventoryItem = reserve(item, 3)
+    let final_item: InventoryItem = deactivate_when_empty(reserved_item)
+
+    let marker: Integer = String.instr(final_item.sku, "ITEM")
+    call Std.IO.logf("sku = ${}", final_item.sku)
+    call Std.IO.logf("quantity = ${}", final_item.quantity)
+    call Std.IO.logf("reserved = ${}", final_item.reserved)
+    call Std.IO.logf("active = ${}", final_item.active)
+    call Std.IO.logf("marker = ${}", marker)
+end main
+
+end App.Main

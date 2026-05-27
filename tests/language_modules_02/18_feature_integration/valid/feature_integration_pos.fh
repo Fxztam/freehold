@@ -1,0 +1,110 @@
+module Test.FeatureIntegration.Pos
+
+-- FEAT-01: Range types
+type Percentage is Integer range 0..100
+type Score is Double range 0.0..10.0
+
+-- FEAT-02: Records with proto field ids
+type UserProfile is record
+    user_id: Integer proto 1
+    username: String proto 2
+    is_staff: Boolean proto 3
+end record
+
+-- FEAT-08: Generic type arguments
+type Container<T> is record
+    item: T
+    checksum: BigInteger
+end record
+
+error ValidationError
+error ExecutionError
+
+-- FEAT-06: gRPC service IDL surface
+service UserDeliveryService is
+    rpc FetchProfile(request: UserProfile): UserProfile
+end UserDeliveryService
+
+-- FEAT-03 and FEAT-07: contracts plus abort declaration/body
+function process_percentage(input: Integer) returns Percentage
+requires input >= 0, input <= 100
+aborts ValidationError
+ensures result = input
+is
+    if input < 0 or input > 100 then
+        abort ValidationError
+    end if
+    return input
+end process_percentage
+
+-- FEAT-04: loop invariants and variant
+function sum_up_to(max: Integer) returns Integer
+requires max > 0
+ensures result >= max
+is
+    let current: Integer = 0
+    let total: Integer = 0
+
+    while current < max
+    invariant current >= 0
+    invariant current <= max
+    variant max - current
+    do
+        current := current + 1
+        total := total + current
+    end while
+
+    return total
+end sum_up_to
+
+-- FEAT-05: structured concurrency Scope block
+async function async_fetch_data() returns String
+is
+    return "Data"
+end async_fetch_data
+
+async function run_concurrent_tasks() returns String
+is
+    scope test_scope do
+        spawn
+            let handle: JoinHandle<String> = test_scope.spawn<String>(async_fetch_data())
+        join
+            let data: String = await test_scope.join<String>(handle)
+        result
+            return data
+    end scope
+end run_concurrent_tasks
+
+-- FEAT-08: Result<Array<T,N>, E> type arguments in routine surface
+function load_scores() returns Result<Array<Integer, 3>, ExecutionError>
+ensures success, value[0] >= 0
+is
+    return ok [90, 95, 100]
+end load_scores
+
+procedure main()
+aborts ValidationError
+is
+    let scores: Array<Integer, 3> = [90, 95, 100]
+    let first_score: Integer = scores[0]
+    check first_score = 90
+
+    let profile: UserProfile = UserProfile {
+        user_id: 42,
+        username: "Johann",
+        is_staff: true
+    }
+
+    check profile.user_id = 42
+    check profile.is_staff = true
+
+    let valid_pct: Percentage = process_percentage(50)
+    check valid_pct = 50
+
+    let calculated_sum: Integer = sum_up_to(10)
+    check calculated_sum = 55
+
+    call Std.IO.logf("All positive integration tests passed successfully.")
+end main
+
+end Test.FeatureIntegration.Pos

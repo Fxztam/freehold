@@ -1,0 +1,5323 @@
+{
+  "node": "FhirDocumentV0",
+  "schema_profile": "fh-ir",
+  "schema": "fh-ir-v0",
+  "schema_version": {
+    "major": 0,
+    "minor": 1,
+    "patch": 0
+  },
+  "language_version": "freehold-v1",
+  "source_ast": {
+    "node": "SourceAst",
+    "module": {
+      "node": "Module",
+      "name": "App.Main",
+      "imports": [
+        {
+          "kind": "ImportDecl",
+          "module": "Std.IO",
+          "exposing": []
+        }
+      ],
+      "declarations": [
+        {
+          "kind": "RecordTypeDecl",
+          "name": "InventoryItem",
+          "fields": [
+            {
+              "name": "active",
+              "type": "Boolean",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "name": "quantity",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "name": "reserved",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "name": "sku",
+              "type": "String",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "String"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "deactivate_when_empty",
+          "type_params": [],
+          "is_async": false,
+          "params": [
+            {
+              "name": "item",
+              "type": "InventoryItem",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "InventoryItem"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "InventoryItem"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "InventoryItem"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "LetStmt",
+              "name": "updated",
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              },
+              "value": {
+                "kind": "VarExpr",
+                "name": "item"
+              }
+            },
+            {
+              "kind": "IfStmt",
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "updated",
+                    "quantity"
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              },
+              "then_body": [
+                {
+                  "kind": "FieldAssignStmt",
+                  "path": [
+                    "updated",
+                    "active"
+                  ],
+                  "value": {
+                    "kind": "BoolExpr",
+                    "value": false
+                  }
+                }
+              ],
+              "else_body": []
+            },
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "updated"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "procedure",
+          "name": "main",
+          "type_params": [],
+          "is_async": false,
+          "params": [],
+          "return_type": {
+            "kind": "Void"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "Void"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "LetStmt",
+              "name": "item",
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              },
+              "value": {
+                "kind": "CallExpr",
+                "name": "make_item",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "SKU-017"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "NumberExpr",
+                      "value": 7
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "reserved_item",
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              },
+              "value": {
+                "kind": "CallExpr",
+                "name": "reserve",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "item"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "NumberExpr",
+                      "value": 3
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "final_item",
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              },
+              "value": {
+                "kind": "CallExpr",
+                "name": "deactivate_when_empty",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "reserved_item"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "marker",
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              },
+              "value": {
+                "kind": "CallExpr",
+                "name": "String.instr",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "final_item",
+                        "sku"
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "ITEM"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "kind": "CallStmt",
+              "name": "Std.IO.logf",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "sku = ${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "final_item",
+                      "sku"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "CallStmt",
+              "name": "Std.IO.logf",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "quantity = ${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "final_item",
+                      "quantity"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "CallStmt",
+              "name": "Std.IO.logf",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "reserved = ${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "final_item",
+                      "reserved"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "CallStmt",
+              "name": "Std.IO.logf",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "active = ${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "final_item",
+                      "active"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "CallStmt",
+              "name": "Std.IO.logf",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "marker = ${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "marker"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "make_item",
+          "type_params": [],
+          "is_async": false,
+          "params": [
+            {
+              "name": "sku",
+              "type": "String",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "String"
+              }
+            },
+            {
+              "name": "quantity",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "InventoryItem"
+          },
+          "requires": [
+            {
+              "kind": "BinaryExpr",
+              "op": ">=",
+              "left": {
+                "kind": "CallExpr",
+                "name": "String.instr",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "sku"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "SKU"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            },
+            {
+              "kind": "BinaryExpr",
+              "op": ">=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "quantity"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          ],
+          "aborts": [],
+          "ensures": [
+            {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "result",
+                  "quantity"
+                ]
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "quantity"
+              }
+            },
+            {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "result",
+                  "reserved"
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            },
+            {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "result",
+                  "active"
+                ]
+              },
+              "right": {
+                "kind": "BoolExpr",
+                "value": true
+              }
+            }
+          ],
+          "contracts": {
+            "requires": [
+              {
+                "kind": "ContractClause",
+                "role": "requires",
+                "index": 0,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": ">=",
+                  "left": {
+                    "kind": "CallExpr",
+                    "name": "String.instr",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "sku"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "SKU"
+                        }
+                      }
+                    ]
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              },
+              {
+                "kind": "ContractClause",
+                "role": "requires",
+                "index": 1,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": ">=",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "quantity"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              }
+            ],
+            "ensures": [
+              {
+                "kind": "ContractClause",
+                "role": "ensures",
+                "index": 0,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "quantity"
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "quantity"
+                  }
+                }
+              },
+              {
+                "kind": "ContractClause",
+                "role": "ensures",
+                "index": 1,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "reserved"
+                    ]
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              },
+              {
+                "kind": "ContractClause",
+                "role": "ensures",
+                "index": 2,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "active"
+                    ]
+                  },
+                  "right": {
+                    "kind": "BoolExpr",
+                    "value": true
+                  }
+                }
+              }
+            ],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "InventoryItem"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "InventoryItem"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "RecordLiteralExpr",
+                  "type": "InventoryItem",
+                  "args": [
+                    {
+                      "kind": "NamedArg",
+                      "name": "sku",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "sku"
+                      }
+                    },
+                    {
+                      "kind": "NamedArg",
+                      "name": "quantity",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "quantity"
+                      }
+                    },
+                    {
+                      "kind": "NamedArg",
+                      "name": "reserved",
+                      "value": {
+                        "kind": "NumberExpr",
+                        "value": 0
+                      }
+                    },
+                    {
+                      "kind": "NamedArg",
+                      "name": "active",
+                      "value": {
+                        "kind": "BoolExpr",
+                        "value": true
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "reserve",
+          "type_params": [],
+          "is_async": false,
+          "params": [
+            {
+              "name": "item",
+              "type": "InventoryItem",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "name": "amount",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "InventoryItem"
+          },
+          "requires": [
+            {
+              "kind": "BinaryExpr",
+              "op": ">",
+              "left": {
+                "kind": "VarExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            },
+            {
+              "kind": "BinaryExpr",
+              "op": ">=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "item",
+                  "quantity"
+                ]
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "amount"
+              }
+            }
+          ],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [
+              {
+                "kind": "ContractClause",
+                "role": "requires",
+                "index": 0,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": ">",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "amount"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              },
+              {
+                "kind": "ContractClause",
+                "role": "requires",
+                "index": 1,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": ">=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "item",
+                      "quantity"
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "amount"
+                  }
+                }
+              }
+            ],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "InventoryItem"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "InventoryItem"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "LetStmt",
+              "name": "updated",
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              },
+              "value": {
+                "kind": "VarExpr",
+                "name": "item"
+              }
+            },
+            {
+              "kind": "FieldAssignStmt",
+              "path": [
+                "updated",
+                "reserved"
+              ],
+              "value": {
+                "kind": "BinaryExpr",
+                "op": "+",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "updated",
+                    "reserved"
+                  ]
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "amount"
+                }
+              }
+            },
+            {
+              "kind": "FieldAssignStmt",
+              "path": [
+                "updated",
+                "quantity"
+              ],
+              "value": {
+                "kind": "BinaryExpr",
+                "op": "-",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "updated",
+                    "quantity"
+                  ]
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "amount"
+                }
+              }
+            },
+            {
+              "kind": "FieldAssignStmt",
+              "path": [
+                "updated",
+                "sku"
+              ],
+              "value": {
+                "kind": "CallExpr",
+                "name": "String.replace",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "updated",
+                        "sku"
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "SKU"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "ITEM"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "updated"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "semantic_ir": {
+    "node": "SemanticIr",
+    "analysis": {
+      "node": "AnalysisReport",
+      "types": [
+        {
+          "kind": "TypeDef",
+          "name": "BigFloat",
+          "base": "BigFloat",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "BigFloat"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "BigInteger",
+          "base": "BigInteger",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "BigInteger"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Boolean",
+          "base": "Boolean",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Boolean"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Double",
+          "base": "Double",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Double"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Executor",
+          "base": "Executor",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Executor"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Integer",
+          "base": "Integer",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Integer"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "Scope",
+          "base": "Scope",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "Scope"
+          }
+        },
+        {
+          "kind": "TypeDef",
+          "name": "String",
+          "base": "String",
+          "base_type": {
+            "kind": "TypeName",
+            "name": "String"
+          }
+        }
+      ],
+      "records": [
+        {
+          "kind": "RecordDef",
+          "name": "InventoryItem",
+          "fields": [
+            {
+              "kind": "RecordFieldDef",
+              "name": "active",
+              "type": "Boolean",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "RecordFieldDef",
+              "name": "quantity",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "RecordFieldDef",
+              "name": "reserved",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "RecordFieldDef",
+              "name": "sku",
+              "type": "String",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "String"
+              }
+            }
+          ],
+          "proto_fields": []
+        }
+      ],
+      "errors": [],
+      "error_defs": [],
+      "routines": [
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "deactivate_when_empty",
+          "type_params": [],
+          "is_async": false,
+          "params": [
+            {
+              "name": "item",
+              "type": "InventoryItem",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "InventoryItem"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "InventoryItem"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "InventoryItem"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "LetStmt",
+              "name": "updated",
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              },
+              "value": {
+                "kind": "VarExpr",
+                "name": "item"
+              }
+            },
+            {
+              "kind": "IfStmt",
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "updated",
+                    "quantity"
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              },
+              "then_body": [
+                {
+                  "kind": "FieldAssignStmt",
+                  "path": [
+                    "updated",
+                    "active"
+                  ],
+                  "value": {
+                    "kind": "BoolExpr",
+                    "value": false
+                  }
+                }
+              ],
+              "else_body": []
+            },
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "updated"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "procedure",
+          "name": "main",
+          "type_params": [],
+          "is_async": false,
+          "params": [],
+          "return_type": {
+            "kind": "Void"
+          },
+          "requires": [],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "Void"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "LetStmt",
+              "name": "item",
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              },
+              "value": {
+                "kind": "CallExpr",
+                "name": "make_item",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "SKU-017"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "NumberExpr",
+                      "value": 7
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "reserved_item",
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              },
+              "value": {
+                "kind": "CallExpr",
+                "name": "reserve",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "item"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "NumberExpr",
+                      "value": 3
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "final_item",
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              },
+              "value": {
+                "kind": "CallExpr",
+                "name": "deactivate_when_empty",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "reserved_item"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "kind": "LetStmt",
+              "name": "marker",
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              },
+              "value": {
+                "kind": "CallExpr",
+                "name": "String.instr",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "final_item",
+                        "sku"
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "ITEM"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "kind": "CallStmt",
+              "name": "Std.IO.logf",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "sku = ${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "final_item",
+                      "sku"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "CallStmt",
+              "name": "Std.IO.logf",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "quantity = ${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "final_item",
+                      "quantity"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "CallStmt",
+              "name": "Std.IO.logf",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "reserved = ${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "final_item",
+                      "reserved"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "CallStmt",
+              "name": "Std.IO.logf",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "active = ${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "final_item",
+                      "active"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "CallStmt",
+              "name": "Std.IO.logf",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "marker = ${}"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "marker"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "make_item",
+          "type_params": [],
+          "is_async": false,
+          "params": [
+            {
+              "name": "sku",
+              "type": "String",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "String"
+              }
+            },
+            {
+              "name": "quantity",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "InventoryItem"
+          },
+          "requires": [
+            {
+              "kind": "BinaryExpr",
+              "op": ">=",
+              "left": {
+                "kind": "CallExpr",
+                "name": "String.instr",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "sku"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "SKU"
+                    }
+                  }
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            },
+            {
+              "kind": "BinaryExpr",
+              "op": ">=",
+              "left": {
+                "kind": "VarExpr",
+                "name": "quantity"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            }
+          ],
+          "aborts": [],
+          "ensures": [
+            {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "result",
+                  "quantity"
+                ]
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "quantity"
+              }
+            },
+            {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "result",
+                  "reserved"
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            },
+            {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "result",
+                  "active"
+                ]
+              },
+              "right": {
+                "kind": "BoolExpr",
+                "value": true
+              }
+            }
+          ],
+          "contracts": {
+            "requires": [
+              {
+                "kind": "ContractClause",
+                "role": "requires",
+                "index": 0,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": ">=",
+                  "left": {
+                    "kind": "CallExpr",
+                    "name": "String.instr",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "sku"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "SKU"
+                        }
+                      }
+                    ]
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              },
+              {
+                "kind": "ContractClause",
+                "role": "requires",
+                "index": 1,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": ">=",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "quantity"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              }
+            ],
+            "ensures": [
+              {
+                "kind": "ContractClause",
+                "role": "ensures",
+                "index": 0,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "quantity"
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "quantity"
+                  }
+                }
+              },
+              {
+                "kind": "ContractClause",
+                "role": "ensures",
+                "index": 1,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "reserved"
+                    ]
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              },
+              {
+                "kind": "ContractClause",
+                "role": "ensures",
+                "index": 2,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "active"
+                    ]
+                  },
+                  "right": {
+                    "kind": "BoolExpr",
+                    "value": true
+                  }
+                }
+              }
+            ],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "InventoryItem"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "InventoryItem"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "RecordLiteralExpr",
+                  "type": "InventoryItem",
+                  "args": [
+                    {
+                      "kind": "NamedArg",
+                      "name": "sku",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "sku"
+                      }
+                    },
+                    {
+                      "kind": "NamedArg",
+                      "name": "quantity",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "quantity"
+                      }
+                    },
+                    {
+                      "kind": "NamedArg",
+                      "name": "reserved",
+                      "value": {
+                        "kind": "NumberExpr",
+                        "value": 0
+                      }
+                    },
+                    {
+                      "kind": "NamedArg",
+                      "name": "active",
+                      "value": {
+                        "kind": "BoolExpr",
+                        "value": true
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "RoutineDecl",
+          "routine_kind": "function",
+          "name": "reserve",
+          "type_params": [],
+          "is_async": false,
+          "params": [
+            {
+              "name": "item",
+              "type": "InventoryItem",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "name": "amount",
+              "type": "Integer",
+              "type_repr": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            }
+          ],
+          "return_type": {
+            "kind": "TypeName",
+            "name": "InventoryItem"
+          },
+          "requires": [
+            {
+              "kind": "BinaryExpr",
+              "op": ">",
+              "left": {
+                "kind": "VarExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            },
+            {
+              "kind": "BinaryExpr",
+              "op": ">=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "item",
+                  "quantity"
+                ]
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "amount"
+              }
+            }
+          ],
+          "aborts": [],
+          "ensures": [],
+          "contracts": {
+            "requires": [
+              {
+                "kind": "ContractClause",
+                "role": "requires",
+                "index": 0,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": ">",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "amount"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              },
+              {
+                "kind": "ContractClause",
+                "role": "requires",
+                "index": 1,
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": ">=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "item",
+                      "quantity"
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "amount"
+                  }
+                }
+              }
+            ],
+            "ensures": [],
+            "aborts": []
+          },
+          "contract_bindings": {
+            "kind": "ContractBindings",
+            "is_result_return": false,
+            "contexts": {
+              "requires": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              },
+              "ensures": {
+                "result": true,
+                "success": false,
+                "failure": false,
+                "value": true,
+                "error": false
+              },
+              "aborts": {
+                "result": false,
+                "success": false,
+                "failure": false,
+                "value": false,
+                "error": false
+              }
+            },
+            "bindings": [
+              {
+                "kind": "ContractBinding",
+                "name": "result",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "InventoryItem"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "success",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "failure",
+                "available": false,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "value",
+                "available": true,
+                "type": {
+                  "kind": "TypeName",
+                  "name": "InventoryItem"
+                }
+              },
+              {
+                "kind": "ContractBinding",
+                "name": "error",
+                "available": false,
+                "type": {
+                  "kind": "Void"
+                },
+                "error_ref": null
+              }
+            ],
+            "result_value_binding": {
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            "result_error_binding": {
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          },
+          "body": [
+            {
+              "kind": "LetStmt",
+              "name": "updated",
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              },
+              "value": {
+                "kind": "VarExpr",
+                "name": "item"
+              }
+            },
+            {
+              "kind": "FieldAssignStmt",
+              "path": [
+                "updated",
+                "reserved"
+              ],
+              "value": {
+                "kind": "BinaryExpr",
+                "op": "+",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "updated",
+                    "reserved"
+                  ]
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "amount"
+                }
+              }
+            },
+            {
+              "kind": "FieldAssignStmt",
+              "path": [
+                "updated",
+                "quantity"
+              ],
+              "value": {
+                "kind": "BinaryExpr",
+                "op": "-",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "updated",
+                    "quantity"
+                  ]
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "amount"
+                }
+              }
+            },
+            {
+              "kind": "FieldAssignStmt",
+              "path": [
+                "updated",
+                "sku"
+              ],
+              "value": {
+                "kind": "CallExpr",
+                "name": "String.replace",
+                "args": [
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "updated",
+                        "sku"
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "SKU"
+                    }
+                  },
+                  {
+                    "kind": "PositionalArg",
+                    "value": {
+                      "kind": "StringExpr",
+                      "value": "ITEM"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "kind": "ReturnStmt",
+              "value": {
+                "kind": "ReturnPlain",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "updated"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "services": [],
+      "proof_obligations": [],
+      "flow_summaries": [
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "deactivate_when_empty",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "main",
+          "routine_kind": "procedure",
+          "normal_return_possible": true,
+          "guaranteed_exit": false,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [
+            "deactivate_when_empty",
+            "make_item",
+            "reserve"
+          ],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "make_item",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "reserve",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        }
+      ],
+      "verifier": {
+        "node": "VerifierReport",
+        "proof_obligations": [],
+        "flow_summaries": [
+          {
+            "kind": "RoutineFlowSummary",
+            "routine_name": "deactivate_when_empty",
+            "routine_kind": "function",
+            "normal_return_possible": true,
+            "guaranteed_exit": true,
+            "declared_aborts": [],
+            "declared_abort_refs": [],
+            "emitted_aborts": [],
+            "emitted_abort_refs": [],
+            "called_routines": [],
+            "propagated_aborts": [],
+            "propagated_abort_refs": []
+          },
+          {
+            "kind": "RoutineFlowSummary",
+            "routine_name": "main",
+            "routine_kind": "procedure",
+            "normal_return_possible": true,
+            "guaranteed_exit": false,
+            "declared_aborts": [],
+            "declared_abort_refs": [],
+            "emitted_aborts": [],
+            "emitted_abort_refs": [],
+            "called_routines": [
+              "deactivate_when_empty",
+              "make_item",
+              "reserve"
+            ],
+            "propagated_aborts": [],
+            "propagated_abort_refs": []
+          },
+          {
+            "kind": "RoutineFlowSummary",
+            "routine_name": "make_item",
+            "routine_kind": "function",
+            "normal_return_possible": true,
+            "guaranteed_exit": true,
+            "declared_aborts": [],
+            "declared_abort_refs": [],
+            "emitted_aborts": [],
+            "emitted_abort_refs": [],
+            "called_routines": [],
+            "propagated_aborts": [],
+            "propagated_abort_refs": []
+          },
+          {
+            "kind": "RoutineFlowSummary",
+            "routine_name": "reserve",
+            "routine_kind": "function",
+            "normal_return_possible": true,
+            "guaranteed_exit": true,
+            "declared_aborts": [],
+            "declared_abort_refs": [],
+            "emitted_aborts": [],
+            "emitted_abort_refs": [],
+            "called_routines": [],
+            "propagated_aborts": [],
+            "propagated_abort_refs": []
+          }
+        ]
+      }
+    }
+  },
+  "module": {
+    "node": "Module",
+    "name": "App.Main",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Std.IO",
+        "exposing": []
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RecordTypeDecl",
+        "name": "InventoryItem",
+        "fields": [
+          {
+            "name": "active",
+            "type": "Boolean",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Boolean"
+            }
+          },
+          {
+            "name": "quantity",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          {
+            "name": "reserved",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          {
+            "name": "sku",
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "deactivate_when_empty",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "item",
+            "type": "InventoryItem",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "InventoryItem"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "updated",
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            },
+            "value": {
+              "kind": "VarExpr",
+              "name": "item"
+            }
+          },
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "updated",
+                  "quantity"
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            },
+            "then_body": [
+              {
+                "kind": "FieldAssignStmt",
+                "path": [
+                  "updated",
+                  "active"
+                ],
+                "value": {
+                  "kind": "BoolExpr",
+                  "value": false
+                }
+              }
+            ],
+            "else_body": []
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "VarExpr",
+                "name": "updated"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "item",
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "make_item",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "SKU-017"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 7
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "reserved_item",
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "reserve",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "item"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 3
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "final_item",
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "deactivate_when_empty",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "reserved_item"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "marker",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.instr",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "final_item",
+                      "sku"
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "ITEM"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "sku = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "final_item",
+                    "sku"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "quantity = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "final_item",
+                    "quantity"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "reserved = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "final_item",
+                    "reserved"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "active = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "final_item",
+                    "active"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "marker = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "marker"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "make_item",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "sku",
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
+          },
+          {
+            "name": "quantity",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "InventoryItem"
+        },
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "CallExpr",
+              "name": "String.instr",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "sku"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "SKU"
+                  }
+                }
+              ]
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "VarExpr",
+              "name": "quantity"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          }
+        ],
+        "aborts": [],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "result",
+                "quantity"
+              ]
+            },
+            "right": {
+              "kind": "VarExpr",
+              "name": "quantity"
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "result",
+                "reserved"
+              ]
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "result",
+                "active"
+              ]
+            },
+            "right": {
+              "kind": "BoolExpr",
+              "value": true
+            }
+          }
+        ],
+        "contracts": {
+          "requires": [
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "CallExpr",
+                  "name": "String.instr",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "sku"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "SKU"
+                      }
+                    }
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 1,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "quantity"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            }
+          ],
+          "ensures": [
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "result",
+                    "quantity"
+                  ]
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "quantity"
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 1,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "result",
+                    "reserved"
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 2,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "result",
+                    "active"
+                  ]
+                },
+                "right": {
+                  "kind": "BoolExpr",
+                  "value": true
+                }
+              }
+            }
+          ],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "RecordLiteralExpr",
+                "type": "InventoryItem",
+                "args": [
+                  {
+                    "kind": "NamedArg",
+                    "name": "sku",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "sku"
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "quantity",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "quantity"
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "reserved",
+                    "value": {
+                      "kind": "NumberExpr",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "active",
+                    "value": {
+                      "kind": "BoolExpr",
+                      "value": true
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "reserve",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "item",
+            "type": "InventoryItem",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            }
+          },
+          {
+            "name": "amount",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "InventoryItem"
+        },
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": ">",
+            "left": {
+              "kind": "VarExpr",
+              "name": "amount"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "item",
+                "quantity"
+              ]
+            },
+            "right": {
+              "kind": "VarExpr",
+              "name": "amount"
+            }
+          }
+        ],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "amount"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 1,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "item",
+                    "quantity"
+                  ]
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "amount"
+                }
+              }
+            }
+          ],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "updated",
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            },
+            "value": {
+              "kind": "VarExpr",
+              "name": "item"
+            }
+          },
+          {
+            "kind": "FieldAssignStmt",
+            "path": [
+              "updated",
+              "reserved"
+            ],
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "updated",
+                  "reserved"
+                ]
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "amount"
+              }
+            }
+          },
+          {
+            "kind": "FieldAssignStmt",
+            "path": [
+              "updated",
+              "quantity"
+            ],
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "-",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "updated",
+                  "quantity"
+                ]
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "amount"
+              }
+            }
+          },
+          {
+            "kind": "FieldAssignStmt",
+            "path": [
+              "updated",
+              "sku"
+            ],
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.replace",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "updated",
+                      "sku"
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "SKU"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "ITEM"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "VarExpr",
+                "name": "updated"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "node": "AnalysisReport",
+    "types": [
+      {
+        "kind": "TypeDef",
+        "name": "BigFloat",
+        "base": "BigFloat",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigFloat"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "BigInteger",
+        "base": "BigInteger",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigInteger"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Boolean",
+        "base": "Boolean",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Boolean"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Double",
+        "base": "Double",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Double"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Executor",
+        "base": "Executor",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Executor"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Integer",
+        "base": "Integer",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Scope",
+        "base": "Scope",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Scope"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "String",
+        "base": "String",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "String"
+        }
+      }
+    ],
+    "records": [
+      {
+        "kind": "RecordDef",
+        "name": "InventoryItem",
+        "fields": [
+          {
+            "kind": "RecordFieldDef",
+            "name": "active",
+            "type": "Boolean",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Boolean"
+            }
+          },
+          {
+            "kind": "RecordFieldDef",
+            "name": "quantity",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          {
+            "kind": "RecordFieldDef",
+            "name": "reserved",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          {
+            "kind": "RecordFieldDef",
+            "name": "sku",
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
+          }
+        ],
+        "proto_fields": []
+      }
+    ],
+    "errors": [],
+    "error_defs": [],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "deactivate_when_empty",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "item",
+            "type": "InventoryItem",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "InventoryItem"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "updated",
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            },
+            "value": {
+              "kind": "VarExpr",
+              "name": "item"
+            }
+          },
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "updated",
+                  "quantity"
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 0
+              }
+            },
+            "then_body": [
+              {
+                "kind": "FieldAssignStmt",
+                "path": [
+                  "updated",
+                  "active"
+                ],
+                "value": {
+                  "kind": "BoolExpr",
+                  "value": false
+                }
+              }
+            ],
+            "else_body": []
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "VarExpr",
+                "name": "updated"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "item",
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "make_item",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "SKU-017"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 7
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "reserved_item",
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "reserve",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "item"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 3
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "final_item",
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "deactivate_when_empty",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "reserved_item"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "marker",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.instr",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "final_item",
+                      "sku"
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "ITEM"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "sku = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "final_item",
+                    "sku"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "quantity = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "final_item",
+                    "quantity"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "reserved = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "final_item",
+                    "reserved"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "active = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "final_item",
+                    "active"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "marker = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "marker"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "make_item",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "sku",
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
+          },
+          {
+            "name": "quantity",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "InventoryItem"
+        },
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "CallExpr",
+              "name": "String.instr",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "VarExpr",
+                    "name": "sku"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "SKU"
+                  }
+                }
+              ]
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "VarExpr",
+              "name": "quantity"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          }
+        ],
+        "aborts": [],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "result",
+                "quantity"
+              ]
+            },
+            "right": {
+              "kind": "VarExpr",
+              "name": "quantity"
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "result",
+                "reserved"
+              ]
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "result",
+                "active"
+              ]
+            },
+            "right": {
+              "kind": "BoolExpr",
+              "value": true
+            }
+          }
+        ],
+        "contracts": {
+          "requires": [
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "CallExpr",
+                  "name": "String.instr",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "sku"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "SKU"
+                      }
+                    }
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 1,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "quantity"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            }
+          ],
+          "ensures": [
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "result",
+                    "quantity"
+                  ]
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "quantity"
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 1,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "result",
+                    "reserved"
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 2,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "result",
+                    "active"
+                  ]
+                },
+                "right": {
+                  "kind": "BoolExpr",
+                  "value": true
+                }
+              }
+            }
+          ],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "RecordLiteralExpr",
+                "type": "InventoryItem",
+                "args": [
+                  {
+                    "kind": "NamedArg",
+                    "name": "sku",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "sku"
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "quantity",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "quantity"
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "reserved",
+                    "value": {
+                      "kind": "NumberExpr",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "active",
+                    "value": {
+                      "kind": "BoolExpr",
+                      "value": true
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "reserve",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "item",
+            "type": "InventoryItem",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            }
+          },
+          {
+            "name": "amount",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "InventoryItem"
+        },
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": ">",
+            "left": {
+              "kind": "VarExpr",
+              "name": "amount"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "item",
+                "quantity"
+              ]
+            },
+            "right": {
+              "kind": "VarExpr",
+              "name": "amount"
+            }
+          }
+        ],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "amount"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 1,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "item",
+                    "quantity"
+                  ]
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "amount"
+                }
+              }
+            }
+          ],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "InventoryItem"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "updated",
+            "type": {
+              "kind": "TypeName",
+              "name": "InventoryItem"
+            },
+            "value": {
+              "kind": "VarExpr",
+              "name": "item"
+            }
+          },
+          {
+            "kind": "FieldAssignStmt",
+            "path": [
+              "updated",
+              "reserved"
+            ],
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "updated",
+                  "reserved"
+                ]
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "amount"
+              }
+            }
+          },
+          {
+            "kind": "FieldAssignStmt",
+            "path": [
+              "updated",
+              "quantity"
+            ],
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "-",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "updated",
+                  "quantity"
+                ]
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "amount"
+              }
+            }
+          },
+          {
+            "kind": "FieldAssignStmt",
+            "path": [
+              "updated",
+              "sku"
+            ],
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.replace",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "updated",
+                      "sku"
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "SKU"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "ITEM"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "VarExpr",
+                "name": "updated"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "services": [],
+    "proof_obligations": [],
+    "flow_summaries": [
+      {
+        "kind": "RoutineFlowSummary",
+        "routine_name": "deactivate_when_empty",
+        "routine_kind": "function",
+        "normal_return_possible": true,
+        "guaranteed_exit": true,
+        "declared_aborts": [],
+        "declared_abort_refs": [],
+        "emitted_aborts": [],
+        "emitted_abort_refs": [],
+        "called_routines": [],
+        "propagated_aborts": [],
+        "propagated_abort_refs": []
+      },
+      {
+        "kind": "RoutineFlowSummary",
+        "routine_name": "main",
+        "routine_kind": "procedure",
+        "normal_return_possible": true,
+        "guaranteed_exit": false,
+        "declared_aborts": [],
+        "declared_abort_refs": [],
+        "emitted_aborts": [],
+        "emitted_abort_refs": [],
+        "called_routines": [
+          "deactivate_when_empty",
+          "make_item",
+          "reserve"
+        ],
+        "propagated_aborts": [],
+        "propagated_abort_refs": []
+      },
+      {
+        "kind": "RoutineFlowSummary",
+        "routine_name": "make_item",
+        "routine_kind": "function",
+        "normal_return_possible": true,
+        "guaranteed_exit": true,
+        "declared_aborts": [],
+        "declared_abort_refs": [],
+        "emitted_aborts": [],
+        "emitted_abort_refs": [],
+        "called_routines": [],
+        "propagated_aborts": [],
+        "propagated_abort_refs": []
+      },
+      {
+        "kind": "RoutineFlowSummary",
+        "routine_name": "reserve",
+        "routine_kind": "function",
+        "normal_return_possible": true,
+        "guaranteed_exit": true,
+        "declared_aborts": [],
+        "declared_abort_refs": [],
+        "emitted_aborts": [],
+        "emitted_abort_refs": [],
+        "called_routines": [],
+        "propagated_aborts": [],
+        "propagated_abort_refs": []
+      }
+    ],
+    "verifier": {
+      "node": "VerifierReport",
+      "proof_obligations": [],
+      "flow_summaries": [
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "deactivate_when_empty",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "main",
+          "routine_kind": "procedure",
+          "normal_return_possible": true,
+          "guaranteed_exit": false,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [
+            "deactivate_when_empty",
+            "make_item",
+            "reserve"
+          ],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "make_item",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        },
+        {
+          "kind": "RoutineFlowSummary",
+          "routine_name": "reserve",
+          "routine_kind": "function",
+          "normal_return_possible": true,
+          "guaranteed_exit": true,
+          "declared_aborts": [],
+          "declared_abort_refs": [],
+          "emitted_aborts": [],
+          "emitted_abort_refs": [],
+          "called_routines": [],
+          "propagated_aborts": [],
+          "propagated_abort_refs": []
+        }
+      ]
+    }
+  }
+}
