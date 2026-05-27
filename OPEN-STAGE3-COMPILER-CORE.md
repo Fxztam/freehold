@@ -18,6 +18,7 @@ bootstrap/compiler_core_v1/
   Compiler/Core/Names.fh
   Compiler/Core/Diagnostics.fh
   Compiler/Core/Fixtures.fh
+  Compiler/Core/Token.fh
   Std/IO.fh
 ```
 
@@ -34,6 +35,11 @@ bootstrap/compiler_core_v1/
 - `Compiler.Core.Fixtures`
   - `CompilerFixtureResult`
   - deterministische Mini-Fixture-Auswertung fuer Package-Pfad, Exportname und Diagnostic-Text
+- `Compiler.Core.Token`
+  - `TokenKind`
+  - `SourceSpan`
+  - `Token`
+  - Helper fuer Token-Erzeugung, Token-Key und Token-Text
 - `App.Main`
   - Smoke-Einstieg, der die Helper zusammen benutzt und Golden-Ergebniszeilen ausgibt
 
@@ -62,6 +68,8 @@ Das Manifest beschreibt den ersten Contract `compiler_core_v1_go_project`.
 
 ## Naechste Schritte
 
-1. Weitere Mini-Fixtures nur bei neuem Compiler-Core-Verhalten ergaenzen.
-2. Danach erst kleine IR-/Go-Codegen-Helfer in Freehold modellieren.
-3. Stage1-Ausfuehrung erst beginnen, wenn die Mini-Fixtures stabil sind.
+1. AST-Minimum fuer Modul-/Identifier-/Literal-Knoten ergaenzen.
+2. Danach einen kontrollierten Fixture-Lexer fuer ein Mini-Modul ergaenzen.
+3. Danach einen kontrollierten Fixture-Parser fuer `module <Identifier> end <Identifier>` ergaenzen.
+4. Weitere Mini-Fixtures nur bei neuem Compiler-Core-Verhalten ergaenzen.
+5. Stage1-Ausfuehrung erst beginnen, wenn die Mini-Fixtures stabil sind.

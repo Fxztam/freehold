@@ -3,6 +3,7 @@ module App.Main
 import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic_text, make_diagnostic
 import Compiler.Core.Fixtures exposing CompilerFixtureResult, evaluate_fixture
 import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, exported_go_name, make_module_name, make_symbol_name, module_to_go_package
+import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_source_span, make_token, make_token_kind, token_key, token_text
 import Std.IO
 
 function build_sample_diagnostic() returns Diagnostic
@@ -34,6 +35,14 @@ is
     call Std.IO.logf("fixture.diagnostics.package = ${}", diagnostics_fixture.package_path)
     call Std.IO.logf("fixture.diagnostics.export = ${}", diagnostics_fixture.exported_name)
     call Std.IO.logf("fixture.diagnostics.diag = ${}", diagnostics_fixture.diagnostic_text)
+
+    let module_kind: TokenKind = make_token_kind("KeywordModule")
+    let module_span: SourceSpan = make_source_span("mini_module.fh", 1, 1, 1, 7)
+    let module_token: Token = make_token(module_kind, module_span, "module")
+
+    call Std.IO.logf("token.kind = ${}", module_token.kind.name)
+    call Std.IO.logf("token.key = ${}", token_key(module_token))
+    call Std.IO.logf("token.text = ${}", token_text(module_token))
 end main
 
 end App.Main

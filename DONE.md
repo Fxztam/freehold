@@ -807,3 +807,23 @@
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `python -m py_compile .\tools\verify_stage3_compiler_core_contracts.py` -> exit 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, runtime Golden stdout matched 10/10 lines.
+
+## Stage-3 compiler_core_v1 Token model
+
+- Added `Compiler.Core.Token` as the first lexer/parser-facing data-model slice.
+- New Freehold records:
+  - `TokenKind` for stable token kind names.
+  - `SourceSpan` for source name and start/end positions.
+  - `Token` for kind/span/lexeme.
+- New helpers:
+  - `make_token_kind`.
+  - `make_source_span`.
+  - `make_token`.
+  - `token_key`.
+  - `token_text`.
+- Extended `App.Main` and the Stage-3 runtime Golden with a deterministic `KeywordModule` token fixture.
+- Updated `artifacts/stage3/compiler_core_v1/manifest.json` so the Stage-3 contract now checks generated Go for `compiler/core/token/token.go`.
+- Updated `OPEN-STAGE3-COMPILER-CORE.md`; next planned compiler-core step is the AST-minimum before fixture lexer/parser.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched.

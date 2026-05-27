@@ -1,0 +1,62 @@
+module Compiler.Core.Token
+
+type TokenKind is record
+    name: String
+end record
+
+type SourceSpan is record
+    source_name: String
+    start_line: Integer
+    start_column: Integer
+    end_line: Integer
+    end_column: Integer
+end record
+
+type Token is record
+    kind: TokenKind
+    span: SourceSpan
+    lexeme: String
+end record
+
+function make_token_kind(name: String) returns TokenKind
+requires String.instr(name, "") = 0
+ensures result.name = name
+is
+    return TokenKind { name: name }
+end make_token_kind
+
+function make_source_span(source_name: String, start_line: Integer, start_column: Integer, end_line: Integer, end_column: Integer) returns SourceSpan
+requires start_line >= 1, start_column >= 1, end_line >= start_line, end_column >= 1
+ensures result.source_name = source_name, result.start_line = start_line, result.end_column = end_column
+is
+    return SourceSpan {
+        source_name: source_name,
+        start_line: start_line,
+        start_column: start_column,
+        end_line: end_line,
+        end_column: end_column
+    }
+end make_source_span
+
+function make_token(kind: TokenKind, span: SourceSpan, lexeme: String) returns Token
+requires String.instr(kind.name, "") = 0
+ensures result.kind.name = kind.name, result.lexeme = lexeme
+is
+    return Token { kind: kind, span: span, lexeme: lexeme }
+end make_token
+
+function token_key(token: Token) returns String
+requires String.instr(token.kind.name, "") = 0
+ensures String.instr(result, token.kind.name) = 0
+is
+    return String.template("${kind}@${source}:${line}:${column}", kind: token.kind.name, source: token.span.source_name, line: token.span.start_line, column: token.span.start_column)
+end token_key
+
+function token_text(token: Token) returns String
+requires String.instr(token.kind.name, "") = 0
+ensures String.instr(result, token.lexeme) >= 0
+is
+    return String.template("${key}:${lexeme}", key: token_key(token), lexeme: token.lexeme)
+end token_text
+
+end Compiler.Core.Token
