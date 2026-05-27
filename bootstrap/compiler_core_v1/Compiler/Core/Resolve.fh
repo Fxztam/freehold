@@ -1,0 +1,67 @@
+module Compiler.Core.Resolve
+
+import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_text, make_unknown_exposed_symbol_diagnostic
+import Compiler.Core.Lexer exposing MiniImportReferenceModuleTokens
+import Compiler.Core.Names exposing ModuleName, SymbolName
+
+type ResolveStatus is record
+    name: String
+end record
+
+type ResolveResult is record
+    status: ResolveStatus
+    module_name: String
+    symbol_name: String
+    issue: Diagnostic
+end record
+
+function make_resolve_status(name: String) returns ResolveStatus
+requires String.instr(name, "") = 0
+ensures result.name = name
+is
+    return ResolveStatus { name: name }
+end make_resolve_status
+
+function resolve_ok(import_module_full: String, symbol_raw: String) returns ResolveResult
+requires String.instr(import_module_full, "") = 0, String.instr(symbol_raw, "") = 0
+ensures result.status.name = "ok", result.module_name = import_module_full, result.symbol_name = symbol_raw
+is
+    let status: ResolveStatus = make_resolve_status("ok")
+    let empty_module: ModuleName = ModuleName { full: import_module_full }
+    let empty_symbol: SymbolName = SymbolName { raw: symbol_raw }
+    let empty_issue: Diagnostic = Diagnostic { code: "", message: "", module_name: empty_module, symbol_name: empty_symbol }
+    return ResolveResult { status: status, module_name: import_module_full, symbol_name: symbol_raw, issue: empty_issue }
+end resolve_ok
+
+function resolve_error(issue: Diagnostic, import_module_full: String, symbol_raw: String) returns ResolveResult
+requires String.instr(issue.code, "FH-") = 0, String.instr(import_module_full, "") = 0, String.instr(symbol_raw, "") = 0
+ensures result.status.name = "error", result.issue.code = issue.code
+is
+    let status: ResolveStatus = make_resolve_status("error")
+    return ResolveResult { status: status, module_name: import_module_full, symbol_name: symbol_raw, issue: issue }
+end resolve_error
+
+function resolve_mini_import_reference_module(tokens: MiniImportReferenceModuleTokens) returns ResolveResult
+requires tokens.import_keyword.lexeme = "import", tokens.exposing_keyword.lexeme = "exposing", tokens.return_keyword.lexeme = "return"
+ensures result.module_name = tokens.import_module_name.lexeme, result.symbol_name = tokens.return_symbol.lexeme
+is
+    if tokens.exposed_name.lexeme = tokens.return_symbol.lexeme then
+        return resolve_ok(tokens.import_module_name.lexeme, tokens.return_symbol.lexeme)
+    else
+        let issue: Diagnostic = make_unknown_exposed_symbol_diagnostic(tokens.import_module_name.lexeme, tokens.return_symbol.lexeme)
+        return resolve_error(issue, tokens.import_module_name.lexeme, tokens.return_symbol.lexeme)
+    end if
+end resolve_mini_import_reference_module
+
+function resolve_result_summary(resolve_result: ResolveResult) returns String
+requires String.instr(resolve_result.status.name, "") = 0
+ensures String.instr(result, resolve_result.status.name) = 0
+is
+    if resolve_result.status.name = "ok" then
+        return String.template("ok:${module}.${symbol}", module: resolve_result.module_name, symbol: resolve_result.symbol_name)
+    else
+        return String.template("error:${diagnostic}", diagnostic: diagnostic_text(resolve_result.issue))
+    end if
+end resolve_result_summary
+
+end Compiler.Core.Resolve

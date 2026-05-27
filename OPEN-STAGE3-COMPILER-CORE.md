@@ -23,6 +23,7 @@ bootstrap/compiler_core_v1/
   Compiler/Core/Lexer.fh
   Compiler/Core/Parser.fh
   Compiler/Core/ParseResult.fh
+  Compiler/Core/Resolve.fh
   Std/IO.fh
 ```
 
@@ -92,6 +93,12 @@ bootstrap/compiler_core_v1/
   - `ParseError`
   - `ParseResult`
   - Helper fuer OK-/Fehler-Ergebnisse und deterministische Result-Summary
+- `Compiler.Core.Resolve`
+  - `ResolveStatus`
+  - `ResolveResult`
+  - Mini-Resolver fuer kontrollierte Import-Reference-Tokens
+  - OK-Ausgang fuer `import Demo.Support exposing answer` / `return answer`
+  - Diagnostic-Ausgang mit `FH-REF-1001` fuer `return missing`
 - `App.Main`
   - Smoke-Einstieg, der die Helper zusammen benutzt und Golden-Ergebniszeilen ausgibt
 
@@ -120,6 +127,6 @@ Das Manifest beschreibt den ersten Contract `compiler_core_v1_go_project`.
 
 ## Naechste Schritte
 
-1. Die `FH-REF-1001`-Diagnostik aus dem kontrollierten Fixture in die breitere Stage-3-Namensauflösung ueberfuehren.
-2. Danach Import-/Exposing-Diagnostik und Parser-Result-Pfad konsolidieren, sobald ein Resolver-Slice existiert.
+1. Den Mini-Resolver ueber Tokens hinaus auf das positive Import-Reference-AST-Modell ausweiten.
+2. Danach Import-/Exposing-Diagnostik und Parser-Result-Pfad konsolidieren, sobald Resolver und Parser die Phasengrenze sauber teilen.
 3. Stage1-Ausfuehrung erst beginnen, wenn die Mini-Fixtures stabil sind.

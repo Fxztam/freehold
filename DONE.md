@@ -1079,3 +1079,24 @@
   - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Diagnostics.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 51/51 lines.
+
+## Stage-3 compiler_core_v1 mini resolver module
+
+- Added `Compiler.Core.Resolve` as the first dedicated Stage-3 resolver phase.
+- Introduced:
+  - `ResolveStatus`.
+  - `ResolveResult`.
+  - `resolve_ok`.
+  - `resolve_error`.
+  - `resolve_mini_import_reference_module`.
+  - `resolve_result_summary`.
+- The resolver accepts the controlled `MiniImportReferenceModuleTokens` fixture and returns:
+  - `ok:Demo.Support.answer` for `import Demo.Support exposing answer` plus `return answer`.
+  - `error:FH-REF-1001:Demo.Support.missing:unknown exposed symbol missing in Demo.Support` for `return missing`.
+- Extended `App.Main` and the Stage-3 runtime Golden with resolver result lines for the positive and missing-symbol paths.
+- Updated `artifacts/stage3/compiler_core_v1/manifest.json` so the Stage-3 contract now expects 10 generated Go source files and checks the new `compiler/core/resolve/resolve.go` package.
+- Updated `OPEN-STAGE3-COMPILER-CORE.md`; next planned compiler-core step is widening the mini-resolver toward the positive Import-Reference AST model and then cleaning up the parser/resolver phase boundary.
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Resolve.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 53/53 lines.

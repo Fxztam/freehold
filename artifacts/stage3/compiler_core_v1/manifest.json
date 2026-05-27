@@ -13,7 +13,7 @@
       "source_file": "bootstrap/compiler_core_v1/App/Main.fh",
       "expected": {
         "module_path": "freehold.local",
-        "total_files": 9,
+        "total_files": 10,
         "total_build_files": 3,
         "total_extra_files": 0,
         "supported": true
@@ -63,6 +63,8 @@
             "parser.import_ref.result = %v",
             "parser.import_ref.missing = %v",
             "diag.import_ref.unknown = %v",
+            "resolver.import_ref.result = %v",
+            "resolver.import_ref.missing = %v",
             "parse.ok = %v",
             "parse.error = %v"
           ]
@@ -189,6 +191,22 @@
             "compiler_core_ast.MakeModuleWithImportNode(moduleNode, importDecl)",
             "compiler_core_ast.MakeModuleWithImportReferenceNode(moduleNode, importDecl, routine)",
             "compiler_core_ast.MakeModuleNode(tokens.ModuleKeyword.Span, moduleIdentifier)"
+          ]
+        },
+        {
+          "output_path": "compiler/core/resolve/resolve.go",
+          "module": "Compiler.Core.Resolve",
+          "supported": true,
+          "must_contain": [
+            "type ResolveStatus struct",
+            "type ResolveResult struct",
+            "func MakeResolveStatus(name string) ResolveStatus",
+            "func ResolveOk(importModuleFull string, symbolRaw string) ResolveResult",
+            "func ResolveError(issue compiler_core_diagnostics.Diagnostic, importModuleFull string, symbolRaw string) ResolveResult",
+            "func ResolveMiniImportReferenceModule(tokens compiler_core_lexer.MiniImportReferenceModuleTokens) ResolveResult",
+            "func ResolveResultSummary(resolveResult ResolveResult) string",
+            "compiler_core_diagnostics.MakeUnknownExposedSymbolDiagnostic",
+            "compiler_core_diagnostics.DiagnosticText"
           ]
         },
         {
