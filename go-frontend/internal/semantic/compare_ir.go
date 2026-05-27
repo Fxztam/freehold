@@ -1,6 +1,7 @@
 package semantic
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,8 @@ import (
 )
 
 const (
-	CompareIRSchema         = "fh-compare-ir-v0"
+	CompareIRSchemaV0       = "fh-compare-ir-v0"
+	CompareIRSchemaV1       = "fh-compare-ir-v1"
 	FreeholdLanguageVersion = "freehold-v1"
 )
 
@@ -24,6 +26,7 @@ type compareIRDocument struct {
 }
 
 type moduleIR struct {
+	Node         string         `json:"node,omitempty"`
 	Name         string         `json:"name"`
 	Imports      []importDeclIR `json:"imports"`
 	Declarations []any          `json:"declarations"`
@@ -64,16 +67,26 @@ type errorDeclIR struct {
 }
 
 type typeDefIR struct {
-	Name     string   `json:"name"`
-	Base     string   `json:"base"`
-	MinValue *float64 `json:"min_value,omitempty"`
-	MaxValue *float64 `json:"max_value,omitempty"`
+	Kind     string     `json:"kind,omitempty"`
+	Name     string     `json:"name"`
+	Base     string     `json:"base"`
+	BaseType *typeRefIR `json:"base_type,omitempty"`
+	MinValue *float64   `json:"min_value,omitempty"`
+	MaxValue *float64   `json:"max_value,omitempty"`
 }
 
 type recordDefIR struct {
-	Name        string         `json:"name"`
-	Fields      []paramIR      `json:"fields"`
-	ProtoFields []protoFieldIR `json:"proto_fields"`
+	Kind        string          `json:"kind,omitempty"`
+	Name        string          `json:"name"`
+	Fields      []recordFieldIR `json:"fields"`
+	ProtoFields []protoFieldIR  `json:"proto_fields"`
+}
+
+type recordFieldIR struct {
+	Kind     string    `json:"kind"`
+	Name     string    `json:"name"`
+	Type     string    `json:"type"`
+	TypeRepr typeRefIR `json:"type_repr"`
 }
 
 type protoFieldIR struct {
@@ -96,36 +109,112 @@ type rpcDecl struct {
 }
 
 type routineDecl struct {
-	Kind        string        `json:"kind"`
-	RoutineKind string        `json:"routine_kind"`
-	Name        string        `json:"name"`
-	TypeParams  []string      `json:"type_params"`
-	IsAsync     bool          `json:"is_async"`
-	Params      []paramIR     `json:"params"`
-	ReturnType  typeRefIR     `json:"return_type"`
-	Requires    []any         `json:"requires"`
-	Aborts      []abortClause `json:"aborts"`
-	Ensures     []any         `json:"ensures"`
-	Body        []any         `json:"body"`
+	Kind             string             `json:"kind"`
+	RoutineKind      string             `json:"routine_kind"`
+	Name             string             `json:"name"`
+	TypeParams       []string           `json:"type_params"`
+	IsAsync          bool               `json:"is_async"`
+	Params           []paramIR          `json:"params"`
+	ReturnType       typeRefIR          `json:"return_type"`
+	Requires         []any              `json:"requires"`
+	Aborts           []abortClause      `json:"aborts"`
+	Ensures          []any              `json:"ensures"`
+	Contracts        contractSection    `json:"contracts,omitempty"`
+	ContractBindings contractBindingsIR `json:"contract_bindings,omitempty"`
+	Body             []any              `json:"body"`
 }
 
 type paramIR struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Name     string    `json:"name"`
+	Type     string    `json:"type"`
+	TypeRepr typeRefIR `json:"type_repr,omitempty"`
 }
 
 type typeRefIR struct {
-	Kind        string     `json:"kind"`
-	Name        string     `json:"name,omitempty"`
-	OkType      *typeRefIR `json:"ok_type,omitempty"`
-	ErrorType   string     `json:"error_type,omitempty"`
-	ElementType string     `json:"element_type,omitempty"`
-	Size        *int       `json:"size,omitempty"`
+	Kind            string      `json:"kind"`
+	Name            string      `json:"name,omitempty"`
+	OkType          *typeRefIR  `json:"ok_type,omitempty"`
+	ErrorType       string      `json:"error_type,omitempty"`
+	ErrorRef        *errorRefIR `json:"error_ref,omitempty"`
+	ElementType     string      `json:"element_type,omitempty"`
+	ElementTypeRepr *typeRefIR  `json:"element_type_repr,omitempty"`
+	Size            *int        `json:"size,omitempty"`
+}
+
+type errorRefIR struct {
+	Kind string `json:"kind"`
+	Name string `json:"name"`
+}
+
+type contractSection struct {
+	Requires []any         `json:"requires"`
+	Ensures  []any         `json:"ensures"`
+	Aborts   []abortClause `json:"aborts"`
+}
+
+type contractClauseIR struct {
+	Kind      string `json:"kind"`
+	Role      string `json:"role"`
+	Index     int    `json:"index"`
+	Condition any    `json:"condition"`
+}
+
+type contractContextIR struct {
+	Result  bool `json:"result"`
+	Success bool `json:"success"`
+	Failure bool `json:"failure"`
+	Value   bool `json:"value"`
+	Error   bool `json:"error"`
+}
+
+type contractContextMatrixIR struct {
+	Requires contractContextIR `json:"requires"`
+	Ensures  contractContextIR `json:"ensures"`
+	Aborts   contractContextIR `json:"aborts"`
+}
+
+type contractBindingIR struct {
+	Kind      string    `json:"kind"`
+	Name      string    `json:"name"`
+	Available bool      `json:"available"`
+	Type      typeRefIR `json:"type"`
+}
+
+type errorContractBindingIR struct {
+	Kind      string      `json:"kind"`
+	Name      string      `json:"name"`
+	Available bool        `json:"available"`
+	Type      typeRefIR   `json:"type"`
+	ErrorRef  *errorRefIR `json:"error_ref"`
+}
+
+type resultBindingIR struct {
+	Name      string    `json:"name"`
+	Available bool      `json:"available"`
+	Type      typeRefIR `json:"type"`
+}
+
+type resultErrorBindingIR struct {
+	Name      string      `json:"name"`
+	Available bool        `json:"available"`
+	Type      typeRefIR   `json:"type"`
+	ErrorRef  *errorRefIR `json:"error_ref"`
+}
+
+type contractBindingsIR struct {
+	Kind               string                  `json:"kind"`
+	IsResultReturn     bool                    `json:"is_result_return"`
+	Contexts           contractContextMatrixIR `json:"contexts"`
+	Bindings           []any                   `json:"bindings"`
+	ResultValueBinding resultBindingIR         `json:"result_value_binding"`
+	ResultErrorBinding resultErrorBindingIR    `json:"result_error_binding"`
 }
 
 type abortClause struct {
-	Error     string `json:"error"`
-	Condition any    `json:"condition,omitempty"`
+	Kind      string      `json:"kind"`
+	Error     string      `json:"error"`
+	ErrorRef  *errorRefIR `json:"error_ref,omitempty"`
+	Condition any         `json:"condition,omitempty"`
 }
 
 type returnStmtIR struct {
@@ -194,8 +283,8 @@ type whileStmtIR struct {
 	Kind       string `json:"kind"`
 	Condition  any    `json:"condition"`
 	Invariants []any  `json:"invariants"`
-	Variant    any    `json:"variant,omitempty"`
 	Body       []any  `json:"body"`
+	Variant    any    `json:"variant,omitempty"`
 }
 
 type caseBranchIR struct {
@@ -320,7 +409,18 @@ type moduleEnv struct {
 	Services map[string]serviceDecl
 }
 
-func ExportCompareIRJSON(entryFile string) (string, error) {
+func schemaForCompareProfile(profile string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(profile)) {
+	case "", "v1":
+		return CompareIRSchemaV1, nil
+	case "v0":
+		return CompareIRSchemaV0, nil
+	default:
+		return "", fmt.Errorf("unsupported compare-ir profile: %q", profile)
+	}
+}
+
+func ExportCompareIRJSON(entryFile string, profile string) (string, error) {
 	project, diagnostics, err := ValidateProject(entryFile)
 	if err != nil {
 		return "", err
@@ -332,6 +432,11 @@ func ExportCompareIRJSON(entryFile string) (string, error) {
 		return "", fmt.Errorf("failed to load project")
 	}
 
+	schema, err := schemaForCompareProfile(profile)
+	if err != nil {
+		return "", err
+	}
+
 	envCache := map[string]moduleEnv{}
 	env, err := buildModuleEnv(project, project.Entry.Name, envCache)
 	if err != nil {
@@ -339,23 +444,26 @@ func ExportCompareIRJSON(entryFile string) (string, error) {
 	}
 
 	doc := compareIRDocument{
-		Schema:          CompareIRSchema,
+		Schema:          schema,
 		LanguageVersion: FreeholdLanguageVersion,
 		Module:          exportModule(project.Entry),
 		Analysis: analysisSection{
 			Types:    sortedTypeDefs(env.Types),
 			Records:  sortedRecordDefs(env.Records),
 			Errors:   sortedErrorNames(env.Errors),
-			Routines: sortedRoutines(env.Routines),
+			Routines: sortedRoutines(localRoutines(project.Entry)),
 			Services: sortedServices(localServices(project.Entry)),
 		},
 	}
 
-	data, err := json.MarshalIndent(doc, "", "  ")
-	if err != nil {
+	var buffer bytes.Buffer
+	encoder := json.NewEncoder(&buffer)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(doc); err != nil {
 		return "", err
 	}
-	return string(data) + "\n", nil
+	return buffer.String(), nil
 }
 
 func exportModule(module *ast.Module) moduleIR {
@@ -365,7 +473,7 @@ func exportModule(module *ast.Module) moduleIR {
 	for _, decl := range module.Declarations {
 		switch value := decl.(type) {
 		case ast.ImportDecl:
-			exposing := append([]string(nil), value.Exposing...)
+			exposing := append([]string{}, value.Exposing...)
 			sort.Strings(exposing)
 			imports = append(imports, importDeclIR{Kind: "ImportDecl", Module: value.Module, Exposing: exposing})
 		case ast.TypeDecl:
@@ -393,7 +501,7 @@ func exportModule(module *ast.Module) moduleIR {
 	})
 	sortModuleDeclarations(declarations)
 
-	return moduleIR{Name: module.Name, Imports: imports, Declarations: declarations}
+	return moduleIR{Node: "Module", Name: module.Name, Imports: imports, Declarations: declarations}
 }
 
 func sortModuleDeclarations(declarations []any) {
@@ -440,7 +548,7 @@ func exportTypeDecl(value ast.TypeDecl) typeDeclIR {
 func exportRecordTypeDecl(value ast.TypeDecl) recordTypeDeclIR {
 	fields := make([]paramIR, 0, len(value.Fields))
 	for _, field := range sortedParams(value.Fields) {
-		fields = append(fields, paramIR{Name: field.Name, Type: field.Type})
+		fields = append(fields, paramIR{Name: field.Name, Type: field.Type, TypeRepr: typeRefFromName(field.Type)})
 	}
 	item := recordTypeDeclIR{Kind: "RecordTypeDecl", Name: value.Name, Fields: fields}
 	if len(value.TypeParams) > 0 {
@@ -468,6 +576,19 @@ func localServices(module *ast.Module) map[string]serviceDecl {
 	return services
 }
 
+func localRoutines(module *ast.Module) map[string]routineDecl {
+	routines := map[string]routineDecl{}
+	for _, decl := range module.Declarations {
+		switch value := decl.(type) {
+		case ast.FunctionDecl:
+			routines[value.Name] = exportRoutineFromFunction(value)
+		case ast.ProcedureDecl:
+			routines[value.Name] = exportRoutineFromProcedure(value)
+		}
+	}
+	return routines
+}
+
 func exportServiceDecl(value ast.ServiceDecl) serviceDecl {
 	rpcs := append([]ast.RpcDecl(nil), value.Rpcs...)
 	sort.Slice(rpcs, func(i, j int) bool { return rpcs[i].Name < rpcs[j].Name })
@@ -481,53 +602,74 @@ func exportServiceDecl(value ast.ServiceDecl) serviceDecl {
 func exportRoutineFromFunction(value ast.FunctionDecl) routineDecl {
 	params := make([]paramIR, 0, len(value.Params))
 	for _, param := range value.Params {
-		params = append(params, paramIR{Name: param.Name, Type: param.Type})
+		params = append(params, paramIR{Name: param.Name, Type: param.Type, TypeRepr: typeRefFromName(param.Type)})
 	}
-	typeParams := append([]string(nil), value.TypeParams...)
+	typeParams := append([]string{}, value.TypeParams...)
 	sort.Strings(typeParams)
+	requires := exportExprList(value.Requires)
+	ensures := exportExprList(value.Ensures)
+	contracts := contractSection{Requires: exportContractClauses("requires", value.Requires), Ensures: exportContractClauses("ensures", value.Ensures), Aborts: exportAbortClauses(value.Aborts)}
+	returnType := typeRefFromName(value.ReturnType)
 	return routineDecl{
-		Kind:        "RoutineDecl",
-		RoutineKind: "function",
-		Name:        value.Name,
-		TypeParams:  typeParams,
-		IsAsync:     value.IsAsync,
-		Params:      params,
-		ReturnType:  typeRefFromName(value.ReturnType),
-		Requires:    exportExprList(value.Requires),
-		Aborts:      exportAbortClauses(value.Aborts),
-		Ensures:     exportExprList(value.Ensures),
-		Body:        exportStmtList(value.Body),
+		Kind:             "RoutineDecl",
+		RoutineKind:      "function",
+		Name:             value.Name,
+		TypeParams:       typeParams,
+		IsAsync:          value.IsAsync,
+		Params:           params,
+		ReturnType:       returnType,
+		Requires:         requires,
+		Aborts:           contracts.Aborts,
+		Ensures:          ensures,
+		Contracts:        contracts,
+		ContractBindings: buildContractBindings(returnType),
+		Body:             exportStmtList(value.Body),
 	}
 }
 
 func exportRoutineFromProcedure(value ast.ProcedureDecl) routineDecl {
 	params := make([]paramIR, 0, len(value.Params))
 	for _, param := range value.Params {
-		params = append(params, paramIR{Name: param.Name, Type: param.Type})
+		params = append(params, paramIR{Name: param.Name, Type: param.Type, TypeRepr: typeRefFromName(param.Type)})
 	}
+	returnType := typeRefIR{Kind: "Void"}
+	requires := exportExprList(value.Requires)
+	ensures := exportExprList(value.Ensures)
+	contracts := contractSection{Requires: exportContractClauses("requires", value.Requires), Ensures: exportContractClauses("ensures", value.Ensures), Aborts: exportAbortClauses(value.Aborts)}
 	return routineDecl{
-		Kind:        "RoutineDecl",
-		RoutineKind: "procedure",
-		Name:        value.Name,
-		TypeParams:  []string{},
-		IsAsync:     false,
-		Params:      params,
-		ReturnType:  typeRefIR{Kind: "Void"},
-		Requires:    exportExprList(value.Requires),
-		Aborts:      exportAbortClauses(value.Aborts),
-		Ensures:     exportExprList(value.Ensures),
-		Body:        exportStmtList(value.Body),
+		Kind:             "RoutineDecl",
+		RoutineKind:      "procedure",
+		Name:             value.Name,
+		TypeParams:       []string{},
+		IsAsync:          false,
+		Params:           params,
+		ReturnType:       returnType,
+		Requires:         requires,
+		Aborts:           contracts.Aborts,
+		Ensures:          ensures,
+		Contracts:        contracts,
+		ContractBindings: buildContractBindings(returnType),
+		Body:             exportStmtList(value.Body),
 	}
 }
 
 func exportAbortClauses(clauses []ast.AbortClause) []abortClause {
 	items := make([]abortClause, 0, len(clauses))
 	for _, clause := range clauses {
+		errorRef := &errorRefIR{Kind: "ErrorRef", Name: clause.Error}
 		if clause.Condition != nil {
-			items = append(items, abortClause{Error: clause.Error, Condition: exportExpr(clause.Condition)})
+			items = append(items, abortClause{Kind: "AbortContractClause", Error: clause.Error, ErrorRef: errorRef, Condition: exportExpr(clause.Condition)})
 		} else {
-			items = append(items, abortClause{Error: clause.Error})
+			items = append(items, abortClause{Kind: "AbortContractClause", Error: clause.Error, ErrorRef: errorRef})
 		}
+	}
+	return items
+}
+
+func exportContractClauses(role string, expressions []ast.Expr) []any {
+	items := make([]any, 0, len(expressions))
+	for index, expr := range expressions {
+		items = append(items, contractClauseIR{Kind: "ContractClause", Role: role, Index: index, Condition: exportExpr(expr)})
 	}
 	return items
 }
@@ -624,8 +766,8 @@ func exportExpr(expr ast.Expr) any {
 		return stringExprIR{Kind: "StringExpr", Value: value.Value}
 	case ast.NumberExpr:
 		if strings.Contains(value.Value, ".") {
-			if parsed, err := strconv.ParseFloat(value.Value, 64); err == nil {
-				return numberExprIR{Kind: "DoubleExpr", Value: parsed}
+			if _, err := strconv.ParseFloat(value.Value, 64); err == nil {
+				return numberExprIR{Kind: "DoubleExpr", Value: json.Number(value.Value)}
 			}
 		}
 		if parsed, err := strconv.Atoi(value.Value); err == nil {
@@ -641,9 +783,6 @@ func exportExpr(expr ast.Expr) any {
 		}
 		if value.Name == "false" {
 			return boolExprIR{Kind: "BoolExpr", Value: false}
-		}
-		if value.Name == "result" || value.Name == "value" || value.Name == "error" {
-			return specialResultExprIR{Kind: "SpecialResultExpr", Name: value.Name}
 		}
 		return varExprIR{Kind: "VarExpr", Name: value.Name}
 	case ast.FieldAccessExpr:
@@ -690,10 +829,8 @@ func exportExpr(expr ast.Expr) any {
 }
 
 func exportRecordLiteralArgs(fields []ast.RecordField) []any {
-	sortedFields := append([]ast.RecordField(nil), fields...)
-	sort.Slice(sortedFields, func(i, j int) bool { return sortedFields[i].Name < sortedFields[j].Name })
-	items := make([]any, 0, len(sortedFields))
-	for _, field := range sortedFields {
+	items := make([]any, 0, len(fields))
+	for _, field := range fields {
 		items = append(items, namedArgIR{Kind: "NamedArg", Name: field.Name, Value: exportExpr(field.Value)})
 	}
 	return items
@@ -742,19 +879,78 @@ func typeRefFromName(name string) typeRefIR {
 		parts := splitTopLevel(name[len("Result<") : len(name)-1])
 		if len(parts) == 2 {
 			okType := typeRefFromName(parts[0])
-			return typeRefIR{Kind: "ResultTypeName", OkType: &okType, ErrorType: strings.TrimSpace(parts[1])}
+			errorName := strings.TrimSpace(parts[1])
+			return typeRefIR{Kind: "ResultTypeName", OkType: &okType, ErrorType: errorName, ErrorRef: &errorRefIR{Kind: "ErrorRef", Name: errorName}}
 		}
 	}
 	if strings.HasPrefix(name, "Array<") && strings.HasSuffix(name, ">") {
 		parts := splitTopLevel(name[len("Array<") : len(name)-1])
 		if len(parts) == 2 {
+			elementName := strings.TrimSpace(parts[0])
+			elementType := typeRefFromName(elementName)
 			sizeValue, err := strconv.Atoi(strings.TrimSpace(parts[1]))
 			if err == nil {
-				return typeRefIR{Kind: "ArrayTypeName", ElementType: strings.TrimSpace(parts[0]), Size: &sizeValue}
+				return typeRefIR{Kind: "ArrayTypeName", ElementType: elementName, ElementTypeRepr: &elementType, Size: &sizeValue}
 			}
 		}
 	}
 	return typeRefIR{Kind: "TypeName", Name: name}
+}
+
+func boolTypeRef() typeRefIR {
+	return typeRefIR{Kind: "TypeName", Name: "Boolean"}
+}
+
+func voidTypeRef() typeRefIR {
+	return typeRefIR{Kind: "Void"}
+}
+
+func isResultType(ref typeRefIR) bool {
+	return ref.Kind == "ResultTypeName" && ref.OkType != nil
+}
+
+func buildContractBindings(returnType typeRefIR) contractBindingsIR {
+	isResult := isResultType(returnType)
+	ensuresCtx := contractContextIR{Result: true}
+	if isResult {
+		ensuresCtx.Success = true
+		ensuresCtx.Failure = true
+		ensuresCtx.Value = true
+		ensuresCtx.Error = true
+	}
+
+	valueType := voidTypeRef()
+	if isResult && returnType.OkType != nil {
+		valueType = *returnType.OkType
+	}
+
+	errorType := voidTypeRef()
+	var errorRef *errorRefIR
+	if isResult && returnType.ErrorType != "" {
+		errorType = typeRefIR{Kind: "TypeName", Name: returnType.ErrorType}
+		errorRef = &errorRefIR{Kind: "ErrorRef", Name: returnType.ErrorType}
+	}
+
+	bindings := []any{
+		contractBindingIR{Kind: "ContractBinding", Name: "result", Available: true, Type: returnType},
+		contractBindingIR{Kind: "ContractBinding", Name: "success", Available: isResult, Type: boolTypeRef()},
+		contractBindingIR{Kind: "ContractBinding", Name: "failure", Available: isResult, Type: boolTypeRef()},
+		contractBindingIR{Kind: "ContractBinding", Name: "value", Available: isResult, Type: valueType},
+		errorContractBindingIR{Kind: "ContractBinding", Name: "error", Available: isResult, Type: errorType, ErrorRef: errorRef},
+	}
+
+	return contractBindingsIR{
+		Kind:           "ContractBindings",
+		IsResultReturn: isResult,
+		Contexts: contractContextMatrixIR{
+			Requires: contractContextIR{},
+			Ensures:  ensuresCtx,
+			Aborts:   contractContextIR{},
+		},
+		Bindings:           bindings,
+		ResultValueBinding: resultBindingIR{Name: "value", Available: isResult, Type: valueType},
+		ResultErrorBinding: resultErrorBindingIR{Name: "error", Available: isResult, Type: errorType, ErrorRef: errorRef},
+	}
 }
 
 func buildModuleEnv(project *Project, moduleName string, cache map[string]moduleEnv) (moduleEnv, error) {
@@ -774,7 +970,8 @@ func buildModuleEnv(project *Project, moduleName string, cache map[string]module
 		Services: map[string]serviceDecl{},
 	}
 	for _, name := range []string{"BigFloat", "BigInteger", "Boolean", "Double", "Executor", "Integer", "Scope", "String"} {
-		env.Types[name] = typeDefIR{Name: name, Base: name}
+		baseType := typeRefIR{Kind: "TypeName", Name: name}
+		env.Types[name] = typeDefIR{Kind: "TypeDef", Name: name, Base: name, BaseType: &baseType}
 	}
 
 	for _, decl := range module.Declarations {
@@ -806,23 +1003,31 @@ func buildModuleEnv(project *Project, moduleName string, cache map[string]module
 			return moduleEnv{}, err
 		}
 		for _, symbol := range importDecl.Exposing {
+			exposesSymbol := false
 			if value, ok := imported.Types[symbol]; ok {
+				exposesSymbol = true
 				if _, exists := env.Types[symbol]; !exists {
 					env.Types[symbol] = value
 				}
 			}
 			if value, ok := imported.Records[symbol]; ok {
+				exposesSymbol = true
 				if _, exists := env.Records[symbol]; !exists {
 					env.Records[symbol] = value
 				}
 			}
 			if imported.Errors[symbol] {
+				exposesSymbol = true
 				env.Errors[symbol] = true
 			}
 			if value, ok := imported.Routines[symbol]; ok {
+				exposesSymbol = true
 				if _, exists := env.Routines[symbol]; !exists {
 					env.Routines[symbol] = value
 				}
+			}
+			if exposesSymbol {
+				mergeImportedTypeEnv(&env, imported)
 			}
 		}
 	}
@@ -831,8 +1036,25 @@ func buildModuleEnv(project *Project, moduleName string, cache map[string]module
 	return env, nil
 }
 
+func mergeImportedTypeEnv(env *moduleEnv, imported moduleEnv) {
+	for name, value := range imported.Types {
+		if _, exists := env.Types[name]; !exists {
+			env.Types[name] = value
+		}
+	}
+	for name, value := range imported.Records {
+		if _, exists := env.Records[name]; !exists {
+			env.Records[name] = value
+		}
+	}
+	for name := range imported.Errors {
+		env.Errors[name] = true
+	}
+}
+
 func exportTypeDef(value ast.TypeDecl) typeDefIR {
-	item := typeDefIR{Name: value.Name, Base: value.Base}
+	baseType := typeRefFromName(value.Base)
+	item := typeDefIR{Kind: "TypeDef", Name: value.Name, Base: value.Base, BaseType: &baseType}
 	if value.Range != nil {
 		if parsed, ok := parseNumber(value.Range.Min); ok {
 			item.MinValue = &parsed
@@ -845,15 +1067,15 @@ func exportTypeDef(value ast.TypeDecl) typeDefIR {
 }
 
 func exportRecordDef(value ast.TypeDecl) recordDefIR {
-	fields := make([]paramIR, 0, len(value.Fields))
+	fields := make([]recordFieldIR, 0, len(value.Fields))
 	protoFields := []protoFieldIR{}
 	for _, field := range sortedParams(value.Fields) {
-		fields = append(fields, paramIR{Name: field.Name, Type: field.Type})
+		fields = append(fields, recordFieldIR{Kind: "RecordFieldDef", Name: field.Name, Type: field.Type, TypeRepr: typeRefFromName(field.Type)})
 		if field.ProtoID != nil {
 			protoFields = append(protoFields, protoFieldIR{Name: field.Name, ID: *field.ProtoID})
 		}
 	}
-	return recordDefIR{Name: value.Name, Fields: fields, ProtoFields: protoFields}
+	return recordDefIR{Kind: "RecordDef", Name: value.Name, Fields: fields, ProtoFields: protoFields}
 }
 
 func parseNumber(value string) (float64, bool) {

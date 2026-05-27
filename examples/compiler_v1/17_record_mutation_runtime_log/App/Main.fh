@@ -1,0 +1,28 @@
+module App.Main
+
+import Std.IO
+
+type Counter is record
+    count: Integer
+    label: String
+end record
+
+function make_counter(count: Integer, label: String) returns Counter
+requires count >= 0
+ensures result.count = count, result.label = label
+is
+    return Counter { count: count, label: label }
+end make_counter
+
+procedure main()
+is
+    let counter: Counter = make_counter(1, "cold-start")
+    counter.count := counter.count + 4
+    counter.label := String.replace(counter.label, "cold", "warm")
+    let marker: Integer = String.instr(counter.label, "warm")
+    call Std.IO.logf("counter = ${}", counter.count)
+    call Std.IO.logf("label = ${}", counter.label)
+    call Std.IO.logf("marker = ${}", marker)
+end main
+
+end App.Main

@@ -187,6 +187,13 @@ def generate_go_project_build_files(files: list[GoProjectFile], executable_name:
         entry = next((file for file in files if file.module_name == entry_module_name), files[0])
         exe_name = go_executable_name(executable_name)
         import_alias = go_package_name(entry.module_name)
+        main_call = f"\t{import_alias}.Main()\n"
+        if re.search(r"(?m)^func Main\(\) error \{", entry.result.go_source):
+            main_call = (
+                f"\tif err := {import_alias}.Main(); err != nil {{\n"
+                "\t\tpanic(err)\n"
+                "\t}\n"
+            )
         build_files.append(
             GoProjectBuildFile(
                 output_path=f"cmd/{exe_name}/main.go",
@@ -197,7 +204,7 @@ def generate_go_project_build_files(files: list[GoProjectFile], executable_name:
                     f"\t{import_alias} \"{go_import_path(entry.module_name)}\"\n"
                     ")\n\n"
                     "func main() {\n"
-                    f"\t{import_alias}.Main()\n"
+                    f"{main_call}"
                     "}\n"
                 ),
             )
@@ -258,6 +265,7 @@ class GoGenerator:
         self.imports_by_module = {import_decl.module_name: import_decl for import_decl in self.imports}
         self.exposed_symbols = self.build_exposed_symbols(self.imports)
         self.exposed_type_modules = self.build_exposed_type_modules(self.imports)
+        self.exposed_error_modules = self.build_exposed_error_modules(self.imports)
         self.used_import_modules: set[str] = set()
         self.used_runtime_modules: set[str] = set()
         self.std_imports: set[str] = set()
@@ -271,6 +279,7 @@ class GoGenerator:
         self.current_local_types: dict[str, Any] = {}
         self.inferred_int_locals: set[str] = set()
         self.contract_bindings: dict[str, str] = {}
+        self.current_routine_read_names: set[str] = set()
 
     def generate(self) -> GoCodegenResult:
         package_name = go_package_name(self.program.module_name)
@@ -331,6 +340,26 @@ class GoGenerator:
             }
             for symbol in import_decl.exposing:
                 if symbol not in exported_types:
+                    continue
+                if symbol in symbols and symbols[symbol] != import_decl.module_name:
+                    symbols[symbol] = None
+                else:
+                    symbols[symbol] = import_decl.module_name
+        return symbols
+
+    def build_exposed_error_modules(self, imports: list[ImportDecl]) -> dict[str, str | None]:
+        symbols: dict[str, str | None] = {}
+        for import_decl in imports:
+            resolved = self.resolved_modules.get(import_decl.module_name)
+            if resolved is None:
+                continue
+            exported_errors = {
+                declaration.name
+                for declaration in resolved.ast.declarations
+                if isinstance(declaration, ErrorDecl)
+            }
+            for symbol in import_decl.exposing:
+                if symbol not in exported_errors:
                     continue
                 if symbol in symbols and symbols[symbol] != import_decl.module_name:
                     symbols[symbol] = None
@@ -546,21 +575,26 @@ class GoGenerator:
         previous_local_types = self.current_local_types
         previous_inferred_int_locals = self.inferred_int_locals
         previous_contract_bindings = self.contract_bindings
+        previous_routine_read_names = self.current_routine_read_names
         self.current_return_type = routine.return_type
         self.current_aborts = routine.aborts or []
         self.current_routine_decl = routine
         self.current_local_types = {param.name: param.type_name for param in routine.params}
         self.inferred_int_locals = set()
         self.contract_bindings = {}
+        self.current_routine_read_names = self.routine_read_names(routine)
         lines.extend(f"\t{line}" for line in self.contract_checks(routine.requires, "requires"))
         for stmt in routine.body:
             lines.extend(f"\t{line}" for line in self.statement(stmt))
+        if routine.return_type is None and routine.aborts:
+            lines.append("\treturn nil")
         self.current_return_type = previous_return_type
         self.current_aborts = previous_aborts
         self.current_routine_decl = previous_routine_decl
         self.current_local_types = previous_local_types
         self.inferred_int_locals = previous_inferred_int_locals
         self.contract_bindings = previous_contract_bindings
+        self.current_routine_read_names = previous_routine_read_names
         lines.extend(["}", ""])
         return lines
 
@@ -582,8 +616,15 @@ class GoGenerator:
                 isinstance(stmt.expr, NumberExpr) and self.go_declared_base(stmt.type_ref) == "Integer"
             ):
                 self.inferred_int_locals.add(stmt.name)
+            if isinstance(stmt.expr, CallExpr):
+                call_routine = self.called_routine(stmt.expr.name)
+                if call_routine is not None and call_routine.aborts:
+                    return self.let_aborting_call(stmt, already_declared, call_routine)
             operator = "=" if already_declared else ":="
-            return [f"{go_local_name(stmt.name)} {operator} {self.expr_with_type(stmt.expr, stmt.type_ref)}"]
+            lines = [f"{go_local_name(stmt.name)} {operator} {self.expr_with_type(stmt.expr, stmt.type_ref)}"]
+            if stmt.name not in self.current_routine_read_names:
+                lines.append(f"_ = {go_local_name(stmt.name)}")
+            return lines
         if isinstance(stmt, AssignStmt):
             type_ref = self.current_local_types.get(stmt.name)
             return [f"{go_local_name(stmt.name)} = {self.expr_with_type(stmt.expr, type_ref)}"]
@@ -685,6 +726,98 @@ class GoGenerator:
             lines.extend(self.statement(statement))
         return lines or ["// empty"]
 
+    def routine_read_names(self, routine: RoutineDecl) -> set[str]:
+        names: set[str] = set()
+        for expr in routine.requires or []:
+            names.update(self.expr_read_names(expr))
+        for expr in routine.ensures or []:
+            names.update(self.expr_read_names(expr))
+        for abort in routine.aborts or []:
+            if abort.condition is not None:
+                names.update(self.expr_read_names(abort.condition))
+        for stmt in routine.body:
+            names.update(self.statement_read_names(stmt))
+        return names
+
+    def statement_read_names(self, stmt: Any) -> set[str]:
+        names: set[str] = set()
+        if isinstance(stmt, LetStmt):
+            names.update(self.expr_read_names(stmt.expr))
+        elif isinstance(stmt, AssignStmt):
+            names.update(self.expr_read_names(stmt.expr))
+        elif isinstance(stmt, FieldAssignStmt):
+            if stmt.path:
+                names.add(stmt.path[0])
+            names.update(self.expr_read_names(stmt.expr))
+        elif isinstance(stmt, ReturnStmt):
+            names.update(self.return_read_names(stmt.value))
+        elif isinstance(stmt, CheckStmt):
+            names.update(self.expr_read_names(stmt.expr))
+        elif isinstance(stmt, CallStmt):
+            for arg in stmt.args:
+                names.update(self.expr_read_names(arg))
+        elif isinstance(stmt, IfStmt):
+            names.update(self.expr_read_names(stmt.condition))
+            for nested in stmt.then_body + stmt.else_body:
+                names.update(self.statement_read_names(nested))
+        elif isinstance(stmt, WhileStmt):
+            names.update(self.expr_read_names(stmt.condition))
+            for invariant in stmt.invariants:
+                names.update(self.expr_read_names(invariant))
+            if stmt.variant is not None:
+                names.update(self.expr_read_names(stmt.variant))
+            for nested in stmt.body:
+                names.update(self.statement_read_names(nested))
+        elif isinstance(stmt, CaseStmt):
+            names.update(self.expr_read_names(stmt.expr))
+            for branch in stmt.branches:
+                names.update(self.expr_read_names(branch.value))
+                for nested in branch.body:
+                    names.update(self.statement_read_names(nested))
+            for nested in stmt.default_body:
+                names.update(self.statement_read_names(nested))
+        return names
+
+    def return_read_names(self, value: Any) -> set[str]:
+        if isinstance(value, ReturnPlain):
+            return self.expr_read_names(value.expr)
+        if isinstance(value, ReturnOk):
+            return self.expr_read_names(value.expr)
+        return set()
+
+    def expr_read_names(self, expr: Any) -> set[str]:
+        names: set[str] = set()
+        if isinstance(expr, VarExpr):
+            names.add(expr.name)
+        elif isinstance(expr, SpecialResultExpr):
+            names.add(expr.name)
+        elif isinstance(expr, FieldAccessExpr):
+            if expr.path:
+                names.add(expr.path[0])
+        elif isinstance(expr, IndexedFieldAccessExpr):
+            names.add(expr.name)
+            names.update(self.expr_read_names(expr.index))
+        elif isinstance(expr, IndexExpr):
+            names.add(expr.name)
+            names.update(self.expr_read_names(expr.index))
+        elif isinstance(expr, UnaryExpr):
+            names.update(self.expr_read_names(expr.expr))
+        elif isinstance(expr, BinaryExpr):
+            names.update(self.expr_read_names(expr.left))
+            names.update(self.expr_read_names(expr.right))
+        elif isinstance(expr, CallExpr):
+            for arg in expr.args:
+                names.update(self.expr_read_names(arg))
+        elif isinstance(expr, NamedArg):
+            names.update(self.expr_read_names(expr.expr))
+        elif isinstance(expr, RecordLiteralExpr):
+            for arg in expr.args:
+                names.update(self.expr_read_names(arg))
+        elif isinstance(expr, ArrayLiteralExpr):
+            for item in expr.items:
+                names.update(self.expr_read_names(item))
+        return names
+
     def abort_return(self, error_name: str) -> list[str]:
         self.std_imports.add("errors")
         if self.current_return_type is None:
@@ -714,6 +847,25 @@ class GoGenerator:
         if self.current_ensures():
             lines.extend(self.ensure_checks_for_value("value"))
         lines.append("return value, nil" if self.current_aborts else "return value")
+        return lines
+
+    def let_aborting_call(self, stmt: LetStmt, already_declared: bool, routine: RoutineDecl) -> list[str]:
+        args_text = self.render_call_args(stmt.expr.args, routine)
+        call_text = f"{self.callable_name(stmt.expr.name, stmt.expr)}({args_text})"
+        name = go_local_name(stmt.name)
+        if already_declared:
+            temp_name = self.fresh_local_name(stmt.name)
+            lines = [f"{temp_name}, err := {call_text}"]
+        else:
+            temp_name = name
+            lines = [f"{name}, err := {call_text}"]
+        lines.append("if err != nil {")
+        lines.extend(indent_lines(self.propagate_abort_return()))
+        lines.append("}")
+        if already_declared:
+            lines.append(f"{name} = {temp_name}")
+        if stmt.name not in self.current_routine_read_names:
+            lines.append(f"_ = {name}")
         return lines
 
     def propagate_abort_return(self) -> list[str]:
@@ -867,7 +1019,7 @@ class GoGenerator:
         if isinstance(expr, VarExpr):
             if expr.name in self.contract_bindings:
                 return self.contract_bindings[expr.name]
-            if expr.name in self.local_errors:
+            if expr.name in self.local_errors or expr.name in self.exposed_error_modules:
                 return self.go_error_name(expr.name)
             return go_local_name(expr.name)
         if isinstance(expr, SpecialResultExpr):

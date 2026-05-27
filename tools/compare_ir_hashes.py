@@ -62,7 +62,30 @@ def load_manifest(path: Path) -> dict[str, Any]:
         raise ValueError(f"unsupported manifest schema: {manifest.get('schema')!r}")
     if not isinstance(manifest.get("samples"), list):
         raise ValueError("manifest must contain a samples list")
+    validate_manifest_policy(manifest)
     return manifest
+
+
+def validate_manifest_policy(manifest: dict[str, Any]) -> None:
+    policy = manifest.get("policy")
+    if policy is None:
+        return
+    samples = manifest["samples"]
+    active_names = [sample.get("name") for sample in samples if not sample.get("skip")]
+    skipped_names = [sample.get("name") for sample in samples if sample.get("skip")]
+
+    expected_active = policy.get("active_samples")
+    if expected_active is not None and len(active_names) != expected_active:
+        raise ValueError(
+            f"manifest policy violation: expected {expected_active} active samples, found {len(active_names)}"
+        )
+
+    expected_skipped = policy.get("skipped_samples")
+    if expected_skipped is not None and sorted(skipped_names) != sorted(expected_skipped):
+        raise ValueError(
+            "manifest policy violation: skipped samples must be exactly "
+            f"{sorted(expected_skipped)!r}, found {sorted(skipped_names)!r}"
+        )
 
 
 def compare_sample(sample: dict[str, Any], python_root: Path, go_root: Path) -> dict[str, Any]:

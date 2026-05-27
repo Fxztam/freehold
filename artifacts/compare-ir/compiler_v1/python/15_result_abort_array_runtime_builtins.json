@@ -1,7 +1,8 @@
 {
-  "schema": "fh-compare-ir-v0",
+  "schema": "fh-compare-ir-v1",
   "language_version": "freehold-v1",
   "module": {
+    "node": "Module",
     "name": "App.Main",
     "imports": [
       {
@@ -45,6 +46,98 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -54,9 +147,17 @@
               "ok_type": {
                 "kind": "ArrayTypeName",
                 "element_type": "StockItem",
+                "element_type_repr": {
+                  "kind": "TypeName",
+                  "name": "StockItem"
+                },
                 "size": 3
               },
-              "error_type": "StockMissing"
+              "error_type": "StockMissing",
+              "error_ref": {
+                "kind": "ErrorRef",
+                "name": "StockMissing"
+              }
             },
             "value": {
               "kind": "CallExpr",
@@ -78,6 +179,10 @@
             "type": {
               "kind": "ArrayTypeName",
               "element_type": "StockItem",
+              "element_type_repr": {
+                "kind": "TypeName",
+                "name": "StockItem"
+              },
               "size": 3
             },
             "value": {
@@ -432,15 +537,27 @@
         "params": [
           {
             "name": "first",
-            "type": "StockItem"
+            "type": "StockItem",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "StockItem"
+            }
           },
           {
             "name": "second",
-            "type": "StockItem"
+            "type": "StockItem",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "StockItem"
+            }
           },
           {
             "name": "third",
-            "type": "StockItem"
+            "type": "StockItem",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "StockItem"
+            }
           }
         ],
         "return_type": {
@@ -559,6 +676,233 @@
             }
           }
         ],
+        "contracts": {
+          "requires": [
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "first",
+                    "quantity"
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 1,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "second",
+                    "warehouse",
+                    "id"
+                  ]
+                },
+                "right": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "first",
+                    "warehouse",
+                    "id"
+                  ]
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 2,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "third",
+                    "warehouse",
+                    "id"
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            }
+          ],
+          "ensures": [
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "CallExpr",
+                  "name": "String.instr",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "result"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "SKU"
+                      }
+                    }
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 1,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "CallExpr",
+                  "name": "String.instr",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "result"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "north"
+                      }
+                    }
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            }
+          ],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "String"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -644,67 +988,134 @@
   "analysis": {
     "types": [
       {
+        "kind": "TypeDef",
         "name": "BigFloat",
-        "base": "BigFloat"
+        "base": "BigFloat",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigFloat"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "BigInteger",
-        "base": "BigInteger"
+        "base": "BigInteger",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigInteger"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Boolean",
-        "base": "Boolean"
+        "base": "Boolean",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Boolean"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Double",
-        "base": "Double"
+        "base": "Double",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Double"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Executor",
-        "base": "Executor"
+        "base": "Executor",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Executor"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Integer",
-        "base": "Integer"
+        "base": "Integer",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Scope",
-        "base": "Scope"
+        "base": "Scope",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Scope"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "String",
-        "base": "String"
+        "base": "String",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "String"
+        }
       }
     ],
     "records": [
       {
+        "kind": "RecordDef",
         "name": "StockItem",
         "fields": [
           {
+            "kind": "RecordFieldDef",
             "name": "quantity",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           },
           {
+            "kind": "RecordFieldDef",
             "name": "sku",
-            "type": "String"
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
           },
           {
+            "kind": "RecordFieldDef",
             "name": "warehouse",
-            "type": "Warehouse"
+            "type": "Warehouse",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Warehouse"
+            }
           }
         ],
         "proto_fields": []
       },
       {
+        "kind": "RecordDef",
         "name": "Warehouse",
         "fields": [
           {
+            "kind": "RecordFieldDef",
             "name": "id",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           },
           {
+            "kind": "RecordFieldDef",
             "name": "label",
-            "type": "String"
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
           }
         ],
         "proto_fields": []
@@ -727,6 +1138,98 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -736,9 +1239,17 @@
               "ok_type": {
                 "kind": "ArrayTypeName",
                 "element_type": "StockItem",
+                "element_type_repr": {
+                  "kind": "TypeName",
+                  "name": "StockItem"
+                },
                 "size": 3
               },
-              "error_type": "StockMissing"
+              "error_type": "StockMissing",
+              "error_ref": {
+                "kind": "ErrorRef",
+                "name": "StockMissing"
+              }
             },
             "value": {
               "kind": "CallExpr",
@@ -760,6 +1271,10 @@
             "type": {
               "kind": "ArrayTypeName",
               "element_type": "StockItem",
+              "element_type_repr": {
+                "kind": "TypeName",
+                "name": "StockItem"
+              },
               "size": 3
             },
             "value": {
@@ -1114,15 +1629,27 @@
         "params": [
           {
             "name": "first",
-            "type": "StockItem"
+            "type": "StockItem",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "StockItem"
+            }
           },
           {
             "name": "second",
-            "type": "StockItem"
+            "type": "StockItem",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "StockItem"
+            }
           },
           {
             "name": "third",
-            "type": "StockItem"
+            "type": "StockItem",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "StockItem"
+            }
           }
         ],
         "return_type": {
@@ -1241,6 +1768,233 @@
             }
           }
         ],
+        "contracts": {
+          "requires": [
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "first",
+                    "quantity"
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 1,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "second",
+                    "warehouse",
+                    "id"
+                  ]
+                },
+                "right": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "first",
+                    "warehouse",
+                    "id"
+                  ]
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 2,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "third",
+                    "warehouse",
+                    "id"
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            }
+          ],
+          "ensures": [
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "CallExpr",
+                  "name": "String.instr",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "result"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "SKU"
+                      }
+                    }
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 1,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "CallExpr",
+                  "name": "String.instr",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "VarExpr",
+                        "name": "result"
+                      }
+                    },
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "north"
+                      }
+                    }
+                  ]
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            }
+          ],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "String"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",

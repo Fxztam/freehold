@@ -1,0 +1,33 @@
+module Domain.Accounts
+
+import Domain.Types exposing Account, make_account
+
+error NotFound
+
+function read_account(id: Integer) returns Account
+requires id >= 0
+aborts NotFound when id = 0
+ensures result.id = id
+is
+    if id = 0 then
+        abort NotFound
+    end if
+    return make_account(id, "Ada", "gold")
+end read_account
+
+function read_primary(id: Integer) returns Account
+requires id > 0
+aborts NotFound
+ensures result.id = id
+is
+    return read_account(id)
+end read_primary
+
+function account_label(account: Account) returns String
+requires account.id > 0
+ensures String.instr(result, account.name) >= 0
+is
+    return String.template("${name}#${id}", name: account.name, id: account.id)
+end account_label
+
+end Domain.Accounts

@@ -13,13 +13,22 @@ from freehold.core.fhir import (
 from freehold.core.verifier import VerifiedProgram
 
 
-COMPARE_IR_SCHEMA = "fh-compare-ir-v0"
+COMPARE_IR_SCHEMA_V0 = "fh-compare-ir-v0"
+COMPARE_IR_SCHEMA_V1 = "fh-compare-ir-v1"
 FREEHOLD_LANGUAGE_VERSION = "freehold-v1"
 
 
-def export_verified_program(verified: VerifiedProgram) -> dict[str, Any]:
+def _schema_for_profile(profile: str) -> str:
+    if profile == "v0":
+        return COMPARE_IR_SCHEMA_V0
+    if profile == "v1":
+        return COMPARE_IR_SCHEMA_V1
+    raise ValueError(f"unsupported compare-ir profile: {profile!r}")
+
+
+def export_verified_program(verified: VerifiedProgram, profile: str = "v1") -> dict[str, Any]:
     return {
-        "schema": COMPARE_IR_SCHEMA,
+        "schema": _schema_for_profile(profile),
         "language_version": FREEHOLD_LANGUAGE_VERSION,
         "module": export_program(verified.ast),
         "analysis": {
@@ -32,5 +41,5 @@ def export_verified_program(verified: VerifiedProgram) -> dict[str, Any]:
     }
 
 
-def export_compare_ir_json(verified: VerifiedProgram) -> str:
-    return json.dumps(export_verified_program(verified), indent=2, ensure_ascii=False) + "\n"
+def export_compare_ir_json(verified: VerifiedProgram, profile: str = "v1") -> str:
+    return json.dumps(export_verified_program(verified, profile=profile), indent=2, ensure_ascii=False) + "\n"

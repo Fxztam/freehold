@@ -284,7 +284,7 @@ func (p *Parser) parseNameToken() token.Token {
 
 func (p *Parser) parseFieldMemberName() string {
 	tok := p.peek()
-	if tok.Kind == token.Value {
+	if tok.Kind == token.Value || tok.Kind == token.Error {
 		p.pos++
 		return tok.Lexeme
 	}

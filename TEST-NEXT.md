@@ -99,6 +99,36 @@ Fuer bewusst nicht unterstuetzte Beispiele prueft der Wrapper:
    - `App.Main` verwendet qualifizierte Calls, damit beide Namensraeume im gleichen Go-Projekt kollisionsfrei bleiben
    - Runtime-Smoke prueft, dass beide Modulpfade getrennte Werte und Ausgaben liefern
 
+13. `13_control_flow_runtime_log`
+   - `while` mit Invarianten und Variante
+   - `if`/`else`-Zweig mit Runtime-Ausgabe
+   - `case` ueber berechnetem Wert
+
+14. `14_big_loop_runtime_log`
+   - BigInteger-Akkumulation in einer Schleife
+   - lokale Integer-Laufvariablen als Big-Konversionsquelle
+   - Runtime-Smoke prueft berechnete Big-Ausgabe
+
+15. `15_result_abort_array_runtime_builtins`
+   - `Result<Array<StockItem, 3>, StockMissing>` mit Record-Payloads
+   - abortender importierter Domain-Call plus Runtime-Builtins in einem Drei-Modul-Projekt
+   - Runtime-Smoke prueft Result/Abort/Array sowie Math/String/Json/Big-Ausgabe
+
+16. `16_abort_propagation_runtime_log`
+   - sprechendes Demo fuer erfolgreiche Abort-Propagation ueber mehrere Routinen
+   - `main` deklariert den propagierten `NotFound`-Abort explizit
+   - Runtime-Smoke prueft den normalen Erfolgszweig mit sichtbarer Ausgabe
+
+17. `17_record_mutation_runtime_log`
+   - Record-Feldmutation (`record.field := ...`) im Runtime-Pfad
+   - String-Runtime-Funktion in einer Feldzuweisung
+   - Runtime-Smoke prueft mutierten Record-Zustand
+
+18. `18_result_error_branch_runtime_log`
+   - normaler `Result`-Fehlerzweig ohne Abort-Propagation
+   - `outcome.error` wird im App-Code ausgewertet und ausgegeben
+   - Runtime-Smoke prueft Fehlerzweig und Error-Payload
+
 ## Unsupported-Smokes
 
 Bewusst nicht unterstuetzte Go-Codegen-V1-Faelle bleiben als Smoke-Test wichtig. Aktuell abgedeckt:
@@ -126,6 +156,30 @@ Weiterhin geparkt fuer spaetere Unsupported- oder Positiv-Smokes:
 ## Additive Testlinie
 
 Bestehende `.fh`-Faelle und vorhandene Dateien unter `artifacts/` sind eingefrorene Verifikationsbaselines. Neue Compiler-Erkenntnisse werden als neue `.fh`-Faelle plus neue Goldens/Artefakte ergaenzt; vorhandene Artefakte werden nicht aktualisiert.
+
+Der Compiler-V1-Compare-IR-Gate bleibt im normalen Check-Modus non-mutating:
+
+```text
+compare-ir-compiler-v1.cmd
+```
+
+Der Command generiert Python- und Go-IR in ein temporaeres Verzeichnis, prueft zuerst die frisch generierte Python/Go-Paritaet und vergleicht danach beide generierten Seiten gegen die eingefrorenen Baselines unter `artifacts/compare-ir/compiler_v1/`. Baseline-Updates sind nur ueber den expliziten Update-Command erlaubt:
+
+```text
+compare-ir-compiler-v1-update.cmd
+```
+
+Die drei bewussten Stage-1-Skips (`unsupported_generic_function`, `unsupported_async_scope_runtime`, `unsupported_grpc_binding`) werden nicht in Stage 1 nachgezogen. Stage 2 ist als eigener Pfad in `OPEN-COMPARE-IR-STAGE2.md` geplant, mit separatem Manifest/Gate und demselben non-mutating Default. Der aktuelle Stage-2-Gate ist:
+
+```text
+compare-ir-compiler-v1-stage2.cmd
+```
+
+Baseline-Updates fuer Stage 2 laufen nur explizit ueber:
+
+```text
+compare-ir-compiler-v1-stage2-update.cmd
+```
 
 Der Standardablauf nutzt additive Artifact-Generatoren und prueft die Regel mit:
 

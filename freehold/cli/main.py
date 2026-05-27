@@ -58,7 +58,7 @@ def cmd_fhir(args):
 def cmd_compare_ir(args):
     resolver = ModuleResolver(runtime_modules=GO_RUNTIME_MODULE_EXPORTS)
     verified = resolver.verify_entry(args.file)
-    compare_ir_json = export_compare_ir_json(verified)
+    compare_ir_json = export_compare_ir_json(verified, profile=args.profile)
     if args.output:
         out = Path(args.output)
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -166,7 +166,7 @@ def project_has_entry_main(files, entry_module_name: str | None) -> bool:
     entry = next((file for file in files if file.module_name == entry_module_name), None)
     if entry is None:
         return False
-    return re.search(r"(?m)^func Main\(\) \{", entry.result.go_source) is not None
+    return re.search(r"(?m)^func Main\(\)(?: error)? \{", entry.result.go_source) is not None
 
 def normalize_text(text: str) -> str:
     return text.strip().replace("\r\n", "\n")
@@ -249,6 +249,7 @@ def build_parser():
     p = sub.add_parser("compare-ir", help="Export reduced compare IR JSON from a verified Freehold module")
     p.add_argument("file")
     p.add_argument("--output", "-o", default=None)
+    p.add_argument("--profile", choices=["v0", "v1"], default="v1", help="compare-ir export profile (default: v1)")
     p.set_defaults(func=cmd_compare_ir)
     p = sub.add_parser("grpc-proto", help="Generate a proto3 file from Freehold gRPC IDL")
     p.add_argument("file")

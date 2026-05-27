@@ -1,7 +1,8 @@
 {
-  "schema": "fh-compare-ir-v0",
+  "schema": "fh-compare-ir-v1",
   "language_version": "freehold-v1",
   "module": {
+    "node": "Module",
     "name": "App.Main",
     "imports": [
       {
@@ -22,7 +23,7 @@
       {
         "kind": "ImportDecl",
         "module": "Std.IO",
-        "exposing": null
+        "exposing": []
       }
     ],
     "declarations": [
@@ -39,6 +40,98 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -49,7 +142,11 @@
                 "kind": "TypeName",
                 "name": "Shipment"
               },
-              "error_type": "MissingShipment"
+              "error_type": "MissingShipment",
+              "error_ref": {
+                "kind": "ErrorRef",
+                "name": "MissingShipment"
+              }
             },
             "value": {
               "kind": "CallExpr",
@@ -206,53 +303,168 @@
   "analysis": {
     "types": [
       {
+        "kind": "TypeDef",
         "name": "BigFloat",
-        "base": "BigFloat"
+        "base": "BigFloat",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigFloat"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "BigInteger",
-        "base": "BigInteger"
+        "base": "BigInteger",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigInteger"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Boolean",
-        "base": "Boolean"
+        "base": "Boolean",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Boolean"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Double",
-        "base": "Double"
+        "base": "Double",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Double"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Executor",
-        "base": "Executor"
+        "base": "Executor",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Executor"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Integer",
-        "base": "Integer"
+        "base": "Integer",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Scope",
-        "base": "Scope"
+        "base": "Scope",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Scope"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "String",
-        "base": "String"
+        "base": "String",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "String"
+        }
       }
     ],
     "records": [
       {
+        "kind": "RecordDef",
+        "name": "Place",
+        "fields": [
+          {
+            "kind": "RecordFieldDef",
+            "name": "label",
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
+          },
+          {
+            "kind": "RecordFieldDef",
+            "name": "zone_id",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          }
+        ],
+        "proto_fields": []
+      },
+      {
+        "kind": "RecordDef",
+        "name": "Recipient",
+        "fields": [
+          {
+            "kind": "RecordFieldDef",
+            "name": "address",
+            "type": "Place",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Place"
+            }
+          },
+          {
+            "kind": "RecordFieldDef",
+            "name": "id",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          {
+            "kind": "RecordFieldDef",
+            "name": "name",
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
+          }
+        ],
+        "proto_fields": []
+      },
+      {
+        "kind": "RecordDef",
         "name": "Shipment",
         "fields": [
           {
+            "kind": "RecordFieldDef",
             "name": "destination",
-            "type": "Place"
+            "type": "Place",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Place"
+            }
           },
           {
+            "kind": "RecordFieldDef",
             "name": "id",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           },
           {
+            "kind": "RecordFieldDef",
             "name": "recipient",
-            "type": "Recipient"
+            "type": "Recipient",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Recipient"
+            }
           }
         ],
         "proto_fields": []
@@ -262,105 +474,6 @@
       "MissingShipment"
     ],
     "routines": [
-      {
-        "kind": "RoutineDecl",
-        "routine_kind": "function",
-        "name": "load_shipment",
-        "type_params": null,
-        "is_async": false,
-        "params": [
-          {
-            "name": "id",
-            "type": "Integer"
-          }
-        ],
-        "return_type": {
-          "kind": "ResultTypeName",
-          "ok_type": {
-            "kind": "TypeName",
-            "name": "Shipment"
-          },
-          "error_type": "MissingShipment"
-        },
-        "requires": [
-          {
-            "kind": "BinaryExpr",
-            "op": "\u003e",
-            "left": {
-              "kind": "VarExpr",
-              "name": "id"
-            },
-            "right": {
-              "kind": "NumberExpr",
-              "value": 0
-            }
-          }
-        ],
-        "aborts": [],
-        "ensures": [
-          {
-            "kind": "VarExpr",
-            "name": "success"
-          },
-          {
-            "kind": "BinaryExpr",
-            "op": "=",
-            "left": {
-              "kind": "FieldAccessExpr",
-              "path": [
-                "value",
-                "id"
-              ]
-            },
-            "right": {
-              "kind": "VarExpr",
-              "name": "id"
-            }
-          },
-          {
-            "kind": "BinaryExpr",
-            "op": "=",
-            "left": {
-              "kind": "FieldAccessExpr",
-              "path": [
-                "value",
-                "recipient",
-                "address",
-                "zone_id"
-              ]
-            },
-            "right": {
-              "kind": "FieldAccessExpr",
-              "path": [
-                "value",
-                "destination",
-                "zone_id"
-              ]
-            }
-          }
-        ],
-        "body": [
-          {
-            "kind": "ReturnStmt",
-            "value": {
-              "kind": "ReturnOk",
-              "value": {
-                "kind": "CallExpr",
-                "name": "build_shipment",
-                "args": [
-                  {
-                    "kind": "PositionalArg",
-                    "value": {
-                      "kind": "VarExpr",
-                      "name": "id"
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        ]
-      },
       {
         "kind": "RoutineDecl",
         "routine_kind": "procedure",
@@ -374,6 +487,98 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -384,7 +589,11 @@
                 "kind": "TypeName",
                 "name": "Shipment"
               },
-              "error_type": "MissingShipment"
+              "error_type": "MissingShipment",
+              "error_ref": {
+                "kind": "ErrorRef",
+                "name": "MissingShipment"
+              }
             },
             "value": {
               "kind": "CallExpr",

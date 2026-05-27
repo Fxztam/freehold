@@ -1,0 +1,16 @@
+module App.Main
+
+import Std.IO
+import Domain.Types exposing Account
+import Domain.Accounts exposing NotFound, read_primary, account_label
+
+procedure main()
+aborts NotFound
+is
+    let account: Account = read_primary(7)
+    let label: String = account_label(account)
+    call Std.IO.logf("account = ${}", label)
+    call Std.IO.logf("tier = ${}", account.tier)
+end main
+
+end App.Main

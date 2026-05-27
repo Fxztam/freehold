@@ -1,7 +1,8 @@
 {
-  "schema": "fh-compare-ir-v0",
+  "schema": "fh-compare-ir-v1",
   "language_version": "freehold-v1",
   "module": {
+    "node": "Module",
     "name": "App.Main",
     "imports": [
       {
@@ -31,7 +32,11 @@
         "params": [
           {
             "name": "id",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           }
         ],
         "return_type": {
@@ -39,13 +44,147 @@
           "ok_type": {
             "kind": "ArrayTypeName",
             "element_type": "Account",
+            "element_type_repr": {
+              "kind": "TypeName",
+              "name": "Account"
+            },
             "size": 2
           },
-          "error_type": "NotFound"
+          "error_type": "NotFound",
+          "error_ref": {
+            "kind": "ErrorRef",
+            "name": "NotFound"
+          }
         },
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": true,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": true,
+              "failure": true,
+              "value": true,
+              "error": true
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "ResultTypeName",
+                "ok_type": {
+                  "kind": "ArrayTypeName",
+                  "element_type": "Account",
+                  "element_type_repr": {
+                    "kind": "TypeName",
+                    "name": "Account"
+                  },
+                  "size": 2
+                },
+                "error_type": "NotFound",
+                "error_ref": {
+                  "kind": "ErrorRef",
+                  "name": "NotFound"
+                }
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "ArrayTypeName",
+                "element_type": "Account",
+                "element_type_repr": {
+                  "kind": "TypeName",
+                  "name": "Account"
+                },
+                "size": 2
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "NotFound"
+              },
+              "error_ref": {
+                "kind": "ErrorRef",
+                "name": "NotFound"
+              }
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "ArrayTypeName",
+              "element_type": "Account",
+              "element_type_repr": {
+                "kind": "TypeName",
+                "name": "Account"
+              },
+              "size": 2
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "NotFound"
+            },
+            "error_ref": {
+              "kind": "ErrorRef",
+              "name": "NotFound"
+            }
+          }
+        },
         "body": [
           {
             "kind": "ReturnStmt",
@@ -77,7 +216,11 @@
         "params": [
           {
             "name": "id",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           }
         ],
         "return_type": {
@@ -87,10 +230,117 @@
         "requires": [],
         "aborts": [
           {
-            "error": "NotFound"
+            "kind": "AbortContractClause",
+            "error": "NotFound",
+            "error_ref": {
+              "kind": "ErrorRef",
+              "name": "NotFound"
+            }
           }
         ],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": [
+            {
+              "kind": "AbortContractClause",
+              "error": "NotFound",
+              "error_ref": {
+                "kind": "ErrorRef",
+                "name": "NotFound"
+              }
+            }
+          ]
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Account"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "ReturnStmt",
@@ -118,45 +368,91 @@
   "analysis": {
     "types": [
       {
+        "kind": "TypeDef",
         "name": "BigFloat",
-        "base": "BigFloat"
+        "base": "BigFloat",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigFloat"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "BigInteger",
-        "base": "BigInteger"
+        "base": "BigInteger",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigInteger"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Boolean",
-        "base": "Boolean"
+        "base": "Boolean",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Boolean"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Double",
-        "base": "Double"
+        "base": "Double",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Double"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Executor",
-        "base": "Executor"
+        "base": "Executor",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Executor"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Integer",
-        "base": "Integer"
+        "base": "Integer",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Scope",
-        "base": "Scope"
+        "base": "Scope",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Scope"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "String",
-        "base": "String"
+        "base": "String",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "String"
+        }
       }
     ],
     "records": [
       {
+        "kind": "RecordDef",
         "name": "Account",
         "fields": [
           {
+            "kind": "RecordFieldDef",
             "name": "id",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           }
         ],
         "proto_fields": []
@@ -175,7 +471,11 @@
         "params": [
           {
             "name": "id",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           }
         ],
         "return_type": {
@@ -183,13 +483,147 @@
           "ok_type": {
             "kind": "ArrayTypeName",
             "element_type": "Account",
+            "element_type_repr": {
+              "kind": "TypeName",
+              "name": "Account"
+            },
             "size": 2
           },
-          "error_type": "NotFound"
+          "error_type": "NotFound",
+          "error_ref": {
+            "kind": "ErrorRef",
+            "name": "NotFound"
+          }
         },
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": true,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": true,
+              "failure": true,
+              "value": true,
+              "error": true
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "ResultTypeName",
+                "ok_type": {
+                  "kind": "ArrayTypeName",
+                  "element_type": "Account",
+                  "element_type_repr": {
+                    "kind": "TypeName",
+                    "name": "Account"
+                  },
+                  "size": 2
+                },
+                "error_type": "NotFound",
+                "error_ref": {
+                  "kind": "ErrorRef",
+                  "name": "NotFound"
+                }
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "ArrayTypeName",
+                "element_type": "Account",
+                "element_type_repr": {
+                  "kind": "TypeName",
+                  "name": "Account"
+                },
+                "size": 2
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "NotFound"
+              },
+              "error_ref": {
+                "kind": "ErrorRef",
+                "name": "NotFound"
+              }
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "ArrayTypeName",
+              "element_type": "Account",
+              "element_type_repr": {
+                "kind": "TypeName",
+                "name": "Account"
+              },
+              "size": 2
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "NotFound"
+            },
+            "error_ref": {
+              "kind": "ErrorRef",
+              "name": "NotFound"
+            }
+          }
+        },
         "body": [
           {
             "kind": "ReturnStmt",
@@ -221,7 +655,11 @@
         "params": [
           {
             "name": "id",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           }
         ],
         "return_type": {
@@ -231,10 +669,117 @@
         "requires": [],
         "aborts": [
           {
-            "error": "NotFound"
+            "kind": "AbortContractClause",
+            "error": "NotFound",
+            "error_ref": {
+              "kind": "ErrorRef",
+              "name": "NotFound"
+            }
           }
         ],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": [
+            {
+              "kind": "AbortContractClause",
+              "error": "NotFound",
+              "error_ref": {
+                "kind": "ErrorRef",
+                "name": "NotFound"
+              }
+            }
+          ]
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Account"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "ReturnStmt",

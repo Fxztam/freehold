@@ -1,0 +1,15 @@
+module Domain.Payments
+
+error PaymentDeclined
+
+function authorize(amount: Integer) returns Result<String, PaymentDeclined>
+requires amount > 0
+ensures success or error = PaymentDeclined
+is
+    if amount > 100 then
+        return error PaymentDeclined
+    end if
+    return ok String.template("approved-${}", amount)
+end authorize
+
+end Domain.Payments

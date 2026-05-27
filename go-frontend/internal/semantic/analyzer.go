@@ -27,6 +27,7 @@ type SymbolTable struct {
 	Records  map[string]RecordType
 	Routines map[string]RoutineType
 	Types    map[string]bool
+	Errors   map[string]bool
 }
 
 type Analyzer struct {
@@ -35,7 +36,7 @@ type Analyzer struct {
 }
 
 func BuildSymbolTable(module *ast.Module) SymbolTable {
-	symbols := SymbolTable{Records: map[string]RecordType{}, Routines: map[string]RoutineType{}, Types: builtinTypes()}
+	symbols := SymbolTable{Records: map[string]RecordType{}, Routines: map[string]RoutineType{}, Types: builtinTypes(), Errors: map[string]bool{}}
 	if module == nil {
 		return symbols
 	}
@@ -58,6 +59,8 @@ func BuildSymbolTable(module *ast.Module) SymbolTable {
 		case ast.ErrorDecl:
 			symbols.Types[value.Name] = true
 			symbols.Types[qualifiedName(module, value.Name)] = true
+			symbols.Errors[value.Name] = true
+			symbols.Errors[qualifiedName(module, value.Name)] = true
 		case ast.FunctionDecl:
 			routine := RoutineType{Name: value.Name, QualifiedName: qualifiedName(module, value.Name), Params: value.Params, ReturnType: value.ReturnType}
 			symbols.Routines[value.Name] = routine
@@ -118,6 +121,10 @@ func buildSymbolTableWithImports(module *ast.Module, importedByName map[string]*
 				addType(&symbols, exposed)
 				addType(&symbols, qualifiedName(imported, exposed))
 			}
+			if importedSymbols.Errors[exposed] {
+				addError(&symbols, exposed)
+				addError(&symbols, qualifiedName(imported, exposed))
+			}
 			routine, ok := importedSymbols.Routines[exposed]
 			if ok {
 				addRoutine(&symbols, routine)
@@ -140,6 +147,12 @@ func addRoutine(target *SymbolTable, routine RoutineType) {
 func addType(target *SymbolTable, name string) {
 	if name != "" {
 		target.Types[name] = true
+	}
+}
+
+func addError(target *SymbolTable, name string) {
+	if name != "" {
+		target.Errors[name] = true
 	}
 }
 
@@ -379,6 +392,9 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 		}
 		typeName, ok := env[value.Name]
 		if !ok {
+			if a.symbols.Errors[value.Name] {
+				return value.Name, true
+			}
 			a.diagnostics = append(a.diagnostics, diagnostic.UnknownVariable(locationFromPosition(value.Pos), value.Name))
 		}
 		return typeName, ok

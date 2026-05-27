@@ -15,4 +15,5 @@ func Collect() ResultArrayInteger3NotFound {
 
 func Main() {
 	values := Collect()
+	_ = values
 }

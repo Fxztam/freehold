@@ -3,6 +3,7 @@ package arrayliteral
 
 func Main() {
 	values := [3]int64{1, 2, 3}
+	_ = values
 	if !(true) {
 		panic("freehold check failed")
 	}

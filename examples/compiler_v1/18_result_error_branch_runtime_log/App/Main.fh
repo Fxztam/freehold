@@ -1,0 +1,17 @@
+module App.Main
+
+import Std.IO
+import Domain.Payments exposing PaymentDeclined, authorize
+
+procedure main()
+is
+    let outcome: Result<String, PaymentDeclined> = authorize(150)
+    if outcome.error = PaymentDeclined then
+        call Std.IO.log("status = failed")
+    else
+        call Std.IO.logf("status = ${}", outcome.value)
+    end if
+    call Std.IO.log("error = PaymentDeclined")
+end main
+
+end App.Main

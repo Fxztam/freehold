@@ -1,13 +1,14 @@
 {
-  "schema": "fh-compare-ir-v0",
+  "schema": "fh-compare-ir-v1",
   "language_version": "freehold-v1",
   "module": {
+    "node": "Module",
     "name": "App.Main",
     "imports": [
       {
         "kind": "ImportDecl",
         "module": "Big",
-        "exposing": null
+        "exposing": []
       }
     ],
     "declarations": [
@@ -15,12 +16,16 @@
         "kind": "RoutineDecl",
         "routine_kind": "function",
         "name": "accumulate",
-        "type_params": null,
+        "type_params": [],
         "is_async": false,
         "params": [
           {
             "name": "terms",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           }
         ],
         "return_type": {
@@ -30,6 +35,99 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "BigInteger"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -68,7 +166,7 @@
             "kind": "WhileStmt",
             "condition": {
               "kind": "BinaryExpr",
-              "op": "\u003c",
+              "op": "<",
               "left": {
                 "kind": "VarExpr",
                 "name": "i"
@@ -81,7 +179,7 @@
             "invariants": [
               {
                 "kind": "BinaryExpr",
-                "op": "\u003e=",
+                "op": ">=",
                 "left": {
                   "kind": "VarExpr",
                   "name": "i"
@@ -93,7 +191,7 @@
               },
               {
                 "kind": "BinaryExpr",
-                "op": "\u003c=",
+                "op": "<=",
                 "left": {
                   "kind": "VarExpr",
                   "name": "i"
@@ -105,7 +203,7 @@
               },
               {
                 "kind": "BinaryExpr",
-                "op": "\u003e=",
+                "op": ">=",
                 "left": {
                   "kind": "VarExpr",
                   "name": "terms"
@@ -116,18 +214,6 @@
                 }
               }
             ],
-            "variant": {
-              "kind": "BinaryExpr",
-              "op": "-",
-              "left": {
-                "kind": "VarExpr",
-                "name": "terms"
-              },
-              "right": {
-                "kind": "VarExpr",
-                "name": "i"
-              }
-            },
             "body": [
               {
                 "kind": "LetStmt",
@@ -202,7 +288,19 @@
                   "name": "next_i"
                 }
               }
-            ]
+            ],
+            "variant": {
+              "kind": "BinaryExpr",
+              "op": "-",
+              "left": {
+                "kind": "VarExpr",
+                "name": "terms"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "i"
+              }
+            }
           },
           {
             "kind": "ReturnStmt",
@@ -229,6 +327,98 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -294,36 +484,76 @@
   "analysis": {
     "types": [
       {
+        "kind": "TypeDef",
         "name": "BigFloat",
-        "base": "BigFloat"
+        "base": "BigFloat",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigFloat"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "BigInteger",
-        "base": "BigInteger"
+        "base": "BigInteger",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigInteger"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Boolean",
-        "base": "Boolean"
+        "base": "Boolean",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Boolean"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Double",
-        "base": "Double"
+        "base": "Double",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Double"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Executor",
-        "base": "Executor"
+        "base": "Executor",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Executor"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Integer",
-        "base": "Integer"
+        "base": "Integer",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Scope",
-        "base": "Scope"
+        "base": "Scope",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Scope"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "String",
-        "base": "String"
+        "base": "String",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "String"
+        }
       }
     ],
     "records": [],
@@ -333,12 +563,16 @@
         "kind": "RoutineDecl",
         "routine_kind": "function",
         "name": "accumulate",
-        "type_params": null,
+        "type_params": [],
         "is_async": false,
         "params": [
           {
             "name": "terms",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           }
         ],
         "return_type": {
@@ -348,6 +582,99 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "BigInteger"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -386,7 +713,7 @@
             "kind": "WhileStmt",
             "condition": {
               "kind": "BinaryExpr",
-              "op": "\u003c",
+              "op": "<",
               "left": {
                 "kind": "VarExpr",
                 "name": "i"
@@ -399,7 +726,7 @@
             "invariants": [
               {
                 "kind": "BinaryExpr",
-                "op": "\u003e=",
+                "op": ">=",
                 "left": {
                   "kind": "VarExpr",
                   "name": "i"
@@ -411,7 +738,7 @@
               },
               {
                 "kind": "BinaryExpr",
-                "op": "\u003c=",
+                "op": "<=",
                 "left": {
                   "kind": "VarExpr",
                   "name": "i"
@@ -423,7 +750,7 @@
               },
               {
                 "kind": "BinaryExpr",
-                "op": "\u003e=",
+                "op": ">=",
                 "left": {
                   "kind": "VarExpr",
                   "name": "terms"
@@ -434,18 +761,6 @@
                 }
               }
             ],
-            "variant": {
-              "kind": "BinaryExpr",
-              "op": "-",
-              "left": {
-                "kind": "VarExpr",
-                "name": "terms"
-              },
-              "right": {
-                "kind": "VarExpr",
-                "name": "i"
-              }
-            },
             "body": [
               {
                 "kind": "LetStmt",
@@ -520,7 +835,19 @@
                   "name": "next_i"
                 }
               }
-            ]
+            ],
+            "variant": {
+              "kind": "BinaryExpr",
+              "op": "-",
+              "left": {
+                "kind": "VarExpr",
+                "name": "terms"
+              },
+              "right": {
+                "kind": "VarExpr",
+                "name": "i"
+              }
+            }
           },
           {
             "kind": "ReturnStmt",
@@ -547,6 +874,98 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",

@@ -1,5 +1,58 @@
 [
   {
+    "case": "01_core/valid/minimal_module.fh",
+    "name": "minimal module go codegen matches",
+    "status": "match",
+    "source_file": "tests/language_modules/01_core/valid/minimal_module.fh",
+    "artifact_file": "artifacts/go-codegen/01_core/valid/minimal_module.go",
+    "json_file": "artifacts/go-codegen/01_core/valid/minimal_module.json",
+    "expected_go": "tests/language_modules/01_core/expected_go/minimal_module.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "coreminimal",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "02_import/fixtures/valid/plain_import_project/App/Main.fh",
+    "name": "plain import project codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/02_import/fixtures/valid/plain_import_project/App/Main.fh",
+    "artifact_dir": "artifacts/go-codegen/02_import/plain_import_project/project",
+    "json_file": "artifacts/go-codegen/02_import/plain_import_project/project/_project.json",
+    "expected_go_dir": "tests/language_modules/02_import/expected_go_project/plain_import_project",
+    "supported": true,
+    "files": [
+      {
+        "module": "App.Main",
+        "source_file": "tests/language_modules/02_import/fixtures/valid/plain_import_project/App/Main.fh",
+        "output_path": "app/main/main.go",
+        "supported": true,
+        "diagnostics": []
+      },
+      {
+        "module": "Banking.Proofs",
+        "source_file": "tests/language_modules/02_import/fixtures/valid/plain_import_project/Banking/Proofs.fh",
+        "output_path": "banking/proofs/proofs.go",
+        "supported": true,
+        "diagnostics": []
+      }
+    ],
+    "build_files": [
+      {
+        "output_path": "go.mod",
+        "kind": "go_mod",
+        "content": "module freehold.local\n\ngo 1.22\n"
+      },
+      {
+        "output_path": "build.cmd",
+        "kind": "build_cmd",
+        "content": "@echo off\nsetlocal\ngo test ./...\n"
+      }
+    ],
+    "error": null
+  },
+  {
     "case": "03_import_resolution/App/Main.fh",
     "name": "import existing module go codegen",
     "status": "match",
@@ -122,6 +175,292 @@
     "error": null
   },
   {
+    "case": "03_import_resolution/App/Main.fh",
+    "name": "imported record type go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_record_type/App/Main.fh",
+    "artifact_file": "artifacts/go-codegen/03_import_resolution/import_record_type/App/Main.go",
+    "json_file": "artifacts/go-codegen/03_import_resolution/import_record_type/App/Main.json",
+    "expected_go": "tests/language_modules/03_import_resolution/expected_go/import_record_type.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "app/main",
+    "imports": [
+      {
+        "module": "Domain.Types",
+        "alias": "domain_types",
+        "path": "freehold.local/domain/types",
+        "runtime": false,
+        "used": true
+      }
+    ],
+    "error": null
+  },
+  {
+    "case": "03_import_resolution/fixtures/valid/import_record_type/App/Main.fh",
+    "name": "imported record type project codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_record_type/App/Main.fh",
+    "artifact_dir": "artifacts/go-codegen/03_import_resolution/import_record_type/project",
+    "json_file": "artifacts/go-codegen/03_import_resolution/import_record_type/project/_project.json",
+    "expected_go_dir": "tests/language_modules/03_import_resolution/expected_go_project/import_record_type",
+    "supported": true,
+    "files": [
+      {
+        "module": "App.Main",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_record_type/App/Main.fh",
+        "output_path": "app/main/main.go",
+        "supported": true,
+        "diagnostics": []
+      },
+      {
+        "module": "Domain.Types",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_record_type/Domain/Types.fh",
+        "output_path": "domain/types/types.go",
+        "supported": true,
+        "diagnostics": []
+      }
+    ],
+    "build_files": [
+      {
+        "output_path": "go.mod",
+        "kind": "go_mod",
+        "content": "module freehold.local\n\ngo 1.22\n"
+      },
+      {
+        "output_path": "build.cmd",
+        "kind": "build_cmd",
+        "content": "@echo off\nsetlocal\ngo test ./...\n"
+      }
+    ],
+    "error": null
+  },
+  {
+    "case": "03_import_resolution/App/Main.fh",
+    "name": "imported Result error go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_result_error/App/Main.fh",
+    "artifact_file": "artifacts/go-codegen/03_import_resolution/import_result_error/App/Main.go",
+    "json_file": "artifacts/go-codegen/03_import_resolution/import_result_error/App/Main.json",
+    "expected_go": "tests/language_modules/03_import_resolution/expected_go/import_result_error.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "app/main",
+    "imports": [
+      {
+        "module": "Domain.Results",
+        "alias": "domain_results",
+        "path": "freehold.local/domain/results",
+        "runtime": false,
+        "used": true
+      }
+    ],
+    "error": null
+  },
+  {
+    "case": "03_import_resolution/fixtures/valid/import_result_error/App/Main.fh",
+    "name": "imported Result error project codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_result_error/App/Main.fh",
+    "artifact_dir": "artifacts/go-codegen/03_import_resolution/import_result_error/project",
+    "json_file": "artifacts/go-codegen/03_import_resolution/import_result_error/project/_project.json",
+    "expected_go_dir": "tests/language_modules/03_import_resolution/expected_go_project/import_result_error",
+    "supported": true,
+    "files": [
+      {
+        "module": "App.Main",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_result_error/App/Main.fh",
+        "output_path": "app/main/main.go",
+        "supported": true,
+        "diagnostics": []
+      },
+      {
+        "module": "Domain.Results",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_result_error/Domain/Results.fh",
+        "output_path": "domain/results/results.go",
+        "supported": true,
+        "diagnostics": []
+      }
+    ],
+    "build_files": [
+      {
+        "output_path": "go.mod",
+        "kind": "go_mod",
+        "content": "module freehold.local\n\ngo 1.22\n"
+      },
+      {
+        "output_path": "build.cmd",
+        "kind": "build_cmd",
+        "content": "@echo off\nsetlocal\ngo test ./...\n"
+      }
+    ],
+    "error": null
+  },
+  {
+    "case": "03_import_resolution/App/Main.fh",
+    "name": "imported Result array record go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_result_array_record/App/Main.fh",
+    "artifact_file": "artifacts/go-codegen/03_import_resolution/import_result_array_record/App/Main.go",
+    "json_file": "artifacts/go-codegen/03_import_resolution/import_result_array_record/App/Main.json",
+    "expected_go": "tests/language_modules/03_import_resolution/expected_go/import_result_array_record.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "app/main",
+    "imports": [
+      {
+        "module": "Domain.Types",
+        "alias": "domain_types",
+        "path": "freehold.local/domain/types",
+        "runtime": false,
+        "used": true
+      },
+      {
+        "module": "Domain.Accounts",
+        "alias": "domain_accounts",
+        "path": "freehold.local/domain/accounts",
+        "runtime": false,
+        "used": true
+      }
+    ],
+    "error": null
+  },
+  {
+    "case": "03_import_resolution/fixtures/valid/import_result_array_record/App/Main.fh",
+    "name": "imported Result array record project codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_result_array_record/App/Main.fh",
+    "artifact_dir": "artifacts/go-codegen/03_import_resolution/import_result_array_record/project",
+    "json_file": "artifacts/go-codegen/03_import_resolution/import_result_array_record/project/_project.json",
+    "expected_go_dir": "tests/language_modules/03_import_resolution/expected_go_project/import_result_array_record",
+    "supported": true,
+    "files": [
+      {
+        "module": "App.Main",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_result_array_record/App/Main.fh",
+        "output_path": "app/main/main.go",
+        "supported": true,
+        "diagnostics": []
+      },
+      {
+        "module": "Domain.Accounts",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_result_array_record/Domain/Accounts.fh",
+        "output_path": "domain/accounts/accounts.go",
+        "supported": true,
+        "diagnostics": []
+      },
+      {
+        "module": "Domain.Types",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_result_array_record/Domain/Types.fh",
+        "output_path": "domain/types/types.go",
+        "supported": true,
+        "diagnostics": []
+      }
+    ],
+    "build_files": [
+      {
+        "output_path": "go.mod",
+        "kind": "go_mod",
+        "content": "module freehold.local\n\ngo 1.22\n"
+      },
+      {
+        "output_path": "build.cmd",
+        "kind": "build_cmd",
+        "content": "@echo off\nsetlocal\ngo test ./...\n"
+      }
+    ],
+    "error": null
+  },
+  {
+    "case": "03_import_resolution/App/Main.fh",
+    "name": "transitive imported name conflicts go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_transitive_name_conflicts/App/Main.fh",
+    "artifact_file": "artifacts/go-codegen/03_import_resolution/import_transitive_name_conflicts/App/Main.go",
+    "json_file": "artifacts/go-codegen/03_import_resolution/import_transitive_name_conflicts/App/Main.json",
+    "expected_go": "tests/language_modules/03_import_resolution/expected_go/import_transitive_name_conflicts.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "app/main",
+    "imports": [
+      {
+        "module": "Domestic.Reports",
+        "alias": "domestic_reports",
+        "path": "freehold.local/domestic/reports",
+        "runtime": false,
+        "used": true
+      },
+      {
+        "module": "Partner.Reports",
+        "alias": "partner_reports",
+        "path": "freehold.local/partner/reports",
+        "runtime": false,
+        "used": true
+      }
+    ],
+    "error": null
+  },
+  {
+    "case": "03_import_resolution/fixtures/valid/import_transitive_name_conflicts/App/Main.fh",
+    "name": "transitive imported name conflicts project codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_transitive_name_conflicts/App/Main.fh",
+    "artifact_dir": "artifacts/go-codegen/03_import_resolution/import_transitive_name_conflicts/project",
+    "json_file": "artifacts/go-codegen/03_import_resolution/import_transitive_name_conflicts/project/_project.json",
+    "expected_go_dir": "tests/language_modules/03_import_resolution/expected_go_project/import_transitive_name_conflicts",
+    "supported": true,
+    "files": [
+      {
+        "module": "App.Main",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_transitive_name_conflicts/App/Main.fh",
+        "output_path": "app/main/main.go",
+        "supported": true,
+        "diagnostics": []
+      },
+      {
+        "module": "Domestic.Reports",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_transitive_name_conflicts/Domestic/Reports.fh",
+        "output_path": "domestic/reports/reports.go",
+        "supported": true,
+        "diagnostics": []
+      },
+      {
+        "module": "Domestic.Shared",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_transitive_name_conflicts/Domestic/Shared.fh",
+        "output_path": "domestic/shared/shared.go",
+        "supported": true,
+        "diagnostics": []
+      },
+      {
+        "module": "Partner.Reports",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_transitive_name_conflicts/Partner/Reports.fh",
+        "output_path": "partner/reports/reports.go",
+        "supported": true,
+        "diagnostics": []
+      },
+      {
+        "module": "Partner.Shared",
+        "source_file": "tests/language_modules/03_import_resolution/fixtures/valid/import_transitive_name_conflicts/Partner/Shared.fh",
+        "output_path": "partner/shared/shared.go",
+        "supported": true,
+        "diagnostics": []
+      }
+    ],
+    "build_files": [
+      {
+        "output_path": "go.mod",
+        "kind": "go_mod",
+        "content": "module freehold.local\n\ngo 1.22\n"
+      },
+      {
+        "output_path": "build.cmd",
+        "kind": "build_cmd",
+        "content": "@echo off\nsetlocal\ngo test ./...\n"
+      }
+    ],
+    "error": null
+  },
+  {
     "case": "04_types/valid/primitive_type_aliases.fh",
     "name": "primitive type aliases go codegen matches",
     "status": "match",
@@ -132,6 +471,48 @@
     "supported": true,
     "diagnostics": [],
     "package_path": "typeexamples",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "04_types/valid/ranged_types.fh",
+    "name": "ranged integer and double types go codegen matches",
+    "status": "match",
+    "source_file": "tests/language_modules/04_types/valid/ranged_types.fh",
+    "artifact_file": "artifacts/go-codegen/04_types/valid/ranged_types.go",
+    "json_file": "artifacts/go-codegen/04_types/valid/ranged_types.json",
+    "expected_go": "tests/language_modules/04_types/expected_go/ranged_types.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "rangedtypes",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "04_types/valid/alias_array_signature_usage.fh",
+    "name": "type aliases in array signatures go codegen matches",
+    "status": "match",
+    "source_file": "tests/language_modules/04_types/valid/alias_array_signature_usage.fh",
+    "artifact_file": "artifacts/go-codegen/04_types/valid/alias_array_signature_usage.go",
+    "json_file": "artifacts/go-codegen/04_types/valid/alias_array_signature_usage.json",
+    "expected_go": "tests/language_modules/04_types/expected_go/alias_array_signature_usage.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "aliasarraysignatureusage",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "04_types/valid/alias_record_result_usage.fh",
+    "name": "type aliases in records and Results go codegen matches",
+    "status": "match",
+    "source_file": "tests/language_modules/04_types/valid/alias_record_result_usage.fh",
+    "artifact_file": "artifacts/go-codegen/04_types/valid/alias_record_result_usage.go",
+    "json_file": "artifacts/go-codegen/04_types/valid/alias_record_result_usage.json",
+    "expected_go": "tests/language_modules/04_types/expected_go/alias_record_result_usage.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "aliasrecordresultusage",
     "imports": [],
     "error": null
   },
@@ -160,6 +541,62 @@
     "supported": true,
     "diagnostics": [],
     "package_path": "recordliteral",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "06_arrays/valid/array_literal.fh",
+    "name": "array literal go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/06_arrays/valid/array_literal.fh",
+    "artifact_file": "artifacts/go-codegen/06_arrays/valid/array_literal.go",
+    "json_file": "artifacts/go-codegen/06_arrays/valid/array_literal.json",
+    "expected_go": "tests/language_modules/06_arrays/expected_go/array_literal.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "arrayliteral",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "06_arrays/valid/array_index.fh",
+    "name": "array index go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/06_arrays/valid/array_index.fh",
+    "artifact_file": "artifacts/go-codegen/06_arrays/valid/array_index.go",
+    "json_file": "artifacts/go-codegen/06_arrays/valid/array_index.json",
+    "expected_go": "tests/language_modules/06_arrays/expected_go/array_index.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "arrayindex",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "06_arrays/valid/array_return.fh",
+    "name": "array return go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/06_arrays/valid/array_return.fh",
+    "artifact_file": "artifacts/go-codegen/06_arrays/valid/array_return.go",
+    "json_file": "artifacts/go-codegen/06_arrays/valid/array_return.json",
+    "expected_go": "tests/language_modules/06_arrays/expected_go/array_return.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "arrayreturn",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "06_arrays/valid/empty_array_literal.fh",
+    "name": "empty array literal go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/06_arrays/valid/empty_array_literal.fh",
+    "artifact_file": "artifacts/go-codegen/06_arrays/valid/empty_array_literal.go",
+    "json_file": "artifacts/go-codegen/06_arrays/valid/empty_array_literal.json",
+    "expected_go": "tests/language_modules/06_arrays/expected_go/empty_array_literal.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "emptyarrayliteral",
     "imports": [],
     "error": null
   },
@@ -570,6 +1007,146 @@
     "error": null
   },
   {
+    "case": "11_errors_results/valid/result_value_field_access.fh",
+    "name": "Result value field access codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/11_errors_results/valid/result_value_field_access.fh",
+    "artifact_file": "artifacts/go-codegen/11_errors_results/valid/result_value_field_access.go",
+    "json_file": "artifacts/go-codegen/11_errors_results/valid/result_value_field_access.json",
+    "expected_go": "tests/language_modules/11_errors_results/expected_go/result_value_field_access.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "resultvaluefieldaccess",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "13_contract_blocks/valid/function_requires.fh",
+    "name": "function requires go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/13_contract_blocks/valid/function_requires.fh",
+    "artifact_file": "artifacts/go-codegen/13_contract_blocks/valid/function_requires.go",
+    "json_file": "artifacts/go-codegen/13_contract_blocks/valid/function_requires.json",
+    "expected_go": "tests/language_modules/13_contract_blocks/expected_go/function_requires.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "functionrequires",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "13_contract_blocks/valid/function_ensures_result.fh",
+    "name": "function ensures result go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/13_contract_blocks/valid/function_ensures_result.fh",
+    "artifact_file": "artifacts/go-codegen/13_contract_blocks/valid/function_ensures_result.go",
+    "json_file": "artifacts/go-codegen/13_contract_blocks/valid/function_ensures_result.json",
+    "expected_go": "tests/language_modules/13_contract_blocks/expected_go/function_ensures_result.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "functionensuresresult",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "13_contract_blocks/valid/procedure_contracts.fh",
+    "name": "procedure contracts go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/13_contract_blocks/valid/procedure_contracts.fh",
+    "artifact_file": "artifacts/go-codegen/13_contract_blocks/valid/procedure_contracts.go",
+    "json_file": "artifacts/go-codegen/13_contract_blocks/valid/procedure_contracts.json",
+    "expected_go": "tests/language_modules/13_contract_blocks/expected_go/procedure_contracts.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "procedurecontracts",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "13_contract_blocks/valid/result_value_ensures.fh",
+    "name": "Result value ensures go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/13_contract_blocks/valid/result_value_ensures.fh",
+    "artifact_file": "artifacts/go-codegen/13_contract_blocks/valid/result_value_ensures.go",
+    "json_file": "artifacts/go-codegen/13_contract_blocks/valid/result_value_ensures.json",
+    "expected_go": "tests/language_modules/13_contract_blocks/expected_go/result_value_ensures.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "resultvalueensures",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "13_contract_blocks/valid/result_value_field_ensures.fh",
+    "name": "Result value field ensures go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/13_contract_blocks/valid/result_value_field_ensures.fh",
+    "artifact_file": "artifacts/go-codegen/13_contract_blocks/valid/result_value_field_ensures.go",
+    "json_file": "artifacts/go-codegen/13_contract_blocks/valid/result_value_field_ensures.json",
+    "expected_go": "tests/language_modules/13_contract_blocks/expected_go/result_value_field_ensures.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "resultvaluefieldensures",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "13_contract_blocks/valid/result_value_array_field_ensures.fh",
+    "name": "Result value array field ensures go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/13_contract_blocks/valid/result_value_array_field_ensures.fh",
+    "artifact_file": "artifacts/go-codegen/13_contract_blocks/valid/result_value_array_field_ensures.go",
+    "json_file": "artifacts/go-codegen/13_contract_blocks/valid/result_value_array_field_ensures.json",
+    "expected_go": "tests/language_modules/13_contract_blocks/expected_go/result_value_array_field_ensures.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "result_value_array_field_ensures",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "14_comments_whitespace/valid/line_comments.fh",
+    "name": "line comments go codegen ignores comments",
+    "status": "match",
+    "source_file": "tests/language_modules/14_comments_whitespace/valid/line_comments.fh",
+    "artifact_file": "artifacts/go-codegen/14_comments_whitespace/valid/line_comments.go",
+    "json_file": "artifacts/go-codegen/14_comments_whitespace/valid/line_comments.json",
+    "expected_go": "tests/language_modules/14_comments_whitespace/expected_go/line_comments.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "linecomments",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "14_comments_whitespace/valid/comment_markers_inside_strings.fh",
+    "name": "comment markers inside strings go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/14_comments_whitespace/valid/comment_markers_inside_strings.fh",
+    "artifact_file": "artifacts/go-codegen/14_comments_whitespace/valid/comment_markers_inside_strings.go",
+    "json_file": "artifacts/go-codegen/14_comments_whitespace/valid/comment_markers_inside_strings.json",
+    "expected_go": "tests/language_modules/14_comments_whitespace/expected_go/comment_markers_inside_strings.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "commentmarkersinsidestrings",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "14_comments_whitespace/valid/tabs_and_blank_lines.fh",
+    "name": "tabs and blank lines go codegen normalizes formatting",
+    "status": "match",
+    "source_file": "tests/language_modules/14_comments_whitespace/valid/tabs_and_blank_lines.fh",
+    "artifact_file": "artifacts/go-codegen/14_comments_whitespace/valid/tabs_and_blank_lines.go",
+    "json_file": "artifacts/go-codegen/14_comments_whitespace/valid/tabs_and_blank_lines.json",
+    "expected_go": "tests/language_modules/14_comments_whitespace/expected_go/tabs_and_blank_lines.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "tabsandblanklines",
+    "imports": [],
+    "error": null
+  },
+  {
     "case": "15_qualified_names_calls/valid/string_qualified_builtin_call.fh",
     "name": "String qualified built-in call go codegen matches",
     "status": "match",
@@ -603,6 +1180,104 @@
         "used": true
       }
     ],
+    "error": null
+  },
+  {
+    "case": "16_control_flow_edges/valid/if_else_both_return.fh",
+    "name": "if else both return go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/16_control_flow_edges/valid/if_else_both_return.fh",
+    "artifact_file": "artifacts/go-codegen/16_control_flow_edges/valid/if_else_both_return.go",
+    "json_file": "artifacts/go-codegen/16_control_flow_edges/valid/if_else_both_return.json",
+    "expected_go": "tests/language_modules/16_control_flow_edges/expected_go/if_else_both_return.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "control/ifelsereturn",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "16_control_flow_edges/valid/case_all_branches_return.fh",
+    "name": "case all branches return go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/16_control_flow_edges/valid/case_all_branches_return.fh",
+    "artifact_file": "artifacts/go-codegen/16_control_flow_edges/valid/case_all_branches_return.go",
+    "json_file": "artifacts/go-codegen/16_control_flow_edges/valid/case_all_branches_return.json",
+    "expected_go": "tests/language_modules/16_control_flow_edges/expected_go/case_all_branches_return.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "control/casereturn",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "16_control_flow_edges/valid/return_after_if_without_else.fh",
+    "name": "return after if without else go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/16_control_flow_edges/valid/return_after_if_without_else.fh",
+    "artifact_file": "artifacts/go-codegen/16_control_flow_edges/valid/return_after_if_without_else.go",
+    "json_file": "artifacts/go-codegen/16_control_flow_edges/valid/return_after_if_without_else.json",
+    "expected_go": "tests/language_modules/16_control_flow_edges/expected_go/return_after_if_without_else.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "control/returnafterif",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "16_control_flow_edges/valid/while_zero_iteration_edge.fh",
+    "name": "while zero iteration edge go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/16_control_flow_edges/valid/while_zero_iteration_edge.fh",
+    "artifact_file": "artifacts/go-codegen/16_control_flow_edges/valid/while_zero_iteration_edge.go",
+    "json_file": "artifacts/go-codegen/16_control_flow_edges/valid/while_zero_iteration_edge.json",
+    "expected_go": "tests/language_modules/16_control_flow_edges/expected_go/while_zero_iteration_edge.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "control/whilezero",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "16_control_flow_edges/valid/while_multiple_invariants_no_variant.fh",
+    "name": "while multiple invariants no variant go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/16_control_flow_edges/valid/while_multiple_invariants_no_variant.fh",
+    "artifact_file": "artifacts/go-codegen/16_control_flow_edges/valid/while_multiple_invariants_no_variant.go",
+    "json_file": "artifacts/go-codegen/16_control_flow_edges/valid/while_multiple_invariants_no_variant.json",
+    "expected_go": "tests/language_modules/16_control_flow_edges/expected_go/while_multiple_invariants_no_variant.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "control/whileinvariants",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "16_control_flow_edges/valid/nested_if_case_while.fh",
+    "name": "nested if case while go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/16_control_flow_edges/valid/nested_if_case_while.fh",
+    "artifact_file": "artifacts/go-codegen/16_control_flow_edges/valid/nested_if_case_while.go",
+    "json_file": "artifacts/go-codegen/16_control_flow_edges/valid/nested_if_case_while.json",
+    "expected_go": "tests/language_modules/16_control_flow_edges/expected_go/nested_if_case_while.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "control/nestededges",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "16_control_flow_edges/valid/case_boolean_branches.fh",
+    "name": "case Boolean branches go codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/16_control_flow_edges/valid/case_boolean_branches.fh",
+    "artifact_file": "artifacts/go-codegen/16_control_flow_edges/valid/case_boolean_branches.go",
+    "json_file": "artifacts/go-codegen/16_control_flow_edges/valid/case_boolean_branches.json",
+    "expected_go": "tests/language_modules/16_control_flow_edges/expected_go/case_boolean_branches.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "control/booleancase",
+    "imports": [],
     "error": null
   },
   {
@@ -802,6 +1477,56 @@
     "error": null
   },
   {
+    "case": "18_string_templates/valid/string_template_dynamic_format.fh",
+    "name": "String.template dynamic format go codegen matches",
+    "status": "match",
+    "source_file": "tests/language_modules/18_string_templates/valid/string_template_dynamic_format.fh",
+    "artifact_file": "artifacts/go-codegen/18_string_templates/valid/string_template_dynamic_format.go",
+    "json_file": "artifacts/go-codegen/18_string_templates/valid/string_template_dynamic_format.json",
+    "expected_go": "tests/language_modules/18_string_templates/expected_go/string_template_dynamic_format.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "stringtemplatedynamicformat",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "18_string_templates/valid/string_template_dynamic_named_format.fh",
+    "name": "String.template dynamic named format go codegen matches",
+    "status": "match",
+    "source_file": "tests/language_modules/18_string_templates/valid/string_template_dynamic_named_format.fh",
+    "artifact_file": "artifacts/go-codegen/18_string_templates/valid/string_template_dynamic_named_format.go",
+    "json_file": "artifacts/go-codegen/18_string_templates/valid/string_template_dynamic_named_format.json",
+    "expected_go": "tests/language_modules/18_string_templates/expected_go/string_template_dynamic_named_format.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "stringtemplatedynamicnamedformat",
+    "imports": [],
+    "error": null
+  },
+  {
+    "case": "18_string_templates/valid/std_io_logf_dynamic_format.fh",
+    "name": "Std.IO.logf dynamic format go codegen matches",
+    "status": "match",
+    "source_file": "tests/language_modules/18_string_templates/valid/std_io_logf_dynamic_format.fh",
+    "artifact_file": "artifacts/go-codegen/18_string_templates/valid/std_io_logf_dynamic_format.go",
+    "json_file": "artifacts/go-codegen/18_string_templates/valid/std_io_logf_dynamic_format.json",
+    "expected_go": "tests/language_modules/18_string_templates/expected_go/std_io_logf_dynamic_format.go",
+    "supported": true,
+    "diagnostics": [],
+    "package_path": "stdiologfdynamicformat",
+    "imports": [
+      {
+        "module": "Std.IO",
+        "alias": "std_io",
+        "path": "fmt",
+        "runtime": true,
+        "used": true
+      }
+    ],
+    "error": null
+  },
+  {
     "case": "19_big_numbers/valid/big_integer_operations.fh",
     "name": "Big integer operations go codegen",
     "status": "match",
@@ -902,6 +1627,38 @@
       {
         "module": "App.Main",
         "source_file": "tests/language_modules/19_big_numbers/fixtures/valid/import_big_module/App/Main.fh",
+        "output_path": "app/main/main.go",
+        "supported": true,
+        "diagnostics": []
+      }
+    ],
+    "build_files": [
+      {
+        "output_path": "go.mod",
+        "kind": "go_mod",
+        "content": "module freehold.local\n\ngo 1.22\n"
+      },
+      {
+        "output_path": "build.cmd",
+        "kind": "build_cmd",
+        "content": "@echo off\nsetlocal\ngo test ./...\n"
+      }
+    ],
+    "error": null
+  },
+  {
+    "case": "19_big_numbers/fixtures/valid/big_integer_loop_arguments/App/Main.fh",
+    "name": "Big integer loop arguments project codegen",
+    "status": "match",
+    "source_file": "tests/language_modules/19_big_numbers/fixtures/valid/big_integer_loop_arguments/App/Main.fh",
+    "artifact_dir": "artifacts/go-codegen/19_big_numbers/big_integer_loop_arguments/project",
+    "json_file": "artifacts/go-codegen/19_big_numbers/big_integer_loop_arguments/project/_project.json",
+    "expected_go_dir": "tests/language_modules/19_big_numbers/expected_go_project/big_integer_loop_arguments",
+    "supported": true,
+    "files": [
+      {
+        "module": "App.Main",
+        "source_file": "tests/language_modules/19_big_numbers/fixtures/valid/big_integer_loop_arguments/App/Main.fh",
         "output_path": "app/main/main.go",
         "supported": true,
         "diagnostics": []

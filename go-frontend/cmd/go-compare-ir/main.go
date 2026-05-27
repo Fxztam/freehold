@@ -10,6 +10,7 @@ import (
 
 func main() {
 	outFile := flag.String("out", "", "write compare IR JSON to this file")
+	profile := flag.String("profile", "v1", "compare-ir export profile (v0 or v1)")
 	flag.Parse()
 
 	if flag.NArg() != 1 {
@@ -18,7 +19,7 @@ func main() {
 	}
 
 	entryFile := flag.Arg(0)
-	content, err := semantic.ExportCompareIRJSON(entryFile)
+	content, err := semantic.ExportCompareIRJSON(entryFile, *profile)
 	if err != nil {
 		fmt.Println("FAIL", entryFile, "=>", err)
 		os.Exit(1)
