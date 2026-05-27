@@ -312,9 +312,16 @@
     {
       "module": "23_concurrency",
       "title": "Concurrency V1 Async Await Runtime Channels",
-      "status": "deferred",
-      "summary": "Concurrency frontend semantics exist, but runtime execution and Go codegen are parked.",
-      "deferred_items": ["async runtime", "channels", "scope/join handle execution"]
+      "status": "supported",
+      "summary": "Async routines, await, Scope, JoinHandle, Channel, Sender, and Receiver are supported by Go codegen V1 as synchronous structured runtime wrappers over Go values and native channels; scheduler-backed async remains deferred.",
+      "supported_cases": [
+        "async function awaits async function",
+        "channel endpoints verify",
+        "await channel send receive",
+        "scope JoinHandle is joined before return",
+        "structured scope block joins handles before result"
+      ],
+      "deferred_items": ["scheduler-backed async runtime"]
     },
     {
       "module": "24_grpc_idl",

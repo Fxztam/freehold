@@ -1,0 +1,817 @@
+{
+  "declarations": [
+    {
+      "body": [
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "left": {
+                "name": "id",
+                "node": "VarExpr"
+              },
+              "node": "BinaryExpr",
+              "op": "*",
+              "right": {
+                "node": "NumberExpr",
+                "value": 2
+              }
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "name": "result",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "is_async": true,
+      "kind": "function",
+      "name": "fetch_value",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "id",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "id",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "expr": {
+              "args": [
+                {
+                  "name": "a",
+                  "node": "VarExpr"
+                }
+              ],
+              "name": "fetch_value",
+              "node": "CallExpr"
+            },
+            "node": "AwaitExpr"
+          },
+          "name": "va",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "expr": {
+              "args": [
+                {
+                  "name": "b",
+                  "node": "VarExpr"
+                }
+              ],
+              "name": "fetch_value",
+              "node": "CallExpr"
+            },
+            "node": "AwaitExpr"
+          },
+          "name": "vb",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "left": {
+                "name": "va",
+                "node": "VarExpr"
+              },
+              "node": "BinaryExpr",
+              "op": "+",
+              "right": {
+                "name": "vb",
+                "node": "VarExpr"
+              }
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "name": "result",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "is_async": true,
+      "kind": "function",
+      "name": "fetch_sum",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "a",
+          "node": "Param",
+          "type_name": "Integer"
+        },
+        {
+          "name": "b",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "a",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        },
+        {
+          "left": {
+            "name": "b",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "join_body": [
+            {
+              "expr": {
+                "expr": {
+                  "args": [
+                    {
+                      "name": "value_handle",
+                      "node": "VarExpr"
+                    }
+                  ],
+                  "name": "worker.join",
+                  "node": "CallExpr",
+                  "type_args": [
+                    "Integer"
+                  ]
+                },
+                "node": "AwaitExpr"
+              },
+              "name": "n",
+              "node": "LetStmt",
+              "type_ref": {
+                "name": "Integer",
+                "node": "TypeName"
+              }
+            },
+            {
+              "args": [
+                {
+                  "node": "StringExpr",
+                  "value": "spawned: ${}"
+                },
+                {
+                  "name": "n",
+                  "node": "VarExpr"
+                }
+              ],
+              "name": "Std.IO.logf",
+              "node": "CallStmt"
+            },
+            {
+              "args": [
+                {
+                  "node": "StringExpr",
+                  "value": "joined"
+                }
+              ],
+              "name": "Std.IO.logf",
+              "node": "CallStmt"
+            }
+          ],
+          "name": "worker",
+          "node": "ScopeStmt",
+          "result_body": [
+            {
+              "args": [
+                {
+                  "node": "StringExpr",
+                  "value": "done"
+                }
+              ],
+              "name": "Std.IO.logf",
+              "node": "CallStmt"
+            }
+          ],
+          "spawn_body": [
+            {
+              "expr": {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "node": "NumberExpr",
+                        "value": 1
+                      }
+                    ],
+                    "name": "fetch_value",
+                    "node": "CallExpr"
+                  }
+                ],
+                "name": "worker.spawn",
+                "node": "CallExpr",
+                "type_args": [
+                  "Integer"
+                ]
+              },
+              "name": "value_handle",
+              "node": "LetStmt",
+              "type_ref": {
+                "name": "JoinHandle<Integer>",
+                "node": "TypeName"
+              }
+            }
+          ]
+        }
+      ],
+      "ensures": [],
+      "is_async": true,
+      "kind": "procedure",
+      "name": "run_tasks",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": null
+    },
+    {
+      "body": [
+        {
+          "join_body": [
+            {
+              "args": [
+                {
+                  "node": "StringExpr",
+                  "value": "after empty spawn"
+                }
+              ],
+              "name": "Std.IO.logf",
+              "node": "CallStmt"
+            }
+          ],
+          "name": "empty_w",
+          "node": "ScopeStmt",
+          "result_body": [
+            {
+              "args": [
+                {
+                  "node": "StringExpr",
+                  "value": "result"
+                }
+              ],
+              "name": "Std.IO.logf",
+              "node": "CallStmt"
+            }
+          ],
+          "spawn_body": []
+        }
+      ],
+      "ensures": [],
+      "is_async": true,
+      "kind": "procedure",
+      "name": "empty_spawn",
+      "node": "RoutineDecl",
+      "params": [],
+      "requires": [],
+      "return_type": null
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "args": [],
+            "name": "scope",
+            "node": "CallExpr"
+          },
+          "name": "active",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Scope",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "name": "n",
+                    "node": "VarExpr"
+                  }
+                ],
+                "name": "fetch_value",
+                "node": "CallExpr"
+              }
+            ],
+            "name": "active.spawn",
+            "node": "CallExpr",
+            "type_args": [
+              "Integer"
+            ]
+          },
+          "name": "handle",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "JoinHandle<Integer>",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "expr": {
+              "args": [
+                {
+                  "name": "handle",
+                  "node": "VarExpr"
+                }
+              ],
+              "name": "active.join",
+              "node": "CallExpr",
+              "type_args": [
+                "Integer"
+              ]
+            },
+            "node": "AwaitExpr"
+          },
+          "name": "joined_value",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "joined_value",
+              "node": "VarExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "name": "result",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">=",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "is_async": true,
+      "kind": "function",
+      "name": "scope_expr",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "n",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "n",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "args": [],
+            "name": "scope",
+            "node": "CallExpr"
+          },
+          "name": "active",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Scope",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "name": "n",
+                    "node": "VarExpr"
+                  }
+                ],
+                "name": "fetch_value",
+                "node": "CallExpr"
+              }
+            ],
+            "name": "active.spawn",
+            "node": "CallExpr",
+            "type_args": [
+              "Integer"
+            ]
+          },
+          "name": "handle",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "JoinHandle<Integer>",
+            "node": "TypeName"
+          }
+        },
+        {
+          "expr": {
+            "expr": {
+              "args": [
+                {
+                  "name": "handle",
+                  "node": "VarExpr"
+                }
+              ],
+              "name": "active.join",
+              "node": "CallExpr",
+              "type_args": [
+                "Integer"
+              ]
+            },
+            "node": "AwaitExpr"
+          },
+          "name": "j",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "args": [
+            {
+              "node": "StringExpr",
+              "value": "j=${}"
+            },
+            {
+              "name": "j",
+              "node": "VarExpr"
+            }
+          ],
+          "name": "Std.IO.logf",
+          "node": "CallStmt"
+        }
+      ],
+      "ensures": [],
+      "is_async": true,
+      "kind": "procedure",
+      "name": "member_access",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "n",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "n",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": null
+    },
+    {
+      "body": [
+        {
+          "expr": {
+            "node": "NumberExpr",
+            "value": 0
+          },
+          "name": "total",
+          "node": "LetStmt",
+          "type_ref": {
+            "name": "Integer",
+            "node": "TypeName"
+          }
+        },
+        {
+          "join_body": [
+            {
+              "expr": {
+                "expr": {
+                  "args": [
+                    {
+                      "name": "va_handle",
+                      "node": "VarExpr"
+                    }
+                  ],
+                  "name": "fetch.join",
+                  "node": "CallExpr",
+                  "type_args": [
+                    "Integer"
+                  ]
+                },
+                "node": "AwaitExpr"
+              },
+              "name": "va",
+              "node": "LetStmt",
+              "type_ref": {
+                "name": "Integer",
+                "node": "TypeName"
+              }
+            },
+            {
+              "expr": {
+                "expr": {
+                  "args": [
+                    {
+                      "name": "vb_handle",
+                      "node": "VarExpr"
+                    }
+                  ],
+                  "name": "fetch.join",
+                  "node": "CallExpr",
+                  "type_args": [
+                    "Integer"
+                  ]
+                },
+                "node": "AwaitExpr"
+              },
+              "name": "vb",
+              "node": "LetStmt",
+              "type_ref": {
+                "name": "Integer",
+                "node": "TypeName"
+              }
+            },
+            {
+              "expr": {
+                "left": {
+                  "name": "va",
+                  "node": "VarExpr"
+                },
+                "node": "BinaryExpr",
+                "op": "+",
+                "right": {
+                  "name": "vb",
+                  "node": "VarExpr"
+                }
+              },
+              "name": "total",
+              "node": "AssignStmt"
+            },
+            {
+              "expr": {
+                "left": {
+                  "name": "total",
+                  "node": "VarExpr"
+                },
+                "node": "BinaryExpr",
+                "op": ">=",
+                "right": {
+                  "node": "NumberExpr",
+                  "value": 0
+                }
+              },
+              "node": "CheckStmt"
+            }
+          ],
+          "name": "fetch",
+          "node": "ScopeStmt",
+          "result_body": [
+            {
+              "args": [
+                {
+                  "node": "StringExpr",
+                  "value": "total = ${}"
+                },
+                {
+                  "name": "total",
+                  "node": "VarExpr"
+                }
+              ],
+              "name": "Std.IO.logf",
+              "node": "CallStmt"
+            }
+          ],
+          "spawn_body": [
+            {
+              "expr": {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "name": "a",
+                        "node": "VarExpr"
+                      }
+                    ],
+                    "name": "fetch_value",
+                    "node": "CallExpr"
+                  }
+                ],
+                "name": "fetch.spawn",
+                "node": "CallExpr",
+                "type_args": [
+                  "Integer"
+                ]
+              },
+              "name": "va_handle",
+              "node": "LetStmt",
+              "type_ref": {
+                "name": "JoinHandle<Integer>",
+                "node": "TypeName"
+              }
+            },
+            {
+              "expr": {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "name": "b",
+                        "node": "VarExpr"
+                      }
+                    ],
+                    "name": "fetch_value",
+                    "node": "CallExpr"
+                  }
+                ],
+                "name": "fetch.spawn",
+                "node": "CallExpr",
+                "type_args": [
+                  "Integer"
+                ]
+              },
+              "name": "vb_handle",
+              "node": "LetStmt",
+              "type_ref": {
+                "name": "JoinHandle<Integer>",
+                "node": "TypeName"
+              }
+            }
+          ]
+        },
+        {
+          "node": "ReturnStmt",
+          "value": {
+            "expr": {
+              "name": "total",
+              "node": "VarExpr"
+            },
+            "node": "ReturnPlain"
+          }
+        }
+      ],
+      "ensures": [
+        {
+          "left": {
+            "name": "result",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "is_async": true,
+      "kind": "function",
+      "name": "parallel",
+      "node": "RoutineDecl",
+      "params": [
+        {
+          "name": "a",
+          "node": "Param",
+          "type_name": "Integer"
+        },
+        {
+          "name": "b",
+          "node": "Param",
+          "type_name": "Integer"
+        }
+      ],
+      "requires": [
+        {
+          "left": {
+            "name": "a",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        },
+        {
+          "left": {
+            "name": "b",
+            "node": "VarExpr"
+          },
+          "node": "BinaryExpr",
+          "op": ">",
+          "right": {
+            "node": "NumberExpr",
+            "value": 0
+          }
+        }
+      ],
+      "return_type": {
+        "name": "Integer",
+        "node": "TypeName"
+      }
+    }
+  ],
+  "imports": [],
+  "module_name": "Test.Scope.Pos",
+  "node": "Program"
+}

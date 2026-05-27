@@ -434,3 +434,208 @@
   - `python -m freehold test-language --root tests\language_modules_02`
   - New branch status: 92/98 passing, 6 failing.
   - Fully green after this batch: `05_generics`, `10_ensures`, `13_let_mutation`.
+
+### Language modules 02 remaining 6 failure analysis
+
+- Re-ran the branch-02 suite:
+  - `python -m freehold test-language --root tests\language_modules_02 --json-summary .tmp\language_modules_02_remaining6_summary.json`
+  - Status remains 92/98 passing, 6 failing.
+- `07_procedures`: package uses trailing comma in zero-argument `Std.IO.logf` calls, e.g. `logf("Hello from procedure", )`. Current grammar requires `arg_list: call_arg ("," call_arg)*`, so this is a package normalization candidate.
+- `17_stdlib_args`: same trailing-comma issue for `logf("Programm gestartet", )`; package normalization should be batched with `07_procedures`.
+- `08_service_rpc`: package uses primitive RPC request types such as `rpc GetPoint(id: Integer): Point`. Current gRPC V1 policy requires declared record message types for unary request/response types, so this is a policy decision: either keep strict gRPC message records and adapt package, or intentionally extend service semantics.
+- `12_result`: module name `Test.Result.Pos` uses reserved keyword `Result` as a module segment. This is a name-policy decision; simplest package adaptation is to rename the positive module path/entry to avoid `Result`.
+- `15_scope_async`: grammar supports `async function` but not `async procedure`; the positive package also uses scope/spawn/join constructs. This is a larger language surface decision, not a tiny fixture cleanup.
+- `16_expressions`: parameter declarations use `Array<Integer, 3>`, but grammar currently has `param: NAME ":" type_ref` and only `return_type`/`let` accept `array_type`. This is a coherent language-extension candidate because arrays already work in returns and lets.
+- Recommended next order:
+  - Batch 1: normalize trailing comma calls in `07_procedures` and `17_stdlib_args`.
+  - Batch 2: decide/implement `Array<T,N>` in parameter type positions for `16_expressions`.
+  - Batch 3: decide gRPC request/response policy for primitive request shorthands in `08_service_rpc`.
+  - Batch 4: decide whether reserved keywords remain forbidden in module segments (`12_result`).
+  - Batch 5: treat `async procedure`/scope runtime as a separate language feature slice (`15_scope_async`).
+
+### Language modules 02 selected 4-fix batch
+
+- Normalized trailing-comma `Std.IO.logf` package calls:
+  - `07_procedures`: `Std.IO.logf("Hello from procedure", )` and `Std.IO.logf("done", )` now omit the trailing comma.
+  - `17_stdlib_args`: `Std.IO.logf("Programm gestartet", )` now omits the trailing comma.
+- Kept Result as a reserved name and renamed the positive Result package module from `Test.Result.Pos` to `Test.Results.Pos`.
+- Added shared support-project fixture entries for the remaining support-dependent positives:
+  - `Test/Procedures/Pos.fh`
+  - `Test/Results/Pos.fh`
+  - `Test/Expressions/Pos.fh`
+  - `Test/Stdlib/Pos.fh`
+- Switched `07_procedures`, `12_result`, `16_expressions`, and `17_stdlib_args` positive manifest cases to resolver-backed `root`/`entry` validation.
+- Extended the Python grammar/parser/verifier path so `Array<T,N>` is accepted and type-checked in parameter positions while preserving the existing `Param.type_name` AST surface.
+- Normalized newly exposed package-positive assumptions to current language semantics:
+  - Result/status keywords remain contract-only; positive body locals now use plain booleans.
+  - aborting calls must be propagated with `aborts`.
+  - `Json.stringify` remains record-only; the stdlib positive now stringifies a `Point` record.
+- Regenerated affected branch-02 AST goldens and `freehold.generated.ebnf`.
+- Validation:
+  - `python -m py_compile freehold\core\ast.py freehold\core\parser_legacy.py freehold\core\verifier.py freehold\core\interpreter.py` passed.
+  - Targeted modules passed: `07_procedures` 4/4, `12_result` 5/5, `16_expressions` 7/7, `17_stdlib_args` 7/7.
+  - Full branch-02 suite: `python -m freehold test-language --root tests\language_modules_02` -> 96/98.
+  - Stable suite: `python -m freehold test-language` -> 466/466.
+- Remaining branch-02 failures are now only:
+  - `08_service_rpc`: primitive RPC request type shorthand versus strict record-message gRPC policy.
+  - `15_scope_async`: `async procedure` grammar/language surface.
+
+### Language modules 02 RPC package normalization
+
+- Kept the existing gRPC V1 policy strict: unary RPC request and response types must be declared record-message types with `proto` field ids.
+- Normalized `08_service_rpc` positive package coverage from primitive request shorthands and `Result<...>` responses to explicit message records:
+  - request records: `PointRequest`, `PrefixRequest`, `ValueRequest`, `CreatePointRequest`;
+  - response records: `PointMessage`, `LabeledMessage`, `CountLabelsResponse`, `SafePointResponse`.
+- Avoided reserved field names in gRPC response messages (`success_flag`, `error_text` instead of `ok`, `error`).
+- Added the resolver-backed fixture entry:
+  - `tests/language_modules_02/fixtures/support_project/Test/Service/Pos.fh`
+- Switched `08_service_rpc` positive manifest case to shared support-project `root`/`entry` validation.
+- Regenerated the `08_service_rpc` expected AST golden.
+- Validation:
+  - `python -m freehold test-language --root tests\language_modules_02 --module 08_service_rpc` -> 5/5.
+  - `python -m freehold test-language --root tests\language_modules_02` -> 97/98.
+  - `python -m freehold test-language` -> 466/466.
+- Intermediate remaining branch-02 failure before the later async/scope slice:
+  - `15_scope_async`: unsupported `async procedure` grammar/language surface at that point.
+
+### Rules/diagnostics/control-flow follow-up after RPC normalization
+
+- Checked whether the RPC normalization and Array-parameter grammar extension require follow-up in `spec/freehold.rules`, `spec/freehold.diag`, or `spec/analyzer.cflow`.
+- Result: no functional rules/diagnostics/control-flow spec changes are needed for the RPC package fix.
+  - gRPC V1 strict record-message policy is already covered by `FH-GRPC-4403`, `FH-GRPC-4404`, and `FH-GRPC-4406`.
+  - The positive RPC package was adapted to that policy instead of changing semantics.
+  - `analyzer.cflow` is unaffected because RPC message record declarations do not change routine/control-flow behavior.
+- Array parameters are covered by the executable grammar change and existing type/argument diagnostics; no new diagnostic code is needed.
+- Validation:
+  - `verify-spec-diagnostics.cmd` -> Failures: 0.
+  - `compare-semantic-diagnostics.cmd` -> 99/99 matching semantic diagnostics.
+  - `verify-grammar-consistency.cmd` -> Mismatches: 0.
+
+### Async/scope remaining slice sizing
+
+- Inspected the remaining `15_scope_async` branch-02 positive case against the existing stable `23_concurrency` implementation.
+- Existing stable support already covers `async function`, `await`, `ScopeStmt`, `JoinHandle<T>`, `scope.spawn<T>`, `scope.join<T>`, scope lifetime diagnostics, AST export, verifier semantics, and cflow spec notes.
+- The branch-02 positive file is not just missing parser support for `async procedure`; it also uses older shorthand/style forms:
+  - `async procedure ...` while grammar currently only permits `async function ...`;
+  - old trailing-comma `Std.IO.logf("...", )` calls;
+  - `scope(n, 42)` / `scope(n)` as Integer-returning expression shorthands, while current stable semantics uses `scope()` returning `Scope`;
+  - `.spawn` / `.join` as value-like member access, while current stable semantics uses typed calls such as `request_scope.spawn<T>(awaitable)` and `await request_scope.join<T>(handle)`.
+- Size estimate:
+  - Small parser-only patch if we only accept `async procedure` syntax and keep semantics otherwise unchanged.
+  - Medium, low-risk package-normalization slice if `15_scope_async` is adapted to the already-stable `23_concurrency` surface and goldens are regenerated.
+  - Large language-design slice only if the old shorthand forms (`scope(args)` as Integer and `.spawn`/`.join` field-like access) should become official semantics.
+
+### Language modules 02 async/scope medium slice
+
+- Chose the medium solution for the remaining async problem: keep the existing stable `23_concurrency` semantics and normalize the branch-02 package to that surface.
+- Added `async procedure` syntax support in the executable grammar and inline grammar.
+- Updated the parser so both async functions and async procedures set `RoutineDecl.is_async`.
+- Normalized `15_scope_async` positive coverage:
+  - removed old trailing-comma `Std.IO.logf("...", )` calls;
+  - replaced old `scope(args)` integer shorthand with `scope()` returning `Scope`;
+  - replaced `.spawn` / `.join` value-like member access with typed `Scope` calls such as `worker.spawn<Integer>(...)` and `await worker.join<Integer>(...)`;
+  - avoided the reserved local name `value` by using `joined_value`.
+- Kept the old shorthand forms out of the language for now; no new runtime/control-flow model was introduced.
+- Broadened the await-context diagnostic wording from async function to async routine while preserving the existing `VF-ASY001` / `FH-CON-3101` compatibility path.
+- Regenerated:
+  - `freehold/grammar/freehold.generated.ebnf`;
+  - `tests/language_modules_02/15_scope_async/expected_ast/scope_pos.ast.json`.
+- Validation:
+  - `python -m freehold test-language --root tests\language_modules_02 --module 15_scope_async` -> 4/4.
+  - `python -m freehold test-language --root tests\language_modules_02` -> 98/98.
+  - `python -m freehold test-language --module 23_concurrency` -> 20/20.
+  - `python -m freehold test-language` -> 466/466.
+  - `verify-spec-diagnostics.cmd` -> Failures: 0.
+  - `compare-semantic-diagnostics.cmd` -> 99/99 matching semantic diagnostics.
+  - `verify-grammar-consistency.cmd` -> Mismatches: 0.
+- Branch-02 imported package suite is now fully green.
+
+## Unsupported compiler-v1 demo check after RPC/Async work
+
+- Checked `examples/compiler_v1/unsupported/async_scope_runtime/App/Main.fh` and `examples/compiler_v1/unsupported/grpc_binding/App/Main.fh` after the branch-02 RPC and async/scope fixes.
+- `verify-compiler-examples.cmd` still passes and still expects both demos to report `FH-GOCODEGEN-0001` in the general Go codegen path.
+- `async_scope_runtime` now verifies successfully in the frontend/verifier, but `go-codegen-project` exits with `1`; `.tmp/probe_async_scope.json` has `supported: false` with `FH-GOCODEGEN-0001` diagnostics: `async routines are not supported by Go codegen V1`.
+- `grpc_binding` now verifies successfully in the frontend/verifier, but general `go-codegen-project` exits with `1`; `.tmp/probe_grpc_binding.json` has `supported: false` with `FH-GOCODEGEN-0001`: `declaration not supported by Go codegen V1`.
+- Dedicated gRPC generation is working: `python -m freehold grpc-go-bindings examples\compiler_v1\unsupported\grpc_binding\App\Main.fh --output .tmp\probe_grpc_binding_exit.go` exits with `0` and generates the Go binding wrapper.
+
+## Go-codegen support for async_scope_runtime and grpc_binding demos
+
+- Solved both previously unsupported compiler-v1 demos in the general `go-codegen-project` path.
+- `async_scope_runtime`:
+  - Go codegen now accepts async routines and lowers them synchronously for V1.
+  - `await` is transparent in the generated Go expression path.
+  - `Scope` lowers to `FreeholdScope`; `JoinHandle<T>` lowers to `FreeholdJoinHandle[T]`; `scope` blocks and `scope.spawn<T>`/`scope.join<T>` lower to structured sequential Go code.
+- `grpc_binding`:
+  - `ServiceDecl` is no longer a general Go-codegen unsupported declaration.
+  - Project codegen emits extra gRPC Go files for service modules: a minimal `pb` stub package plus the existing unary server binding wrapper.
+  - gRPC projects add `google.golang.org/grpc v1.64.0` to `go.mod` and run `go mod tidy` in generated `build.cmd` before `go test ./...`.
+- Promoted the two demos in `tools/verify_compiler_examples.py`:
+  - `19_async_scope_runtime` is now a supported compiler example.
+  - `20_grpc_binding` is now a supported compiler example.
+- Kept `old_concurrent_grpc_channel_demo` unsupported because channels remain outside Go-codegen V1; Channel/Sender/Receiver now report structured `FH-GOCODEGEN-0001` diagnostics instead of aborting before project JSON is written.
+- Updated `tests/language_modules/go_codegen_feature_matrix.json`: `23_concurrency` is now supported for async/await/scope/JoinHandle lowering, with channels and scheduler-backed async runtime still deferred.
+- Validation:
+  - Direct `go-codegen-project` probe for `async_scope_runtime` -> exit 0; generated Go project build -> exit 0.
+  - Direct `go-codegen-project` probe for `grpc_binding` -> exit 0; generated Go project build -> exit 0.
+  - `verify-compiler-examples.cmd` -> passed.
+  - `python -m freehold test-language --module 23_concurrency` -> 20/20.
+  - `python -m freehold test-language --module 24_grpc_idl` -> 10/10.
+  - `verify-go-feature-matrix.cmd` -> Mismatches: 0.
+  - `python -m freehold test-language --root tests\language_modules_02` -> 98/98.
+  - `python -m freehold test-language` -> 466/466.
+
+## Go-codegen channel runtime wrapper slice
+
+- Added Go-codegen support for existing frontend channel syntax and semantics.
+- `Channel<T>`, `Sender<T>`, and `Receiver<T>` now lower to small Go wrapper types over native `chan T`:
+  - `FreeholdChannel[T]` owns `chan T`;
+  - `FreeholdSender[T]` and `FreeholdReceiver[T]` expose send/receive endpoints.
+- Added lowering for channel runtime calls:
+  - `channel<T>(capacity)` -> `make(chan T, int(capacity))` inside `FreeholdChannel[T]`;
+  - `channel_sender<T>(channel)` -> `FreeholdSender[T]`;
+  - `channel_receiver<T>(channel)` -> `FreeholdReceiver[T]`;
+  - `channel_send<T>(sender, value)` -> blocking Go send returning `true`;
+  - `channel_receive<T>(receiver)` -> blocking Go receive.
+- Promoted `examples/concurrent_grpc_channel_demo.fh` to supported compiler example `21_concurrent_grpc_channel_demo`; it now verifies, codegens, emits gRPC project extras, and builds.
+- Updated `tests/language_modules/go_codegen_feature_matrix.json`: `23_concurrency` now lists channel endpoints and awaitable send/receive as supported Go-codegen cases; scheduler-backed async runtime remains deferred.
+- Validation:
+  - Direct `go-codegen` probe for `channel_endpoints.fh` -> exit 0.
+  - Direct `go-codegen` probe for `await_channel_send_receive.fh` -> exit 0.
+  - Direct `go-codegen-project` probe for `examples/concurrent_grpc_channel_demo.fh` -> exit 0; generated Go project build -> exit 0.
+  - `verify-compiler-examples.cmd` -> passed; includes `21_concurrent_grpc_channel_demo`.
+  - `python -m freehold test-language --module 23_concurrency` -> 20/20.
+  - `verify-go-feature-matrix.cmd` -> Mismatches: 0.
+  - `python -m freehold test-language` -> 466/466.
+  - `python -m freehold test-language --root tests\language_modules_02` -> 98/98.
+
+## Full test pass after compiler-v1 19/20/21 promotion
+
+- Ran the broad Freehold verification set after promoting the solved demos to numbered compiler-v1 examples.
+- Results:
+  - `fhtest.cmd` -> exit 0; CLI smoke, core language module, full regression suite, hello run, and demo verifies all passed.
+  - `verify-compiler-examples.cmd` -> exit 0; compiler example smoke passed.
+  - `compare-ir-compiler-v1.cmd` -> exit 0; 15 matching, 0 mismatching, 3 skipped.
+  - `compare-ir-compiler-v1-stage2.cmd` -> exit 0; 3 generated, 0 skipped, Python/Go export failures 0.
+  - `verify-go-feature-matrix.cmd` -> exit 0; Mismatches: 0.
+  - `verify-spec-diagnostics.cmd` -> exit 0; Failures: 0.
+  - `compare-semantic-diagnostics.cmd` -> exit 0; 99 matching, 0 mismatching.
+  - `verify-grammar-consistency.cmd` -> exit 0; Mismatches: 0.
+  - `python -m freehold test-language` -> exit 0; 466/466.
+  - `python -m freehold test-language --root tests\language_modules_02` -> exit 0; 98/98.
+
+## Promoted solved compiler-v1 demos to 19/20/21
+
+- Moved the solved compiler-v1 demos out of `unsupported` and into numbered compiler examples:
+  - `examples/compiler_v1/19_async_scope_runtime/App/Main.fh`.
+  - `examples/compiler_v1/20_grpc_binding/App/Main.fh`.
+  - `examples/compiler_v1/21_concurrent_grpc_channel_demo/App/Main.fh`.
+- Updated `tools/verify_compiler_examples.py` so 19/20/21 are supported compiler examples at their new paths.
+- `examples/compiler_v1/unsupported` now keeps only the still unsupported generic-function demo.
+- Updated `artifacts/fhir-samples/compiler_v1/manifest.json` so skipped IR entries for 19/20 point at the new numbered paths while the frozen Stage-1 IR baseline scope stays unchanged.
+- Validation:
+  - Direct verify for 19/20/21 at the new paths -> exit 0 for each.
+  - `verify-compiler-examples.cmd` -> passed; includes 19/20/21 as supported and only `unsupported_generic_function` as unsupported.
+  - `compare-ir-compiler-v1.cmd` -> exit 0; generated/frozen parity still 15 matching, 0 mismatching, 3 skipped.
+  - `verify-go-feature-matrix.cmd` -> Mismatches: 0.
+  - `python -m freehold test-language` -> 466/466.
+  - `python -m freehold test-language --root tests\language_modules_02` -> 98/98.

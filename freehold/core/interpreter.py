@@ -7,6 +7,14 @@ from freehold.core.verifier import VerifiedProgram
 from freehold.runtime import big as std_big
 from freehold.runtime import std_io
 
+def param_type_ref(type_name: str):
+    if type_name.startswith("Array<") and type_name.endswith(">"):
+        inner = type_name[len("Array<"):-1]
+        element_type, _, size_text = inner.rpartition(",")
+        if element_type and size_text.strip().isdigit():
+            return ArrayTypeName(element_type.strip(), int(size_text.strip()))
+    return TypeName(type_name)
+
 class Interpreter:
     def __init__(self, verified: VerifiedProgram):
         self.v=verified; self.types=verified.types; self.records=verified.records; self.errors=verified.errors; self.routines=verified.routines
@@ -15,7 +23,7 @@ class Interpreter:
     def call(self,name,args):
         name = self.local_routine_name(name)
         r=self.routines[name]; env={}; env_types={}
-        for p,v in zip(r.params,args): env[p.name]=v; env_types[p.name]=TypeName(p.type_name)
+        for p,v in zip(r.params,args): env[p.name]=v; env_types[p.name]=param_type_ref(p.type_name)
         for req in r.requires:
             if self.eval(req, env) is not True:
                 raise VerificationError(f"{req.pos.text()}: requires failed in {name}: {req}")

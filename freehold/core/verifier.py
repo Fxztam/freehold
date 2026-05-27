@@ -286,7 +286,8 @@ class Verifier:
                 if p.name in seen_params:
                     raise TypeCheckError(f"{p.pos.text()}: duplicate parameter name: {p.name}")
                 seen_params.add(p.name)
-                ctx.require_type_or_record(p.type_name, p.pos); env[p.name] = TypeName(p.type_name)
+                param_type = self.param_type_ref(p, ctx)
+                ctx.require_return_type(param_type, p.pos); env[p.name] = param_type
             if r.return_type: ctx.require_return_type(r.return_type, r.pos)
             if r.name == "main" and r.requires:
                 raise TypeCheckError(f"{r.requires[0].pos.text()}: main requires clause is not allowed")
@@ -877,7 +878,7 @@ class Verifier:
             return self.call_expr_type(e, env, ctx, allow_result, result_type)
         if isinstance(e, AwaitExpr):
             if not ctx.current_async:
-                raise TypeCheckError(f"{e.pos.text()}: await is only allowed inside async functions")
+                raise TypeCheckError(f"{e.pos.text()}: await is only allowed inside async routines")
             awaited = self.infer(e.expr, env, ctx, allow_result, result_type)
             if not isinstance(awaited, AwaitableType):
                 join_inner = ctx.join_handle_inner_type(awaited)
@@ -974,10 +975,18 @@ class Verifier:
             if isinstance(a, NamedArg):
                 raise TypeCheckError(f"{a.pos.text()}: routine {r.name} does not accept named argument: {a.name}")
             actual = self.infer(a,env,ctx,False,None)
-            expected = TypeName(ctx.substitute_type(p.type_name, substitutions))
+            expected = ctx.substitute_type_ref(self.param_type_ref(p, ctx), substitutions)
             if self.base(actual, ctx) != self.base(expected, ctx):
                 raise TypeCheckError(f"{a.pos.text()}: routine argument {index} type mismatch for {r.name}: expected {type_to_string(expected)}, got {type_to_string(actual)}")
             self.assign(actual, expected, ctx, a.pos)
+
+    def param_type_ref(self, param: Param, ctx):
+        generic = ctx.parse_generic_instance(param.type_name)
+        if generic is not None:
+            base, args = generic
+            if base == "Array" and len(args) == 2 and args[1].isdigit():
+                return ArrayTypeName(args[0], int(args[1]))
+        return TypeName(param.type_name)
 
 class Ctx:
     def __init__(self, module_name, types, records, generic_records, errors, routines, imports=None, imported_modules=None):

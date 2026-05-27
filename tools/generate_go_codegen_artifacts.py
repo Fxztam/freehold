@@ -11,7 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from freehold.core.go_codegen import generate_go_file, generate_go_project, generate_go_project_build_files, generate_go_source
+from freehold.core.go_codegen import generate_go_file, generate_go_project, generate_go_project_build_files, generate_go_project_extra_files, generate_go_source
 
 
 DEFAULT_ROOT = Path("tests/language_modules")
@@ -124,12 +124,15 @@ def run_project_case(module_dir: Path, case: dict[str, Any], out_root: Path, *, 
     try:
         files = generate_go_project(entry_path)
         build_files = generate_go_project_build_files(files)
+        extra_files = generate_go_project_extra_files(files)
         actual = {file.output_path: file.result.go_source for file in files}
         actual.update({file.output_path: file.content for file in build_files})
+        actual.update({file.output_path: file.content for file in extra_files})
         error = None
     except Exception as exc:
         files = []
         build_files = []
+        extra_files = []
         actual = {}
         error = {"type": type(exc).__name__, "message": str(exc)}
     expected = {

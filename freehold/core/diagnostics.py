@@ -644,7 +644,7 @@ Example:
     -amount
 """
 
-ASYNC_AWAIT_CONTEXT_HINT = """`await` may only be used inside an async function.
+ASYNC_AWAIT_CONTEXT_HINT = """`await` may only be used inside an async routine.
 
 Example:
     async function load() returns Integer
@@ -1308,10 +1308,10 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         found_type = unary_negative_match.group(1)
         return Diagnostic("VF-E007", "unary negative requires numeric operand", line, column, found_type, "Integer or Double", EXPRESSION_UNARY_NEGATIVE_HINT, phase="semantic")
-    await_context_match = re.search(r"await is only allowed inside async functions", message)
+    await_context_match = re.search(r"await is only allowed inside async (?:function|functions|routine|routines)", message)
     if await_context_match:
         line, column = _source_position_from_message(message)
-        return Diagnostic("VF-ASY001", "await outside async function", line, column, "await", "async function context", ASYNC_AWAIT_CONTEXT_HINT, phase="semantic")
+        return Diagnostic("VF-ASY001", "await outside async routine", line, column, "await", "async routine context", ASYNC_AWAIT_CONTEXT_HINT, phase="semantic")
     awaitable_match = re.search(r"await requires an awaitable expression, got (.+)", message)
     if awaitable_match:
         line, column = _source_position_from_message(message)

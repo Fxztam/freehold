@@ -102,7 +102,7 @@ class AstBuilder:
         kind = "function" if tree.data == "function_decl" else "procedure"
         is_async = False
         idx = 0
-        if kind == "function" and tree.children and isinstance(tree.children[0], Tree) and tree.children[0].data == "async_marker":
+        if tree.children and isinstance(tree.children[0], Tree) and tree.children[0].data == "async_marker":
             is_async = True
             idx = 1
         name = str(tree.children[idx]); idx += 1
@@ -112,7 +112,7 @@ class AstBuilder:
             idx += 1
         params = []
         if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "param_list":
-            params = [Param(str(p.children[0]), self.type_ref_name(p.children[1]), pos(p)) for p in tree.children[idx].children]
+            params = [Param(str(p.children[0]), type_to_string(self.param_type(p.children[1])), pos(p)) for p in tree.children[idx].children]
             idx += 1
         ret = None
         if kind == "function":
@@ -136,6 +136,10 @@ class AstBuilder:
 
     def return_type(self, tree: Tree):
         inner = tree.children[0]
+        return self.type_ref_tree(inner)
+
+    def param_type(self, tree: Tree):
+        inner = grammar_children(tree)[0] if tree.data == "param_type" else tree
         return self.type_ref_tree(inner)
 
     def expr_list(self, tree: Tree):

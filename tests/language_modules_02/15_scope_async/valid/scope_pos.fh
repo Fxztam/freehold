@@ -26,12 +26,13 @@ async procedure run_tasks()
 is
     scope worker do
         spawn
-            let n: Integer = await fetch_value(1)
-            call Std.IO.logf("spawned: ${}", n)
+            let value_handle: JoinHandle<Integer> = worker.spawn<Integer>(fetch_value(1))
         join
-            call Std.IO.logf("joined", )
+            let n: Integer = await worker.join<Integer>(value_handle)
+            call Std.IO.logf("spawned: ${}", n)
+            call Std.IO.logf("joined")
         result
-            call Std.IO.logf("done", )
+            call Std.IO.logf("done")
     end scope
 end run_tasks
 
@@ -41,29 +42,31 @@ is
     scope empty_w do
         spawn
         join
-            call Std.IO.logf("after empty spawn", )
+            call Std.IO.logf("after empty spawn")
         result
-            call Std.IO.logf("result", )
+            call Std.IO.logf("result")
     end scope
 end empty_spawn
 
--- SCP-02: scope(args) als Ausdruck
+-- SCP-02: scope() als Ausdruck mit spawn/join API
 async function scope_expr(n: Integer) returns Integer
 requires n > 0
 ensures result >= 0
 is
-    let handle: Integer = scope(n, 42)
-    return handle
+    let active: Scope = scope()
+    let handle: JoinHandle<Integer> = active.spawn<Integer>(fetch_value(n))
+    let joined_value: Integer = await active.join<Integer>(handle)
+    return joined_value
 end scope_expr
 
--- SCP-06: .spawn / .join als Member-Zugriff
+-- SCP-06: .spawn / .join als typisierte Scope-Methoden
 async procedure member_access(n: Integer)
 requires n > 0
 is
-    let handle: Integer = scope(n)
-    let s: Integer = handle.spawn
-    let j: Integer = handle.join
-    call Std.IO.logf("s=${}, j=${}", s, j)
+    let active: Scope = scope()
+    let handle: JoinHandle<Integer> = active.spawn<Integer>(fetch_value(n))
+    let j: Integer = await active.join<Integer>(handle)
+    call Std.IO.logf("j=${}", j)
 end member_access
 
 -- SCP-01 PASS: Scope mit Datenaustausch
@@ -74,10 +77,12 @@ is
     let total: Integer = 0
     scope fetch do
         spawn
-            let va: Integer = await fetch_value(a)
-            let vb: Integer = await fetch_value(b)
-            total := va + vb
+            let va_handle: JoinHandle<Integer> = fetch.spawn<Integer>(fetch_value(a))
+            let vb_handle: JoinHandle<Integer> = fetch.spawn<Integer>(fetch_value(b))
         join
+            let va: Integer = await fetch.join<Integer>(va_handle)
+            let vb: Integer = await fetch.join<Integer>(vb_handle)
+            total := va + vb
             check total >= 0
         result
             call Std.IO.logf("total = ${}", total)

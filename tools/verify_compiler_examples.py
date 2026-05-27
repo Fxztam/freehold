@@ -47,6 +47,9 @@ SUPPORTED_EXAMPLES = [
     SupportedExample("16_abort_propagation_runtime_log", "examples/compiler_v1/16_abort_propagation_runtime_log/App/Main.fh", "examples/expected_logs/compiler_v1_abort_propagation_runtime_log.expected.log"),
     SupportedExample("17_record_mutation_runtime_log", "examples/compiler_v1/17_record_mutation_runtime_log/App/Main.fh", "examples/expected_logs/compiler_v1_record_mutation_runtime_log.expected.log"),
     SupportedExample("18_result_error_branch_runtime_log", "examples/compiler_v1/18_result_error_branch_runtime_log/App/Main.fh", "examples/expected_logs/compiler_v1_result_error_branch_runtime_log.expected.log"),
+    SupportedExample("19_async_scope_runtime", "examples/compiler_v1/19_async_scope_runtime/App/Main.fh"),
+    SupportedExample("20_grpc_binding", "examples/compiler_v1/20_grpc_binding/App/Main.fh"),
+    SupportedExample("21_concurrent_grpc_channel_demo", "examples/compiler_v1/21_concurrent_grpc_channel_demo/App/Main.fh"),
     SupportedExample("old_BigNumbers", "examples/BigNumbers.fh", "examples/expected_logs/BigNumbers.expected.log"),
     SupportedExample("old_ChudnovskyFeynmanPoint", "examples/ChudnovskyFeynmanPoint.fh", "examples/expected_logs/ChudnovskyFeynmanPoint.expected.log"),
     SupportedExample("old_ChudnovskyPi", "examples/ChudnovskyPi.fh", "examples/expected_logs/ChudnovskyPi.expected.log"),
@@ -63,9 +66,6 @@ SUPPORTED_EXAMPLES = [
 
 UNSUPPORTED_EXAMPLES = [
     UnsupportedExample("unsupported_generic_function", "examples/compiler_v1/unsupported/generic_function/App/Main.fh", "FH-GOCODEGEN-0001"),
-    UnsupportedExample("unsupported_grpc_binding", "examples/compiler_v1/unsupported/grpc_binding/App/Main.fh", "FH-GOCODEGEN-0001"),
-    UnsupportedExample("unsupported_async_scope_runtime", "examples/compiler_v1/unsupported/async_scope_runtime/App/Main.fh", "FH-GOCODEGEN-0001"),
-    UnsupportedExample("old_concurrent_grpc_channel_demo", "examples/concurrent_grpc_channel_demo.fh", "FH-GOCODEGEN-0001"),
 ]
 
 

@@ -20,12 +20,13 @@ range_decl: "range" SIGNED_NUMBER ".." SIGNED_NUMBER
 
 function_decl: async_marker? "function" NAME type_param_list? "(" param_list? ")" "returns" return_type contract_block? "is" stmt* "end" NAME
 async_marker: "async"
-procedure_decl: "procedure" NAME "(" param_list? ")" contract_block? "is" stmt* "end" NAME
+procedure_decl: async_marker? "procedure" NAME "(" param_list? ")" contract_block? "is" stmt* "end" NAME
 service_decl: "service" NAME "is" rpc_decl+ "end" NAME
 rpc_decl: "rpc" NAME "(" NAME ":" type_ref ")" ":" type_ref
 
 param_list: param ("," param)*
-param: NAME ":" type_ref
+param: NAME ":" param_type
+param_type: array_type | type_ref
 type_ref: NAME type_arg_list?
 type_arg_list: TYPE_ARG_START type_ref ("," type_ref)* ">"
 return_type: array_type | result_type | type_ref

@@ -1,0 +1,187 @@
+{
+  "declarations": [
+    {
+      "fields": [
+        {
+          "name": "id",
+          "node": "RecordField",
+          "proto_id": 1,
+          "type_name": "Integer"
+        }
+      ],
+      "name": "PointRequest",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "prefix",
+          "node": "RecordField",
+          "proto_id": 1,
+          "type_name": "String"
+        }
+      ],
+      "name": "PrefixRequest",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "val",
+          "node": "RecordField",
+          "proto_id": 1,
+          "type_name": "Integer"
+        }
+      ],
+      "name": "ValueRequest",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "n",
+          "node": "RecordField",
+          "proto_id": 1,
+          "type_name": "Integer"
+        }
+      ],
+      "name": "CreatePointRequest",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "x",
+          "node": "RecordField",
+          "proto_id": 1,
+          "type_name": "Integer"
+        },
+        {
+          "name": "y",
+          "node": "RecordField",
+          "proto_id": 2,
+          "type_name": "Integer"
+        }
+      ],
+      "name": "PointMessage",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "name",
+          "node": "RecordField",
+          "proto_id": 1,
+          "type_name": "String"
+        },
+        {
+          "name": "amount",
+          "node": "RecordField",
+          "proto_id": 2,
+          "type_name": "Integer"
+        }
+      ],
+      "name": "LabeledMessage",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "count",
+          "node": "RecordField",
+          "proto_id": 1,
+          "type_name": "Integer"
+        }
+      ],
+      "name": "CountLabelsResponse",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "fields": [
+        {
+          "name": "success_flag",
+          "node": "RecordField",
+          "proto_id": 1,
+          "type_name": "Boolean"
+        },
+        {
+          "name": "point",
+          "node": "RecordField",
+          "proto_id": 2,
+          "type_name": "PointMessage"
+        },
+        {
+          "name": "error_text",
+          "node": "RecordField",
+          "proto_id": 3,
+          "type_name": "String"
+        }
+      ],
+      "name": "SafePointResponse",
+      "node": "RecordTypeDecl"
+    },
+    {
+      "name": "PointService",
+      "node": "ServiceDecl",
+      "rpcs": [
+        {
+          "name": "GetPoint",
+          "node": "RpcDecl",
+          "request_name": "request",
+          "request_type": "PointRequest",
+          "response_type": "PointMessage"
+        }
+      ]
+    },
+    {
+      "name": "LabelService",
+      "node": "ServiceDecl",
+      "rpcs": [
+        {
+          "name": "GetLabeled",
+          "node": "RpcDecl",
+          "request_name": "request",
+          "request_type": "PointRequest",
+          "response_type": "LabeledMessage"
+        },
+        {
+          "name": "CountLabels",
+          "node": "RpcDecl",
+          "request_name": "request",
+          "request_type": "PrefixRequest",
+          "response_type": "CountLabelsResponse"
+        },
+        {
+          "name": "FindByValue",
+          "node": "RpcDecl",
+          "request_name": "request",
+          "request_type": "ValueRequest",
+          "response_type": "LabeledMessage"
+        }
+      ]
+    },
+    {
+      "name": "SafeService",
+      "node": "ServiceDecl",
+      "rpcs": [
+        {
+          "name": "FindPoint",
+          "node": "RpcDecl",
+          "request_name": "request",
+          "request_type": "PointRequest",
+          "response_type": "SafePointResponse"
+        },
+        {
+          "name": "CreatePoint",
+          "node": "RpcDecl",
+          "request_name": "request",
+          "request_type": "CreatePointRequest",
+          "response_type": "SafePointResponse"
+        }
+      ]
+    }
+  ],
+  "imports": [],
+  "module_name": "Test.Service.Pos",
+  "node": "Program"
+}

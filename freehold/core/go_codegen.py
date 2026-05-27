@@ -10,6 +10,7 @@ from typing import Any
 from freehold.core.ast import (
     ArrayLiteralExpr,
     ArrayTypeName,
+    AwaitExpr,
     AbortStmt,
     AssignStmt,
     BinaryExpr,
@@ -38,7 +39,9 @@ from freehold.core.ast import (
     ReturnError,
     ReturnStmt,
     RoutineDecl,
+    ServiceDecl,
     SpecialResultExpr,
+    ScopeStmt,
     ResultTypeName,
     StringExpr,
     TypeDecl,
@@ -108,6 +111,7 @@ class GoProjectFile:
     source_file: str
     output_path: str
     result: GoCodegenResult
+    result_program: Program
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -120,6 +124,20 @@ class GoProjectFile:
 
 @dataclass(frozen=True)
 class GoProjectBuildFile:
+    output_path: str
+    content: str
+    kind: str
+
+    def to_json(self) -> dict[str, str]:
+        return {
+            "output_path": self.output_path,
+            "kind": self.kind,
+            "content": self.content,
+        }
+
+
+@dataclass(frozen=True)
+class GoProjectExtraFile:
     output_path: str
     content: str
     kind: str
@@ -168,17 +186,46 @@ def generate_go_project(entry_file: str | Path) -> list[GoProjectFile]:
                 source_file=display_path(resolved.path),
                 output_path=go_module_output_path(module_name).as_posix(),
                 result=result,
+                result_program=resolved.ast,
             )
         )
     return files
 
 
+def generate_go_project_extra_files(files: list[GoProjectFile]) -> list[GoProjectExtraFile]:
+    from freehold.core.grpc_go_codegen import generate_grpc_go_bindings
+
+    extras: list[GoProjectExtraFile] = []
+    for file in files:
+        if not any(isinstance(declaration, ServiceDecl) for declaration in file.result_program.declarations):
+            continue
+        extras.append(
+            GoProjectExtraFile(
+                output_path=go_grpc_pb_stub_output_path(file.module_name).as_posix(),
+                kind="grpc_go_pb_stub",
+                content=generate_grpc_pb_stub(file.result_program),
+            )
+        )
+        extras.append(
+            GoProjectExtraFile(
+                output_path=go_grpc_binding_output_path(file.module_name).as_posix(),
+                kind="grpc_go_bindings",
+                content=generate_grpc_go_bindings(file.result_program),
+            )
+        )
+    return extras
+
+
 def generate_go_project_build_files(files: list[GoProjectFile], executable_name: str | None = None, entry_module_name: str | None = None) -> list[GoProjectBuildFile]:
+    grpc_required = any(any(isinstance(declaration, ServiceDecl) for declaration in file.result_program.declarations) for file in files)
+    go_mod = f"module {GO_PROJECT_MODULE_PATH}\n\ngo 1.22\n"
+    if grpc_required:
+        go_mod += "\nrequire google.golang.org/grpc v1.64.0\n"
     build_files = [
         GoProjectBuildFile(
             output_path="go.mod",
             kind="go_mod",
-            content=f"module {GO_PROJECT_MODULE_PATH}\n\ngo 1.22\n",
+            content=go_mod,
         ),
     ]
     if executable_name is not None:
@@ -216,6 +263,7 @@ def generate_go_project_build_files(files: list[GoProjectFile], executable_name:
                 content=(
                     "@echo off\n"
                     "setlocal\n"
+                    f"{('go mod tidy\nif errorlevel 1 exit /b %errorlevel%\n') if grpc_required else ''}"
                     "go test ./...\n"
                     "if errorlevel 1 exit /b %errorlevel%\n"
                     f"go build -trimpath -o bin\\{exe_name}.exe .\\cmd\\{exe_name}\n"
@@ -227,7 +275,7 @@ def generate_go_project_build_files(files: list[GoProjectFile], executable_name:
         GoProjectBuildFile(
             output_path="build.cmd",
             kind="build_cmd",
-            content="@echo off\nsetlocal\ngo test ./...\n",
+            content="@echo off\nsetlocal\n" + ("go mod tidy\nif errorlevel 1 exit /b %errorlevel%\n" if grpc_required else "") + "go test ./...\n",
         ),
     )
     return build_files
@@ -237,16 +285,19 @@ def result_json(result: GoCodegenResult, **metadata: str) -> str:
     return json.dumps(result.to_json(**metadata), indent=2) + "\n"
 
 
-def project_result_json(files: list[GoProjectFile], build_files: list[GoProjectBuildFile] | None = None) -> str:
+def project_result_json(files: list[GoProjectFile], build_files: list[GoProjectBuildFile] | None = None, extra_files: list[GoProjectExtraFile] | None = None) -> str:
     build_files = build_files or []
+    extra_files = extra_files or []
     return json.dumps(
         {
             "module_path": GO_PROJECT_MODULE_PATH,
             "total_files": len(files),
             "total_build_files": len(build_files),
+            "total_extra_files": len(extra_files),
             "supported": all(file.result.supported for file in files),
             "files": [file.to_json() for file in files],
             "build_files": [file.to_json() for file in build_files],
+            "extra_files": [file.to_json() for file in extra_files],
         },
         indent=2,
     ) + "\n"
@@ -273,6 +324,7 @@ class GoGenerator:
         self.needs_json_helper = False
         self.needs_big_helpers = False
         self.needs_template_helper = False
+        self.needs_async_helpers = False
         self.current_return_type: Any = None
         self.current_aborts: list[Any] = []
         self.current_routine_decl: RoutineDecl | None = None
@@ -295,6 +347,8 @@ class GoGenerator:
                 body_lines.extend(self.routine_decl(declaration))
             elif isinstance(declaration, ErrorDecl):
                 body_lines.extend(self.error_decl(declaration))
+            elif isinstance(declaration, ServiceDecl):
+                body_lines.extend(self.service_decl(declaration))
             else:
                 self.unsupported(declaration, "declaration not supported by Go codegen V1")
         lines = [
@@ -413,6 +467,36 @@ class GoGenerator:
 
     def helper_decls(self) -> list[str]:
         lines: list[str] = []
+        if self.needs_async_helpers:
+            lines.extend([
+                "type FreeholdScope struct{}",
+                "",
+                "type FreeholdJoinHandle[T any] struct {",
+                "\tvalue T",
+                "}",
+                "",
+                "type FreeholdChannel[T any] struct {",
+                "\tch chan T",
+                "}",
+                "",
+                "type FreeholdSender[T any] struct {",
+                "\tch chan T",
+                "}",
+                "",
+                "type FreeholdReceiver[T any] struct {",
+                "\tch chan T",
+                "}",
+                "",
+                "func freeholdChannelSend[T any](sender FreeholdSender[T], value T) bool {",
+                "\tsender.ch <- value",
+                "\treturn true",
+                "}",
+                "",
+                "func freeholdChannelReceive[T any](receiver FreeholdReceiver[T]) T {",
+                "\treturn <-receiver.ch",
+                "}",
+                "",
+            ])
         if self.needs_json_helper:
             lines.extend([
                 "func freeholdJSONString(value interface{}) string {",
@@ -559,12 +643,12 @@ class GoGenerator:
         lines.extend(["}", ""])
         return lines
 
+    def service_decl(self, declaration: ServiceDecl) -> list[str]:
+        return [f"// Service {go_exported_name(declaration.name)} is emitted through the generated gRPC binding file.", ""]
+
     def routine_decl(self, routine: RoutineDecl) -> list[str]:
         if routine.type_params:
             self.unsupported(routine, "generic routines are not supported by Go codegen V1")
-            return []
-        if routine.is_async:
-            self.unsupported(routine, "async routines are not supported by Go codegen V1")
             return []
         params = ", ".join(self.param(param) for param in routine.params)
         result_type = self.routine_result_type(routine)
@@ -717,6 +801,17 @@ class GoGenerator:
                 lines.extend(indent_lines(self.statement_block(stmt.default_body)))
             lines.append("}")
             return lines
+        if isinstance(stmt, ScopeStmt):
+            self.needs_async_helpers = True
+            scope_name = go_local_name(stmt.name)
+            lines = ["{"]
+            lines.append(f"\t{scope_name} := FreeholdScope{{}}")
+            lines.append(f"\t_ = {scope_name}")
+            lines.extend(indent_lines(self.statement_block(stmt.spawn_body)))
+            lines.extend(indent_lines(self.statement_block(stmt.join_body)))
+            lines.extend(indent_lines(self.statement_block(stmt.result_body)))
+            lines.append("}")
+            return lines
         self.unsupported(stmt, "statement not supported by Go codegen V1")
         return ["// unsupported statement"]
 
@@ -776,6 +871,9 @@ class GoGenerator:
                     names.update(self.statement_read_names(nested))
             for nested in stmt.default_body:
                 names.update(self.statement_read_names(nested))
+        elif isinstance(stmt, ScopeStmt):
+            for nested in stmt.spawn_body + stmt.join_body + stmt.result_body:
+                names.update(self.statement_read_names(nested))
         return names
 
     def return_read_names(self, value: Any) -> set[str]:
@@ -808,6 +906,8 @@ class GoGenerator:
         elif isinstance(expr, CallExpr):
             for arg in expr.args:
                 names.update(self.expr_read_names(arg))
+        elif isinstance(expr, AwaitExpr):
+            names.update(self.expr_read_names(expr.expr))
         elif isinstance(expr, NamedArg):
             names.update(self.expr_read_names(expr.expr))
         elif isinstance(expr, RecordLiteralExpr):
@@ -943,10 +1043,25 @@ class GoGenerator:
                 return f"[{args[1]}]{self.go_type_string(args[0])}"
             if base == "Result" and len(args) == 2:
                 return self.go_result_type_name(ResultTypeName(TypeName(args[0]), args[1]))
+            if base == "JoinHandle" and len(args) == 1:
+                self.needs_async_helpers = True
+                return f"FreeholdJoinHandle[{self.go_type_string(args[0])}]"
+            if base == "Channel" and len(args) == 1:
+                self.needs_async_helpers = True
+                return f"FreeholdChannel[{self.go_type_string(args[0])}]"
+            if base == "Sender" and len(args) == 1:
+                self.needs_async_helpers = True
+                return f"FreeholdSender[{self.go_type_string(args[0])}]"
+            if base == "Receiver" and len(args) == 1:
+                self.needs_async_helpers = True
+                return f"FreeholdReceiver[{self.go_type_string(args[0])}]"
         imported = self.imported_type_module(type_name)
         if imported is not None:
             self.used_import_modules.add(imported)
             return f"{go_import_alias(imported)}.{go_exported_name(type_name)}"
+        if type_name == "Scope":
+            self.needs_async_helpers = True
+            return "FreeholdScope"
         return go_type_string(type_name)
 
     def go_zero_value(self, type_ref: Any) -> str:
@@ -1039,6 +1154,8 @@ class GoGenerator:
             base = self.contract_bindings.get(expr.name, go_local_name(expr.name))
             indexed = f"{base}[{self.expr(expr.index)}]"
             return ".".join([indexed] + [go_exported_name(field) for field in expr.fields])
+        if isinstance(expr, AwaitExpr):
+            return self.await_expr(expr)
         if isinstance(expr, UnaryExpr):
             precedence = unary_precedence(expr.op)
             rendered = f"{go_operator(expr.op)}{self.expr_at(expr.expr, precedence)}"
@@ -1057,11 +1174,11 @@ class GoGenerator:
             values = ", ".join(self.expr(item) for item in expr.items)
             return f"[]any{{{values}}}"
         if isinstance(expr, CallExpr):
-            if expr.type_args:
-                self.unsupported(expr, "generic calls are not supported by Go codegen V1")
             runtime_call = self.runtime_call_expr(expr, None)
             if runtime_call is not None:
                 return runtime_call
+            if expr.type_args:
+                self.unsupported(expr, "generic calls are not supported by Go codegen V1")
             call_routine = self.called_routine(expr.name)
             if call_routine is not None and call_routine.aborts:
                 self.unsupported(expr, "aborting calls in expressions are not supported by Go codegen V1")
@@ -1069,6 +1186,11 @@ class GoGenerator:
             return f"{self.callable_name(expr.name, expr)}({args})"
         self.unsupported(expr, "expression not supported by Go codegen V1")
         return "nil"
+
+    def await_expr(self, expr: AwaitExpr) -> str:
+        if isinstance(expr.expr, VarExpr) and self.is_join_handle_type(self.current_local_types.get(expr.expr.name)):
+            return f"{go_local_name(expr.expr.name)}.value"
+        return self.expr(expr.expr)
 
     def callable_name(self, name: str, node: Any) -> str:
         current_prefix = f"{self.program.module_name}."
@@ -1112,6 +1234,9 @@ class GoGenerator:
         return None
 
     def runtime_call_expr(self, expr: CallExpr, expected_type: Any) -> str | None:
+        async_call = self.async_runtime_call_expr(expr)
+        if async_call is not None:
+            return async_call
         if expr.name == "Json.stringify":
             self.std_imports.add("encoding/json")
             self.needs_json_helper = True
@@ -1147,6 +1272,85 @@ class GoGenerator:
             rendered = f"math.{go_name}(float64({args[0]}), float64({args[1]}))"
             return f"int64({rendered})" if go_expected_base(expected_type) == "Integer" else rendered
         return None
+
+    def async_runtime_call_expr(self, expr: CallExpr) -> str | None:
+        if expr.name == "scope" and not expr.args:
+            self.needs_async_helpers = True
+            return "FreeholdScope{}"
+        if expr.name == "channel":
+            return self.render_channel_call(expr)
+        if expr.name == "channel_sender":
+            return self.render_channel_endpoint_call(expr, "FreeholdSender")
+        if expr.name == "channel_receiver":
+            return self.render_channel_endpoint_call(expr, "FreeholdReceiver")
+        if expr.name == "channel_send":
+            return self.render_channel_send_call(expr)
+        if expr.name == "channel_receive":
+            return self.render_channel_receive_call(expr)
+        if expr.name == "scope_spawn":
+            return self.render_spawn_call(expr, task_arg_index=1)
+        if expr.name == "scope_join":
+            return self.render_join_call(expr, handle_arg_index=1)
+        if expr.name.endswith(".spawn"):
+            return self.render_spawn_call(expr, task_arg_index=0)
+        if expr.name.endswith(".join"):
+            return self.render_join_call(expr, handle_arg_index=0)
+        return None
+
+    def render_channel_call(self, expr: CallExpr) -> str:
+        self.needs_async_helpers = True
+        if not expr.type_args or len(expr.type_args) != 1 or len(expr.args) != 1:
+            self.unsupported(expr, "channel requires one type argument and one capacity argument")
+            return "FreeholdChannel[any]{}"
+        value_type = self.go_type_string(expr.type_args[0])
+        return f"FreeholdChannel[{value_type}]{{ch: make(chan {value_type}, int({self.expr(expr.args[0])}))}}"
+
+    def render_channel_endpoint_call(self, expr: CallExpr, endpoint_type: str) -> str:
+        self.needs_async_helpers = True
+        if not expr.type_args or len(expr.type_args) != 1 or len(expr.args) != 1:
+            self.unsupported(expr, "channel endpoint requires one type argument and one Channel argument")
+            return f"{endpoint_type}[any]{{}}"
+        value_type = self.go_type_string(expr.type_args[0])
+        return f"{endpoint_type}[{value_type}]{{ch: {self.expr(expr.args[0])}.ch}}"
+
+    def render_channel_send_call(self, expr: CallExpr) -> str:
+        self.needs_async_helpers = True
+        if not expr.type_args or len(expr.type_args) != 1 or len(expr.args) != 2:
+            self.unsupported(expr, "channel_send requires one type argument, a Sender, and a value")
+            return "false"
+        value_type = self.go_type_string(expr.type_args[0])
+        return f"freeholdChannelSend[{value_type}]({self.expr(expr.args[0])}, {self.expr(expr.args[1])})"
+
+    def render_channel_receive_call(self, expr: CallExpr) -> str:
+        self.needs_async_helpers = True
+        if not expr.type_args or len(expr.type_args) != 1 or len(expr.args) != 1:
+            self.unsupported(expr, "channel_receive requires one type argument and a Receiver")
+            return "nil"
+        value_type = self.go_type_string(expr.type_args[0])
+        return f"freeholdChannelReceive[{value_type}]({self.expr(expr.args[0])})"
+
+    def render_spawn_call(self, expr: CallExpr, task_arg_index: int) -> str:
+        self.needs_async_helpers = True
+        if not expr.type_args or len(expr.type_args) != 1 or task_arg_index >= len(expr.args):
+            self.unsupported(expr, "scope spawn requires one type argument and an awaitable value")
+            return "FreeholdJoinHandle[any]{}"
+        value_type = self.go_type_string(expr.type_args[0])
+        return f"FreeholdJoinHandle[{value_type}]{{value: {self.expr(expr.args[task_arg_index])}}}"
+
+    def render_join_call(self, expr: CallExpr, handle_arg_index: int) -> str:
+        self.needs_async_helpers = True
+        if handle_arg_index >= len(expr.args):
+            self.unsupported(expr, "scope join requires a JoinHandle argument")
+            return "nil"
+        return f"{self.expr(expr.args[handle_arg_index])}.value"
+
+    def is_join_handle_type(self, type_ref: Any) -> bool:
+        if isinstance(type_ref, TypeName):
+            return self.is_join_handle_type(type_ref.name)
+        if isinstance(type_ref, str):
+            generic = parse_generic(type_ref)
+            return generic is not None and generic[0] == "JoinHandle" and len(generic[1]) == 1
+        return False
 
     def big_runtime_call_expr(self, expr: CallExpr) -> str | None:
         if not expr.name.startswith("Big."):
@@ -1372,8 +1576,16 @@ def go_type_string(type_name: str) -> str:
             return f"[{args[1]}]{go_type_string(args[0])}"
         if base == "Result" and len(args) == 2:
             return go_result_type_name(ResultTypeName(TypeName(args[0]), args[1]))
-        if base in {"JoinHandle", "Channel", "Sender", "Receiver"}:
-            raise GoCodegenError(f"{base} is not supported by Go codegen V1")
+        if base == "JoinHandle" and len(args) == 1:
+            return f"FreeholdJoinHandle[{go_type_string(args[0])}]"
+        if base == "Channel" and len(args) == 1:
+            return f"FreeholdChannel[{go_type_string(args[0])}]"
+        if base == "Sender" and len(args) == 1:
+            return f"FreeholdSender[{go_type_string(args[0])}]"
+        if base == "Receiver" and len(args) == 1:
+            return f"FreeholdReceiver[{go_type_string(args[0])}]"
+    if type_name == "Scope":
+        return "FreeholdScope"
     mapping = {
         "Integer": "int64",
         "Boolean": "bool",
@@ -1469,6 +1681,58 @@ def type_name_uses_big(type_name: str) -> bool:
     return any(type_name_uses_big(arg) for arg in args)
 
 
+def generate_grpc_pb_stub(program: Program) -> str:
+    record_decls = [declaration for declaration in program.declarations if isinstance(declaration, RecordTypeDecl)]
+    service_decls = [declaration for declaration in program.declarations if isinstance(declaration, ServiceDecl)]
+    package_name = f"{go_package_name(program.module_name)}pb"
+    lines: list[str] = [
+        "// Code generated by Freehold Go codegen V1 gRPC project stubs; DO NOT EDIT.",
+        f"package {package_name}",
+        "",
+    ]
+    if service_decls:
+        lines.extend([
+            "import (",
+            "\t\"context\"",
+            "",
+            "\t\"google.golang.org/grpc\"",
+            "\t\"google.golang.org/grpc/codes\"",
+            "\t\"google.golang.org/grpc/status\"",
+            ")",
+            "",
+        ])
+    for record in record_decls:
+        lines.append(f"type {go_exported_name(record.name)} struct {{")
+        for field in record.fields:
+            lines.append(f"\t{go_exported_name(field.name)} {go_type_string(field.type_name)} `json:\"{field.name}\"`")
+        lines.extend(["}", ""])
+    for service in service_decls:
+        service_name = go_exported_name(service.name)
+        lines.append(f"type {service_name}Server interface {{")
+        for rpc in service.rpcs:
+            lines.append(f"\t{go_exported_name(rpc.name)}(context.Context, *{go_exported_name(rpc.request_type)}) (*{go_exported_name(rpc.response_type)}, error)")
+        lines.extend(["}", ""])
+        lines.extend([
+            f"type Unimplemented{service_name}Server struct{{}}",
+            "",
+        ])
+        for rpc in service.rpcs:
+            lines.extend([
+                f"func (Unimplemented{service_name}Server) {go_exported_name(rpc.name)}(context.Context, *{go_exported_name(rpc.request_type)}) (*{go_exported_name(rpc.response_type)}, error) {{",
+                f"\treturn nil, status.Error(codes.Unimplemented, \"method {go_exported_name(rpc.name)} not implemented\")",
+                "}",
+                "",
+            ])
+        lines.extend([
+            f"func Register{service_name}Server(registrar grpc.ServiceRegistrar, server {service_name}Server) {{",
+            "\t_ = registrar",
+            "\t_ = server",
+            "}",
+            "",
+        ])
+    return format_go_source("\n".join(lines).rstrip() + "\n")
+
+
 def go_package_name(module_name: str) -> str:
     package = re.sub(r"[^A-Za-z0-9_]", "_", module_name).lower()
     if not package or package[0].isdigit():
@@ -1483,6 +1747,15 @@ def go_package_path(module_name: str) -> str:
 def go_module_output_path(module_name: str) -> Path:
     parts = module_name.split(".")
     return Path(go_package_path(module_name)) / f"{go_package_path_part(parts[-1])}.go"
+
+
+def go_grpc_binding_output_path(module_name: str) -> Path:
+    parts = module_name.split(".")
+    return Path("grpc") / go_package_path(module_name) / f"{go_package_path_part(parts[-1])}_grpc.go"
+
+
+def go_grpc_pb_stub_output_path(module_name: str) -> Path:
+    return Path("grpc") / f"{go_package_path(module_name)}pb" / f"{go_package_path_part(module_name.split('.')[-1])}pb.go"
 
 
 def go_import_path(module_name: str) -> str:
