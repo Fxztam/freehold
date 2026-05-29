@@ -89,17 +89,25 @@ def safe_rmtree(path: Path) -> None:
 
 
 def main() -> int:
+    import argparse
+    parser = argparse.ArgumentParser(description="Verify Stage 3 native compiler on examples and fuzzy tests")
+    parser.add_argument("--fuzz-only", action="store_true", help="Only run dynamic fuzzy tests")
+    parser.add_argument("--fuzz-cycles", type=int, default=5, help="Number of fuzzing cycles to run (default: 5)")
+    parser.add_argument("--seed", type=int, default=42000, help="Initial seed for the fuzzer (default: 42000)")
+    args = parser.parse_args()
+
     safe_rmtree(OUT_ROOT)
     OUT_ROOT.mkdir(parents=True, exist_ok=True)
 
     failed = False
-    for example in SUPPORTED_EXAMPLES:
-        failed = run_supported_with_stage3(example) or failed
-    for example in UNSUPPORTED_EXAMPLES:
-        failed = run_unsupported(example) or failed
+    if not args.fuzz_only:
+        for example in SUPPORTED_EXAMPLES:
+            failed = run_supported_with_stage3(example) or failed
+        for example in UNSUPPORTED_EXAMPLES:
+            failed = run_unsupported(example) or failed
 
     # Run dynamically generated fuzzy tests
-    failed = run_fuzzy_tests() or failed
+    failed = run_fuzzy_tests(cycles=args.fuzz_cycles, initial_seed=args.seed) or failed
 
     if failed:
         print("\n[FAIL] Stage 3 compiler example and fuzzy verification failed.")
@@ -314,14 +322,14 @@ def run(command: list[str], cwd: Path, quiet: bool = False) -> subprocess.Comple
     return subprocess.run(command, cwd=cwd, text=True)
 
 
-def run_fuzzy_tests() -> bool:
+def run_fuzzy_tests(cycles: int = 5, initial_seed: int = 42000) -> bool:
     print("\n=== RUNNING DYNAMIC FUZZY TESTS ===")
     failed = False
 
     # 1. Positive typing fuzz tests (typing_pos): must compile & build with stage3
-    print("\n--- Running 5 Positive Fuzzing Tests (typing_pos) ---")
-    for i in range(1, 6):
-        seed = 42000 + i * 111
+    print(f"\n--- Running {cycles} Positive Fuzzing Tests (typing_pos) ---")
+    for i in range(1, cycles + 1):
+        seed = initial_seed + i * 111
         source = build_typing_positive(seed)
         
         match = re.search(r'module\s+([A-Za-z0-9_\.]+)', source)
@@ -347,16 +355,21 @@ def run_fuzzy_tests() -> bool:
             expected_log=None
         )
         
-        if run_supported_with_stage3(example):
+        import time
+        start_time = time.time()
+        res = run_supported_with_stage3(example)
+        elapsed = time.time() - start_time
+        
+        if res:
             failed = True
-            print(f"[FAIL] Positive fuzz test {i} (seed {seed}) failed.")
+            print(f"[FAIL] Positive fuzz test {i} (seed {seed}) failed (took {elapsed:.2f}s).")
         else:
-            print(f"[OK] Positive fuzz test {i} (seed {seed}) verified successfully.")
+            print(f"[OK] Positive fuzz test {i} (seed {seed}) verified successfully (took {elapsed:.2f}s).")
 
     # 2. Negative typing fuzz tests (typing_neg): must be rejected by verifier
-    print("\n--- Running 5 Negative Fuzzing Tests (typing_neg) ---")
-    for i in range(1, 6):
-        seed = 52000 + i * 111
+    print(f"\n--- Running {cycles} Negative Fuzzing Tests (typing_neg) ---")
+    for i in range(1, cycles + 1):
+        seed = initial_seed + 10000 + i * 111
         source, mutation = build_typing_negative(seed)
         
         match = re.search(r'module\s+([A-Za-z0-9_\.]+)', source)
