@@ -1252,7 +1252,7 @@ class Ctx:
             if isinstance(t.ok_type, ResultTypeName):
                 raise TypeCheckError(f"{pos.text()}: nested Result payloads are forbidden in v1")
             self.require_return_type(t.ok_type,pos)
-            if t.error_type not in self.errors:
+            if t.error_type not in self.errors and t.error_type != "String":
                 raise TypeCheckError(f"{pos.text()}: unknown result error type: {t.error_type}")
     def routine(self,n,pos):
         local_name = self.local_routine_name(n)

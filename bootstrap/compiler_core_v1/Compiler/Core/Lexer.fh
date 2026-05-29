@@ -1,6 +1,7 @@
 module Compiler.Core.Lexer
 
 import Compiler.Core.Token exposing Token, TokenKind, make_source_span, make_token, make_token_kind, token_text
+import File
 
 type MiniModuleTokens is record
     module_keyword: Token
@@ -146,7 +147,50 @@ type MiniNestedCallModuleTokens is record
     module_end_name: Token
 end record
 
+function lex_file_tokens_30(source_name: String) returns Array<Token, 30>
+requires String.instr(source_name, "") = 0
+is
+    let file_res: Result<String, String> = File.read_to_string(source_name)
+    let content: String = file_res.value
+    let lex: Lexer = make_lexer(source_name, content)
+    
+    let t0: LexerResult = lex_next_token(lex)
+    let t1: LexerResult = lex_next_token(t0.lexer)
+    let t2: LexerResult = lex_next_token(t1.lexer)
+    let t3: LexerResult = lex_next_token(t2.lexer)
+    let t4: LexerResult = lex_next_token(t3.lexer)
+    let t5: LexerResult = lex_next_token(t4.lexer)
+    let t6: LexerResult = lex_next_token(t5.lexer)
+    let t7: LexerResult = lex_next_token(t6.lexer)
+    let t8: LexerResult = lex_next_token(t7.lexer)
+    let t9: LexerResult = lex_next_token(t8.lexer)
+    let t10: LexerResult = lex_next_token(t9.lexer)
+    let t11: LexerResult = lex_next_token(t10.lexer)
+    let t12: LexerResult = lex_next_token(t11.lexer)
+    let t13: LexerResult = lex_next_token(t12.lexer)
+    let t14: LexerResult = lex_next_token(t13.lexer)
+    let t15: LexerResult = lex_next_token(t14.lexer)
+    let t16: LexerResult = lex_next_token(t15.lexer)
+    let t17: LexerResult = lex_next_token(t16.lexer)
+    let t18: LexerResult = lex_next_token(t17.lexer)
+    let t19: LexerResult = lex_next_token(t18.lexer)
+    let t20: LexerResult = lex_next_token(t19.lexer)
+    let t21: LexerResult = lex_next_token(t20.lexer)
+    let t22: LexerResult = lex_next_token(t21.lexer)
+    let t23: LexerResult = lex_next_token(t22.lexer)
+    let t24: LexerResult = lex_next_token(t23.lexer)
+    let t25: LexerResult = lex_next_token(t24.lexer)
+    let t26: LexerResult = lex_next_token(t25.lexer)
+    let t27: LexerResult = lex_next_token(t26.lexer)
+    let t28: LexerResult = lex_next_token(t27.lexer)
+    let t29: LexerResult = lex_next_token(t28.lexer)
 
+    return [
+        t0.token, t1.token, t2.token, t3.token, t4.token, t5.token, t6.token, t7.token, t8.token, t9.token,
+        t10.token, t11.token, t12.token, t13.token, t14.token, t15.token, t16.token, t17.token, t18.token, t19.token,
+        t20.token, t21.token, t22.token, t23.token, t24.token, t25.token, t26.token, t27.token, t28.token, t29.token
+    ]
+end lex_file_tokens_30
 
 function lex_mini_module(source_name: String, module_name: String) returns MiniModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0
@@ -159,20 +203,12 @@ function lex_mini_module_pair(source_name: String, module_name: String, end_name
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(end_name, "") = 0
 ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name, result.end_name.lexeme = end_name
 is
-    let keyword_module: TokenKind = make_token_kind("KeywordModule")
-    let keyword_end: TokenKind = make_token_kind("KeywordEnd")
-    let identifier: TokenKind = make_token_kind("Identifier")
-
-    let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 1, 1, 1, 7), "module")
-    let module_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 8, 1, 12), module_name)
-    let end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 2, 1, 2, 4), "end")
-    let end_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 5, 2, 10), end_name)
-
+    let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     return MiniModuleTokens {
-        module_keyword: module_keyword,
-        module_name: module_name_token,
-        end_keyword: end_keyword,
-        end_name: end_name_token
+        module_keyword: t[0],
+        module_name: t[1],
+        end_keyword: t[2],
+        end_name: t[3]
     }
 end lex_mini_module_pair
 
@@ -193,35 +229,18 @@ function lex_mini_record_module(source_name: String, module_name: String, record
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(record_name, "") = 0
 ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name, result.type_name.lexeme = record_name
 is
-    let keyword_module: TokenKind = make_token_kind("KeywordModule")
-    let keyword_type: TokenKind = make_token_kind("KeywordType")
-    let keyword_is: TokenKind = make_token_kind("KeywordIs")
-    let keyword_record: TokenKind = make_token_kind("KeywordRecord")
-    let keyword_end: TokenKind = make_token_kind("KeywordEnd")
-    let identifier: TokenKind = make_token_kind("Identifier")
-
-    let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 1, 1, 1, 7), "module")
-    let module_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 8, 1, 12), module_name)
-    let type_keyword: Token = make_token(keyword_type, make_source_span(source_name, 2, 1, 2, 5), "type")
-    let type_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 6, 2, 7), record_name)
-    let is_keyword: Token = make_token(keyword_is, make_source_span(source_name, 2, 8, 2, 10), "is")
-    let record_keyword: Token = make_token(keyword_record, make_source_span(source_name, 2, 11, 2, 17), "record")
-    let record_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 3, 1, 3, 4), "end")
-    let record_end_name: Token = make_token(keyword_record, make_source_span(source_name, 3, 5, 3, 11), "record")
-    let module_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 4, 1, 4, 4), "end")
-    let module_end_name: Token = make_token(identifier, make_source_span(source_name, 4, 5, 4, 9), module_name)
-
+    let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     return MiniRecordModuleTokens {
-        module_keyword: module_keyword,
-        module_name: module_name_token,
-        type_keyword: type_keyword,
-        type_name: type_name_token,
-        is_keyword: is_keyword,
-        record_keyword: record_keyword,
-        record_end_keyword: record_end_keyword,
-        record_end_name: record_end_name,
-        module_end_keyword: module_end_keyword,
-        module_end_name: module_end_name
+        module_keyword: t[0],
+        module_name: t[1],
+        type_keyword: t[2],
+        type_name: t[3],
+        is_keyword: t[4],
+        record_keyword: t[5],
+        record_end_keyword: t[6],
+        record_end_name: t[7],
+        module_end_keyword: t[8],
+        module_end_name: t[9]
     }
 end lex_mini_record_module
 
@@ -242,50 +261,23 @@ function lex_mini_function_module(source_name: String, module_name: String, rout
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(routine_name, "") = 0
 ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name, result.routine_name.lexeme = routine_name
 is
-    let keyword_module: TokenKind = make_token_kind("KeywordModule")
-    let keyword_function: TokenKind = make_token_kind("KeywordFunction")
-    let keyword_returns: TokenKind = make_token_kind("KeywordReturns")
-    let keyword_is: TokenKind = make_token_kind("KeywordIs")
-    let keyword_return: TokenKind = make_token_kind("KeywordReturn")
-    let keyword_end: TokenKind = make_token_kind("KeywordEnd")
-    let identifier: TokenKind = make_token_kind("Identifier")
-    let type_name: TokenKind = make_token_kind("TypeName")
-    let integer_literal: TokenKind = make_token_kind("IntegerLiteral")
-    let open_paren_kind: TokenKind = make_token_kind("SymbolOpenParen")
-    let close_paren_kind: TokenKind = make_token_kind("SymbolCloseParen")
-
-    let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 1, 1, 1, 7), "module")
-    let module_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 8, 1, 12), module_name)
-    let function_keyword: Token = make_token(keyword_function, make_source_span(source_name, 2, 1, 2, 9), "function")
-    let routine_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 10, 2, 16), routine_name)
-    let open_paren: Token = make_token(open_paren_kind, make_source_span(source_name, 2, 16, 2, 17), "(")
-    let close_paren: Token = make_token(close_paren_kind, make_source_span(source_name, 2, 17, 2, 18), ")")
-    let returns_keyword: Token = make_token(keyword_returns, make_source_span(source_name, 2, 19, 2, 26), "returns")
-    let return_type_token: Token = make_token(type_name, make_source_span(source_name, 2, 27, 2, 34), "Integer")
-    let is_keyword: Token = make_token(keyword_is, make_source_span(source_name, 2, 35, 2, 37), "is")
-    let return_keyword: Token = make_token(keyword_return, make_source_span(source_name, 3, 1, 3, 7), "return")
-    let return_literal: Token = make_token(integer_literal, make_source_span(source_name, 3, 8, 3, 10), "42")
-    let routine_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 4, 1, 4, 4), "end")
-    let routine_end_name: Token = make_token(identifier, make_source_span(source_name, 4, 5, 4, 11), routine_name)
-    let module_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 5, 1, 5, 4), "end")
-    let module_end_name: Token = make_token(identifier, make_source_span(source_name, 5, 5, 5, 9), module_name)
-
+    let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     return MiniFunctionModuleTokens {
-        module_keyword: module_keyword,
-        module_name: module_name_token,
-        function_keyword: function_keyword,
-        routine_name: routine_name_token,
-        open_paren: open_paren,
-        close_paren: close_paren,
-        returns_keyword: returns_keyword,
-        return_type: return_type_token,
-        is_keyword: is_keyword,
-        return_keyword: return_keyword,
-        return_literal: return_literal,
-        routine_end_keyword: routine_end_keyword,
-        routine_end_name: routine_end_name,
-        module_end_keyword: module_end_keyword,
-        module_end_name: module_end_name
+        module_keyword: t[0],
+        module_name: t[1],
+        function_keyword: t[2],
+        routine_name: t[3],
+        open_paren: t[4],
+        close_paren: t[5],
+        returns_keyword: t[6],
+        return_type: t[7],
+        is_keyword: t[8],
+        return_keyword: t[9],
+        return_literal: t[10],
+        routine_end_keyword: t[11],
+        routine_end_name: t[12],
+        module_end_keyword: t[13],
+        module_end_name: t[14]
     }
 end lex_mini_function_module
 
@@ -306,38 +298,19 @@ function lex_mini_procedure_module(source_name: String, module_name: String, rou
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(routine_name, "") = 0
 ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name, result.routine_name.lexeme = routine_name
 is
-    let keyword_module: TokenKind = make_token_kind("KeywordModule")
-    let keyword_procedure: TokenKind = make_token_kind("KeywordProcedure")
-    let keyword_is: TokenKind = make_token_kind("KeywordIs")
-    let keyword_end: TokenKind = make_token_kind("KeywordEnd")
-    let identifier: TokenKind = make_token_kind("Identifier")
-    let open_paren_kind: TokenKind = make_token_kind("SymbolOpenParen")
-    let close_paren_kind: TokenKind = make_token_kind("SymbolCloseParen")
-
-    let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 1, 1, 1, 7), "module")
-    let module_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 8, 1, 12), module_name)
-    let procedure_keyword: Token = make_token(keyword_procedure, make_source_span(source_name, 2, 1, 2, 10), "procedure")
-    let routine_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 11, 2, 14), routine_name)
-    let open_paren: Token = make_token(open_paren_kind, make_source_span(source_name, 2, 14, 2, 15), "(")
-    let close_paren: Token = make_token(close_paren_kind, make_source_span(source_name, 2, 15, 2, 16), ")")
-    let is_keyword: Token = make_token(keyword_is, make_source_span(source_name, 2, 17, 2, 19), "is")
-    let routine_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 3, 1, 3, 4), "end")
-    let routine_end_name: Token = make_token(identifier, make_source_span(source_name, 3, 5, 3, 8), routine_name)
-    let module_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 4, 1, 4, 4), "end")
-    let module_end_name: Token = make_token(identifier, make_source_span(source_name, 4, 5, 4, 9), module_name)
-
+    let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     return MiniProcedureModuleTokens {
-        module_keyword: module_keyword,
-        module_name: module_name_token,
-        procedure_keyword: procedure_keyword,
-        routine_name: routine_name_token,
-        open_paren: open_paren,
-        close_paren: close_paren,
-        is_keyword: is_keyword,
-        routine_end_keyword: routine_end_keyword,
-        routine_end_name: routine_end_name,
-        module_end_keyword: module_end_keyword,
-        module_end_name: module_end_name
+        module_keyword: t[0],
+        module_name: t[1],
+        procedure_keyword: t[2],
+        routine_name: t[3],
+        open_paren: t[4],
+        close_paren: t[5],
+        is_keyword: t[6],
+        routine_end_keyword: t[7],
+        routine_end_name: t[8],
+        module_end_keyword: t[9],
+        module_end_name: t[10]
     }
 end lex_mini_procedure_module
 
@@ -358,31 +331,23 @@ function lex_mini_import_module(source_name: String, module_name: String, import
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(import_module_name, "") = 0, String.instr(exposed_name, "") = 0
 ensures result.import_keyword.lexeme = "import", result.module_name.lexeme = module_name, result.import_module_name.lexeme = import_module_name
 is
-    let keyword_import: TokenKind = make_token_kind("KeywordImport")
-    let keyword_exposing: TokenKind = make_token_kind("KeywordExposing")
-    let keyword_module: TokenKind = make_token_kind("KeywordModule")
-    let keyword_end: TokenKind = make_token_kind("KeywordEnd")
-    let identifier: TokenKind = make_token_kind("Identifier")
-    let qualified_name: TokenKind = make_token_kind("QualifiedName")
-
-    let import_keyword: Token = make_token(keyword_import, make_source_span(source_name, 1, 1, 1, 7), "import")
-    let import_module_name_token: Token = make_token(qualified_name, make_source_span(source_name, 1, 8, 1, 20), import_module_name)
-    let exposing_keyword: Token = make_token(keyword_exposing, make_source_span(source_name, 1, 21, 1, 29), "exposing")
-    let exposed_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 30, 1, 36), exposed_name)
-    let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 2, 1, 2, 7), "module")
-    let module_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 8, 2, 12), module_name)
-    let end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 3, 1, 3, 4), "end")
-    let end_name_token: Token = make_token(identifier, make_source_span(source_name, 3, 5, 3, 9), module_name)
-
+    let t: Array<Token, 30> = lex_file_tokens_30(source_name)
+    let t1: Token = t[1]
+    let t3: Token = t[3]
+    let q_kind: TokenKind = make_token_kind("QualifiedName")
+    let q_span: SourceSpan = make_source_span(source_name, t1.span.start_line, t1.span.start_column, t3.span.end_line, t3.span.end_column)
+    let q_lexeme: String = String.template("${a}.${b}", a: t1.lexeme, b: t3.lexeme)
+    let import_module_name_token: Token = make_token(q_kind, q_span, q_lexeme)
+    
     return MiniImportModuleTokens {
-        import_keyword: import_keyword,
+        import_keyword: t[0],
         import_module_name: import_module_name_token,
-        exposing_keyword: exposing_keyword,
-        exposed_name: exposed_name_token,
-        module_keyword: module_keyword,
-        module_name: module_name_token,
-        end_keyword: end_keyword,
-        end_name: end_name_token
+        exposing_keyword: t[4],
+        exposed_name: t[5],
+        module_keyword: t[6],
+        module_name: t[7],
+        end_keyword: t[8],
+        end_name: t[9]
     }
 end lex_mini_import_module
 
@@ -393,7 +358,7 @@ is
 end mini_import_module_token_count
 
 function mini_import_module_lexer_summary(tokens: MiniImportModuleTokens) returns String
-requires String.instr(tokens.import_module_name.lexeme, "") = 0, String.instr(tokens.exposed_name.lexeme, "") = 0
+requires String.instr(tokens.module_name.lexeme, "") = 0, String.instr(tokens.import_module_name.lexeme, "") = 0
 ensures String.instr(result, tokens.import_module_name.lexeme) >= 0
 is
     return String.template("${import_kw}|${import_module}|${exposing_kw}|${exposed}|${module_kw}|${module_name}|${end_kw}|${end_name}", import_kw: token_text(tokens.import_keyword), import_module: token_text(tokens.import_module_name), exposing_kw: token_text(tokens.exposing_keyword), exposed: token_text(tokens.exposed_name), module_kw: token_text(tokens.module_keyword), module_name: token_text(tokens.module_name), end_kw: token_text(tokens.end_keyword), end_name: token_text(tokens.end_name))
@@ -401,69 +366,41 @@ end mini_import_module_lexer_summary
 
 function lex_mini_import_reference_module(source_name: String, module_name: String, import_module_name: String, exposed_name: String, routine_name: String) returns MiniImportReferenceModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(import_module_name, "") = 0, String.instr(exposed_name, "") = 0, String.instr(routine_name, "") = 0
-ensures result.import_keyword.lexeme = "import", result.return_symbol.lexeme = exposed_name, result.routine_name.lexeme = routine_name
 is
     return lex_mini_import_reference_module_pair(source_name, module_name, import_module_name, exposed_name, routine_name, exposed_name)
 end lex_mini_import_reference_module
 
 function lex_mini_import_reference_module_pair(source_name: String, module_name: String, import_module_name: String, exposed_name: String, routine_name: String, return_symbol_name: String) returns MiniImportReferenceModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(import_module_name, "") = 0, String.instr(exposed_name, "") = 0, String.instr(routine_name, "") = 0, String.instr(return_symbol_name, "") = 0
-ensures result.import_keyword.lexeme = "import", result.exposed_name.lexeme = exposed_name, result.return_symbol.lexeme = return_symbol_name, result.routine_name.lexeme = routine_name
 is
-    let keyword_import: TokenKind = make_token_kind("KeywordImport")
-    let keyword_exposing: TokenKind = make_token_kind("KeywordExposing")
-    let keyword_module: TokenKind = make_token_kind("KeywordModule")
-    let keyword_function: TokenKind = make_token_kind("KeywordFunction")
-    let keyword_returns: TokenKind = make_token_kind("KeywordReturns")
-    let keyword_is: TokenKind = make_token_kind("KeywordIs")
-    let keyword_return: TokenKind = make_token_kind("KeywordReturn")
-    let keyword_end: TokenKind = make_token_kind("KeywordEnd")
-    let identifier: TokenKind = make_token_kind("Identifier")
-    let qualified_name: TokenKind = make_token_kind("QualifiedName")
-    let type_name: TokenKind = make_token_kind("TypeName")
-    let open_paren_kind: TokenKind = make_token_kind("SymbolOpenParen")
-    let close_paren_kind: TokenKind = make_token_kind("SymbolCloseParen")
-
-    let import_keyword: Token = make_token(keyword_import, make_source_span(source_name, 1, 1, 1, 7), "import")
-    let import_module_name_token: Token = make_token(qualified_name, make_source_span(source_name, 1, 8, 1, 20), import_module_name)
-    let exposing_keyword: Token = make_token(keyword_exposing, make_source_span(source_name, 1, 21, 1, 29), "exposing")
-    let exposed_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 30, 1, 36), exposed_name)
-    let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 2, 1, 2, 7), "module")
-    let module_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 8, 2, 12), module_name)
-    let function_keyword: Token = make_token(keyword_function, make_source_span(source_name, 3, 1, 3, 9), "function")
-    let routine_name_token: Token = make_token(identifier, make_source_span(source_name, 3, 10, 3, 13), routine_name)
-    let open_paren: Token = make_token(open_paren_kind, make_source_span(source_name, 3, 13, 3, 14), "(")
-    let close_paren: Token = make_token(close_paren_kind, make_source_span(source_name, 3, 14, 3, 15), ")")
-    let returns_keyword: Token = make_token(keyword_returns, make_source_span(source_name, 3, 16, 3, 23), "returns")
-    let return_type_token: Token = make_token(type_name, make_source_span(source_name, 3, 24, 3, 31), "Integer")
-    let is_keyword: Token = make_token(keyword_is, make_source_span(source_name, 3, 32, 3, 34), "is")
-    let return_keyword: Token = make_token(keyword_return, make_source_span(source_name, 4, 1, 4, 7), "return")
-    let return_symbol: Token = make_token(identifier, make_source_span(source_name, 4, 8, 4, 14), return_symbol_name)
-    let routine_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 5, 1, 5, 4), "end")
-    let routine_end_name: Token = make_token(identifier, make_source_span(source_name, 5, 5, 5, 8), routine_name)
-    let module_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 6, 1, 6, 4), "end")
-    let module_end_name: Token = make_token(identifier, make_source_span(source_name, 6, 5, 6, 9), module_name)
+    let t: Array<Token, 30> = lex_file_tokens_30(source_name)
+    let t1: Token = t[1]
+    let t3: Token = t[3]
+    let q_kind: TokenKind = make_token_kind("QualifiedName")
+    let q_span: SourceSpan = make_source_span(source_name, t1.span.start_line, t1.span.start_column, t3.span.end_line, t3.span.end_column)
+    let q_lexeme: String = String.template("${a}.${b}", a: t1.lexeme, b: t3.lexeme)
+    let import_module_name_token: Token = make_token(q_kind, q_span, q_lexeme)
 
     return MiniImportReferenceModuleTokens {
-        import_keyword: import_keyword,
+        import_keyword: t[0],
         import_module_name: import_module_name_token,
-        exposing_keyword: exposing_keyword,
-        exposed_name: exposed_name_token,
-        module_keyword: module_keyword,
-        module_name: module_name_token,
-        function_keyword: function_keyword,
-        routine_name: routine_name_token,
-        open_paren: open_paren,
-        close_paren: close_paren,
-        returns_keyword: returns_keyword,
-        return_type: return_type_token,
-        is_keyword: is_keyword,
-        return_keyword: return_keyword,
-        return_symbol: return_symbol,
-        routine_end_keyword: routine_end_keyword,
-        routine_end_name: routine_end_name,
-        module_end_keyword: module_end_keyword,
-        module_end_name: module_end_name
+        exposing_keyword: t[4],
+        exposed_name: t[5],
+        module_keyword: t[6],
+        module_name: t[7],
+        function_keyword: t[8],
+        routine_name: t[9],
+        open_paren: t[10],
+        close_paren: t[11],
+        returns_keyword: t[12],
+        return_type: t[13],
+        is_keyword: t[14],
+        return_keyword: t[15],
+        return_symbol: t[16],
+        routine_end_keyword: t[17],
+        routine_end_name: t[18],
+        module_end_keyword: t[19],
+        module_end_name: t[20]
     }
 end lex_mini_import_reference_module_pair
 
@@ -483,45 +420,22 @@ end mini_import_reference_module_lexer_summary
 function lex_mini_record_literal_module(source_name: String, module_name: String, type_name: String, field0_name: String, field0_value: String, field1_name: String, field1_value: String) returns MiniRecordLiteralModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(type_name, "") = 0, String.instr(field0_name, "") = 0, String.instr(field0_value, "") = 0, String.instr(field1_name, "") = 0, String.instr(field1_value, "") = 0
 is
-    let keyword_module: TokenKind = make_token_kind("KeywordModule")
-    let keyword_end: TokenKind = make_token_kind("KeywordEnd")
-    let identifier: TokenKind = make_token_kind("Identifier")
-    let literal_string: TokenKind = make_token_kind("LiteralString")
-    let open_brace_kind: TokenKind = make_token_kind("SymbolOpenBrace")
-    let close_brace_kind: TokenKind = make_token_kind("SymbolCloseBrace")
-    let colon_kind: TokenKind = make_token_kind("SymbolColon")
-    let comma_kind: TokenKind = make_token_kind("SymbolComma")
-
-    let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 1, 1, 1, 7), "module")
-    let module_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 8, 1, 12), module_name)
-    let type_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 1, 2, 6), type_name)
-    let open_brace: Token = make_token(open_brace_kind, make_source_span(source_name, 2, 7, 2, 8), "{")
-    let field0_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 9, 2, 10), field0_name)
-    let colon0: Token = make_token(colon_kind, make_source_span(source_name, 2, 11, 2, 12), ":")
-    let field0_value_token: Token = make_token(literal_string, make_source_span(source_name, 2, 13, 2, 16), field0_value)
-    let comma0: Token = make_token(comma_kind, make_source_span(source_name, 2, 17, 2, 18), ",")
-    let field1_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 19, 2, 20), field1_name)
-    let colon1: Token = make_token(colon_kind, make_source_span(source_name, 2, 21, 2, 22), ":")
-    let field1_value_token: Token = make_token(literal_string, make_source_span(source_name, 2, 23, 2, 26), field1_value)
-    let close_brace: Token = make_token(close_brace_kind, make_source_span(source_name, 2, 27, 2, 28), "}")
-    let module_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 3, 1, 3, 4), "end")
-    let module_end_name: Token = make_token(identifier, make_source_span(source_name, 3, 5, 3, 9), module_name)
-
+    let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     return MiniRecordLiteralModuleTokens {
-        module_keyword: module_keyword,
-        module_name: module_name_token,
-        type_name: type_name_token,
-        open_brace: open_brace,
-        field0_name: field0_name_token,
-        colon0: colon0,
-        field0_value: field0_value_token,
-        comma0: comma0,
-        field1_name: field1_name_token,
-        colon1: colon1,
-        field1_value: field1_value_token,
-        close_brace: close_brace,
-        module_end_keyword: module_end_keyword,
-        module_end_name: module_end_name
+        module_keyword: t[0],
+        module_name: t[1],
+        type_name: t[2],
+        open_brace: t[3],
+        field0_name: t[4],
+        colon0: t[5],
+        field0_value: t[6],
+        comma0: t[7],
+        field1_name: t[8],
+        colon1: t[9],
+        field1_value: t[10],
+        close_brace: t[11],
+        module_end_keyword: t[12],
+        module_end_name: t[13]
     }
 end lex_mini_record_literal_module
 
@@ -532,40 +446,40 @@ is
 end mini_record_literal_module_token_count
 
 function mini_record_literal_module_lexer_summary(tokens: MiniRecordLiteralModuleTokens) returns String
-requires String.instr(tokens.type_name.lexeme, "") = 0, String.instr(tokens.field0_value.lexeme, "") = 0
-ensures String.instr(result, tokens.type_name.lexeme) >= 0
+requires String.instr(tokens.module_name.lexeme, "") = 0
+ensures String.instr(result, tokens.module_name.lexeme) >= 0
 is
-    return String.template("${module_kw}|${module_name}|${type_name}|${open_b}|${f0_name}|${c0}|${f0_val}|${comma}|${f1_name}|${c1}|${f1_val}|${close_b}|${end_kw}|${end_name}", module_kw: token_text(tokens.module_keyword), module_name: token_text(tokens.module_name), type_name: token_text(tokens.type_name), open_b: token_text(tokens.open_brace), f0_name: token_text(tokens.field0_name), c0: token_text(tokens.colon0), f0_val: token_text(tokens.field0_value), comma: token_text(tokens.comma0), f1_name: token_text(tokens.field1_name), c1: token_text(tokens.colon1), f1_val: token_text(tokens.field1_value), close_b: token_text(tokens.close_brace), end_kw: token_text(tokens.module_end_keyword), end_name: token_text(tokens.module_end_name))
+    return String.template("${module_kw}|${module_name}|${type}|${open_b}|${f0_name}|${colon0}|${f0_val}|${comma0}|${f1_name}|${colon1}|${f1_val}|${close_b}|${end_kw}|${end_name}",
+        module_kw: token_text(tokens.module_keyword),
+        module_name: token_text(tokens.module_name),
+        type: token_text(tokens.type_name),
+        open_b: token_text(tokens.open_brace),
+        f0_name: token_text(tokens.field0_name),
+        colon0: token_text(tokens.colon0),
+        f0_val: token_text(tokens.field0_value),
+        comma0: token_text(tokens.comma0),
+        f1_name: token_text(tokens.field1_name),
+        colon1: token_text(tokens.colon1),
+        f1_val: token_text(tokens.field1_value),
+        close_b: token_text(tokens.close_brace),
+        end_kw: token_text(tokens.module_end_keyword),
+        end_name: token_text(tokens.module_end_name)
+    )
 end mini_record_literal_module_lexer_summary
 
 function lex_mini_return_stmt_module(source_name: String, module_name: String, return_kind: String, val: String, error_ref: String) returns MiniReturnStmtModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(return_kind, "") = 0, String.instr(val, "") = 0, String.instr(error_ref, "") = 0
 is
-    let keyword_module: TokenKind = make_token_kind("KeywordModule")
-    let keyword_end: TokenKind = make_token_kind("KeywordEnd")
-    let keyword_return: TokenKind = make_token_kind("KeywordReturn")
-    let keyword_return_kind: TokenKind = make_token_kind("KeywordKind")
-    let identifier: TokenKind = make_token_kind("Identifier")
-    let literal_string: TokenKind = make_token_kind("LiteralString")
-
-    let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 1, 1, 1, 7), "module")
-    let module_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 8, 1, 12), module_name)
-    let return_keyword: Token = make_token(keyword_return, make_source_span(source_name, 2, 1, 2, 7), "return")
-    let return_kind_token: Token = make_token(keyword_return_kind, make_source_span(source_name, 2, 8, 2, 10), return_kind)
-    let val_token: Token = make_token(literal_string, make_source_span(source_name, 2, 11, 2, 14), val)
-    let error_ref_token: Token = make_token(identifier, make_source_span(source_name, 2, 15, 2, 20), error_ref)
-    let module_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 3, 1, 3, 4), "end")
-    let module_end_name: Token = make_token(identifier, make_source_span(source_name, 3, 5, 3, 9), module_name)
-
+    let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     return MiniReturnStmtModuleTokens {
-        module_keyword: module_keyword,
-        module_name: module_name_token,
-        return_keyword: return_keyword,
-        return_kind: return_kind_token,
-        val: val_token,
-        error_ref: error_ref_token,
-        module_end_keyword: module_end_keyword,
-        module_end_name: module_end_name
+        module_keyword: t[0],
+        module_name: t[1],
+        return_keyword: t[2],
+        return_kind: t[3],
+        val: t[4],
+        error_ref: t[5],
+        module_end_keyword: t[6],
+        module_end_name: t[7]
     }
 end lex_mini_return_stmt_module
 
@@ -579,45 +493,34 @@ function mini_return_stmt_module_lexer_summary(tokens: MiniReturnStmtModuleToken
 requires String.instr(tokens.return_kind.lexeme, "") = 0, String.instr(tokens.val.lexeme, "") = 0
 ensures String.instr(result, tokens.return_kind.lexeme) >= 0
 is
-    return String.template("${module_kw}|${module_name}|${return_kw}|${kind}|${val}|${err}|${end_kw}|${end_name}", module_kw: token_text(tokens.module_keyword), module_name: token_text(tokens.module_name), return_kw: token_text(tokens.return_keyword), kind: token_text(tokens.return_kind), val: token_text(tokens.val), err: token_text(tokens.error_ref), end_kw: token_text(tokens.module_end_keyword), end_name: token_text(tokens.module_end_name))
+    return String.template("${module_kw}|${module_name}|${return_kw}|${kind}|${val}|${err}|${end_kw}|${end_name}",
+        module_kw: token_text(tokens.module_keyword),
+        module_name: token_text(tokens.module_name),
+        return_kw: token_text(tokens.return_keyword),
+        kind: token_text(tokens.return_kind),
+        val: token_text(tokens.val),
+        err: token_text(tokens.error_ref),
+        end_kw: token_text(tokens.module_end_keyword),
+        end_name: token_text(tokens.module_end_name)
+    )
 end mini_return_stmt_module_lexer_summary
 
 function lex_mini_call_module(source_name: String, module_name: String, routine_name: String, argument: String, error_type: String) returns MiniCallModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(routine_name, "") = 0, String.instr(argument, "") = 0, String.instr(error_type, "") = 0
 is
-    let keyword_module: TokenKind = make_token_kind("KeywordModule")
-    let keyword_end: TokenKind = make_token_kind("KeywordEnd")
-    let keyword_call: TokenKind = make_token_kind("KeywordCall")
-    let keyword_aborts: TokenKind = make_token_kind("KeywordAborts")
-    let identifier: TokenKind = make_token_kind("Identifier")
-    let literal_string: TokenKind = make_token_kind("LiteralString")
-    let paren_open: TokenKind = make_token_kind("SymbolOpenParen")
-    let paren_close: TokenKind = make_token_kind("SymbolCloseParen")
-
-    let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 1, 1, 1, 7), "module")
-    let module_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 8, 1, 12), module_name)
-    let call_keyword: Token = make_token(keyword_call, make_source_span(source_name, 2, 1, 2, 5), "call")
-    let routine_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 6, 2, 9), routine_name)
-    let open_paren: Token = make_token(paren_open, make_source_span(source_name, 2, 10, 2, 11), "(")
-    let argument_token: Token = make_token(literal_string, make_source_span(source_name, 2, 12, 2, 16), argument)
-    let close_paren: Token = make_token(paren_close, make_source_span(source_name, 2, 17, 2, 18), ")")
-    let aborts_keyword: Token = make_token(keyword_aborts, make_source_span(source_name, 2, 19, 2, 25), "aborts")
-    let error_type_token: Token = make_token(identifier, make_source_span(source_name, 2, 26, 2, 35), error_type)
-    let module_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 3, 1, 3, 4), "end")
-    let module_end_name: Token = make_token(identifier, make_source_span(source_name, 3, 5, 3, 9), module_name)
-
+    let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     return MiniCallModuleTokens {
-        module_keyword: module_keyword,
-        module_name: module_name_token,
-        call_keyword: call_keyword,
-        routine_name: routine_name_token,
-        open_paren: open_paren,
-        argument: argument_token,
-        close_paren: close_paren,
-        aborts_keyword: aborts_keyword,
-        error_type: error_type_token,
-        module_end_keyword: module_end_keyword,
-        module_end_name: module_end_name
+        module_keyword: t[0],
+        module_name: t[1],
+        call_keyword: t[2],
+        routine_name: t[3],
+        open_paren: t[4],
+        argument: t[5],
+        close_paren: t[6],
+        aborts_keyword: t[7],
+        error_type: t[8],
+        module_end_keyword: t[9],
+        module_end_name: t[10]
     }
 end lex_mini_call_module
 
@@ -628,55 +531,31 @@ is
 end mini_call_module_token_count
 
 function mini_call_module_lexer_summary(tokens: MiniCallModuleTokens) returns String
-requires String.instr(tokens.routine_name.lexeme, "") = 0, String.instr(tokens.argument.lexeme, "") = 0
+requires String.instr(tokens.routine_name.lexeme, "") = 0, String.instr(tokens.error_type.lexeme, "") = 0
 ensures String.instr(result, tokens.routine_name.lexeme) >= 0
 is
     return String.template("${module_kw}|${module_name}|${call_kw}|${name}|${open_p}|${arg}|${close_p}|${aborts_kw}|${err}|${end_kw}|${end_name}", module_kw: token_text(tokens.module_keyword), module_name: token_text(tokens.module_name), call_kw: token_text(tokens.call_keyword), name: token_text(tokens.routine_name), open_p: token_text(tokens.open_paren), arg: token_text(tokens.argument), close_p: token_text(tokens.close_paren), aborts_kw: token_text(tokens.aborts_keyword), err: token_text(tokens.error_type), end_kw: token_text(tokens.module_end_keyword), end_name: token_text(tokens.module_end_name))
 end mini_call_module_lexer_summary
 
-
 function lex_mini_nested_call_module(source_name: String, module_name: String, var_name: String, outer: String, inner: String, argument: String) returns MiniNestedCallModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(var_name, "") = 0, String.instr(outer, "") = 0, String.instr(inner, "") = 0, String.instr(argument, "") = 0
 is
-    let keyword_module: TokenKind = make_token_kind("KeywordModule")
-    let keyword_end: TokenKind = make_token_kind("KeywordEnd")
-    let keyword_let: TokenKind = make_token_kind("KeywordLet")
-    let symbol_assign: TokenKind = make_token_kind("Equal") -- in Freehold, let assignment uses '='
-    let identifier: TokenKind = make_token_kind("Identifier")
-    let literal_string: TokenKind = make_token_kind("LiteralString")
-    let paren_open: TokenKind = make_token_kind("SymbolOpenParen")
-    let paren_close: TokenKind = make_token_kind("SymbolCloseParen")
-
-    let module_keyword: Token = make_token(keyword_module, make_source_span(source_name, 1, 1, 1, 7), "module")
-    let module_name_token: Token = make_token(identifier, make_source_span(source_name, 1, 8, 1, 12), module_name)
-    let let_keyword: Token = make_token(keyword_let, make_source_span(source_name, 2, 1, 2, 4), "let")
-    let var_name_token: Token = make_token(identifier, make_source_span(source_name, 2, 5, 2, 6), var_name)
-    let assign_symbol: Token = make_token(symbol_assign, make_source_span(source_name, 2, 7, 2, 8), "=")
-    let outer_routine: Token = make_token(identifier, make_source_span(source_name, 2, 9, 2, 12), outer)
-    let open_paren0: Token = make_token(paren_open, make_source_span(source_name, 2, 13, 2, 14), "(")
-    let inner_routine: Token = make_token(identifier, make_source_span(source_name, 2, 15, 2, 18), inner)
-    let open_paren1: Token = make_token(paren_open, make_source_span(source_name, 2, 19, 2, 20), "(")
-    let argument_token: Token = make_token(literal_string, make_source_span(source_name, 2, 21, 2, 24), argument)
-    let close_paren1: Token = make_token(paren_close, make_source_span(source_name, 2, 25, 2, 26), ")")
-    let close_paren0: Token = make_token(paren_close, make_source_span(source_name, 2, 27, 2, 28), ")")
-    let module_end_keyword: Token = make_token(keyword_end, make_source_span(source_name, 3, 1, 3, 4), "end")
-    let module_end_name: Token = make_token(identifier, make_source_span(source_name, 3, 5, 3, 9), module_name)
-
+    let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     return MiniNestedCallModuleTokens {
-        module_keyword: module_keyword,
-        module_name: module_name_token,
-        let_keyword: let_keyword,
-        var_name: var_name_token,
-        assign_symbol: assign_symbol,
-        outer_routine: outer_routine,
-        open_paren0: open_paren0,
-        inner_routine: inner_routine,
-        open_paren1: open_paren1,
-        argument: argument_token,
-        close_paren1: close_paren1,
-        close_paren0: close_paren0,
-        module_end_keyword: module_end_keyword,
-        module_end_name: module_end_name
+        module_keyword: t[0],
+        module_name: t[1],
+        let_keyword: t[2],
+        var_name: t[3],
+        assign_symbol: t[4],
+        outer_routine: t[5],
+        open_paren0: t[6],
+        inner_routine: t[7],
+        open_paren1: t[8],
+        argument: t[9],
+        close_paren1: t[10],
+        close_paren0: t[11],
+        module_end_keyword: t[12],
+        module_end_name: t[13]
     }
 end lex_mini_nested_call_module
 

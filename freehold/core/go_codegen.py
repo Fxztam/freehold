@@ -1234,6 +1234,23 @@ class GoGenerator:
         return None
 
     def runtime_call_expr(self, expr: CallExpr, expected_type: Any) -> str | None:
+        resolved_name = expr.name
+        exposed_module = self.exposed_symbols.get(expr.name)
+        if exposed_module is not None and expr.name not in self.local_routines:
+            resolved_name = f"{exposed_module}.{expr.name}"
+
+        if resolved_name == "System.args":
+            self.std_imports.add("os")
+            res_type = ArrayTypeName("String", 10)
+            # Ensure the wrapper for ArrayString10 is processed or we just use [10]string
+            return "func() [10]string { var res [10]string; for i := 0; i < 10 && i < len(os.Args)-1; i++ { res[i] = os.Args[i+1] }; return res }()"
+
+        if resolved_name == "File.read_to_string":
+            self.std_imports.add("os")
+            res_type = ResultTypeName(TypeName("String"), "String")
+            self.result_types.setdefault(type_to_string(res_type), res_type)
+            return f"func() ResultStringString {{ content, err := os.ReadFile({self.expr(expr.args[0])}); if err != nil {{ return ResultStringString{{Ok: false, Error: err.Error()}} }}; return ResultStringString{{Ok: true, Value: string(content)}} }}()"
+
         async_call = self.async_runtime_call_expr(expr)
         if async_call is not None:
             return async_call

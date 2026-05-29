@@ -160,6 +160,18 @@ class Interpreter:
         if isinstance(e, VarExpr): return env[e.name]
         if isinstance(e, CallExpr):
             args = [self.eval(a, env) for a in e.args if not isinstance(a, NamedArg)]
+            if e.name == "System.args" or (e.name == "args" and "args" not in self.routines):
+                import sys
+                argv = sys.argv[1:]
+                return [argv[i] if i < len(argv) else "" for i in range(10)]
+            if e.name == "File.read_to_string" or (e.name == "read_to_string" and "read_to_string" not in self.routines):
+                path = args[0]
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    return ResultValue(True, content, None)
+                except Exception as ex:
+                    return ResultValue(False, None, str(ex))
             if e.name == "String.concat":
                 return args[0] + args[1]
             if e.name == "String.substr":

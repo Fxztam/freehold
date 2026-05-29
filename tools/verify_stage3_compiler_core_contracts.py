@@ -227,6 +227,11 @@ def write_project(build_root: Path, files: list[Any], build_files: list[Any], ex
         write_text(build_root / file.output_path, file.content)
     for file in extra_files:
         write_text(build_root / file.output_path, file.content)
+    
+    # Copy fixtures to build_root so dynamic file reading works during verification
+    fixtures_src = REPO_ROOT / "bootstrap/compiler_core_v1/fixtures"
+    if fixtures_src.exists():
+        shutil.copytree(fixtures_src, build_root / "bootstrap/compiler_core_v1/fixtures")
 
 
 def write_text(path: Path, content: str) -> None:
