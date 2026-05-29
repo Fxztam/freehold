@@ -97,9 +97,9 @@ Die zukünftige Entwicklungsphase eines Go-nativen Control-Flow-Analyzers wurde 
 **Completed on:** 2026-05-29
 
 - **Rekursiv absteigender Parser:** Implementierung eines vollwertigen Recursive Descent Parsers (`Compiler.Core.Parser.fh`), der den vom allgemeinen Lexer erzeugten Token-Stream syntaktisch validiert.
-- **Unterstützte Strukturen:** Implementierung von Parse-Funktionen für Modul-Deklarationen (`module ... end`), Importe (`import ... exposing ...`), Typen/Records (`type ... is record ... end record`), Prozeduren und Funktionen.
+- **Unterstützte Strukturen:** Implementierung von Parse-Funktionen für Modul-Deklarationen (`module ... end`), Importe (`import ... exposing ...`), Typen/Records (`type ... is record ... end record`), Prozeduren, Funktionen, Statements (`parse_stmt` für `let`, Zuweisungen `:=`, `if` Verzweigungen und `while` Schleifen) sowie Ausdrücke (`parse_expr` für Literale/Identifikatoren).
 - **Invariante Schleifenbedingungen:** Syntaxprüfung und Verifikation über die formale Verifikations-Engine von Freehold durch Hinzufügen von `invariant` Ausdrücken zu den while-Schleifen.
-- **Vermeidung von Namenskonflikten:** Anpassung aller block-lokalen und geschachtelten Variablennamen (`empty_id_err`, `empty_id_fail`, `proc_node_err`, `err_decl`, `err_mismatch`), um korrekten Go-Code ohne Scope-Konflikte zu generieren.
+- **Vermeidung von Namenskonflikten:** Anpassung aller block-lokalen und geschachtelten Variablennamen (`empty_id_err`, `empty_id_fail`, `proc_node_err`, `err_decl`, `err_mismatch`, `node_lit`, `p_next_lit`, `node_id`, `p_next_id`, `p_let1`, `p_let2`, `p_let3`, `p_if1`, `p_if2`, `p_if3`, `p_if4`, `p_wh1`, `p_wh2`, `p_wh3`, `p_wh4`, `p_wh5`), um korrekten Go-Code ohne Scope-Konflikte zu generieren.
 - **Verifikation:** Erfolgreiche Ausführung der kompletten Stage-3 Verifikationspipeline (`verify-stage3-compiler-core-v1.cmd`).
 
 ## Datei-I/O und CLI-Argumente (System & File Integration)

@@ -58,14 +58,16 @@ This document tracks the milestones, architecture decisions, and implementation 
 **Completed on:** 2026-05-29
 
 - **General Parser Architecture:** Implemented `GeneralParser` with full recursive descent state, holding `lexer`, current/peek lookahead tokens, a parsing error `issue` indicator, and a boolean `has_error` status flag.
-- **Syntactic Parsing Implementations:** Added modular parser functions for all declaration types:
+- **Syntactic Parsing Implementations:** Added modular parser functions for all declaration types, statements, and expressions:
   - `parse_module_decl`
   - `parse_import_decl`
   - `parse_record_decl`
   - `parse_procedure_decl`
   - `parse_function_decl`
+  - `parse_stmt` (supporting `let` bindings, mutations via `:=`, conditionals/if branches, and while loops)
+  - `parse_expr` (supporting literal and identifier expressions)
 - **Verification-Engine Compliance:** Added loop invariants to `while` loops (`invariant p_curr.has_error = false or p_curr.has_error = true`) to satisfy Freehold's formal verification engine.
-- **Scope Renaming for Go Code Generation:** Renamed variable names in nested/branched scopes (e.g. `empty_id_err`, `empty_id_fail`, `proc_node_err`, `err_decl`, `err_mismatch`) to guarantee that they are transpiled to correct Go scoping blocks without variable clashing or undefined references.
+- **Scope Renaming for Go Code Generation:** Renamed variable names in nested/branched scopes (e.g. `empty_id_err`, `empty_id_fail`, `proc_node_err`, `err_decl`, `err_mismatch`, `node_lit`, `p_next_lit`, `node_id`, `p_next_id`, `p_let1`, `p_let2`, `p_let3`, `p_if1`, `p_if2`, `p_if3`, `p_if4`, `p_wh1`, `p_wh2`, `p_wh3`, `p_wh4`, `p_wh5`) to guarantee that they are transpiled to correct Go scoping blocks without variable clashing or undefined references.
 - **Contract Verification:** Successfully validated the Go project compilation, passing 100% of all verification gates in `verify-stage3-compiler-core-v1.cmd`.
 
 ## Symbol- und Typ-Resolver (Compiler.Core.Resolve.fh)
