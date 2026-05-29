@@ -90,6 +90,8 @@ type TempVarResult is record
 end record
 
 function make_temp_var_generator(prefix: String) returns TempVarGenerator
+requires String.instr(prefix, "") = 0
+ensures result.counter = 0 and result.prefix = prefix
 is
     return TempVarGenerator { counter: 0, prefix: prefix }
 end make_temp_var_generator
@@ -125,6 +127,8 @@ is
 end flatten_nested_call
 
 function lower_stmt(stmt: StmtNode, gen: TempVarGenerator) returns TempVarResult
+requires String.instr(stmt.kind, "") = 0, String.instr(gen.prefix, "") = 0, gen.counter >= 0
+ensures result.gen.counter >= gen.counter
 is
     if stmt.kind = "LET" then
         return next_temp_var(gen)
@@ -132,5 +136,351 @@ is
         return TempVarResult { gen: gen, name: "" }
     end if
 end lower_stmt
+
+
+type IrInst is record
+    op: String
+    dest: String
+    arg0: String
+    arg1: String
+end record
+
+type IrBlock is record
+    label: String
+    first_inst_idx: Integer
+    inst_count: Integer
+end record
+
+type IrRoutine is record
+    name: String
+    return_type: String
+    first_block_idx: Integer
+    block_count: Integer
+end record
+
+type IrModule is record
+    name: String
+    first_routine_idx: Integer
+    routine_count: Integer
+end record
+
+function char_to_hex(c: String) returns String
+requires String.instr(c, "") = 0
+ensures String.instr(result, "") = 0
+is
+    let chars: String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._: -"
+    let hexes: String = "6162636465666768696a6b6c6d6e6f707172737475767778797a4142434445464748494a4b4c4d4e4f505152535455565758595a303132333435363738392e5f3a202d"
+    let idx: Integer = String.instr(chars, c)
+    if idx >= 0 then
+        return String.substr(hexes, idx * 2, 2)
+    else
+        return "3f"
+    end if
+end char_to_hex
+
+function string_to_hex(s: String) returns String
+requires String.instr(s, "") = 0
+ensures String.instr(result, "") = 0
+is
+    let hex: String = ""
+    let len: Integer = String.length(s)
+    let i: Integer = 0
+    while i < len invariant i >= 0 and i <= len do
+        let c: String = String.substr(s, i, 1)
+        let ch: String = char_to_hex(c)
+        hex := String.template("${prev}${cur}", prev: hex, cur: ch)
+        i := i + 1
+    end while
+    return hex
+end string_to_hex
+
+function int_to_hex4(val: Integer) returns String
+ensures String.instr(result, "") = 0
+is
+    let temp: Integer = val
+    if temp < 0 then
+        temp := 0
+    end if
+    if temp > 65535 then
+        temp := 65535
+    end if
+    let h1: Integer = temp / 4096
+    let r1: Integer = temp - (h1 * 4096)
+    let h2: Integer = r1 / 256
+    let r2: Integer = r1 - (h2 * 256)
+    let h3: Integer = r2 / 16
+    let h4: Integer = r2 - (h3 * 16)
+    
+    let digits: String = "0123456789abcdef"
+    let d1: String = String.substr(digits, h1, 1)
+    let d2: String = String.substr(digits, h2, 1)
+    let d3: String = String.substr(digits, h3, 1)
+    let d4: String = String.substr(digits, h4, 1)
+    
+    return String.template("${a}${b}${c}${d}", a: d1, b: d2, c: d3, d: d4)
+end int_to_hex4
+
+function int_to_hex2(val: Integer) returns String
+ensures String.instr(result, "") = 0
+is
+    let temp: Integer = val
+    if temp < 0 then
+        temp := 0
+    end if
+    if temp > 255 then
+        temp := 255
+    end if
+    let h1: Integer = temp / 16
+    let h2: Integer = temp - (h1 * 16)
+    let digits: String = "0123456789abcdef"
+    let d1: String = String.substr(digits, h1, 1)
+    let d2: String = String.substr(digits, h2, 1)
+    return String.template("${a}${b}", a: d1, b: d2)
+end int_to_hex2
+
+
+
+function serialize_inst_to_json(inst: IrInst) returns String
+requires String.instr(inst.op, "") = 0
+ensures String.instr(result, "") = 0
+is
+    let ob: String = "{"
+    let cb: String = "}"
+    return String.template("${open}\"op\":\"${op}\",\"dest\":\"${dest}\",\"arg0\":\"${arg0}\",\"arg1\":\"${arg1}\"${close}", open: ob, close: cb, op: inst.op, dest: inst.dest, arg0: inst.arg0, arg1: inst.arg1)
+end serialize_inst_to_json
+
+function serialize_to_json(
+    module_name: String,
+    routine_name: String,
+    return_type: String,
+    insts: Array<IrInst, 64>,
+    inst_count: Integer
+) returns String
+requires String.instr(module_name, "") = 0, String.instr(routine_name, "") = 0
+ensures String.instr(result, "") = 0
+is
+    let ob: String = "{"
+    let cb: String = "}"
+    let json: String = String.template("${open}\"module\":\"${module}\",\"routines\":[${open}\"name\":\"${routine}\",\"return_type\":\"${ret}\",\"blocks\":[${open}\"label\":\"entry\",\"insts\":[", open: ob, module: module_name, routine: routine_name, ret: return_type)
+    let i: Integer = 0
+    while i < inst_count invariant i >= 0 do
+        if i >= 0 and i < 64 then
+            let inst_json: String = serialize_inst_to_json(insts[i])
+            if i > 0 then
+                json := String.template("${prev},${cur}", prev: json, cur: inst_json)
+            else
+                json := String.template("${prev}${cur}", prev: json, cur: inst_json)
+            end if
+        end if
+        i := i + 1
+    end while
+    json := String.template("${prev}]${close}]${close}]${close}", prev: json, close: cb)
+    return json
+end serialize_to_json
+
+function serialize_to_binary(
+    module_name: String,
+    routine_name: String,
+    return_type: String,
+    insts: Array<IrInst, 64>,
+    inst_count: Integer
+) returns String
+requires String.instr(module_name, "") = 0, String.instr(routine_name, "") = 0
+ensures String.instr(result, "") = 0
+is
+    let bin: String = "464849524201"
+    
+    let mod_len: String = int_to_hex2(String.length(module_name))
+    let mod_hex: String = string_to_hex(module_name)
+    bin := String.template("${prev}${len}${hex}", prev: bin, len: mod_len, hex: mod_hex)
+    
+    bin := String.template("${prev}0001", prev: bin)
+    
+    let rot_len: String = int_to_hex2(String.length(routine_name))
+    let rot_hex: String = string_to_hex(routine_name)
+    bin := String.template("${prev}${len}${hex}", prev: bin, len: rot_len, hex: rot_hex)
+    
+    let ret_len: String = int_to_hex2(String.length(return_type))
+    let ret_hex: String = string_to_hex(return_type)
+    bin := String.template("${prev}${len}${hex}", prev: bin, len: ret_len, hex: ret_hex)
+    
+    bin := String.template("${prev}0001", prev: bin)
+    bin := String.template("${prev}05656e747279", prev: bin)
+    
+    let count_hex: String = int_to_hex4(inst_count)
+    bin := String.template("${prev}${count}", prev: bin, count: count_hex)
+    
+    let i: Integer = 0
+    while i < inst_count invariant i >= 0 do
+        if i >= 0 and i < 64 then
+            let inst: IrInst = insts[i]
+            
+            let op_len: String = int_to_hex2(String.length(inst.op))
+            let op_hex: String = string_to_hex(inst.op)
+            
+            let dest_len: String = int_to_hex2(String.length(inst.dest))
+            let dest_hex: String = string_to_hex(inst.dest)
+            
+            let arg0_len: String = int_to_hex2(String.length(inst.arg0))
+            let arg0_hex: String = string_to_hex(inst.arg0)
+            
+            let arg1_len: String = int_to_hex2(String.length(inst.arg1))
+            let arg1_hex: String = string_to_hex(inst.arg1)
+            
+            bin := String.template("${prev}${op_l}${op_h}${dest_l}${dest_h}${arg0_l}${arg0_h}${arg1_l}${arg1_h}",
+                prev: bin,
+                op_l: op_len, op_h: op_hex,
+                dest_l: dest_len, dest_h: dest_hex,
+                arg0_l: arg0_len, arg0_h: arg0_hex,
+                arg1_l: arg1_len, arg1_h: arg1_hex
+            )
+        end if
+        i := i + 1
+    end while
+    
+    return bin
+end serialize_to_binary
+
+function emit_json_ir(node: ModuleWithLoweredCallsNode) returns String
+is
+    let insts: Array<IrInst, 64> = [
+        IrInst { op: "CALL", dest: node.first_call.var_name.name, arg0: node.first_call.routine_name.name, arg1: node.first_call.argument_var },
+        IrInst { op: "CALL", dest: node.second_call.var_name.name, arg0: node.second_call.routine_name.name, arg1: node.second_call.argument_var },
+        IrInst { op: "RET", dest: "", arg0: node.second_call.var_name.name, arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" }
+    ]
+    return serialize_to_json(node.module_node.name.name, "use", "Integer", insts, 3)
+end emit_json_ir
+
+function emit_binary_ir(node: ModuleWithLoweredCallsNode) returns String
+is
+    let insts: Array<IrInst, 64> = [
+        IrInst { op: "CALL", dest: node.first_call.var_name.name, arg0: node.first_call.routine_name.name, arg1: node.first_call.argument_var },
+        IrInst { op: "CALL", dest: node.second_call.var_name.name, arg0: node.second_call.routine_name.name, arg1: node.second_call.argument_var },
+        IrInst { op: "RET", dest: "", arg0: node.second_call.var_name.name, arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" },
+        IrInst { op: "", dest: "", arg0: "", arg1: "" }
+    ]
+    return serialize_to_binary(node.module_node.name.name, "use", "Integer", insts, 3)
+end emit_binary_ir
 
 end Compiler.Core.Transform

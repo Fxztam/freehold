@@ -214,6 +214,9 @@ Erfolgreich validiert:
 - `freehold_runtime_demo.exe` aus `examples/compiler_v1/15_result_abort_array_runtime_builtins/App/Main.fh`,
 - `feynman_demo.exe` aus `examples/ChudnovskyFeynmanPoint.fh`,
 - `verify-compiler-examples.cmd` mit EXE-Build und Runtime-Log-Vergleich.
+- **Automatische Generierung von Release-Builds:** Erfolgreiche Stage3-Builds werden automatisch aus dem `.tmp`-Verzeichnis nach `bin/` kopiert.
+- **Natives Verzeichnis-Management:** Automatische Erstellung übergeordneter Ordnerstrukturen bei `File.write_string` über `os.MkdirAll` im Go-Codegen.
+- **Dotted-Identifier Parsing:** Voll-natives Parsing von hierarchischen Modulpfaden (z. B. `examples.ChudnovskyFeynmanPoint`) und Importen in `Parser.fh` über `parse_dotted_identifier`.
 
 Committed Code-Slice:
 
@@ -223,7 +226,6 @@ Committed Code-Slice:
 
 Noch offen fuer spaetere Haertung:
 
-- optionaler Release-Output ausserhalb von `.tmp`,
 - stabiler CLI-Komfortbefehl wie `freehold build-exe <entry.fh>`,
 - Cross-Platform Build-Skripte neben Windows `build.cmd`,
 - optionale Aufnahme von EXE-Builds in weitere Gates.

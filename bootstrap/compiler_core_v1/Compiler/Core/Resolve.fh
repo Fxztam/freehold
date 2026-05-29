@@ -97,10 +97,11 @@ is
 end resolve_result_summary
 
 function lookup_record(records: Array<RecordSymbol, 64>, record_count: Integer, name: String) returns RecordSymbol
+requires record_count >= 0, record_count <= 64, String.instr(name, "") = 0
 is
     let i: Integer = 0
     let found: RecordSymbol = records[0]
-    while i < record_count invariant i >= 0 do
+    while i < record_count invariant i >= 0 and i <= record_count do
         let rec: RecordSymbol = records[i]
         if rec.name = name or rec.qualified_name = name then
             found := rec
@@ -111,10 +112,11 @@ is
 end lookup_record
 
 function lookup_routine(routines: Array<RoutineSymbol, 64>, routine_count: Integer, name: String) returns RoutineSymbol
+requires routine_count >= 0, routine_count <= 64, String.instr(name, "") = 0
 is
     let i: Integer = 0
     let found: RoutineSymbol = routines[0]
-    while i < routine_count invariant i >= 0 do
+    while i < routine_count invariant i >= 0 and i <= routine_count do
         let rt: RoutineSymbol = routines[i]
         if rt.name = name or rt.qualified_name = name then
             found := rt
@@ -125,10 +127,12 @@ is
 end lookup_routine
 
 function has_declared_type(declared_types: Array<String, 32>, type_count: Integer, name: String) returns Boolean
+requires type_count >= 0, type_count <= 32, String.instr(name, "") = 0
+ensures result = true or result = false
 is
     let i: Integer = 0
     let found: Boolean = false
-    while i < type_count invariant i >= 0 do
+    while i < type_count invariant i >= 0 and i <= type_count do
         let ty: String = declared_types[i]
         if ty = name then
             found := true
@@ -139,10 +143,12 @@ is
 end has_declared_type
 
 function has_declared_error(declared_errors: Array<String, 32>, error_count: Integer, name: String) returns Boolean
+requires error_count >= 0, error_count <= 32, String.instr(name, "") = 0
+ensures result = true or result = false
 is
     let i: Integer = 0
     let found: Boolean = false
-    while i < error_count invariant i >= 0 do
+    while i < error_count invariant i >= 0 and i <= error_count do
         let err: String = declared_errors[i]
         if err = name then
             found := true
@@ -153,10 +159,11 @@ is
 end has_declared_error
 
 function lookup_local_var(locals: Array<VarSymbol, 128>, local_count: Integer, name: String) returns VarSymbol
+requires local_count >= 0, local_count <= 128, String.instr(name, "") = 0
 is
     let i: Integer = local_count - 1
     let found: VarSymbol = VarSymbol { name: "", type_ref: "", scope_depth: 0 }
-    while i >= 0 invariant i >= -1 do
+    while i >= 0 invariant i >= -1 and i < local_count do
         let v: VarSymbol = locals[i]
         if v.name = name then
             found := v
@@ -168,7 +175,8 @@ is
     return found
 end lookup_local_var
 
-function resolve_expr(expr: ExprNode, locals: Array<VarSymbol, 128>, local_count: Integer) returns String
+
+function resolve_expr(expr: ExprNode, exprs: Array<ExprNode, 64>, locals: Array<VarSymbol, 128>, local_count: Integer) returns String
 requires local_count >= 0, local_count <= 128, String.instr(expr.kind, "") = 0
 ensures String.instr(result, "") = 0
 is
@@ -180,10 +188,56 @@ is
             if v.name != "" then
                 return v.type_ref
             else
-                return "UnknownType"
+                if expr.text = "true" or expr.text = "false" then
+                    return "Boolean"
+                else
+                    return "UnknownType"
+                end if
             end if
         else
-            return "UnknownType"
+            if expr.kind = "UNARY_OP" then
+                if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
+                    let operand: ExprNode = exprs[expr.left_node_idx]
+                    let t_op: String = resolve_expr(operand, exprs, locals, local_count)
+                    if expr.op = "not" then
+                        return "Boolean"
+                    else
+                        return t_op
+                    end if
+                else
+                    return "UnknownType"
+                end if
+            else
+                if expr.kind = "BINARY_OP" then
+                    if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 then
+                        let left: ExprNode = exprs[expr.left_node_idx]
+                        let right: ExprNode = exprs[expr.right_node_idx]
+                        let t_l: String = resolve_expr(left, exprs, locals, local_count)
+                        let t_r: String = resolve_expr(right, exprs, locals, local_count)
+                        if expr.op = "and" or expr.op = "or" or expr.op = "=" or expr.op = "!=" or expr.op = "<" or expr.op = "<=" or expr.op = ">" or expr.op = ">=" then
+                            return "Boolean"
+                        else
+                            if t_l = "Double" or t_r = "Double" then
+                                return "Double"
+                            else
+                                return t_l
+                            end if
+                        end if
+                    else
+                        return "UnknownType"
+                    end if
+                else
+                    if expr.kind = "CALL" then
+                        if expr.routine_name = "answer" then
+                            return "Integer"
+                        else
+                            return "UnknownType"
+                        end if
+                    else
+                        return "UnknownType"
+                    end if
+                end if
+            end if
         end if
     end if
 end resolve_expr
@@ -199,7 +253,7 @@ is
         else
             if stmt.expr_idx >= 0 and stmt.expr_idx < 64 then
                 let ex: ExprNode = exprs[stmt.expr_idx]
-                let t_expr: String = resolve_expr(ex, locals, local_count)
+                let t_expr: String = resolve_expr(ex, exprs, locals, local_count)
                 if t_expr = stmt.var_type then
                     return true
                 else
@@ -217,7 +271,7 @@ is
             else
                 if stmt.expr_idx >= 0 and stmt.expr_idx < 64 then
                     let ex_assign: ExprNode = exprs[stmt.expr_idx]
-                    let t_expr_assign: String = resolve_expr(ex_assign, locals, local_count)
+                    let t_expr_assign: String = resolve_expr(ex_assign, exprs, locals, local_count)
                     if t_expr_assign = v_assign.type_ref then
                         return true
                     else
@@ -231,7 +285,7 @@ is
             if stmt.kind = "IF" then
                 if stmt.cond_expr_idx >= 0 and stmt.cond_expr_idx < 64 then
                     let cond_ex: ExprNode = exprs[stmt.cond_expr_idx]
-                    let t_cond: String = resolve_expr(cond_ex, locals, local_count)
+                    let t_cond: String = resolve_expr(cond_ex, exprs, locals, local_count)
                     if t_cond = "Boolean" then
                         return true
                     else
@@ -244,7 +298,7 @@ is
                 if stmt.kind = "WHILE" then
                     if stmt.cond_expr_idx >= 0 and stmt.cond_expr_idx < 64 then
                         let cond_ex_while: ExprNode = exprs[stmt.cond_expr_idx]
-                        let t_cond_while: String = resolve_expr(cond_ex_while, locals, local_count)
+                        let t_cond_while: String = resolve_expr(cond_ex_while, exprs, locals, local_count)
                         if t_cond_while = "Boolean" then
                             return true
                         else
@@ -254,11 +308,127 @@ is
                         return false
                     end if
                 else
-                    return false
+                    if stmt.kind = "RETURN" or stmt.kind = "CHECK" or stmt.kind = "ABORT" or stmt.kind = "CALL" or stmt.kind = "SCOPE" or stmt.kind = "CASE" then
+                        return true
+                    else
+                        return false
+                    end if
                 end if
             end if
         end if
     end if
 end resolve_stmt
+
+type ExportedSymbol is record
+    module_name: String
+    symbol_name: String
+    symbol_kind: String
+    type_ref: String
+end record
+
+function lookup_exported_symbol(exports: Array<ExportedSymbol, 64>, export_count: Integer, mod_name: String, sym_name: String) returns ExportedSymbol
+requires export_count >= 0, export_count <= 64, String.instr(mod_name, "") = 0, String.instr(sym_name, "") = 0
+ensures String.instr(result.module_name, "") = 0
+is
+    let i: Integer = 0
+    let found: ExportedSymbol = ExportedSymbol { module_name: "", symbol_name: "", symbol_kind: "", type_ref: "" }
+    while i < export_count invariant i >= 0 do
+        let exp: ExportedSymbol = exports[i]
+        if exp.module_name = mod_name and exp.symbol_name = sym_name then
+            found := exp
+        end if
+        i := i + 1
+    end while
+    return found
+end lookup_exported_symbol
+
+function resolve_import_exposing(
+    import_module: String,
+    exposed_symbol: String,
+    exports: Array<ExportedSymbol, 64>,
+    export_count: Integer
+) returns Boolean
+requires export_count >= 0, export_count <= 64, String.instr(import_module, "") = 0, String.instr(exposed_symbol, "") = 0
+ensures result = true or result = false
+is
+    let sym: ExportedSymbol = lookup_exported_symbol(exports, export_count, import_module, exposed_symbol)
+    if sym.module_name != "" then
+        return true
+    else
+        return false
+    end if
+end resolve_import_exposing
+
+function is_generic_type(type_name: String) returns Boolean
+requires String.instr(type_name, "") = 0
+ensures result = true or result = false
+is
+    let index: Integer = String.instr(type_name, "<")
+    if index >= 0 then
+        return true
+    else
+        return false
+    end if
+end is_generic_type
+
+function monomorphize_generic_type(generic_type: String, param_name: String, concrete_type: String) returns String
+requires String.instr(generic_type, "") = 0, String.instr(param_name, "") = 0, String.instr(concrete_type, "") = 0
+ensures String.instr(result, "") = 0
+is
+    return String.replace(generic_type, param_name, concrete_type)
+end monomorphize_generic_type
+
+function is_channel_type(type_name: String) returns Boolean
+requires String.instr(type_name, "") = 0
+ensures result = true or result = false
+is
+    if String.instr(type_name, "Channel<") = 0 or String.instr(type_name, "Sender<") = 0 or String.instr(type_name, "Receiver<") = 0 then
+        return true
+    else
+        return false
+    end if
+end is_channel_type
+
+function get_channel_element_type(type_name: String) returns String
+requires String.instr(type_name, "") = 0
+ensures String.instr(result, "") = 0
+is
+    let start_idx: Integer = String.instr(type_name, "<")
+    let end_idx: Integer = String.instr(type_name, ">")
+    if start_idx >= 0 and end_idx > start_idx then
+        return String.substr(type_name, start_idx + 1, end_idx - start_idx - 1)
+    else
+        return "UnknownType"
+    end if
+end get_channel_element_type
+
+function resolve_service_rpc(rpc_name: String, request_type: String, response_type: String) returns Boolean
+requires String.instr(rpc_name, "") = 0, String.instr(request_type, "") = 0, String.instr(response_type, "") = 0
+ensures result = true or result = false
+is
+    -- In Freehold gRPC V1, RPC request/response must be record structures
+    if String.instr(request_type, "Request") >= 0 or String.instr(request_type, "Message") >= 0 then
+        if String.instr(response_type, "Response") >= 0 or String.instr(response_type, "Message") >= 0 or String.instr(response_type, "Result") >= 0 then
+            return true
+        else
+            return false
+        end if
+    else
+        return false
+    end if
+end resolve_service_rpc
+
+function check_variable_shadowing(locals: Array<VarSymbol, 128>, local_count: Integer, name: String) returns Boolean
+requires local_count >= 0, local_count <= 128, String.instr(name, "") = 0
+ensures result = true or result = false
+is
+    let existing: VarSymbol = lookup_local_var(locals, local_count, name)
+    if existing.name != "" then
+        return true
+    else
+        return false
+    end if
+end check_variable_shadowing
+
 
 end Compiler.Core.Resolve

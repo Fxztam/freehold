@@ -69,16 +69,22 @@ graph TD
 
 ---
 
-## 3. Nächste Schritte
+## 3. Nächste Schritte (Post-Self-Hosting Roadmap)
 
-1. **Self-Hosting Stabilisierung & Härtung:**
-   - Weiteres Härten der Code-Generierungs-Pipelines und des Go-Frontends gegen komplexe Typen-Szenarien.
-   - Fortlaufende Überprüfung der deterministischen Ausgabe und des verbleibenden Toolings.
+Die wesentlichen Kernschritte des Bootstrappings sind vollständig umgesetzt. Verbleibende Entwicklungsbereiche umfassen:
+
+1. **Go EXE-Builder Integration (Post-Bootstrap-CLI):**
+   - Optionale Generierung von Release-Builds direkt im Zielordner außerhalb temporärer `.tmp`-Verzeichnisse.
+   - Native Portierung des Dependency-Scanners zur Generierung von `go.mod` und Ausführung von `go mod tidy` in Freehold (derzeit teilweise über Python-Hilfsskripte gesteuert).
+2. **Formale Verifikations-Härtung:**
+   - Vollständige mathematische Verifikation aller erweiterten Compiler-Module (`Ast`, `Parser`, `Resolve`, `Transform`, `Flow`) über die Freehold-Verifikations-Engine (`Verifier.fh`), um Fehlerfreiheit (wie z. B. Out-of-Bounds-Sicherheit beim AST-Zugriff) im Compiler selbst formell nachzuweisen.
+3. **CI-Pipeline & Baseline-Schutz:**
+   - Implementierung automatisierter Regressionstests in der CI-Pipeline gemäß `TODO-CONFORMANCE-BASELINE-TESTS.md` zur Vermeidung von Divergenzen zwischen Python- und Go-Compilern bei zukünftigen Codeänderungen.
 
 ## 4. Verbleibende offene Punkte in den MDs (außerhalb der Bootstrapping-Schritte)
 
-- In `TODO-CONFORMANCE-BASELINE-TESTS.md` sind optionale CI-Härtungsmaßnahmen verzeichnet (z. B. separates Script für Baseline-Pflege).
-- In `TODO-FH-TO-GO-EXE.md` sind optionale Features für den EXE-Builder gelistet (z. B. Release-Output außerhalb von `.tmp`).
+- In `TODO-CONFORMANCE-BASELINE-TESTS.md` sind die optionalen CI-Härtungsmaßnahmen verzeichnet (z. B. separates Script für Baseline-Pflege).
+- In `TODO-FH-TO-GO-EXE.md` sind die optionalen Features für den EXE-Builder gelistet (z. B. Release-Output außerhalb von `.tmp`).
 
-Diese nachgelagerten CI- und Tooling-Punkte sind bewusst für spätere Phasen geparkt und blockieren die aktuelle Core-Entwicklung und den Self-Hosting-Bootstrap nicht.
+Diese nachgelagerten CI-, Tooling- und Verifikationspunkte sind für spätere Integrationsphasen vorgesehen und blockieren die bereits erfolgreich abgeschlossene Core-Entwicklung und den Self-Hosting-Bootstrap nicht.
 

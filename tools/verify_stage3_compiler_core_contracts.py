@@ -83,6 +83,8 @@ def verify_contract(contract: dict[str, Any], build_root: Path) -> dict[str, Any
         build_files = generate_go_project_build_files(files, executable_name="stage3_compiler_core_v1", entry_module_name="App.Main")
         extra_files = generate_go_project_extra_files(files)
     except Exception as exc:
+        import traceback
+        traceback.print_exc()
         failures.append(f"generation failed: {type(exc).__name__}: {exc}")
         return contract_row(name, source_file, {}, failures)
 
@@ -109,6 +111,17 @@ def verify_contract(contract: dict[str, Any], build_root: Path) -> dict[str, Any
             failures.append(f"generated Go project build failed with exit code {build_result.returncode}")
         else:
             runtime_golden_result = check_runtime_golden(contract, build_root, failures)
+            if not failures:
+                runtime_golden = contract.get("runtime_golden") or {}
+                executable = runtime_golden.get("executable")
+                if executable:
+                    executable_path = build_root / executable
+                    if executable_path.exists():
+                        target_dir = REPO_ROOT / "bin"
+                        target_dir.mkdir(exist_ok=True)
+                        target_path = target_dir / executable_path.name
+                        shutil.copy2(executable_path, target_path)
+                        print(f"Copied Release Build directly to target folder: {target_path}")
 
     return contract_row(
         name,

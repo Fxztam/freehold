@@ -593,4 +593,71 @@ is
     }
 end make_stmt_node
 
+type RpcDeclNode is record
+    span: SourceSpan
+    name: IdentifierNode
+    request_type: IdentifierNode
+    response_type: IdentifierNode
+end record
+
+type ServiceDeclNode is record
+    span: SourceSpan
+    name: IdentifierNode
+    rpc_count: Integer
+end record
+
+type ChannelTypeNode is record
+    span: SourceSpan
+    element_type: IdentifierNode
+end record
+
+type SpawnStmtNode is record
+    span: SourceSpan
+    scope_name: IdentifierNode
+    routine_name: IdentifierNode
+    argument_name: String
+end record
+
+type JoinStmtNode is record
+    span: SourceSpan
+    scope_name: IdentifierNode
+    handle_var_name: String
+end record
+
+function make_rpc_decl_node(span: SourceSpan, name: IdentifierNode, request_type: IdentifierNode, response_type: IdentifierNode) returns RpcDeclNode
+requires String.instr(name.name, "") = 0
+ensures result.name.name = name.name
+is
+    return RpcDeclNode { span: span, name: name, request_type: request_type, response_type: response_type }
+end make_rpc_decl_node
+
+function make_service_decl_node(span: SourceSpan, name: IdentifierNode, rpc_count: Integer) returns ServiceDeclNode
+requires String.instr(name.name, "") = 0, rpc_count >= 0
+ensures result.name.name = name.name
+is
+    return ServiceDeclNode { span: span, name: name, rpc_count: rpc_count }
+end make_service_decl_node
+
+function make_channel_type_node(span: SourceSpan, element_type: IdentifierNode) returns ChannelTypeNode
+requires String.instr(element_type.name, "") = 0
+ensures result.element_type.name = element_type.name
+is
+    return ChannelTypeNode { span: span, element_type: element_type }
+end make_channel_type_node
+
+function make_spawn_stmt_node(span: SourceSpan, scope_name: IdentifierNode, routine_name: IdentifierNode, argument_name: String) returns SpawnStmtNode
+requires String.instr(scope_name.name, "") = 0, String.instr(routine_name.name, "") = 0
+ensures result.scope_name.name = scope_name.name
+is
+    return SpawnStmtNode { span: span, scope_name: scope_name, routine_name: routine_name, argument_name: argument_name }
+end make_spawn_stmt_node
+
+function make_join_stmt_node(span: SourceSpan, scope_name: IdentifierNode, handle_var_name: String) returns JoinStmtNode
+requires String.instr(scope_name.name, "") = 0
+ensures result.scope_name.name = scope_name.name
+is
+    return JoinStmtNode { span: span, scope_name: scope_name, handle_var_name: handle_var_name }
+end make_join_stmt_node
+
+
 end Compiler.Core.Ast

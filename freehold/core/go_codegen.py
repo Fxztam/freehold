@@ -717,22 +717,22 @@ class GoGenerator:
         if isinstance(stmt, LetStmt):
             already_declared = stmt.name in self.current_local_types
             self.current_local_types[stmt.name] = stmt.type_ref
-            if self.integer_expr_kind(stmt.expr) == "inferred_int" or (
-                isinstance(stmt.expr, NumberExpr) and self.go_declared_base(stmt.type_ref) == "Integer"
-            ):
+            is_inferred_int = self.go_declared_base(stmt.type_ref) == "Integer" and self.integer_expr_kind(stmt.expr) in {"inferred_int", "untyped"}
+            if is_inferred_int:
                 self.inferred_int_locals.add(stmt.name)
             if isinstance(stmt.expr, CallExpr):
                 call_routine = self.called_routine(stmt.expr.name)
                 if call_routine is not None and call_routine.aborts:
                     return self.let_aborting_call(stmt, already_declared, call_routine)
             operator = "=" if already_declared else ":="
-            lines = [f"{go_local_name(stmt.name)} {operator} {self.expr_with_type(stmt.expr, stmt.type_ref)}"]
+            target_type = None if is_inferred_int else stmt.type_ref
+            lines = [f"{go_local_name(stmt.name)} {operator} {self.expr_with_type(stmt.expr, target_type)}"]
             if stmt.name not in self.current_routine_read_names:
                 lines.append(f"_ = {go_local_name(stmt.name)}")
             return lines
         if isinstance(stmt, AssignStmt):
-            type_ref = self.current_local_types.get(stmt.name)
-            return [f"{go_local_name(stmt.name)} = {self.expr_with_type(stmt.expr, type_ref)}"]
+            target_type = None if stmt.name in self.inferred_int_locals else self.current_local_types.get(stmt.name)
+            return [f"{go_local_name(stmt.name)} = {self.expr_with_type(stmt.expr, target_type)}"]
         if isinstance(stmt, FieldAssignStmt):
             head, *tail = stmt.path
             target = ".".join([go_local_name(head)] + [go_exported_name(part) for part in tail])
@@ -837,9 +837,11 @@ class GoGenerator:
         return ["// unsupported statement"]
 
     def statement_block(self, statements: list[Any]) -> list[str]:
+        previous_local_types = dict(self.current_local_types)
         lines: list[str] = []
         for statement in statements:
             lines.extend(self.statement(statement))
+        self.current_local_types = previous_local_types
         return lines or ["// empty"]
 
     def routine_read_names(self, routine: RoutineDecl) -> set[str]:
@@ -1040,7 +1042,25 @@ class GoGenerator:
             rendered = self.runtime_call_expr(expr, type_ref)
             if rendered is not None:
                 return rendered
-        return self.expr(expr)
+        rendered_expr = self.expr(expr)
+        if self.integer_expr_kind(expr) == "inferred_int" and self.go_declared_base(type_ref) == "Integer":
+            return f"int64({rendered_expr})"
+        return rendered_expr
+
+    def record_field_type(self, record_name: str, field_name: str) -> Any | None:
+        for decl in self.program.declarations:
+            if isinstance(decl, RecordTypeDecl) and decl.name == record_name:
+                for field in decl.fields:
+                    if field.name == field_name:
+                        return field.type_name
+        for module_name, resolved in self.resolved_modules.items():
+            if resolved.verified is not None:
+                short_name = record_name.split(".")[-1]
+                for rec_name, rec in resolved.verified.records.items():
+                    if rec_name == record_name or rec_name == short_name:
+                        if field_name in rec.fields:
+                            return rec.fields[field_name]
+        return None
 
     def go_type_ref(self, type_ref: Any) -> str:
         if isinstance(type_ref, ResultTypeName):
@@ -1189,7 +1209,7 @@ class GoGenerator:
                 rendered = f"{self.expr_at(expr.left, precedence, 'left')} {go_operator(expr.op)} {self.expr_at(expr.right, precedence, 'right')}"
             return parenthesize_if_needed(rendered, precedence, parent_precedence, side, expr.op)
         if isinstance(expr, RecordLiteralExpr):
-            args = ", ".join(f"{go_exported_name(arg.name)}: {self.expr(arg.expr)}" for arg in expr.args)
+            args = ", ".join(f"{go_exported_name(arg.name)}: {self.expr_with_type(arg.expr, self.record_field_type(expr.type_name, arg.name))}" for arg in expr.args)
             return f"{self.go_type_string(expr.type_name)}{{{args}}}"
         if isinstance(expr, ArrayLiteralExpr):
             values = ", ".join(self.expr(item) for item in expr.items)
@@ -1266,11 +1286,23 @@ class GoGenerator:
             # Ensure the wrapper for ArrayString10 is processed or we just use [10]string
             return "func() [10]string { var res [10]string; for i := 0; i < 10 && i < len(os.Args)-1; i++ { res[i] = os.Args[i+1] }; return res }()"
 
+        if resolved_name == "System.run_command":
+            self.std_imports.add("os/exec")
+            self.std_imports.add("runtime")
+            return f"func() int64 {{ cmdStr := {self.expr(expr.args[0])}; var cmd *exec.Cmd; if runtime.GOOS == \"windows\" {{ cmd = exec.Command(\"cmd\", \"/c\", cmdStr) }} else {{ cmd = exec.Command(\"sh\", \"-c\", cmdStr) }}; err := cmd.Run(); if err != nil {{ if exitError, ok := err.(*exec.ExitError); ok {{ return int64(exitError.ExitCode()) }}; return -1 }}; return 0 }}()"
+
         if resolved_name == "File.read_to_string":
             self.std_imports.add("os")
             res_type = ResultTypeName(TypeName("String"), "String")
             self.result_types.setdefault(type_to_string(res_type), res_type)
             return f"func() ResultStringString {{ content, err := os.ReadFile({self.expr(expr.args[0])}); if err != nil {{ return ResultStringString{{Ok: false, Error: err.Error()}} }}; return ResultStringString{{Ok: true, Value: string(content)}} }}()"
+
+        if resolved_name == "File.write_string":
+            self.std_imports.add("os")
+            self.std_imports.add("path/filepath")
+            res_type = ResultTypeName(TypeName("Boolean"), "String")
+            self.result_types.setdefault(type_to_string(res_type), res_type)
+            return f"func() ResultBooleanString {{ dir := filepath.Dir({self.expr(expr.args[0])}); if err := os.MkdirAll(dir, 0755); err != nil {{ return ResultBooleanString{{Ok: false, Error: err.Error()}} }}; err := os.WriteFile({self.expr(expr.args[0])}, []byte({self.expr(expr.args[1])}), 0644); if err != nil {{ return ResultBooleanString{{Ok: false, Error: err.Error()}} }}; return ResultBooleanString{{Ok: true, Value: true}} }}()"
 
         async_call = self.async_runtime_call_expr(expr)
         if async_call is not None:
@@ -1475,13 +1507,17 @@ class GoGenerator:
         return f"int64({rendered})" if self.integer_expr_kind(expr) == "inferred_int" else rendered
 
     def expr_for_integer_comparison(self, expr: Any, other: Any) -> str:
-        if self.integer_expr_kind(expr) == "inferred_int" and self.integer_expr_kind(other) == "int64":
-            return f"int64({self.expr(expr)})"
+        if self.integer_expr_kind(expr) == "inferred_int":
+            other_kind = self.integer_expr_kind(other)
+            if other_kind not in {"inferred_int", "untyped"}:
+                return f"int64({self.expr(expr)})"
         return self.expr(expr)
 
     def integer_expr_kind(self, expr: Any) -> str | None:
         if isinstance(expr, NumberExpr):
             return "untyped"
+        if isinstance(expr, UnaryExpr) and expr.op in {"-", "+"}:
+            return self.integer_expr_kind(expr.expr)
         if isinstance(expr, VarExpr):
             if expr.name in self.inferred_int_locals:
                 return "inferred_int"

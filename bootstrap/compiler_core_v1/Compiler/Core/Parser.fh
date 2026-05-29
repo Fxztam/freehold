@@ -3,7 +3,7 @@ module Compiler.Core.Parser
 import Compiler.Core.Ast exposing FunctionImportReferenceNode, FunctionNode, IdentifierNode, ImportNode, ImportReferenceNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, ProcedureNode, RecordTypeNode, ModuleWithRecordLiteralNode, RecordLiteralNode, ModuleWithReturnNode, ReturnStmtNode, ModuleWithCallNode, CallStmtNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, make_function_import_reference_node, make_function_node, make_identifier_node, make_import_node, make_import_reference_node, make_literal_node, make_module_node, make_module_with_function_node, make_module_with_import_node, make_module_with_import_reference_node, make_module_with_procedure_node, make_module_with_record_node, make_procedure_node, make_record_type_node, make_record_literal_node, make_module_with_record_literal_node, make_return_stmt_node, make_module_with_return_node, make_module_with_call_node, make_call_stmt_node, make_nested_call_stmt_node, make_module_with_nested_call_node, make_lowered_call_node, make_module_with_lowered_calls_node, module_text, module_with_function_text, module_with_import_reference_text, module_with_import_text, module_with_procedure_text, module_with_record_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text, ExprNode, StmtNode, make_expr_node, make_stmt_node
 import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, MiniRecordLiteralModuleTokens, MiniReturnStmtModuleTokens, MiniCallModuleTokens, MiniNestedCallModuleTokens, Lexer, LexerResult, make_lexer, lex_next_token
 import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok
-import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_token, make_token_kind
+import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_token, make_token_kind, make_source_span
 
 function build_mini_module_node(tokens: MiniModuleTokens) returns ModuleNode
 requires tokens.module_keyword.lexeme = "module"
@@ -382,6 +382,8 @@ end record
 
 
 function init_general_parser(source_name: String, source: String) returns GeneralParser
+requires String.instr(source_name, "") = 0, String.instr(source, "") = 0
+ensures result.has_error = false and result.source_name = source_name
 is
     let lex: Lexer = make_lexer(source_name, source)
     let res1: LexerResult = lex_next_token(lex)
@@ -399,6 +401,8 @@ is
 end init_general_parser
 
 function advance_parser(p: GeneralParser) returns GeneralParser
+requires String.instr(p.source_name, "") = 0
+ensures result.source_name = p.source_name and result.has_error = p.has_error
 is
     let res: LexerResult = lex_next_token(p.lexer)
     return GeneralParser {
@@ -412,6 +416,8 @@ is
 end advance_parser
 
 function expect_kind(p: GeneralParser, kind: String, err_code: String, err_msg: String) returns GeneralParser
+requires String.instr(p.source_name, "") = 0, String.instr(kind, "") = 0, String.instr(err_code, "") = 0, String.instr(err_msg, "") = 0
+ensures result.source_name = p.source_name
 is
     if p.has_error then
         return p
@@ -432,11 +438,15 @@ is
 end expect_kind
 
 function is_literal_token(tok: Token) returns Boolean
+requires String.instr(tok.kind.name, "") = 0
+ensures result = true or result = false
 is
-    return tok.kind.name = "NumberLiteral" or tok.kind.name = "DoubleLiteral" or tok.kind.name = "StringLiteral"
+    return tok.kind.name = "NumberLiteral" or tok.kind.name = "DoubleLiteral" or tok.kind.name = "StringLiteral" or tok.kind.name = "KeywordTrue" or tok.kind.name = "KeywordFalse"
 end is_literal_token
 
 function parse_identifier(p: GeneralParser) returns ParserIdentifierResult
+requires String.instr(p.source_name, "") = 0
+ensures result.parser.source_name = p.source_name
 is
     if p.has_error then
         let empty_id_err: IdentifierNode = make_identifier_node(p.curr_tok.span, "")
@@ -463,16 +473,48 @@ is
     end if
 end parse_identifier
 
+function parse_dotted_identifier(p: GeneralParser) returns ParserIdentifierResult
+requires String.instr(p.source_name, "") = 0
+ensures result.parser.source_name = p.source_name
+is
+    let res: ParserIdentifierResult = parse_identifier(p)
+    if res.parser.has_error then
+        return res
+    end if
+    
+    let p_curr: GeneralParser = res.parser
+    let full_name: String = res.node.name
+    let last_span: SourceSpan = res.node.span
+    
+    while p_curr.has_error = false and p_curr.curr_tok.kind.name = "Dot"
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        let p_dot: GeneralParser = advance_parser(p_curr)
+        let res_next: ParserIdentifierResult = parse_identifier(p_dot)
+        if res_next.parser.has_error then
+            p_curr := res_next.parser
+        else
+            full_name := String.template("${prev}.${next}", prev: full_name, next: res_next.node.name)
+            last_span := res_next.node.span
+            p_curr := res_next.parser
+        end if
+    end while
+    
+    let combined_span: SourceSpan = make_source_span(p.source_name, res.node.span.start_line, res.node.span.start_column, last_span.end_line, last_span.end_column)
+    let combined_node: IdentifierNode = make_identifier_node(combined_span, full_name)
+    return ParserIdentifierResult { parser: p_curr, node: combined_node }
+end parse_dotted_identifier
+
 function parse_module_decl(p: GeneralParser) returns ParserIdentifierResult
 is
     let p1: GeneralParser = expect_kind(p, "KeywordModule", "FH-PARSE-0002", "Expected 'module'")
-    return parse_identifier(p1)
+    return parse_dotted_identifier(p1)
 end parse_module_decl
 
 function parse_import_decl(p: GeneralParser) returns ParserImportResult
 is
     let p1: GeneralParser = expect_kind(p, "KeywordImport", "FH-PARSE-0002", "Expected 'import'")
-    let res_module: ParserIdentifierResult = parse_identifier(p1)
+    let res_module: ParserIdentifierResult = parse_dotted_identifier(p1)
     let p2: GeneralParser = expect_kind(res_module.parser, "KeywordExposing", "FH-PARSE-0002", "Expected 'exposing'")
     let res_exposed: ParserIdentifierResult = parse_identifier(p2)
     let import_node: ImportNode = make_import_node(res_module.node.span, res_module.node, res_exposed.node)
@@ -685,48 +727,225 @@ is
     return parse_ok(module_node)
 end parse_general_module_result
 
-function parse_expr(p: GeneralParser) returns ParserExprResult
-requires String.instr(p.curr_tok.lexeme, "") = 0, String.instr(p.curr_tok.kind.name, "") = 0
-ensures result.parser.has_error = true or result.parser.has_error = false
+function parse_primary(p: GeneralParser) returns ParserExprResult
 is
     let empty_span: SourceSpan = SourceSpan { source_name: p.source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
     let empty_expr: ExprNode = make_expr_node(empty_span, "ERROR", "", "", "", -1, -1, "", -1, -1, 0)
+    let lit_kind: String = "Integer"
+    let node_lit: ExprNode = empty_expr
+    let p_next: GeneralParser = p
+    let node_id: ExprNode = empty_expr
+    let p1: GeneralParser = p
+    let res: ParserExprResult = ParserExprResult { parser: p, node: empty_expr }
+    let p2: GeneralParser = p
+    let err_msg: String = ""
+    let err: ParseError = ParseError { code: "", message: "", span: empty_span }
+    let p_err: GeneralParser = p
+    
+    if p.has_error then
+        return ParserExprResult { parser: p, node: empty_expr }
+    end if
     
     if is_literal_token(p.curr_tok) then
-        let lit_kind: String = "Integer"
         if p.curr_tok.kind.name = "StringLiteral" then
             lit_kind := "String"
         else
             if p.curr_tok.kind.name = "DoubleLiteral" then
                 lit_kind := "Double"
             else
-                if p.curr_tok.kind.name = "BooleanLiteral" then
+                if p.curr_tok.kind.name = "KeywordTrue" or p.curr_tok.kind.name = "KeywordFalse" then
                     lit_kind := "Boolean"
                 end if
             end if
         end if
-        let node_lit: ExprNode = make_expr_node(p.curr_tok.span, "LITERAL", lit_kind, p.curr_tok.lexeme, "", -1, -1, "", -1, -1, 0)
-        let p_next_lit: GeneralParser = advance_parser(p)
-        return ParserExprResult { parser: p_next_lit, node: node_lit }
+        node_lit := make_expr_node(p.curr_tok.span, "LITERAL", lit_kind, p.curr_tok.lexeme, "", -1, -1, "", -1, -1, 0)
+        p_next := advance_parser(p)
+        return ParserExprResult { parser: p_next, node: node_lit }
     else
         if p.curr_tok.kind.name = "Identifier" then
-            let node_id: ExprNode = make_expr_node(p.curr_tok.span, "IDENTIFIER", "", p.curr_tok.lexeme, "", -1, -1, "", -1, -1, 0)
-            let p_next_id: GeneralParser = advance_parser(p)
-            return ParserExprResult { parser: p_next_id, node: node_id }
+            node_id := make_expr_node(p.curr_tok.span, "IDENTIFIER", "", p.curr_tok.lexeme, "", -1, -1, "", -1, -1, 0)
+            p_next := advance_parser(p)
+            return ParserExprResult { parser: p_next, node: node_id }
         else
-            let err_msg: String = String.template("Expected expression, got ${lexeme}", lexeme: p.curr_tok.lexeme)
-            let err: ParseError = make_parse_error("FH-PARSE-0003", err_msg, p.curr_tok.span)
-            let p_err: GeneralParser = GeneralParser {
-                lexer: p.lexer,
-                curr_tok: p.curr_tok,
-                peek_tok: p.peek_tok,
-                has_error: true,
-                issue: err,
-                source_name: p.source_name
-            }
-            return ParserExprResult { parser: p_err, node: empty_expr }
+            if p.curr_tok.kind.name = "OpenParen" then
+                p1 := advance_parser(p)
+                res := parse_expr(p1)
+                p2 := expect_kind(res.parser, "CloseParen", "FH-PARSE-0002", "Expected ')'")
+                return ParserExprResult { parser: p2, node: res.node }
+            else
+                err_msg := String.template("Expected primary expression, got ${lexeme}", lexeme: p.curr_tok.lexeme)
+                err := make_parse_error("FH-PARSE-0003", err_msg, p.curr_tok.span)
+                p_err := GeneralParser {
+                    lexer: p.lexer,
+                    curr_tok: p.curr_tok,
+                    peek_tok: p.peek_tok,
+                    has_error: true,
+                    issue: err,
+                    source_name: p.source_name
+                }
+                return ParserExprResult { parser: p_err, node: empty_expr }
+            end if
         end if
     end if
+end parse_primary
+
+function parse_unary(p: GeneralParser) returns ParserExprResult
+is
+    let empty_span: SourceSpan = SourceSpan { source_name: p.source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_expr: ExprNode = make_expr_node(empty_span, "ERROR", "", "", "", -1, -1, "", -1, -1, 0)
+    let op_tok: Token = p.curr_tok
+    let p1: GeneralParser = p
+    let res: ParserExprResult = ParserExprResult { parser: p, node: empty_expr }
+    let op: String = ""
+    let node_un: ExprNode = empty_expr
+    
+    if p.has_error then
+        return ParserExprResult { parser: p, node: empty_expr }
+    end if
+    
+    if p.curr_tok.kind.name = "KeywordAwait" or p.curr_tok.kind.name = "KeywordNot" or p.curr_tok.kind.name = "Minus" then
+        op_tok := p.curr_tok
+        p1 := advance_parser(p)
+        res := parse_unary(p1)
+        op := op_tok.lexeme
+        node_un := make_expr_node(op_tok.span, "UNARY_OP", "", "", op, 0, -1, "", -1, -1, 0)
+        return ParserExprResult { parser: res.parser, node: node_un }
+    else
+        return parse_primary(p)
+    end if
+end parse_unary
+
+function parse_product(p: GeneralParser) returns ParserExprResult
+is
+    let res_left: ParserExprResult = parse_unary(p)
+    let p_curr: GeneralParser = res_left.parser
+    let left_node: ExprNode = res_left.node
+    let op_tok: Token = p_curr.curr_tok
+    let p1: GeneralParser = p_curr
+    let res_right: ParserExprResult = ParserExprResult { parser: p_curr, node: left_node }
+    
+    while (p_curr.curr_tok.kind.name = "Star" or p_curr.curr_tok.kind.name = "Slash") and p_curr.has_error = false
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        op_tok := p_curr.curr_tok
+        p1 := advance_parser(p_curr)
+        res_right := parse_unary(p1)
+        p_curr := res_right.parser
+        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", op_tok.lexeme, 0, 0, "", -1, -1, 0)
+    end while
+    return ParserExprResult { parser: p_curr, node: left_node }
+end parse_product
+
+function parse_sum(p: GeneralParser) returns ParserExprResult
+is
+    let res_left: ParserExprResult = parse_product(p)
+    let p_curr: GeneralParser = res_left.parser
+    let left_node: ExprNode = res_left.node
+    let op_tok: Token = p_curr.curr_tok
+    let p1: GeneralParser = p_curr
+    let res_right: ParserExprResult = ParserExprResult { parser: p_curr, node: left_node }
+    
+    while (p_curr.curr_tok.kind.name = "Plus" or p_curr.curr_tok.kind.name = "Minus") and p_curr.has_error = false
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        op_tok := p_curr.curr_tok
+        p1 := advance_parser(p_curr)
+        res_right := parse_product(p1)
+        p_curr := res_right.parser
+        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", op_tok.lexeme, 0, 0, "", -1, -1, 0)
+    end while
+    return ParserExprResult { parser: p_curr, node: left_node }
+end parse_sum
+
+function parse_comparison(p: GeneralParser) returns ParserExprResult
+is
+    let res_left: ParserExprResult = parse_sum(p)
+    let p_curr: GeneralParser = res_left.parser
+    let left_node: ExprNode = res_left.node
+    let op_tok: Token = p_curr.curr_tok
+    let p1: GeneralParser = p_curr
+    let res_right: ParserExprResult = ParserExprResult { parser: p_curr, node: left_node }
+    
+    while (p_curr.curr_tok.kind.name = "LessThan" or p_curr.curr_tok.kind.name = "GreaterThan" or p_curr.curr_tok.kind.name = "LessThanOrEqual" or p_curr.curr_tok.kind.name = "GreaterThanOrEqual") and p_curr.has_error = false
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        op_tok := p_curr.curr_tok
+        p1 := advance_parser(p_curr)
+        res_right := parse_sum(p1)
+        p_curr := res_right.parser
+        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", op_tok.lexeme, 0, 0, "", -1, -1, 0)
+    end while
+    return ParserExprResult { parser: p_curr, node: left_node }
+end parse_comparison
+
+function parse_equality(p: GeneralParser) returns ParserExprResult
+is
+    let res_left: ParserExprResult = parse_comparison(p)
+    let p_curr: GeneralParser = res_left.parser
+    let left_node: ExprNode = res_left.node
+    let op_tok: Token = p_curr.curr_tok
+    let p1: GeneralParser = p_curr
+    let res_right: ParserExprResult = ParserExprResult { parser: p_curr, node: left_node }
+    
+    while (p_curr.curr_tok.kind.name = "Equal" or p_curr.curr_tok.kind.name = "NotEqual") and p_curr.has_error = false
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        op_tok := p_curr.curr_tok
+        p1 := advance_parser(p_curr)
+        res_right := parse_comparison(p1)
+        p_curr := res_right.parser
+        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", op_tok.lexeme, 0, 0, "", -1, -1, 0)
+    end while
+    return ParserExprResult { parser: p_curr, node: left_node }
+end parse_equality
+
+function parse_and(p: GeneralParser) returns ParserExprResult
+is
+    let res_left: ParserExprResult = parse_equality(p)
+    let p_curr: GeneralParser = res_left.parser
+    let left_node: ExprNode = res_left.node
+    let op_tok: Token = p_curr.curr_tok
+    let p1: GeneralParser = p_curr
+    let res_right: ParserExprResult = ParserExprResult { parser: p_curr, node: left_node }
+    
+    while p_curr.curr_tok.kind.name = "KeywordAnd" and p_curr.has_error = false
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        op_tok := p_curr.curr_tok
+        p1 := advance_parser(p_curr)
+        res_right := parse_equality(p1)
+        p_curr := res_right.parser
+        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", "and", 0, 0, "", -1, -1, 0)
+    end while
+    return ParserExprResult { parser: p_curr, node: left_node }
+end parse_and
+
+function parse_or(p: GeneralParser) returns ParserExprResult
+is
+    let res_left: ParserExprResult = parse_and(p)
+    let p_curr: GeneralParser = res_left.parser
+    let left_node: ExprNode = res_left.node
+    let op_tok: Token = p_curr.curr_tok
+    let p1: GeneralParser = p_curr
+    let res_right: ParserExprResult = ParserExprResult { parser: p_curr, node: left_node }
+    
+    while p_curr.curr_tok.kind.name = "KeywordOr" and p_curr.has_error = false
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        op_tok := p_curr.curr_tok
+        p1 := advance_parser(p_curr)
+        res_right := parse_and(p1)
+        p_curr := res_right.parser
+        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", "or", 0, 0, "", -1, -1, 0)
+    end while
+    return ParserExprResult { parser: p_curr, node: left_node }
+end parse_or
+
+function parse_expr(p: GeneralParser) returns ParserExprResult
+requires String.instr(p.curr_tok.lexeme, "") = 0, String.instr(p.curr_tok.kind.name, "") = 0
+ensures result.parser.has_error = true or result.parser.has_error = false
+is
+    return parse_or(p)
 end parse_expr
 
 function parse_stmt(p: GeneralParser) returns ParserStmtResult
@@ -735,67 +954,291 @@ ensures result.parser.has_error = true or result.parser.has_error = false
 is
     let empty_span: SourceSpan = SourceSpan { source_name: p.source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
     let empty_stmt: StmtNode = make_stmt_node(empty_span, "ERROR", "", "", -1, -1, -1, 0, -1, 0, "", "")
+    let p_let1: GeneralParser = p
+    let res_var: ParserIdentifierResult = ParserIdentifierResult { parser: p, node: IdentifierNode { span: empty_span, name: "" } }
+    let p_let2: GeneralParser = p
+    let res_type: ParserIdentifierResult = res_var
+    let p_let3: GeneralParser = p
+    let res_expr: ParserExprResult = ParserExprResult { parser: p, node: ExprNode { span: empty_span, kind: "", literal_kind: "", text: "", op: "", left_node_idx: 0, right_node_idx: 0, routine_name: "", arg0_idx: 0, arg1_idx: 0, arg_count: 0 } }
+    let node_let: StmtNode = empty_stmt
+    let p_if1: GeneralParser = p
+    let res_cond: ParserExprResult = res_expr
+    let p_if2: GeneralParser = p
+    let p_curr: GeneralParser = p
+    let res_stmt: ParserStmtResult = ParserStmtResult { parser: p, node: empty_stmt }
+    let p_if3: GeneralParser = p
+    let p_if4: GeneralParser = p
+    let node_if: StmtNode = empty_stmt
+    let p_wh1: GeneralParser = p
+    let res_wcond: ParserExprResult = res_expr
+    let p_inv_var: GeneralParser = p
+    let res_inv: ParserExprResult = res_expr
+    let p_wh3: GeneralParser = p
+    let p_wh4: GeneralParser = p
+    let p_wh5: GeneralParser = p
+    let node_wh: StmtNode = empty_stmt
+    let p_ret1: GeneralParser = p
+    let node_ret: StmtNode = empty_stmt
+    let p_ab1: GeneralParser = p
+    let res_err: ParserIdentifierResult = res_var
+    let node_ab: StmtNode = empty_stmt
+    let p_ch1: GeneralParser = p
+    let node_ch: StmtNode = empty_stmt
+    let p_cl1: GeneralParser = p
+    let res_name: ParserIdentifierResult = res_var
+    let p_cl2: GeneralParser = p
+    let res_arg: ParserExprResult = res_expr
+    let p_cl3: GeneralParser = p
+    let abort_type: String = ""
+    let p_cl4: GeneralParser = p
+    let res_ab: ParserIdentifierResult = res_var
+    let node_cl: StmtNode = empty_stmt
+    let p_cs1: GeneralParser = p
+    let p_cs2: GeneralParser = p
+    let res_val: ParserExprResult = res_expr
+    let p_arrow: GeneralParser = p
+    let p_arrow2: GeneralParser = p
+    let p_cs3: GeneralParser = p
+    let p_cs4: GeneralParser = p
+    let node_cs: StmtNode = empty_stmt
+    let p_sc1: GeneralParser = p
+    let p_sc2: GeneralParser = p
+    let p_sc3: GeneralParser = p
+    let p_sc4: GeneralParser = p
+    let node_sc: StmtNode = empty_stmt
+    let res_avar: ParserIdentifierResult = res_var
+    let p_as1: GeneralParser = p
+    let res_aexpr: ParserExprResult = res_expr
+    let node_assign: StmtNode = empty_stmt
+    let err_msg: String = ""
+    let err: ParseError = ParseError { code: "", message: "", span: empty_span }
+    let p_err: GeneralParser = p
     
     if p.curr_tok.kind.name = "KeywordLet" then
-        let p_let1: GeneralParser = advance_parser(p)
-        let res_var: ParserIdentifierResult = parse_identifier(p_let1)
-        let p_let2: GeneralParser = expect_kind(res_var.parser, "Colon", "FH-PARSE-0002", "Expected ':'")
-        let res_type: ParserIdentifierResult = parse_identifier(p_let2)
-        let p_let3: GeneralParser = expect_kind(res_type.parser, "Equal", "FH-PARSE-0002", "Expected '='")
-        let res_expr: ParserExprResult = parse_expr(p_let3)
+        p_let1 := advance_parser(p)
+        res_var := parse_identifier(p_let1)
+        p_let2 := expect_kind(res_var.parser, "Colon", "FH-PARSE-0002", "Expected ':'")
+        res_type := parse_identifier(p_let2)
+        p_let3 := expect_kind(res_type.parser, "Equal", "FH-PARSE-0002", "Expected '='")
+        res_expr := parse_expr(p_let3)
         if res_expr.parser.has_error then
             return ParserStmtResult { parser: res_expr.parser, node: empty_stmt }
         end if
-        let node_let: StmtNode = make_stmt_node(p.curr_tok.span, "LET", res_var.node.name, res_type.node.name, 0, -1, -1, 0, -1, 0, "", "")
+        node_let := make_stmt_node(p.curr_tok.span, "LET", res_var.node.name, res_type.node.name, 0, -1, -1, 0, -1, 0, "", "")
         return ParserStmtResult { parser: res_expr.parser, node: node_let }
     else
         if p.curr_tok.kind.name = "KeywordIf" then
-            let p_if1: GeneralParser = advance_parser(p)
-            let res_cond: ParserExprResult = parse_expr(p_if1)
-            let p_if2: GeneralParser = expect_kind(res_cond.parser, "KeywordThen", "FH-PARSE-0002", "Expected 'then'")
-            let p_if3: GeneralParser = expect_kind(p_if2, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
-            let p_if4: GeneralParser = expect_kind(p_if3, "KeywordIf", "FH-PARSE-0002", "Expected 'if'")
+            p_if1 := advance_parser(p)
+            res_cond := parse_expr(p_if1)
+            p_if2 := expect_kind(res_cond.parser, "KeywordThen", "FH-PARSE-0002", "Expected 'then'")
+            
+            p_curr := p_if2
+            while p_curr.curr_tok.kind.name != "KeywordElse" and p_curr.curr_tok.kind.name != "KeywordEnd" and p_curr.has_error = false
+                invariant p_curr.has_error = true or p_curr.has_error = false
+            do
+                res_stmt := parse_stmt(p_curr)
+                p_curr := res_stmt.parser
+            end while
+            
+            if p_curr.curr_tok.kind.name = "KeywordElse" then
+                p_curr := advance_parser(p_curr)
+                while p_curr.curr_tok.kind.name != "KeywordEnd" and p_curr.has_error = false
+                    invariant p_curr.has_error = true or p_curr.has_error = false
+                do
+                    res_stmt := parse_stmt(p_curr)
+                    p_curr := res_stmt.parser
+                end while
+            end if
+            
+            p_if3 := expect_kind(p_curr, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
+            p_if4 := expect_kind(p_if3, "KeywordIf", "FH-PARSE-0002", "Expected 'if'")
             if p_if4.has_error then
                 return ParserStmtResult { parser: p_if4, node: empty_stmt }
             end if
-            let node_if: StmtNode = make_stmt_node(p.curr_tok.span, "IF", "", "", -1, 0, -1, 0, -1, 0, "", "")
+            node_if := make_stmt_node(p.curr_tok.span, "IF", "", "", -1, 0, -1, 0, -1, 0, "", "")
             return ParserStmtResult { parser: p_if4, node: node_if }
         else
             if p.curr_tok.kind.name = "KeywordWhile" then
-                let p_wh1: GeneralParser = advance_parser(p)
-                let res_wcond: ParserExprResult = parse_expr(p_wh1)
-                let p_wh2: GeneralParser = expect_kind(res_wcond.parser, "KeywordInvariant", "FH-PARSE-0002", "Expected 'invariant'")
-                let res_winv: ParserExprResult = parse_expr(p_wh2)
-                let p_wh3: GeneralParser = expect_kind(res_winv.parser, "KeywordDo", "FH-PARSE-0002", "Expected 'do'")
-                let p_wh4: GeneralParser = expect_kind(p_wh3, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
-                let p_wh5: GeneralParser = expect_kind(p_wh4, "KeywordWhile", "FH-PARSE-0002", "Expected 'while'")
+                p_wh1 := advance_parser(p)
+                res_wcond := parse_expr(p_wh1)
+                p_curr := res_wcond.parser
+                
+                while (p_curr.curr_tok.kind.name = "KeywordInvariant" or p_curr.curr_tok.kind.name = "KeywordVariant") and p_curr.has_error = false
+                    invariant p_curr.has_error = true or p_curr.has_error = false
+                do
+                    p_inv_var := advance_parser(p_curr)
+                    res_inv := parse_expr(p_inv_var)
+                    p_curr := res_inv.parser
+                end while
+                
+                p_wh3 := expect_kind(p_curr, "KeywordDo", "FH-PARSE-0002", "Expected 'do'")
+                
+                p_curr := p_wh3
+                while p_curr.curr_tok.kind.name != "KeywordEnd" and p_curr.has_error = false
+                    invariant p_curr.has_error = true or p_curr.has_error = false
+                do
+                    res_stmt := parse_stmt(p_curr)
+                    p_curr := res_stmt.parser
+                end while
+                
+                p_wh4 := expect_kind(p_curr, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
+                p_wh5 := expect_kind(p_wh4, "KeywordWhile", "FH-PARSE-0002", "Expected 'while'")
                 if p_wh5.has_error then
                     return ParserStmtResult { parser: p_wh5, node: empty_stmt }
                 end if
-                let node_wh: StmtNode = make_stmt_node(p.curr_tok.span, "WHILE", "", "", -1, 0, -1, 0, -1, 0, "", "")
+                node_wh := make_stmt_node(p.curr_tok.span, "WHILE", "", "", -1, 0, -1, 0, -1, 0, "", "")
                 return ParserStmtResult { parser: p_wh5, node: node_wh }
             else
-                if p.curr_tok.kind.name = "Identifier" and p.peek_tok.kind.name = "ColonEqual" then
-                    let res_avar: ParserIdentifierResult = parse_identifier(p)
-                    let p_as1: GeneralParser = expect_kind(res_avar.parser, "ColonEqual", "FH-PARSE-0002", "Expected ':='")
-                    let res_aexpr: ParserExprResult = parse_expr(p_as1)
-                    if res_aexpr.parser.has_error then
-                        return ParserStmtResult { parser: res_aexpr.parser, node: empty_stmt }
+                if p.curr_tok.kind.name = "KeywordReturn" then
+                    p_ret1 := advance_parser(p)
+                    p_curr := p_ret1
+                    if p_curr.curr_tok.kind.name = "KeywordOk" or p_curr.curr_tok.kind.name = "KeywordError" then
+                        p_curr := advance_parser(p_curr)
                     end if
-                    let node_assign: StmtNode = make_stmt_node(p.curr_tok.span, "ASSIGN", res_avar.node.name, "", 0, -1, -1, 0, -1, 0, "", "")
-                    return ParserStmtResult { parser: res_aexpr.parser, node: node_assign }
+                    res_expr := parse_expr(p_curr)
+                    if res_expr.parser.has_error then
+                        return ParserStmtResult { parser: res_expr.parser, node: empty_stmt }
+                    end if
+                    node_ret := make_stmt_node(p.curr_tok.span, "RETURN", "", "", 0, -1, -1, 0, -1, 0, "", "")
+                    return ParserStmtResult { parser: res_expr.parser, node: node_ret }
                 else
-                    let err_msg: String = String.template("Expected statement, got ${lexeme}", lexeme: p.curr_tok.lexeme)
-                    let err: ParseError = make_parse_error("FH-PARSE-0004", err_msg, p.curr_tok.span)
-                    let p_err: GeneralParser = GeneralParser {
-                        lexer: p.lexer,
-                        curr_tok: p.curr_tok,
-                        peek_tok: p.peek_tok,
-                        has_error: true,
-                        issue: err,
-                        source_name: p.source_name
-                    }
-                    return ParserStmtResult { parser: p_err, node: empty_stmt }
+                    if p.curr_tok.kind.name = "KeywordAbort" then
+                        p_ab1 := advance_parser(p)
+                        res_err := parse_identifier(p_ab1)
+                        if res_err.parser.has_error then
+                            return ParserStmtResult { parser: res_err.parser, node: empty_stmt }
+                        end if
+                        node_ab := make_stmt_node(p.curr_tok.span, "ABORT", "", "", -1, -1, -1, 0, -1, 0, "", res_err.node.name)
+                        return ParserStmtResult { parser: res_err.parser, node: node_ab }
+                    else
+                        if p.curr_tok.kind.name = "KeywordCheck" then
+                            p_ch1 := advance_parser(p)
+                            res_expr := parse_expr(p_ch1)
+                            if res_expr.parser.has_error then
+                                return ParserStmtResult { parser: res_expr.parser, node: empty_stmt }
+                            end if
+                            node_ch := make_stmt_node(p.curr_tok.span, "CHECK", "", "", -1, 0, -1, 0, -1, 0, "", "")
+                            return ParserStmtResult { parser: res_expr.parser, node: node_ch }
+                        else
+                            if p.curr_tok.kind.name = "KeywordCall" then
+                                p_cl1 := advance_parser(p)
+                                res_name := parse_identifier(p_cl1)
+                                p_cl2 := expect_kind(res_name.parser, "OpenParen", "FH-PARSE-0002", "Expected '('")
+                                p_curr := p_cl2
+                                while p_curr.curr_tok.kind.name != "CloseParen" and p_curr.has_error = false
+                                    invariant p_curr.has_error = true or p_curr.has_error = false
+                                do
+                                    res_arg := parse_expr(p_curr)
+                                    p_curr := res_arg.parser
+                                    if p_curr.curr_tok.kind.name = "Comma" then
+                                        p_curr := advance_parser(p_curr)
+                                    end if
+                                end while
+                                p_cl3 := expect_kind(p_curr, "CloseParen", "FH-PARSE-0002", "Expected ')'")
+                                abort_type := ""
+                                if p_cl3.curr_tok.kind.name = "KeywordAborts" then
+                                    p_cl4 := advance_parser(p_cl3)
+                                    res_ab := parse_identifier(p_cl4)
+                                    abort_type := res_ab.node.name
+                                    p_curr := res_ab.parser
+                                else
+                                    p_curr := p_cl3
+                                end if
+                                if p_curr.has_error then
+                                    return ParserStmtResult { parser: p_curr, node: empty_stmt }
+                                end if
+                                node_cl := make_stmt_node(p.curr_tok.span, "CALL", "", "", -1, -1, -1, 0, -1, 0, res_name.node.name, abort_type)
+                                return ParserStmtResult { parser: p_curr, node: node_cl }
+                            else
+                                if p.curr_tok.kind.name = "KeywordCase" then
+                                    p_cs1 := advance_parser(p)
+                                    res_expr := parse_expr(p_cs1)
+                                    p_cs2 := expect_kind(res_expr.parser, "KeywordIs", "FH-PARSE-0002", "Expected 'is'")
+                                    p_curr := p_cs2
+                                    while p_curr.curr_tok.kind.name = "KeywordWhen" and p_curr.has_error = false
+                                        invariant p_curr.has_error = true or p_curr.has_error = false
+                                    do
+                                        p_curr := advance_parser(p_curr)
+                                        res_val := parse_expr(p_curr)
+                                        p_arrow := expect_kind(res_val.parser, "CaseArrow", "FH-PARSE-0002", "Expected '=>'")
+                                        p_curr := p_arrow
+                                        while p_curr.curr_tok.kind.name != "KeywordWhen" and p_curr.curr_tok.kind.name != "KeywordDefault" and p_curr.curr_tok.kind.name != "KeywordEnd" and p_curr.has_error = false
+                                            invariant p_curr.has_error = true or p_curr.has_error = false
+                                        do
+                                            res_stmt := parse_stmt(p_curr)
+                                            p_curr := res_stmt.parser
+                                        end while
+                                    end while
+                                    if p_curr.curr_tok.kind.name = "KeywordDefault" then
+                                        p_curr := advance_parser(p_curr)
+                                        p_arrow2 := expect_kind(p_curr, "CaseArrow", "FH-PARSE-0002", "Expected '=>'")
+                                        p_curr := p_arrow2
+                                        while p_curr.curr_tok.kind.name != "KeywordEnd" and p_curr.has_error = false
+                                            invariant p_curr.has_error = true or p_curr.has_error = false
+                                        do
+                                            res_stmt := parse_stmt(p_curr)
+                                            p_curr := res_stmt.parser
+                                        end while
+                                    end if
+                                    p_cs3 := expect_kind(p_curr, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
+                                    p_cs4 := expect_kind(p_cs3, "KeywordCase", "FH-PARSE-0002", "Expected 'case'")
+                                    if p_cs4.has_error then
+                                        return ParserStmtResult { parser: p_cs4, node: empty_stmt }
+                                    end if
+                                    node_cs := make_stmt_node(p.curr_tok.span, "CASE", "", "", -1, 0, -1, 0, -1, 0, "", "")
+                                    return ParserStmtResult { parser: p_cs4, node: node_cs }
+                                else
+                                    if p.curr_tok.kind.name = "KeywordScope" then
+                                        p_sc1 := advance_parser(p)
+                                        res_name := parse_identifier(p_sc1)
+                                        p_sc2 := expect_kind(res_name.parser, "KeywordDo", "FH-PARSE-0002", "Expected 'do'")
+                                        p_curr := p_sc2
+                                        while (p_curr.curr_tok.kind.name = "KeywordSpawn" or p_curr.curr_tok.kind.name = "KeywordJoin" or p_curr.curr_tok.kind.name = "KeywordResult") and p_curr.has_error = false
+                                            invariant p_curr.has_error = true or p_curr.has_error = false
+                                        do
+                                            p_curr := advance_parser(p_curr)
+                                            while p_curr.curr_tok.kind.name != "KeywordSpawn" and p_curr.curr_tok.kind.name != "KeywordJoin" and p_curr.curr_tok.kind.name != "KeywordResult" and p_curr.curr_tok.kind.name != "KeywordEnd" and p_curr.has_error = false
+                                                invariant p_curr.has_error = true or p_curr.has_error = false
+                                            do
+                                                res_stmt := parse_stmt(p_curr)
+                                                p_curr := res_stmt.parser
+                                            end while
+                                        end while
+                                        p_sc3 := expect_kind(p_curr, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
+                                        p_sc4 := expect_kind(p_sc3, "KeywordScope", "FH-PARSE-0002", "Expected 'scope'")
+                                        if p_sc4.has_error then
+                                            return ParserStmtResult { parser: p_sc4, node: empty_stmt }
+                                        end if
+                                        node_sc := make_stmt_node(p.curr_tok.span, "SCOPE", "", "", -1, -1, -1, 0, -1, 0, res_name.node.name, "")
+                                        return ParserStmtResult { parser: p_sc4, node: node_sc }
+                                    else
+                                        if p.curr_tok.kind.name = "Identifier" and (p.peek_tok.kind.name = "Assign" or p.peek_tok.kind.name = "ColonEqual") then
+                                            res_avar := parse_identifier(p)
+                                            p_as1 := expect_kind(res_avar.parser, p.peek_tok.kind.name, "FH-PARSE-0002", "Expected ':='")
+                                            res_aexpr := parse_expr(p_as1)
+                                            if res_aexpr.parser.has_error then
+                                                return ParserStmtResult { parser: res_aexpr.parser, node: empty_stmt }
+                                            end if
+                                            node_assign := make_stmt_node(p.curr_tok.span, "ASSIGN", res_avar.node.name, "", 0, -1, -1, 0, -1, 0, "", "")
+                                            return ParserStmtResult { parser: res_aexpr.parser, node: node_assign }
+                                        else
+                                            err_msg := String.template("Expected statement, got ${lexeme}", lexeme: p.curr_tok.lexeme)
+                                            err := make_parse_error("FH-PARSE-0004", err_msg, p.curr_tok.span)
+                                            p_err := GeneralParser {
+                                                lexer: p.lexer,
+                                                curr_tok: p.curr_tok,
+                                                peek_tok: p.peek_tok,
+                                                has_error: true,
+                                                issue: err,
+                                                source_name: p.source_name
+                                            }
+                                            return ParserStmtResult { parser: p_err, node: empty_stmt }
+                                        end if
+                                    end if
+                                end if
+                            end if
+                        end if
+                    end if
                 end if
             end if
         end if

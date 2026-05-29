@@ -113,6 +113,16 @@ class Interpreter:
     def eval_field_path(self, e, env):
         value = env[e.path[0]]
         for field in e.path[1:]:
+            if isinstance(value, ResultValue):
+                if field == "ok":
+                    value = value.ok
+                elif field == "value":
+                    value = value.value
+                elif field == "error":
+                    value = value.error
+                else:
+                    raise VerificationError(f"{e.pos.text()}: unknown Result field {field}")
+                continue
             if not isinstance(value, RecordValue): raise VerificationError(f"{e.pos.text()}: field access requires record value")
             if field not in value.fields: raise VerificationError(f"{e.pos.text()}: missing field {field}")
             value = value.fields[field]
@@ -164,12 +174,28 @@ class Interpreter:
                 import sys
                 argv = sys.argv[1:]
                 return [argv[i] if i < len(argv) else "" for i in range(10)]
+            if e.name == "System.run_command" or (e.name == "run_command" and "run_command" not in self.routines):
+                import subprocess
+                cmd_str = args[0]
+                try:
+                    res = subprocess.run(cmd_str, shell=True)
+                    return res.returncode
+                except Exception:
+                    return -1
             if e.name == "File.read_to_string" or (e.name == "read_to_string" and "read_to_string" not in self.routines):
                 path = args[0]
                 try:
                     with open(path, "r", encoding="utf-8") as f:
                         content = f.read()
                     return ResultValue(True, content, None)
+                except Exception as ex:
+                    return ResultValue(False, None, str(ex))
+            if e.name == "File.write_string" or (e.name == "write_string" and "write_string" not in self.routines):
+                path, content = args
+                try:
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(content)
+                    return ResultValue(True, True, None)
                 except Exception as ex:
                     return ResultValue(False, None, str(ex))
             if e.name == "String.concat":

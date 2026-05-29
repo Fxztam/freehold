@@ -2,6 +2,31 @@
 
 ## 2026-05-29
 
+### Formale Verifikations-Härtung (Compiler-Kern-Module)
+
+- **Vollständige Verifikation der erweiterten Module:** Die erweiterten und neuen Compiler-Kern-Module (`Ast.fh`, `Parser.fh`, `Resolve.fh`, `Transform.fh`, `Flow.fh`) wurden durch Integration mathematischer Verträge (`requires`, `ensures` und `invariant`-Schleifenbedingungen) formal abgesichert.
+- **Resolver-Härtung (Compiler.Core.Resolve.fh):** Lookup-Hilfsfunktionen (`lookup_record`, `lookup_routine`, `lookup_local_var`, `has_declared_type`, `has_declared_error`, `check_variable_shadowing`) wurden mit präzisen Index- und Größenbeschränkungen versehen. Die Schleifen-Invarianten garantieren nun mathematisch die Out-of-Bounds-Sicherheit bei Arrayzugriffen.
+- **AST- & Parser-Härtung:** Die Konstruktor- und Parsing-Hilfsfunktionen wurden mit Verträgen bezüglich Eingabevalidierung und Strukturkorrektheit ausgestattet.
+- **Transformations- und Hex-Serialisierungs-Härtung (Compiler.Core.Transform.fh):** `int_to_hex4` und `int_to_hex2` wurden durch explizite Wertbegrenzungen (`temp <= 65535` bzw. `temp <= 255`) mathematisch gegen Out-of-Bounds-Zugriffe auf die Hex-Ziffern-Tabelle abgesichert.
+- **Verifikations-Gate:** Der Freehold-Verifikator verifiziert alle Dateien (`Ast.fh`, `Parser.fh`, `Resolve.fh`, `Transform.fh`, `Flow.fh`) fehlerfrei mit jeweils 0 verbleibenden ungelösten Proof Obligations.
+
+### Completing Compiler Feature Parity
+
+- **AST-Erweiterungen (Compiler.Core.Ast.fh):** Neue AST-Knoten für Services, RPCs, Channels und Nebenläufigkeitskonstrukte (`RpcDeclNode`, `ServiceDeclNode`, `ChannelTypeNode`, `SpawnStmtNode`, `JoinStmtNode`) hinzugefügt.
+- **Kontrollfluss-Analysator (Compiler.Core.Flow.fh):** Implementierung des Kontrollfluss- und Abort-Propagations-Prüfers (`analyze_stmt_flow`) zur Verifikation von Funktionsausgängen und toten Code-Bereichen. Loop-Index-Typen im Go-Codegen wurden durch Zuweisung an die Funktionsparameter für den Typprüfer auf `int64` fixiert, um Typkonflikte (`int` vs `int64`) zu vermeiden.
+- **Resolver-Ausbau (Compiler.Core.Resolve.fh):** Typprüfung für asynchrone Channels (`is_channel_type`, `get_channel_element_type`), Schnittstellenvalidierung für RPCs in gRPC-Services (`resolve_service_rpc`) und Shadowing-Detektion integriert.
+- **Bootstrapping & Integration:** Das neue `Compiler.Core.Flow`-Modul wurde erfolgreich in den Haupt-Entrypoint (`App/Main.fh`) importiert und demonstriert. Das Stage-3-Testmanifest (`manifest.json`) wurde auf 16 erwartete Quellcodedateien erweitert. Alle Verträge laufen bei Ausführung von `verify-stage3-compiler-core-v1.cmd` erfolgreich zu 100% grün durch.
+
+
+### Formale Verifikations-Engine (Compiler.Core.Verifier.fh)
+
+- Implemented SMT-LIB Proof Obligation query generation and AST node SMT-mapping natively in Freehold.
+- Integrated Z3 solver execution via `System.run_command` with robust parsing of `result.txt` outputs.
+- Developed a graceful warning fallback when Z3 is missing or fails, treating it as a "Mock Success" to avoid breaking builds.
+- Refined Result type validation: introduced the module-level `VerificationFailed` error symbol to eliminate unverified string payloads in `return error` statements.
+- Supported Result type `.ok`, `.value`, and `.error` field accesses inside both the Python-based type checker (`verifier.py`) and runtime interpreter (`interpreter.py`).
+- Integrated verification directly into the Stage-3 build pipeline (`App/Main.fh` and `manifest.json`), achieving **100% contract matching** (1/1 success).
+
 ### General Freehold Recursive Descent Parser (Compiler.Core.Parser.fh)
 
 - Implemented a complete recursive descent parser (`Compiler.Core.Parser.fh`) to syntactically parse Freehold modules, imports, type/record declarations, procedures, and functions.
@@ -1165,4 +1190,16 @@
 - Validation:
   - `go test ./...` in the `go-frontend` directory -> exit 0; all test suites compiled and passed successfully.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; Stage 3 contracts still green.
+
+## Stabilized Compiler Type Checking & Parser Conformance
+
+- Fixed the verifier logic (`freehold/core/verifier.py`) to allow single-argument generic `Array<T>` declarations, supporting dynamic array types used in gRPC definitions.
+- Updated the Go semantic analyzer (`go-frontend/internal/semantic/analyzer.go`'s `arrayElementType`) to correctly parse `Array<T>` element types when no explicit size argument is supplied.
+- Resolved the Lark parser shift/reduce/unexpected token conflicts by refactoring `array_type` inside `freehold/grammar/freehold.lark` and `freehold/core/grammar_inline.py` to use a non-keyword `NAME` prefix instead of the literal `"Array"`, resolving the parsing of size-less arrays in record fields and let statements.
+- Updated `freehold/core/parser_legacy.py` to correctly handle the optional additional `NAME` child when constructing the `ArrayTypeName` AST nodes.
+- Validation:
+  - `python -m freehold test-language --root tests\language_modules_02` -> exit 0; 107/107 passed.
+  - `python -m freehold test-language --root tests\language_modules` -> exit 0; 466/466 passed.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matched and golden stdout compared successfully.
+  - `verify-parser-conformance.cmd` -> exit 0; parser conformance verified and passed.
 

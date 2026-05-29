@@ -26,7 +26,7 @@ Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V
 | Bereich | Dokument | Status |
 | --- | --- | --- |
 | Stage 3 Compiler Core | `OPEN-STAGE3-COMPILER-CORE.md` | Mini-Compilerkern in Freehold implementiert, Go-transpiliert und verifiziert. |
-| Stage 1 Bootstrapping | `OPEN-STAGE1-BOOTSTRAPPING.md` | Meilenstein 1 (Lexer), 2 (Parser), 3 (Resolver) und 4 (Lowering/Transform) abgeschlossen. Meilenstein 5 (Selbstübersetzung/Self-Hosting) gestartet. |
+| Stage 1 Bootstrapping | `OPEN-STAGE1-BOOTSTRAPPING.md` | Alle Meilensteine 1-5 (Lexer, Parser, Resolver, Lowering und Selbstübersetzung) erfolgreich abgeschlossen und per bytegleichem IR-Vergleich verifiziert. Post-Self-Hosting Roadmap gestartet. |
 
 ## Naechste Phase: Go Compiler Vorbereitung
 
