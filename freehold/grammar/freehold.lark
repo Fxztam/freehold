@@ -25,13 +25,13 @@ rpc_decl: "rpc" NAME "(" NAME ":" type_ref ")" ":" type_ref
 
 param_list: param ("," param)*
 param: NAME ":" param_type
-param_type: array_type | type_ref
-type_ref: NAME type_arg_list?
+param_type: type_ref
+type_ref: NAME type_arg_list? | array_type
 type_arg_list: TYPE_ARG_START type_ref ("," type_ref)* ">"
-return_type: array_type | result_type | type_ref
-result_payload_type: array_type | result_type | type_ref
+return_type: result_type | type_ref
+result_payload_type: result_type | type_ref
 result_type: "Result" TYPE_ARG_START result_payload_type "," type_ref ">"
-array_type: "Array" TYPE_ARG_START type_ref "," INT_NUMBER ">"
+array_type: NAME TYPE_ARG_START type_ref "," INT_NUMBER ">"
 
 contract_block: requires_clause* aborts_clause* ensures_clause*
 requires_clause: "requires" expr_list

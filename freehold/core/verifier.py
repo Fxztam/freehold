@@ -8,7 +8,7 @@ from freehold.core.string_templates import validate_template
 
 BUILTIN_TYPE_NAMES = {"Integer", "Boolean", "Double", "String", "BigInteger", "BigFloat", "Executor", "Scope"}
 BUILTIN_GENERIC_TYPE_ARITY = {
-    "Array": 1,
+    "Array": 2,
     "JoinHandle": 1,
     "Channel": 1,
     "Sender": 1,
@@ -519,6 +519,9 @@ class Verifier:
             t = env[root]
         for field in path[1:]:
             if isinstance(t, ResultTypeName):
+                if field == "ok":
+                    t = TypeName("Boolean")
+                    continue
                 if field == "value":
                     t = t.ok_type
                     continue
@@ -531,7 +534,7 @@ class Verifier:
             rec = ctx.records[t.name]
             if field not in rec.fields:
                 raise TypeCheckError(f"{pos.text()}: unknown field {field} for record {t.name}")
-            t = TypeName(rec.fields[field])
+            t = self.parse_type_ref(rec.fields[field], ctx)
         return t
 
     def infer_field_path(self, e, env, ctx, allow_result=False, result_type=None):
@@ -563,7 +566,7 @@ class Verifier:
             rec = ctx.records[t.name]
             if field not in rec.fields:
                 raise TypeCheckError(f"{e.pos.text()}: unknown field {field} for record {t.name}")
-            t = TypeName(rec.fields[field])
+            t = self.parse_type_ref(rec.fields[field], ctx)
         return t
 
     def builtin_call_type(self, e, env, ctx, allow_result, result_type):
@@ -854,7 +857,7 @@ class Verifier:
                 if a.name in seen: raise TypeCheckError(f"{a.pos.text()}: duplicate record literal field: {a.name}")
                 seen.add(a.name)
                 if a.name not in rec.fields: raise TypeCheckError(f"{a.pos.text()}: unknown field for {e.type_name}: {a.name}")
-                self.assign(self.infer(a.expr, env, ctx, allow_result, result_type), TypeName(rec.fields[a.name]), ctx, a.pos)
+                self.assign(self.infer(a.expr, env, ctx, allow_result, result_type), self.parse_type_ref(rec.fields[a.name], ctx), ctx, a.pos)
             missing = set(rec.fields) - seen
             if missing: raise TypeCheckError(f"{e.pos.text()}: missing record field(s) for {e.type_name}: {', '.join(sorted(missing))}")
             return TypeName(e.type_name)
@@ -985,13 +988,18 @@ class Verifier:
                 raise TypeCheckError(f"{a.pos.text()}: routine argument {index} type mismatch for {r.name}: expected {type_to_string(expected)}, got {type_to_string(actual)}")
             self.assign(actual, expected, ctx, a.pos)
 
-    def param_type_ref(self, param: Param, ctx):
-        generic = ctx.parse_generic_instance(param.type_name)
+    def parse_type_ref(self, type_name: str, ctx) -> TypeRef:
+        generic = ctx.parse_generic_instance(type_name)
         if generic is not None:
             base, args = generic
             if base == "Array" and len(args) == 2 and args[1].isdigit():
                 return ArrayTypeName(args[0], int(args[1]))
-        return TypeName(param.type_name)
+            if base == "Result" and len(args) == 2:
+                return ResultTypeName(self.parse_type_ref(args[0], ctx), args[1])
+        return TypeName(type_name)
+
+    def param_type_ref(self, param: Param, ctx):
+        return self.parse_type_ref(param.type_name, ctx)
 
 class Ctx:
     def __init__(self, module_name, types, records, generic_records, errors, routines, imports=None, imported_modules=None):
@@ -1145,9 +1153,14 @@ class Ctx:
             base, args = generic
             if base in BUILTIN_GENERIC_TYPE_ARITY:
                 expected = BUILTIN_GENERIC_TYPE_ARITY[base]
+                if base == "Array" and len(args) == 1:
+                    self.require_type_or_record(args[0], pos)
+                    return
                 if len(args) != expected:
                     raise TypeCheckError(f"{pos.text()}: generic type {base} expects {expected} type argument(s), got {len(args)}")
                 for arg in args:
+                    if base == "Array" and arg.isdigit():
+                        continue
                     self.require_type_or_record(arg, pos)
                 return
             if base in self.types or base in self.records:

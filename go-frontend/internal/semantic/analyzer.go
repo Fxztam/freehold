@@ -869,6 +869,9 @@ func arrayElementType(typeName string) (string, bool) {
 			}
 		}
 	}
+	if depth == 0 {
+		return inner, true
+	}
 	return "", false
 }
 

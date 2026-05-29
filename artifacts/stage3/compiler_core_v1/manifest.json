@@ -13,7 +13,7 @@
       "source_file": "bootstrap/compiler_core_v1/App/Main.fh",
       "expected": {
         "module_path": "freehold.local",
-        "total_files": 13,
+        "total_files": 16,
         "total_build_files": 4,
         "total_extra_files": 0,
         "supported": true
@@ -77,7 +77,9 @@
             "parser.nested_call.result = %v",
             "transform.nested_call.flattened = %v",
             "parse.ok = %v",
-            "parse.error = %v"
+            "parse.error = %v",
+            "flow.return_possible = %v",
+            "flow.exit_guaranteed = %v"
           ]
         },
         {
@@ -282,6 +284,35 @@
             "func MakeToken(kind TokenKind, span SourceSpan, lexeme string) Token",
             "func TokenKey(token Token) string",
             "func TokenText(token Token) string"
+          ]
+        },
+        {
+          "output_path": "compiler/core/codegen/codegen.go",
+          "module": "Compiler.Core.Codegen",
+          "supported": true,
+          "must_contain": [
+            "func GoPackageName(moduleName string) string",
+            "func GoType(fhType string) string",
+            "func EmitModuleHeader(moduleName string, imports [10]string, importCount int64) string",
+            "func EmitRecordDecl(name string, fields [10]string, fieldTypes [10]string, fieldCount int64) string"
+          ]
+        },
+        {
+          "output_path": "compiler/core/verifier/verifier.go",
+          "module": "Compiler.Core.Verifier",
+          "supported": true,
+          "must_contain": [
+            "func ExprToSmt",
+            "func VerifyContract"
+          ]
+        },
+        {
+          "output_path": "compiler/core/flow/flow.go",
+          "module": "Compiler.Core.Flow",
+          "supported": true,
+          "must_contain": [
+            "type FlowSummary struct",
+            "func AnalyzeStmtFlow"
           ]
         }
       ],

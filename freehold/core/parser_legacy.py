@@ -151,9 +151,15 @@ class AstBuilder:
         children = grammar_children(tree)
         if tree.data == "result_payload_type":
             return self.type_ref_tree(children[0])
-        if tree.data == "type_ref": return TypeName(self.type_ref_name(tree))
+        if tree.data == "type_ref":
+            if isinstance(children[0], Tree) and children[0].data == "array_type":
+                return self.type_ref_tree(children[0])
+            return TypeName(self.type_ref_name(tree))
         if tree.data == "result_type": return ResultTypeName(self.type_ref_tree(children[0]), self.type_ref_name(children[1]))
-        if tree.data == "array_type": return ArrayTypeName(self.type_ref_name(children[0]), int(children[1]))
+        if tree.data == "array_type":
+            if len(children) == 3:
+                return ArrayTypeName(self.type_ref_name(children[1]), int(children[2]))
+            return ArrayTypeName(self.type_ref_name(children[0]), int(children[1]))
         raise TypeCheckError(f"{pos(tree).text()}: invalid return type")
 
     def type_ref_name(self, tree: Tree) -> str:
@@ -161,11 +167,17 @@ class AstBuilder:
         if tree.data in ("return_type", "result_payload_type"):
             return self.type_ref_name(children[0])
         if tree.data == "type_ref":
+            if isinstance(children[0], Tree) and children[0].data == "array_type":
+                return self.type_ref_name(children[0])
             name = str(children[0])
             if len(children) > 1:
                 args = [self.type_ref_name(child) for child in grammar_children(children[1])]
                 return f"{name}<{', '.join(args)}>"
             return name
+        if tree.data == "array_type":
+            if len(children) == 3:
+                return f"Array<{self.type_ref_name(children[1])},{children[2]}>"
+            return f"Array<{self.type_ref_name(children[0])},{children[1]}>"
         raise TypeCheckError(f"{pos(tree).text()}: invalid type reference")
 
     def stmt(self, tree: Tree):

@@ -16,7 +16,7 @@ proto_field_id: "proto" INT_NUMBER
 type_decl: "type" NAME "is" base_type range_decl?
 error_decl: "error" NAME
 base_type: BASE_TYPE
-range_decl: "range" SIGNED_NUMBER ".." SIGNED_NUMBER
+range_decl: "range" (SIGNED_NUMBER | INT_NUMBER) ".." (SIGNED_NUMBER | INT_NUMBER)
 
 function_decl: async_marker? "function" NAME type_param_list? "(" param_list? ")" "returns" return_type contract_block? "is" stmt* "end" NAME
 async_marker: "async"
@@ -26,13 +26,13 @@ rpc_decl: "rpc" NAME "(" NAME ":" type_ref ")" ":" type_ref
 
 param_list: param ("," param)*
 param: NAME ":" param_type
-param_type: array_type | type_ref
-type_ref: NAME type_arg_list?
+param_type: type_ref
+type_ref: NAME type_arg_list? | array_type
 type_arg_list: TYPE_ARG_START type_ref ("," type_ref)* ">"
-return_type: array_type | result_type | type_ref
-result_payload_type: array_type | result_type | type_ref
+return_type: result_type | type_ref
+result_payload_type: result_type | type_ref
 result_type: "Result" TYPE_ARG_START result_payload_type "," type_ref ">"
-array_type: "Array" TYPE_ARG_START type_ref "," INT_NUMBER ">"
+array_type: NAME TYPE_ARG_START type_ref "," INT_NUMBER ">"
 
 contract_block: requires_clause* aborts_clause* ensures_clause*
 requires_clause: "requires" expr_list
@@ -110,7 +110,7 @@ array_literal: "[" arg_list? "]"
 
 BASE_TYPE: "Integer" | "Boolean" | "Double" | "String" | "BigInteger" | "BigFloat"
 SIGNED_FLOAT: /-?\d+\.\d+/
-SIGNED_NUMBER: /-?\d+(\.\d+)?/
+SIGNED_NUMBER: /-\d+(\.\d+)?/ | /\d+\.\d+/
 INT_NUMBER: /\d+/
 TYPE_ARG_START: /<(?=[A-Za-z_])/
 %import common.CNAME -> NAME
