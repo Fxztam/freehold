@@ -1,0 +1,20 @@
+module App.Main
+
+type Percent is Integer range 0..100
+
+function add_percent(a: Percent, b: Percent) returns Percent
+requires a + b <= 100
+ensures result = a + b
+is
+    return a + b
+end add_percent
+
+procedure main()
+is
+    let x: Percent = 50
+    let y: Percent = 30
+    let z: Percent = add_percent(x, y)
+    check z = 80
+end main
+
+end App.Main
