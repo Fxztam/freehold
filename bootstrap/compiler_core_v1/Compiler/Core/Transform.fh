@@ -1,6 +1,6 @@
 module Compiler.Core.Transform
 
-import Compiler.Core.Ast exposing ModuleWithImportReferenceNode, ImportReferenceNode, IdentifierNode, FunctionImportReferenceNode, ModuleWithRecordLiteralNode, RecordLiteralNode, ModuleWithReturnNode, ReturnStmtNode, make_import_reference_node, make_function_import_reference_node, make_module_with_import_reference_node, make_identifier_node, make_record_literal_node, make_module_with_record_literal_node, make_return_stmt_node, make_module_with_return_node, ModuleWithCallNode, CallStmtNode, LiteralNode, make_module_with_call_node, make_call_stmt_node, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, make_lowered_call_node, make_module_with_lowered_calls_node
+import Compiler.Core.Ast exposing ModuleWithImportReferenceNode, ImportReferenceNode, IdentifierNode, FunctionImportReferenceNode, ModuleWithRecordLiteralNode, RecordLiteralNode, ModuleWithReturnNode, ReturnStmtNode, make_import_reference_node, make_function_import_reference_node, make_module_with_import_reference_node, make_identifier_node, make_record_literal_node, make_module_with_record_literal_node, make_return_stmt_node, make_module_with_return_node, ModuleWithCallNode, CallStmtNode, LiteralNode, make_module_with_call_node, make_call_stmt_node, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, make_lowered_call_node, make_module_with_lowered_calls_node, StmtNode
 
 function canonicalize_import_references(ast_node: ModuleWithImportReferenceNode) returns ModuleWithImportReferenceNode
 requires String.instr(ast_node.import_decl.module_name.name, "") = 0
@@ -123,5 +123,14 @@ is
 
     return make_module_with_lowered_calls_node(ast_node.module_node, first_call, second_call)
 end flatten_nested_call
+
+function lower_stmt(stmt: StmtNode, gen: TempVarGenerator) returns TempVarResult
+is
+    if stmt.kind = "LET" then
+        return next_temp_var(gen)
+    else
+        return TempVarResult { gen: gen, name: "" }
+    end if
+end lower_stmt
 
 end Compiler.Core.Transform

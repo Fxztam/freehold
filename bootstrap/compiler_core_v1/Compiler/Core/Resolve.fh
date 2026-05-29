@@ -1,7 +1,7 @@
 module Compiler.Core.Resolve
 
 import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_text, make_unknown_exposed_symbol_diagnostic
-import Compiler.Core.Ast exposing ModuleWithImportReferenceNode
+import Compiler.Core.Ast exposing ModuleWithImportReferenceNode, ExprNode, StmtNode
 import Compiler.Core.Names exposing ModuleName, SymbolName
 
 type ResolveStatus is record
@@ -167,5 +167,94 @@ is
     end while
     return found
 end lookup_local_var
+
+function resolve_expr(expr: ExprNode, locals: Array<VarSymbol, 128>, local_count: Integer) returns String
+is
+    if expr.kind = "LITERAL" then
+        return expr.literal_kind
+    else
+        if expr.kind = "IDENTIFIER" then
+            let v: VarSymbol = lookup_local_var(locals, local_count, expr.text)
+            if v.name != "" then
+                return v.type_ref
+            else
+                return "UnknownType"
+            end if
+        else
+            return "UnknownType"
+        end if
+    end if
+end resolve_expr
+
+function resolve_stmt(stmt: StmtNode, exprs: Array<ExprNode, 64>, locals: Array<VarSymbol, 128>, local_count: Integer) returns Boolean
+is
+    if stmt.kind = "LET" then
+        let existing: VarSymbol = lookup_local_var(locals, local_count, stmt.var_name)
+        if existing.name != "" then
+            return false
+        else
+            if stmt.expr_idx >= 0 then
+                let ex: ExprNode = exprs[stmt.expr_idx]
+                let t_expr: String = resolve_expr(ex, locals, local_count)
+                if t_expr = stmt.var_type then
+                    return true
+                else
+                    return false
+                end if
+            else
+                return false
+            end if
+        end if
+    else
+        if stmt.kind = "ASSIGN" then
+            let v_assign: VarSymbol = lookup_local_var(locals, local_count, stmt.var_name)
+            if v_assign.name = "" then
+                return false
+            else
+                if stmt.expr_idx >= 0 then
+                    let ex_assign: ExprNode = exprs[stmt.expr_idx]
+                    let t_expr_assign: String = resolve_expr(ex_assign, locals, local_count)
+                    if t_expr_assign = v_assign.type_ref then
+                        return true
+                    else
+                        return false
+                    end if
+                else
+                    return false
+                end if
+            end if
+        else
+            if stmt.kind = "IF" then
+                if stmt.cond_expr_idx >= 0 then
+                    let cond_ex: ExprNode = exprs[stmt.cond_expr_idx]
+                    let t_cond: String = resolve_expr(cond_ex, locals, local_count)
+                    if t_cond = "Boolean" then
+                        return true
+                    else
+                        return false
+                    end if
+                else
+                    return false
+                end if
+            else
+                if stmt.kind = "WHILE" then
+                    if stmt.cond_expr_idx >= 0 then
+                        let cond_ex_while: ExprNode = exprs[stmt.cond_expr_idx]
+                        let t_cond_while: String = resolve_expr(cond_ex_while, locals, local_count)
+                        if t_cond_while = "Boolean" then
+                            return true
+                        else
+                            return false
+                        end if
+                    else
+                        return false
+                    end if
+                else
+                    return false
+                end if
+            end if
+        end if
+    end if
+end resolve_stmt
 
 end Compiler.Core.Resolve
