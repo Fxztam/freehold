@@ -32,19 +32,31 @@ jobs:
       - name: Full regression suite
         run: python -m freehold test --no-console --json-summary ci_summary.json
 
-      - name: Language modules 01..19
+      - name: Language modules (V1 core subset from both folders)
         shell: pwsh
         run: |
-          $modules = Get-ChildItem -Path .\tests\language_modules -Directory |
-            Sort-Object Name |
-            Where-Object { $_.Name -match '^(0[1-9]|1[0-9])_' }
+          $modules1 = Get-ChildItem -Path .\tests\language_modules -Directory |
+            Where-Object { $_.Name -notmatch 'generics|concurrency|grpc' } |
+            Sort-Object Name
 
           $failures = @()
-          foreach ($module in $modules) {
-            Write-Output "=== MODULE $($module.Name) ==="
-            python -m freehold test-language --module $module.Name
+          foreach ($module in $modules1) {
+            Write-Output "=== MODULE (01) $($module.Name) ==="
+            python -m freehold test-language --module $module.Name --root .\tests\language_modules
             if ($LASTEXITCODE -ne 0) {
-              $failures += $module.Name
+              $failures += "language_modules:$($module.Name)"
+            }
+          }
+
+          $modules2 = Get-ChildItem -Path .\tests\language_modules_02 -Directory |
+            Where-Object { $_.Name -notmatch 'generics|rpc|async|feature_integration' } |
+            Sort-Object Name
+
+          foreach ($module in $modules2) {
+            Write-Output "=== MODULE (02) $($module.Name) ==="
+            python -m freehold test-language --module $module.Name --root .\tests\language_modules_02
+            if ($LASTEXITCODE -ne 0) {
+              $failures += "language_modules_02:$($module.Name)"
             }
           }
 
@@ -54,7 +66,8 @@ jobs:
             exit 1
           }
 
-          Write-Output "ALL_LANGUAGE_MODULES_PASSED $($modules.Count)"
+          $total_count = $modules1.Count + $modules2.Count
+          Write-Output "ALL_LANGUAGE_MODULES_PASSED $total_count"
 
       - name: Verify and run examples
         shell: pwsh
@@ -96,3 +109,6 @@ jobs:
 
       - name: Run stage 3 compiler core contracts verification (Self-hosting compiler core verifications)
         run: .\verify-stage3-compiler-core-v1.cmd
+
+      - name: Run stage 3 compiler examples verification (Self-hosting compiler on examples)
+        run: .\verify-stage3-compiler-examples.cmd
