@@ -60,13 +60,24 @@ jobs:
             }
           }
 
+          $modules3 = Get-ChildItem -Path .\tests\language_modules_v2_3 -Directory |
+            Sort-Object Name
+
+          foreach ($module in $modules3) {
+            Write-Output "=== MODULE (v2_3) $($module.Name) ==="
+            python -m freehold test-language --module $module.Name --root .\tests\language_modules_v2_3
+            if ($LASTEXITCODE -ne 0) {
+              $failures += "language_modules_v2_3:$($module.Name)"
+            }
+          }
+
           if ($failures.Count -gt 0) {
             Write-Output "FAILED_MODULES:"
             $failures | ForEach-Object { Write-Output $_ }
             exit 1
           }
 
-          $total_count = $modules1.Count + $modules2.Count
+          $total_count = $modules1.Count + $modules2.Count + $modules3.Count
           Write-Output "ALL_LANGUAGE_MODULES_PASSED $total_count"
 
       - name: Verify and run examples
