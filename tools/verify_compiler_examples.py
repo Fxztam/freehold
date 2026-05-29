@@ -118,6 +118,13 @@ def run_supported(example: SupportedExample) -> bool:
         print(f"[FAIL] Go project codegen failed: {example.name}")
         return True
 
+    # Copy any extra Go files (like tests) from the example folder to project_out
+    example_root = entry.parent
+    if entry.parent.name == "App":
+        example_root = entry.parent.parent
+    for go_file in example_root.glob("*.go"):
+        shutil.copy(go_file, project_out)
+
     if run(["cmd", "/c", "build.cmd"], project_out).returncode != 0:
         print(f"[FAIL] generated Go build failed: {example.name}")
         return True
