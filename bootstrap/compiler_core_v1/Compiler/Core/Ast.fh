@@ -151,6 +151,36 @@ type ModuleWithLoweredCallsNode is record
     second_call: LoweredCallNode
 end record
 
+type ExprNode is record
+    span: SourceSpan
+    kind: String
+    literal_kind: String
+    text: String
+    op: String
+    left_node_idx: Integer
+    right_node_idx: Integer
+    routine_name: String
+    arg0_idx: Integer
+    arg1_idx: Integer
+    arg_count: Integer
+end record
+
+type StmtNode is record
+    span: SourceSpan
+    kind: String
+    var_name: String
+    var_type: String
+    expr_idx: Integer
+    cond_expr_idx: Integer
+    then_block_start_idx: Integer
+    then_block_len: Integer
+    else_block_start_idx: Integer
+    else_block_len: Integer
+    routine_name: String
+    aborts_type: String
+end record
+
+
 
 
 function make_ast_node_kind(name: String) returns AstNodeKind
@@ -523,5 +553,44 @@ is
         second: lowered_call_text(module_node.second_call)
     )
 end module_with_lowered_calls_text
+
+function make_expr_node(span: SourceSpan, kind: String, literal_kind: String, text: String, op: String, left_node_idx: Integer, right_node_idx: Integer, routine_name: String, arg0_idx: Integer, arg1_idx: Integer, arg_count: Integer) returns ExprNode
+requires String.instr(kind, "") = 0
+ensures result.kind = kind
+is
+    return ExprNode {
+        span: span,
+        kind: kind,
+        literal_kind: literal_kind,
+        text: text,
+        op: op,
+        left_node_idx: left_node_idx,
+        right_node_idx: right_node_idx,
+        routine_name: routine_name,
+        arg0_idx: arg0_idx,
+        arg1_idx: arg1_idx,
+        arg_count: arg_count
+    }
+end make_expr_node
+
+function make_stmt_node(span: SourceSpan, kind: String, var_name: String, var_type: String, expr_idx: Integer, cond_expr_idx: Integer, then_block_start_idx: Integer, then_block_len: Integer, else_block_start_idx: Integer, else_block_len: Integer, routine_name: String, aborts_type: String) returns StmtNode
+requires String.instr(kind, "") = 0
+ensures result.kind = kind
+is
+    return StmtNode {
+        span: span,
+        kind: kind,
+        var_name: var_name,
+        var_type: var_type,
+        expr_idx: expr_idx,
+        cond_expr_idx: cond_expr_idx,
+        then_block_start_idx: then_block_start_idx,
+        then_block_len: then_block_len,
+        else_block_start_idx: else_block_start_idx,
+        else_block_len: else_block_len,
+        routine_name: routine_name,
+        aborts_type: aborts_type
+    }
+end make_stmt_node
 
 end Compiler.Core.Ast

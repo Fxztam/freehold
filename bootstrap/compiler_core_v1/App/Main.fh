@@ -12,6 +12,7 @@ import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_source_sp
 import Compiler.Core.Transform exposing canonicalize_import_references, normalize_record_literal, wrap_return_stmt, lower_abort_propagation, flatten_nested_call
 
 import Std.IO
+import System
 
 function build_sample_diagnostic() returns Diagnostic
 is
@@ -167,6 +168,14 @@ is
 
     call Std.IO.logf("parse.ok = ${}", parse_result_summary(ok_result))
     call Std.IO.logf("parse.error = ${}", parse_result_summary(error_result))
+
+    let args: Array<String, 10> = System.args()
+    if args[0] != "" then
+        call Std.IO.logf("compiler_core_v1 processing CLI file: ${}", args[0])
+        let tokens: MiniModuleTokens = lex_mini_module(args[0], "Demo")
+        let parsed: ParseResult = parse_mini_module_result(tokens)
+        call Std.IO.logf("compiler_core_v1 CLI result: ${}", parse_result_summary(parsed))
+    end if
 end main
 
 end App.Main
