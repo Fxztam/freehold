@@ -70,8 +70,14 @@ Hinweis:
   solange diese noch nicht reviewt und committed sind. Das ist erwartetes Schutzverhalten.
 
 ## CI-/Team-Policy
-- Standard-Job: immer ohne Baseline-Update-Flag.
-- Baseline-Update: nur manuell oder in explizitem Maintenance-Job mit Review-Pflicht.
+- **CI-Pipeline-Integration (`.github/workflows/ci.yml`):**
+  - Die Regressionstests und Conformance-Prüfungen sind voll automatisiert in der GitHub Actions CI integriert.
+  - Folgende Gates werden bei jedem Push und Pull-Request ausgeführt:
+    - **Parser Conformance Verification:** `.\verify-parser-conformance.cmd` (überprüft Parität zwischen Python und Go Compiler-Frontends sowie Baseline-Konformität).
+    - **Compiler Examples Verification:** `.\verify-compiler-examples.cmd` (erzeugt Go-Pakete für Beispiele und verifiziert deren Ausführung/Ausgabe).
+    - **Stage 3 Compiler Core Contracts:** `.\verify-stage3-compiler-core-v1.cmd` (validiert Verträge und Z3-Beweise des selbst-übersetzenden Compiler-Kerns).
+- **Standard-Job:** Läuft immer ohne Baseline-Update-Flag. Jegliche unbeabsichtigte Drift wird sofort als Build-Fehler gemeldet.
+- **Baseline-Update:** Nur manuell oder in explizitem Maintenance-Job mit Review-Pflicht und gesetzter `FREEHOLD_ALLOW_BASELINE_UPDATE=1` Variable.
 
 ## Review-Checkliste fuer Baseline-Updates
 - [ ] Aenderungen sind reproduzierbar (zweiter Lauf identisch).
