@@ -165,7 +165,7 @@ class CheckStmt:
 
 @dataclass
 class CallStmt:
-    name: str; args: list[Any]; pos: SourcePos
+    name: str; args: list[Any]; pos: SourcePos; type_args: list[str] | None = None
 
 @dataclass
 class IfStmt:

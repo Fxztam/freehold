@@ -451,7 +451,8 @@ class Verifier:
                     continue
                 cal = ctx.routine(s.name, s.pos)
                 if cal.kind != "procedure": raise TypeCheckError(f"{s.pos.text()}: call requires procedure")
-                self.args(cal, s.args, env, ctx, s.pos)
+                substitutions = self.routine_type_substitutions(cal, s.type_args, s.pos)
+                self.args(cal, s.args, env, ctx, s.pos, substitutions)
                 self.require_abort_propagation(r, cal, s.pos)
         return saw
 

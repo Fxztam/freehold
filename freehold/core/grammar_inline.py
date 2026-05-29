@@ -20,7 +20,7 @@ range_decl: "range" (SIGNED_NUMBER | INT_NUMBER) ".." (SIGNED_NUMBER | INT_NUMBE
 
 function_decl: async_marker? "function" NAME type_param_list? "(" param_list? ")" "returns" return_type contract_block? "is" stmt* "end" NAME
 async_marker: "async"
-procedure_decl: async_marker? "procedure" NAME "(" param_list? ")" contract_block? "is" stmt* "end" NAME
+procedure_decl: async_marker? "procedure" NAME type_param_list? "(" param_list? ")" contract_block? "is" stmt* "end" NAME
 service_decl: "service" NAME "is" rpc_decl+ "end" NAME
 rpc_decl: "rpc" NAME "(" NAME ":" type_ref ")" ":" type_ref
 
@@ -47,7 +47,7 @@ return_stmt: "return" return_value
 abort_stmt: "abort" NAME
 return_value: "ok" expr -> return_ok | "error" NAME -> return_error | expr -> return_plain
 check_stmt: "check" expr
-call_stmt: "call" qualified_name "(" arg_list? ")"
+call_stmt: "call" qualified_name type_arg_list? "(" arg_list? ")"
 
 if_stmt: "if" expr "then" then_block ("else" else_block)? "end" "if"
 then_block: stmt*

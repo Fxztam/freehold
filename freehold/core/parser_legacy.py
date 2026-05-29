@@ -191,7 +191,12 @@ class AstBuilder:
         if tree.data == "check_stmt": return CheckStmt(self.expr(tree.children[0]), pos(tree))
         if tree.data == "call_stmt":
             call_name = self.qualified_name(tree.children[0]) if isinstance(tree.children[0], Tree) else str(tree.children[0])
-            return CallStmt(call_name, self.args(tree.children[1]) if len(tree.children)>1 else [], pos(tree))
+            type_args = None
+            arg_index = 1
+            if len(tree.children) > 1 and isinstance(tree.children[1], Tree) and tree.children[1].data == "type_arg_list":
+                type_args = [self.type_ref_name(child) for child in grammar_children(tree.children[1])]
+                arg_index = 2
+            return CallStmt(call_name, self.args(tree.children[arg_index]) if len(tree.children)>arg_index else [], pos(tree), type_args)
         if tree.data == "if_stmt":
             then, els = [], []
             for c in tree.children[1:]:
