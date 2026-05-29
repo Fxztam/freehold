@@ -1209,3 +1209,16 @@
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matched and golden stdout compared successfully.
   - `verify-parser-conformance.cmd` -> exit 0; parser conformance verified and passed.
 
+## Automated Regression Testing, CI Integration & Baseline Protection
+
+- **CI Pipeline Automation (`.github/workflows/ci.yml`)**: Integrated Go `1.24` setup and python package dependencies (`DHParser`) to fully automate the regression testing suite.
+- **Verification Gates**:
+  - **Parser Conformance:** `.\verify-parser-conformance.cmd` is now executed on every commit/PR to verify frontend parity and baseline compliance.
+  - **Compiler Examples:** `.\verify-compiler-examples.cmd` is executed to test compilation and runtime correctness of modular compile-v1 programs.
+  - **Stage 3 Compiler Core:** `.\verify-stage3-compiler-core-v1.cmd` is executed to verify mathematical contract proofs via Z3.
+- **CI Baseline Protection Policy**: Baseline update flags are restricted in standard CI runs and require setting `FREEHOLD_ALLOW_BASELINE_UPDATE=1` during manual maintenance tasks.
+- **Strategic Documentation**:
+  - Documented parked V2/V3 topics (gRPC streaming, async executors, REST libraries, generics monomorphization, path-aware control flow analysis) in roadmap files to separate V1 scope boundaries.
+  - Updated `TODO-CONFORMANCE-BASELINE-TESTS.md`, `OPEN-STATUS.md`, `OPEN-STAGE1-BOOTSTRAPPING.md`, and `CHANCHE-SEMANTIK-TODO.md`.
+
+

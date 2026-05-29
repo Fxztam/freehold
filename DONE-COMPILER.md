@@ -269,6 +269,19 @@ Die zukünftige Entwicklungsphase eines Go-nativen Control-Flow-Analyzers wurde 
 - **AST-Builder Integration:** Erweiterung von `parser_legacy.py` zum Auslesen des neuen, optionalen ersten `NAME`-Kindes in `array_type`.
 - **Conformance:** Erfolgreiche Ausführung der kompletten Conformance-Gates (`verify-parser-conformance.cmd`), alle 22 Schritte bestanden.
 
+## CI-Pipeline-Automatisierung & Baseline-Schutz
+
+**Completed on:** 2026-05-29
+
+- **CI-Integration (`.github/workflows/ci.yml`)**: Ergänzung des Setups um Go `1.24` und die Python-Abhängigkeit `DHParser`, um den vollständigen, automatisierten Test- und Vergleichslauf in der Pipeline ausführen zu können.
+- **Automatische Gates**:
+  - **Parser-Conformance:** Automatischer Aufruf von `.\verify-parser-conformance.cmd` zur Überprüfung der AST-Strukturparität, semantischen Diagnosen und der FH-IR-Struktur.
+  - **Compiler-Examples:** Automatischer Aufruf von `.\verify-compiler-examples.cmd` zur Verifikation der Go-Projekt-Codegen-Generierung sowie Ausführung der gebauten Executables.
+  - **Stage 3 Compiler-Core-Contracts:** Automatischer Aufruf von `.\verify-stage3-compiler-core-v1.cmd` zur Ausführung der Z3-Beweise des in Freehold geschriebenen Compiler-Kerns.
+- **Baseline-Sperre in CI**: Standardmäßige Sperrung von Baseline-Updates in CI (Verhinderung von Drift), die nur über `FREEHOLD_ALLOW_BASELINE_UPDATE=1` für geplante Pflegeläufe freigegeben werden können.
+- **Roadmap-Konsolidierung**: Explizite Dokumentation der abgegrenzten, geparkten V2/V3-Themen (wie gRPC-Streaming, asynchrone Runtime, REST/WebSocket-Bibliotheken, Generics-Monomorphisierung und pfadsensitive Proofs) in `TODO-CONFORMANCE-BASELINE-TESTS.md`, `OPEN-STATUS.md`, `OPEN-STAGE1-BOOTSTRAPPING.md` und `CHANCHE-SEMANTIK-TODO.md`.
+
+
 
 
 

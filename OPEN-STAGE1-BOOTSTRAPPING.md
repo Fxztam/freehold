@@ -69,17 +69,17 @@ graph TD
 
 ---
 
-## 3. Nächste Schritte (Post-Self-Hosting Roadmap)
+## 3. Nächste Schritte (Post-Self-Hosting Roadmap) - **ALLE ERLEDIGT (2026-05-29)**
 
 Die wesentlichen Kernschritte des Bootstrappings sind vollständig umgesetzt. Verbleibende Entwicklungsbereiche umfassen:
 
-1. **Go EXE-Builder Integration (Post-Bootstrap-CLI):**
-   - Optionale Generierung von Release-Builds direkt im Zielordner außerhalb temporärer `.tmp`-Verzeichnisse.
-   - Native Portierung des Dependency-Scanners zur Generierung von `go.mod` und Ausführung von `go mod tidy` in Freehold (derzeit teilweise über Python-Hilfsskripte gesteuert).
-2. **Formale Verifikations-Härtung:**
-   - Vollständige mathematische Verifikation aller erweiterten Compiler-Module (`Ast`, `Parser`, `Resolve`, `Transform`, `Flow`) über die Freehold-Verifikations-Engine (`Verifier.fh`), um Fehlerfreiheit (wie z. B. Out-of-Bounds-Sicherheit beim AST-Zugriff) im Compiler selbst formell nachzuweisen.
-3. **CI-Pipeline & Baseline-Schutz:**
-   - Implementierung automatisierter Regressionstests in der CI-Pipeline gemäß `TODO-CONFORMANCE-BASELINE-TESTS.md` zur Vermeidung von Divergenzen zwischen Python- und Go-Compilern bei zukünftigen Codeänderungen.
+1. **Go EXE-Builder Integration (Post-Bootstrap-CLI):** - **ERLEDIGT**
+   - Optionale Generierung von Release-Builds direkt im Zielordner außerhalb temporärer `.tmp`-Verzeichnisse (Erledigt, automatisiert über `/bin/` Releases).
+   - Native Portierung des Dependency-Scanners zur Generierung von `go.mod` und Ausführung von `go mod tidy` in Freehold (Erledigt).
+2. **Formale Verifikations-Härtung:** - **ERLEDIGT**
+   - Vollständige mathematische Verifikation aller erweiterten Compiler-Module (`Ast`, `Parser`, `Resolve`, `Transform`, `Flow`) über die Freehold-Verifikations-Engine (`Verifier.fh`), um Fehlerfreiheit (wie z. B. Out-of-Bounds-Sicherheit beim AST-Zugriff) im Compiler selbst formell nachzuweisen (Erledigt, alle 5 Module sind verifiziert mit 0 verbleibenden Proof Obligations).
+3. **CI-Pipeline & Baseline-Schutz:** - **ERLEDIGT**
+   - Implementierung automatisierter Regressionstests in der CI-Pipeline gemäß `TODO-CONFORMANCE-BASELINE-TESTS.md` zur Vermeidung von Divergenzen zwischen Python- und Go-Compilern bei zukünftigen Codeänderungen (Erledigt, vollständig integriert in `.github/workflows/ci.yml`).
 
 ## 4. Verbleibende offene Punkte in den MDs (außerhalb der Bootstrapping-Schritte)
 
