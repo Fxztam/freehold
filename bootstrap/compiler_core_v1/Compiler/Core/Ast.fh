@@ -32,6 +32,19 @@ type ModuleWithRecordNode is record
     record_type: RecordTypeNode
 end record
 
+type TypeDeclNode is record
+    span: SourceSpan
+    name: IdentifierNode
+    base_type: IdentifierNode
+    min_value: String
+    max_value: String
+end record
+
+type ModuleWithTypeDeclNode is record
+    module_node: ModuleNode
+    type_decl: TypeDeclNode
+end record
+
 type FunctionNode is record
     span: SourceSpan
     name: IdentifierNode
@@ -225,6 +238,20 @@ is
     return ModuleWithRecordNode { module_node: module_node, record_type: record_type }
 end make_module_with_record_node
 
+function make_type_decl_node(span: SourceSpan, name: IdentifierNode, base_type: IdentifierNode, min_value: String, max_value: String) returns TypeDeclNode
+requires String.instr(name.name, "") = 0, String.instr(base_type.name, "") = 0
+ensures result.name.name = name.name, result.base_type.name = base_type.name, result.min_value = min_value, result.max_value = max_value
+is
+    return TypeDeclNode { span: span, name: name, base_type: base_type, min_value: min_value, max_value: max_value }
+end make_type_decl_node
+
+function make_module_with_type_decl_node(module_node: ModuleNode, type_decl: TypeDeclNode) returns ModuleWithTypeDeclNode
+requires String.instr(module_node.name.name, "") = 0, String.instr(type_decl.name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name, result.type_decl.name.name = type_decl.name.name
+is
+    return ModuleWithTypeDeclNode { module_node: module_node, type_decl: type_decl }
+end make_module_with_type_decl_node
+
 function make_function_node(span: SourceSpan, name: IdentifierNode, return_type: IdentifierNode, return_literal: LiteralNode) returns FunctionNode
 requires String.instr(name.name, "") = 0, String.instr(return_type.name, "") = 0
 ensures result.name.name = name.name, result.return_type.name = return_type.name
@@ -329,6 +356,28 @@ ensures String.instr(result, module_node.record_type.name.name) >= 0
 is
     return String.template("${module_name}:record=${record_val}", module_name: module_text(module_node.module_node), record_val: record_type_text(module_node.record_type))
 end module_with_record_text
+
+function type_decl_text(type_decl: TypeDeclNode) returns String
+requires String.instr(type_decl.name.name, "") = 0, String.instr(type_decl.base_type.name, "") = 0
+ensures String.instr(result, type_decl.name.name) >= 0
+is
+    return String.template("TypeDecl:${name}@${source}:${line}:${column}:base=${base}:range=${min_val}..${max_val}",
+        name: type_decl.name.name,
+        source: type_decl.span.source_name,
+        line: type_decl.span.start_line,
+        column: type_decl.span.start_column,
+        base: type_decl.base_type.name,
+        min_val: type_decl.min_value,
+        max_val: type_decl.max_value
+    )
+end type_decl_text
+
+function module_with_type_decl_text(module_node: ModuleWithTypeDeclNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.type_decl.name.name, "") = 0
+ensures String.instr(result, module_node.type_decl.name.name) >= 0
+is
+    return String.template("${module_name}:type_decl=${type_decl_val}", module_name: module_text(module_node.module_node), type_decl_val: type_decl_text(module_node.type_decl))
+end module_with_type_decl_text
 
 function function_text(routine: FunctionNode) returns String
 requires String.instr(routine.name.name, "") = 0, String.instr(routine.return_type.name, "") = 0

@@ -1,7 +1,7 @@
 module Compiler.Core.Parser
 
-import Compiler.Core.Ast exposing FunctionImportReferenceNode, FunctionNode, IdentifierNode, ImportNode, ImportReferenceNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, ProcedureNode, RecordTypeNode, ModuleWithRecordLiteralNode, RecordLiteralNode, ModuleWithReturnNode, ReturnStmtNode, ModuleWithCallNode, CallStmtNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, make_function_import_reference_node, make_function_node, make_identifier_node, make_import_node, make_import_reference_node, make_literal_node, make_module_node, make_module_with_function_node, make_module_with_import_node, make_module_with_import_reference_node, make_module_with_procedure_node, make_module_with_record_node, make_procedure_node, make_record_type_node, make_record_literal_node, make_module_with_record_literal_node, make_return_stmt_node, make_module_with_return_node, make_module_with_call_node, make_call_stmt_node, make_nested_call_stmt_node, make_module_with_nested_call_node, make_lowered_call_node, make_module_with_lowered_calls_node, module_text, module_with_function_text, module_with_import_reference_text, module_with_import_text, module_with_procedure_text, module_with_record_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text, ExprNode, StmtNode, make_expr_node, make_stmt_node
-import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, MiniRecordLiteralModuleTokens, MiniReturnStmtModuleTokens, MiniCallModuleTokens, MiniNestedCallModuleTokens, Lexer, LexerResult, make_lexer, lex_next_token
+import Compiler.Core.Ast exposing FunctionImportReferenceNode, FunctionNode, IdentifierNode, ImportNode, ImportReferenceNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, TypeDeclNode, ModuleWithTypeDeclNode, ProcedureNode, RecordTypeNode, ModuleWithRecordLiteralNode, RecordLiteralNode, ModuleWithReturnNode, ReturnStmtNode, ModuleWithCallNode, CallStmtNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, make_function_import_reference_node, make_function_node, make_identifier_node, make_import_node, make_import_reference_node, make_literal_node, make_module_node, make_module_with_function_node, make_module_with_import_node, make_module_with_import_reference_node, make_module_with_procedure_node, make_module_with_record_node, make_type_decl_node, make_module_with_type_decl_node, make_procedure_node, make_record_type_node, make_record_literal_node, make_module_with_record_literal_node, make_return_stmt_node, make_module_with_return_node, make_module_with_call_node, make_call_stmt_node, make_nested_call_stmt_node, make_module_with_nested_call_node, make_lowered_call_node, make_module_with_lowered_calls_node, module_text, module_with_function_text, module_with_import_reference_text, module_with_import_text, module_with_procedure_text, module_with_record_text, module_with_type_decl_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text, ExprNode, StmtNode, make_expr_node, make_stmt_node
+import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, MiniSubtypeRangeModuleTokens, MiniRecordLiteralModuleTokens, MiniReturnStmtModuleTokens, MiniCallModuleTokens, MiniNestedCallModuleTokens, Lexer, LexerResult, make_lexer, lex_next_token
 import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok
 import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_token, make_token_kind, make_source_span
 
@@ -59,6 +59,44 @@ is
         return parse_error_result(issue, module_node)
     end if
 end parse_mini_record_module_result
+
+function parse_mini_subtype_range_module(tokens: MiniSubtypeRangeModuleTokens) returns ModuleWithTypeDeclNode
+requires tokens.module_keyword.lexeme = "module", tokens.type_keyword.lexeme = "type", tokens.is_keyword.lexeme = "is", tokens.range_keyword.lexeme = "range", tokens.double_dot.lexeme = "..", tokens.module_end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.module_end_name.lexeme
+ensures result.module_node.name.name = tokens.module_name.lexeme, result.type_decl.name.name = tokens.type_name.lexeme
+is
+    let module_identifier: IdentifierNode = make_identifier_node(tokens.module_name.span, tokens.module_name.lexeme)
+    let module_node: ModuleNode = make_module_node(tokens.module_keyword.span, module_identifier)
+    let type_identifier: IdentifierNode = make_identifier_node(tokens.type_name.span, tokens.type_name.lexeme)
+    let base_type_identifier: IdentifierNode = make_identifier_node(tokens.base_type.span, tokens.base_type.lexeme)
+    
+    let min_val: String = tokens.min_value.lexeme
+    let max_val: String = tokens.max_value.lexeme
+    
+    let type_decl: TypeDeclNode = make_type_decl_node(tokens.type_keyword.span, type_identifier, base_type_identifier, min_val, max_val)
+    return make_module_with_type_decl_node(module_node, type_decl)
+end parse_mini_subtype_range_module
+
+function parse_mini_subtype_range_module_result(tokens: MiniSubtypeRangeModuleTokens) returns ParseResult
+requires tokens.module_keyword.lexeme = "module", tokens.type_keyword.lexeme = "type", tokens.is_keyword.lexeme = "is", tokens.range_keyword.lexeme = "range", tokens.double_dot.lexeme = "..", tokens.module_end_keyword.lexeme = "end"
+ensures result.module_node.name.name = tokens.module_name.lexeme
+is
+    let module_identifier: IdentifierNode = make_identifier_node(tokens.module_name.span, tokens.module_name.lexeme)
+    let module_node: ModuleNode = make_module_node(tokens.module_keyword.span, module_identifier)
+    if tokens.module_name.lexeme = tokens.module_end_name.lexeme then
+        return parse_ok(module_node)
+    else
+        let message: String = String.template("end module name mismatch: expected ${expected}, got ${actual}", expected: tokens.module_name.lexeme, actual: tokens.module_end_name.lexeme)
+        let issue: ParseError = make_parse_error("FH-PARSE-0001", message, tokens.module_end_name.span)
+        return parse_error_result(issue, module_node)
+    end if
+end parse_mini_subtype_range_module_result
+
+function mini_subtype_range_module_parser_summary(module_node: ModuleWithTypeDeclNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.type_decl.name.name, "") = 0
+ensures String.instr(result, module_node.type_decl.name.name) >= 0
+is
+    return String.template("ParsedSubtypeRangeModule:${module_val}", module_val: module_with_type_decl_text(module_node))
+end mini_subtype_range_module_parser_summary
 
 function parse_mini_function_module(tokens: MiniFunctionModuleTokens) returns ModuleWithFunctionNode
 requires tokens.module_keyword.lexeme = "module", tokens.function_keyword.lexeme = "function", tokens.open_paren.lexeme = "(", tokens.close_paren.lexeme = ")", tokens.returns_keyword.lexeme = "returns", tokens.is_keyword.lexeme = "is", tokens.return_keyword.lexeme = "return", tokens.routine_end_keyword.lexeme = "end", tokens.module_end_keyword.lexeme = "end", tokens.routine_name.lexeme = tokens.routine_end_name.lexeme, tokens.module_name.lexeme = tokens.module_end_name.lexeme
@@ -533,6 +571,51 @@ is
     return ParserRecordResult { parser: p5, node: rec_node }
 end parse_record_decl
 
+type ParserTypeDeclResult is record
+    parser: GeneralParser
+    node: TypeDeclNode
+    is_record: Boolean
+    record_node: RecordTypeNode
+end record
+
+function parse_type_decl(p: GeneralParser) returns ParserTypeDeclResult
+is
+    let p1: GeneralParser = expect_kind(p, "KeywordType", "FH-PARSE-0002", "Expected 'type'")
+    let res_name: ParserIdentifierResult = parse_identifier(p1)
+    let p2: GeneralParser = expect_kind(res_name.parser, "KeywordIs", "FH-PARSE-0002", "Expected 'is'")
+    
+    if p2.curr_tok.kind.name = "KeywordRecord" then
+        let p3: GeneralParser = expect_kind(p2, "KeywordRecord", "FH-PARSE-0002", "Expected 'record'")
+        let p4: GeneralParser = expect_kind(p3, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
+        let p5: GeneralParser = expect_kind(p4, "KeywordRecord", "FH-PARSE-0002", "Expected 'record'")
+        let rec_node: RecordTypeNode = make_record_type_node(res_name.node.span, res_name.node)
+        
+        let dummy_span: SourceSpan = res_name.node.span
+        let dummy_ident: IdentifierNode = make_identifier_node(dummy_span, "")
+        let dummy_type_decl: TypeDeclNode = make_type_decl_node(dummy_span, dummy_ident, dummy_ident, "0", "0")
+        return ParserTypeDeclResult { parser: p5, node: dummy_type_decl, is_record: true, record_node: rec_node }
+    else
+        let res_base: ParserIdentifierResult = parse_identifier(p2)
+        let p3: GeneralParser = expect_kind(res_base.parser, "KeywordRange", "FH-PARSE-0002", "Expected 'range'")
+        
+        let min_tok: Token = p3.curr_tok
+        let p4: GeneralParser = expect_kind(p3, "NumberLiteral", "FH-PARSE-0002", "Expected number literal")
+        
+        let p5: GeneralParser = expect_kind(p4, "DoubleDot", "FH-PARSE-0002", "Expected '..'")
+        
+        let max_tok: Token = p5.curr_tok
+        let p6: GeneralParser = expect_kind(p5, "NumberLiteral", "FH-PARSE-0002", "Expected number literal")
+        
+        let min_val: String = min_tok.lexeme
+        let max_val: String = max_tok.lexeme
+        
+        let type_decl: TypeDeclNode = make_type_decl_node(res_name.node.span, res_name.node, res_base.node, min_val, max_val)
+        
+        let dummy_rec: RecordTypeNode = make_record_type_node(res_name.node.span, res_name.node)
+        return ParserTypeDeclResult { parser: p6, node: type_decl, is_record: false, record_node: dummy_rec }
+    end if
+end parse_type_decl
+
 function parse_procedure_decl(p: GeneralParser) returns ParserProcedureResult
 is
     let p1: GeneralParser = expect_kind(p, "KeywordProcedure", "FH-PARSE-0002", "Expected 'procedure'")
@@ -671,10 +754,12 @@ is
             p_curr := res_imp.parser
         else
             if p_curr.curr_tok.kind.name = "KeywordType" then
-                let res_rec: ParserRecordResult = parse_record_decl(p_curr)
-                record_node := res_rec.node
-                has_record := true
-                p_curr := res_rec.parser
+                let res_type: ParserTypeDeclResult = parse_type_decl(p_curr)
+                if res_type.is_record then
+                    record_node := res_type.record_node
+                    has_record := true
+                end if
+                p_curr := res_type.parser
             else
                 if p_curr.curr_tok.kind.name = "KeywordProcedure" then
                     let res_proc: ParserProcedureResult = parse_procedure_decl(p_curr)

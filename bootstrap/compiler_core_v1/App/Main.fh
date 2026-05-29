@@ -1,12 +1,12 @@
 module App.Main
 
-import Compiler.Core.Ast exposing IdentifierNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, ModuleWithRecordLiteralNode, ModuleWithReturnNode, ModuleWithCallNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, identifier_key, literal_text, make_identifier_node, make_literal_node, make_module_node, module_key, module_text, module_with_import_reference_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text, ExprNode, make_expr_node, StmtNode
+import Compiler.Core.Ast exposing IdentifierNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, TypeDeclNode, ModuleWithTypeDeclNode, ModuleWithRecordLiteralNode, ModuleWithReturnNode, ModuleWithCallNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, identifier_key, literal_text, make_identifier_node, make_literal_node, make_module_node, module_key, module_text, module_with_import_reference_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text, ExprNode, make_expr_node, StmtNode
 import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic_text, make_diagnostic, make_unknown_exposed_symbol_diagnostic
 import Compiler.Core.Fixtures exposing CompilerFixtureResult, evaluate_fixture
-import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, MiniRecordLiteralModuleTokens, MiniReturnStmtModuleTokens, MiniCallModuleTokens, MiniNestedCallModuleTokens, lex_mini_function_module, lex_mini_import_module, lex_mini_import_reference_module, lex_mini_import_reference_module_pair, lex_mini_module, lex_mini_module_pair, lex_mini_procedure_module, lex_mini_record_module, lex_mini_record_literal_module, lex_mini_return_stmt_module, lex_mini_call_module, lex_mini_nested_call_module, mini_function_module_lexer_summary, mini_function_module_token_count, mini_import_module_lexer_summary, mini_import_module_token_count, mini_import_reference_module_lexer_summary, mini_import_reference_module_token_count, mini_module_lexer_summary, mini_module_token_count, mini_procedure_module_lexer_summary, mini_procedure_module_token_count, mini_record_module_lexer_summary, mini_record_module_token_count, mini_record_literal_module_lexer_summary, mini_record_literal_module_token_count, mini_return_stmt_module_lexer_summary, mini_return_stmt_module_token_count, mini_call_module_lexer_summary, mini_call_module_token_count, mini_nested_call_module_lexer_summary, mini_nested_call_module_token_count
+import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, MiniSubtypeRangeModuleTokens, MiniRecordLiteralModuleTokens, MiniReturnStmtModuleTokens, MiniCallModuleTokens, MiniNestedCallModuleTokens, lex_mini_function_module, lex_mini_import_module, lex_mini_import_reference_module, lex_mini_import_reference_module_pair, lex_mini_module, lex_mini_module_pair, lex_mini_procedure_module, lex_mini_record_module, lex_mini_subtype_range_module, lex_mini_record_literal_module, lex_mini_return_stmt_module, lex_mini_call_module, lex_mini_nested_call_module, mini_function_module_lexer_summary, mini_function_module_token_count, mini_import_module_lexer_summary, mini_import_module_token_count, mini_import_reference_module_lexer_summary, mini_import_reference_module_token_count, mini_module_lexer_summary, mini_module_token_count, mini_procedure_module_lexer_summary, mini_procedure_module_token_count, mini_record_module_lexer_summary, mini_record_module_token_count, mini_subtype_range_module_lexer_summary, mini_subtype_range_module_token_count, mini_record_literal_module_lexer_summary, mini_record_literal_module_token_count, mini_return_stmt_module_lexer_summary, mini_return_stmt_module_token_count, mini_call_module_lexer_summary, mini_call_module_token_count, mini_nested_call_module_lexer_summary, mini_nested_call_module_token_count
 import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, exported_go_name, make_module_name, make_symbol_name, module_to_go_package
 import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok, parse_result_summary
-import Compiler.Core.Parser exposing GeneralParser, ParserIdentifierResult, ParserImportResult, init_general_parser, parse_module_decl, parse_import_decl, mini_function_module_parser_summary, mini_import_module_parser_summary, mini_import_reference_module_parser_summary, mini_module_parser_summary, mini_procedure_module_parser_summary, mini_record_module_parser_summary, mini_record_literal_module_parser_summary, mini_return_stmt_module_parser_summary, mini_call_module_parser_summary, mini_nested_call_module_parser_summary, parse_mini_function_module, parse_mini_function_module_result, parse_mini_import_module, parse_mini_import_module_result, parse_mini_import_reference_module, parse_mini_import_reference_module_result, parse_mini_module, parse_mini_module_result, parse_mini_procedure_module, parse_mini_procedure_module_result, parse_mini_record_module, parse_mini_record_module_result, parse_mini_record_literal_module, parse_mini_record_literal_module_result, parse_mini_return_stmt_module, parse_mini_return_stmt_module_result, parse_mini_call_module, parse_mini_call_module_result, parse_mini_nested_call_module, parse_mini_nested_call_module_result, parsed_module_name
+import Compiler.Core.Parser exposing GeneralParser, ParserIdentifierResult, ParserImportResult, init_general_parser, parse_module_decl, parse_import_decl, mini_function_module_parser_summary, mini_import_module_parser_summary, mini_import_reference_module_parser_summary, mini_module_parser_summary, mini_procedure_module_parser_summary, mini_record_module_parser_summary, mini_subtype_range_module_parser_summary, mini_record_literal_module_parser_summary, mini_return_stmt_module_parser_summary, mini_call_module_parser_summary, mini_nested_call_module_parser_summary, parse_mini_function_module, parse_mini_function_module_result, parse_mini_import_module, parse_mini_import_module_result, parse_mini_import_reference_module, parse_mini_import_reference_module_result, parse_mini_module, parse_mini_module_result, parse_mini_procedure_module, parse_mini_procedure_module_result, parse_mini_record_module, parse_mini_record_module_result, parse_mini_subtype_range_module, parse_mini_subtype_range_module_result, parse_mini_record_literal_module, parse_mini_record_literal_module_result, parse_mini_return_stmt_module, parse_mini_return_stmt_module_result, parse_mini_call_module, parse_mini_call_module_result, parse_mini_nested_call_module, parse_mini_nested_call_module_result, parsed_module_name
 import Compiler.Core.Resolve exposing ResolveResult, resolve_mini_import_reference_module, resolve_result_summary
 import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_source_span, make_token, make_token_kind, token_key, token_text
 import Compiler.Core.Transform exposing canonicalize_import_references, normalize_record_literal, wrap_return_stmt, lower_abort_propagation, flatten_nested_call, emit_json_ir, emit_binary_ir
@@ -511,6 +511,7 @@ is
     let return_tokens: MiniReturnStmtModuleTokens = lex_mini_return_stmt_module("bootstrap/compiler_core_v1/fixtures/mini_return.fh", "Demo", "ok", "100", "some_err")
     let call_tokens: MiniCallModuleTokens = lex_mini_call_module("bootstrap/compiler_core_v1/fixtures/mini_call.fh", "Demo", "foo", "arg", "SomeError")
     let nested_call_tokens: MiniNestedCallModuleTokens = lex_mini_nested_call_module("bootstrap/compiler_core_v1/fixtures/mini_nested_call.fh", "Demo", "y", "foo", "bar", "z")
+    let subtype_range_tokens: MiniSubtypeRangeModuleTokens = lex_mini_subtype_range_module("bootstrap/compiler_core_v1/fixtures/mini_subtype_range.fh", "Demo", "Percent")
 
 
     call Std.IO.logf("lexer.count = ${}", mini_module_token_count(mini_tokens))
@@ -535,6 +536,8 @@ is
     call Std.IO.logf("lexer.call.summary = ${}", mini_call_module_lexer_summary(call_tokens))
     call Std.IO.logf("lexer.nested_call.count = ${}", mini_nested_call_module_token_count(nested_call_tokens))
     call Std.IO.logf("lexer.nested_call.summary = ${}", mini_nested_call_module_lexer_summary(nested_call_tokens))
+    call Std.IO.logf("lexer.subtype_range.count = ${}", mini_subtype_range_module_token_count(subtype_range_tokens))
+    call Std.IO.logf("lexer.subtype_range.summary = ${}", mini_subtype_range_module_lexer_summary(subtype_range_tokens))
 
 
     let parsed_module: ModuleNode = parse_mini_module(mini_tokens)
@@ -542,6 +545,8 @@ is
     let mismatch_result: ParseResult = parse_mini_module_result(mismatch_tokens)
     let parsed_record_module: ModuleWithRecordNode = parse_mini_record_module(record_tokens)
     let parsed_record_result: ParseResult = parse_mini_record_module_result(record_tokens)
+    let parsed_subtype_range_module: ModuleWithTypeDeclNode = parse_mini_subtype_range_module(subtype_range_tokens)
+    let parsed_subtype_range_result: ParseResult = parse_mini_subtype_range_module_result(subtype_range_tokens)
     let parsed_function_module: ModuleWithFunctionNode = parse_mini_function_module(function_tokens)
     let parsed_function_result: ParseResult = parse_mini_function_module_result(function_tokens)
     let parsed_procedure_module: ModuleWithProcedureNode = parse_mini_procedure_module(procedure_tokens)
@@ -574,6 +579,8 @@ is
     call Std.IO.logf("parser.mismatch = ${}", parse_result_summary(mismatch_result))
     call Std.IO.logf("parser.record.summary = ${}", mini_record_module_parser_summary(parsed_record_module))
     call Std.IO.logf("parser.record.result = ${}", parse_result_summary(parsed_record_result))
+    call Std.IO.logf("parser.subtype_range.summary = ${}", mini_subtype_range_module_parser_summary(parsed_subtype_range_module))
+    call Std.IO.logf("parser.subtype_range.result = ${}", parse_result_summary(parsed_subtype_range_result))
     call Std.IO.logf("parser.function.summary = ${}", mini_function_module_parser_summary(parsed_function_module))
     call Std.IO.logf("parser.function.result = ${}", parse_result_summary(parsed_function_result))
     call Std.IO.logf("parser.procedure.summary = ${}", mini_procedure_module_parser_summary(parsed_procedure_module))
@@ -639,6 +646,42 @@ is
         call Std.IO.logf("verifier.result = ${}", ver_res.value)
     else
         call Std.IO.logf("verifier.error = VerificationFailed")
+    end if
+
+    -- Subtype Range Verification check
+    let node_p: ExprNode = make_expr_node(dummy_span, "VAR", "", "p", "", -1, -1, "", -1, -1, 0)
+    let node_min: ExprNode = make_expr_node(dummy_span, "LITERAL", "Integer", "0", "", -1, -1, "", -1, -1, 0)
+    let node_max: ExprNode = make_expr_node(dummy_span, "LITERAL", "Integer", "100", "", -1, -1, "", -1, -1, 0)
+    let node_ge: ExprNode = make_expr_node(dummy_span, "BINARY_OP", "", "", ">=", 0, 1, "", -1, -1, 0)
+    let node_le: ExprNode = make_expr_node(dummy_span, "BINARY_OP", "", "", "<=", 0, 2, "", -1, -1, 0)
+    let node_pre_range: ExprNode = make_expr_node(dummy_span, "BINARY_OP", "", "", "and", 3, 4, "", -1, -1, 0)
+    let node_post_range: ExprNode = make_expr_node(dummy_span, "BINARY_OP", "", "", "and", 3, 4, "", -1, -1, 0)
+    let node_50: ExprNode = make_expr_node(dummy_span, "LITERAL", "Integer", "50", "", -1, -1, "", -1, -1, 0)
+    let node_ge_50: ExprNode = make_expr_node(dummy_span, "BINARY_OP", "", "", ">=", 0, 7, "", -1, -1, 0)
+    let node_post_fail: ExprNode = make_expr_node(dummy_span, "BINARY_OP", "", "", "and", 8, 4, "", -1, -1, 0)
+
+    let range_exprs: Array<ExprNode, 64> = [
+        node_p, node_min, node_max, node_ge, node_le, node_pre_range, node_post_range, node_50, node_ge_50, node_post_fail,
+        node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0,
+        node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0,
+        node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0,
+        node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0,
+        node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0,
+        node_0, node_0, node_0, node_0
+    ]
+
+    let range_ver_res: Result<Boolean, VerificationFailed> = verify_contract(range_exprs, 5, 6)
+    if range_ver_res.ok then
+        call Std.IO.logf("verifier.subtype_range.valid = ${}", range_ver_res.value)
+    else
+        call Std.IO.logf("verifier.subtype_range.valid = VerificationFailed")
+    end if
+
+    let range_ver_fail_res: Result<Boolean, VerificationFailed> = verify_contract(range_exprs, 5, 9)
+    if range_ver_fail_res.ok then
+        call Std.IO.logf("verifier.subtype_range.invalid = ${}", range_ver_fail_res.value)
+    else
+        call Std.IO.logf("verifier.subtype_range.invalid = VerificationFailed")
     end if
 
     let mock_span: SourceSpan = make_source_span("bootstrap/compiler_core_v1/fixtures/mini_module.fh", 1, 1, 1, 1)

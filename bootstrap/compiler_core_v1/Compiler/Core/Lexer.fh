@@ -23,6 +23,21 @@ type MiniRecordModuleTokens is record
     module_end_name: Token
 end record
 
+type MiniSubtypeRangeModuleTokens is record
+    module_keyword: Token
+    module_name: Token
+    type_keyword: Token
+    type_name: Token
+    is_keyword: Token
+    base_type: Token
+    range_keyword: Token
+    min_value: Token
+    double_dot: Token
+    max_value: Token
+    module_end_keyword: Token
+    module_end_name: Token
+end record
+
 type MiniFunctionModuleTokens is record
     module_keyword: Token
     module_name: Token
@@ -256,6 +271,53 @@ ensures String.instr(result, tokens.type_name.lexeme) >= 0
 is
     return String.template("${module_val}|${name}|${type_kw}|${type_name}|${is_kw}|${record_kw}|${record_end}|${record_end_name}|${module_end}|${module_end_name}", module_val: token_text(tokens.module_keyword), name: token_text(tokens.module_name), type_kw: token_text(tokens.type_keyword), type_name: token_text(tokens.type_name), is_kw: token_text(tokens.is_keyword), record_kw: token_text(tokens.record_keyword), record_end: token_text(tokens.record_end_keyword), record_end_name: token_text(tokens.record_end_name), module_end: token_text(tokens.module_end_keyword), module_end_name: token_text(tokens.module_end_name))
 end mini_record_module_lexer_summary
+
+function lex_mini_subtype_range_module(source_name: String, module_name: String, type_name: String) returns MiniSubtypeRangeModuleTokens
+requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(type_name, "") = 0
+ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name, result.type_name.lexeme = type_name
+is
+    let t: Array<Token, 30> = lex_file_tokens_30(source_name)
+    return MiniSubtypeRangeModuleTokens {
+        module_keyword: t[0],
+        module_name: t[1],
+        type_keyword: t[2],
+        type_name: t[3],
+        is_keyword: t[4],
+        base_type: t[5],
+        range_keyword: t[6],
+        min_value: t[7],
+        double_dot: t[8],
+        max_value: t[9],
+        module_end_keyword: t[10],
+        module_end_name: t[11]
+    }
+end lex_mini_subtype_range_module
+
+function mini_subtype_range_module_token_count(tokens: MiniSubtypeRangeModuleTokens) returns Integer
+ensures result = 12
+is
+    return 12
+end mini_subtype_range_module_token_count
+
+function mini_subtype_range_module_lexer_summary(tokens: MiniSubtypeRangeModuleTokens) returns String
+requires String.instr(tokens.module_name.lexeme, "") = 0, String.instr(tokens.type_name.lexeme, "") = 0
+ensures String.instr(result, tokens.type_name.lexeme) >= 0
+is
+    return String.template("${module_val}|${name}|${type_kw}|${type_name}|${is_kw}|${base_type}|${range_kw}|${min_val}|${double_dot}|${max_val}|${module_end}|${module_end_name}",
+        module_val: token_text(tokens.module_keyword),
+        name: token_text(tokens.module_name),
+        type_kw: token_text(tokens.type_keyword),
+        type_name: token_text(tokens.type_name),
+        is_kw: token_text(tokens.is_keyword),
+        base_type: token_text(tokens.base_type),
+        range_kw: token_text(tokens.range_keyword),
+        min_val: token_text(tokens.min_value),
+        double_dot: token_text(tokens.double_dot),
+        max_val: token_text(tokens.max_value),
+        module_end: token_text(tokens.module_end_keyword),
+        module_end_name: token_text(tokens.module_end_name)
+    )
+end mini_subtype_range_module_lexer_summary
 
 function lex_mini_function_module(source_name: String, module_name: String, routine_name: String) returns MiniFunctionModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(routine_name, "") = 0
