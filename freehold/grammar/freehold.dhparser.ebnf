@@ -35,7 +35,7 @@ array_type = "Array" "<" type_ref "," INTEGER_LITERAL ">"
 
 function_decl = ~ [ async_marker ] "function" IDENT [ type_param_list ] "(" [ param_list ] ")" "returns" return_type [ contract_block ] "is" { stmt } "end" IDENT
 async_marker = "async"
-procedure_decl = ~ "procedure" IDENT "(" [ param_list ] ")" [ contract_block ] "is" { stmt } "end" IDENT
+procedure_decl = ~ "procedure" IDENT [ type_param_list ] "(" [ param_list ] ")" [ contract_block ] "is" { stmt } "end" IDENT
 service_decl = ~ "service" IDENT "is" rpc_decl { rpc_decl } "end" IDENT
 rpc_decl = ~ "rpc" IDENT "(" IDENT ":" type_ref ")" ":" type_ref
 
@@ -55,7 +55,7 @@ return_stmt = ~ "return" return_value
 abort_stmt = ~ "abort" IDENT
 return_value = "ok" expr | "error" IDENT | expr
 check_stmt = ~ "check" expr
-call_stmt = ~ "call" qualified_name "(" [ arg_list ] ")"
+call_stmt = ~ "call" qualified_name [ type_arg_list ] "(" [ arg_list ] ")"
 
 if_stmt = ~ "if" expr "then" then_block [ "else" else_block ] "end" "if"
 then_block = { stmt }
