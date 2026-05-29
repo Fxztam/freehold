@@ -79,6 +79,7 @@ class Verifier:
                 declared_names[d.name] = "routine"
                 routines[d.name] = d
         ctx = Ctx(program.module_name, types, records, generic_records, errors, routines, program.imports or [], imported_modules)
+        ctx.services = services
         for rd in [d for d in program.declarations if isinstance(d, RecordTypeDecl)]:
             previous_type_params = ctx.current_type_params
             ctx.current_type_params = set(rd.type_params or [])
@@ -327,7 +328,7 @@ class Verifier:
             ctx.scope_handles = previous_scope_handles
             ctx.type_param_constraints = previous_constraints
 
-    def collect_mutated_vars(self, body: list[Any]) -> set[str]:
+    def collect_mutated_vars(self, body: list[Any], env: dict[str, Any], ctx: Any) -> set[str]:
         mutated = set()
         def visit(stmt):
             if isinstance(stmt, AssignStmt):
@@ -335,6 +336,37 @@ class Verifier:
             elif isinstance(stmt, FieldAssignStmt):
                 if stmt.path:
                     mutated.add(stmt.path[0])
+            elif isinstance(stmt, CallStmt):
+                callee = None
+                try:
+                    callee = ctx.routine(stmt.name, stmt.pos)
+                except TypeCheckError:
+                    pass
+                if callee:
+                    callee_params = [p.name for p in callee.params]
+                    if hasattr(callee, "depends_specs") and callee.depends_specs:
+                        for d_callee in callee.depends_specs:
+                            if d_callee.target in callee_params:
+                                idx = callee_params.index(d_callee.target)
+                                if idx < len(stmt.args):
+                                    arg = stmt.args[idx]
+                                    if isinstance(arg, VarExpr):
+                                        mutated.add(arg.name)
+                                    elif isinstance(arg, (FieldAccessExpr, IndexExpr, IndexedFieldAccessExpr)):
+                                        mutated.add(getattr(arg, "name", None) or getattr(arg, "path", [None])[0])
+                            else:
+                                # Global target
+                                mutated.add(d_callee.target)
+                    elif callee.kind == "procedure":
+                        for arg in stmt.args:
+                            if isinstance(arg, VarExpr):
+                                mutated.add(arg.name)
+                            elif isinstance(arg, (FieldAccessExpr, IndexExpr, IndexedFieldAccessExpr)):
+                                mutated.add(getattr(arg, "name", None) or getattr(arg, "path", [None])[0])
+                        if hasattr(callee, "global_specs") and callee.global_specs:
+                            for cg in callee.global_specs:
+                                if cg.name not in callee_params and cg.mode in ("Output", "In_Out"):
+                                    mutated.add(cg.name)
             elif isinstance(stmt, IfStmt):
                 for s in stmt.then_body: visit(s)
                 for s in stmt.else_body: visit(s)
@@ -351,7 +383,7 @@ class Verifier:
                 for s in stmt.result_body: visit(s)
         for stmt in body:
             visit(stmt)
-        return mutated
+        return {m for m in mutated if m is not None}
 
     def validate_flow_contracts(self, r, env, ctx):
         seen_globals = set()
@@ -365,47 +397,104 @@ class Verifier:
                 if g.name not in env and g.name not in ctx.services:
                     raise TypeCheckError(f"{g.pos.text()}: unknown global variable or service: {g.name}")
 
+        param_names = {p.name for p in r.params}
+        actual_globals = seen_globals - param_names
+
+        # Always check transitive global variable accesses from calls
+        def check_transitive_globals(stmts):
+            for stmt in stmts:
+                if isinstance(stmt, CallStmt):
+                    callee = None
+                    try:
+                        callee = ctx.routine(stmt.name, stmt.pos)
+                    except TypeCheckError:
+                        pass
+                    if callee:
+                        callee_param_names = {p.name for p in callee.params}
+                        if hasattr(callee, "global_specs") and callee.global_specs:
+                            r_globals = {g.name: g.mode for g in r.global_specs} if r.global_specs else {}
+                            for cg in callee.global_specs:
+                                if cg.name not in callee_param_names:
+                                    # It's an actual global accessed by callee
+                                    if cg.name not in r_globals:
+                                        raise TypeCheckError(f"{stmt.pos.text()}: transitive global variable '{cg.name}' accessed by '{stmt.name}' must be declared in global contract of '{r.name}'")
+                                    # Verify mode compatibility
+                                    r_mode = r_globals[cg.name]
+                                    if cg.mode == "In_Out" and r_mode != "In_Out":
+                                        raise TypeCheckError(f"{stmt.pos.text()}: transitive global variable '{cg.name}' with In_Out mode requires In_Out mode in '{r.name}' (got {r_mode})")
+                                    elif cg.mode == "Output" and r_mode not in ("Output", "In_Out"):
+                                        raise TypeCheckError(f"{stmt.pos.text()}: transitive global variable '{cg.name}' with Output mode requires Output or In_Out mode in '{r.name}' (got {r_mode})")
+                                    elif cg.mode == "Input" and r_mode not in ("Input", "In_Out"):
+                                        raise TypeCheckError(f"{stmt.pos.text()}: transitive global variable '{cg.name}' with Input mode requires Input or In_Out mode in '{r.name}' (got {r_mode})")
+                elif isinstance(stmt, IfStmt):
+                    check_transitive_globals(stmt.then_body)
+                    check_transitive_globals(stmt.else_body)
+                elif isinstance(stmt, WhileStmt):
+                    check_transitive_globals(stmt.body)
+                elif isinstance(stmt, CaseStmt):
+                    for branch in stmt.branches:
+                        check_transitive_globals(branch.body)
+                    if stmt.default_body:
+                        check_transitive_globals(stmt.default_body)
+                elif isinstance(stmt, ScopeStmt):
+                    check_transitive_globals(stmt.spawn_body)
+                    check_transitive_globals(stmt.join_body)
+                    check_transitive_globals(stmt.result_body)
+
+        check_transitive_globals(r.body)
+
         if r.depends_specs:
             seen_targets = set()
-            param_names = {p.name for p in r.params}
-            mutated_vars = self.collect_mutated_vars(r.body)
-            mutated_params = mutated_vars & param_names
+            
+            # Valid targets and sources
+            valid_targets = set(param_names)
+            if r.kind == "function":
+                valid_targets.add("result")
+            for name in actual_globals:
+                g_spec = next(g for g in r.global_specs if g.name == name)
+                if g_spec.mode in ("Output", "In_Out"):
+                    valid_targets.add(name)
+
+            valid_sources = set(param_names)
+            for name in actual_globals:
+                g_spec = next(g for g in r.global_specs if g.name == name)
+                if g_spec.mode in ("Input", "In_Out"):
+                    valid_sources.add(name)
+
+            mutated_vars = self.collect_mutated_vars(r.body, env, ctx)
+            mutated_targets = (mutated_vars & param_names) | (mutated_vars & actual_globals)
 
             for d in r.depends_specs:
                 if d.target in seen_targets:
                     raise TypeCheckError(f"{d.pos.text()}: duplicate dependency target: {d.target}")
                 seen_targets.add(d.target)
 
-                if r.kind == "function":
-                    if d.target != "result" and d.target not in param_names:
-                        raise TypeCheckError(f"{d.pos.text()}: invalid dependency target for function: {d.target} (must be result or parameter)")
-                else:
-                    if d.target not in param_names:
-                        raise TypeCheckError(f"{d.pos.text()}: dependency target must be a parameter: {d.target}")
+                if d.target not in valid_targets:
+                    raise TypeCheckError(f"{d.pos.text()}: dependency target '{d.target}' not allowed or not declared as Output/In_Out")
 
                 for src in d.sources:
                     if src == "+":
-                        if d.target not in param_names:
-                            raise TypeCheckError(f"{d.pos.text()}: '+' source is only allowed for parameter targets")
+                        if d.target not in param_names and d.target not in actual_globals:
+                            raise TypeCheckError(f"{d.pos.text()}: '+' source is only allowed for parameter/global targets")
                     else:
-                        if src not in param_names:
-                            raise TypeCheckError(f"{d.pos.text()}: dependency source not found as parameter: {src}")
+                        if src not in valid_sources:
+                            raise TypeCheckError(f"{d.pos.text()}: dependency source '{src}' not allowed or not declared as Input/In_Out")
 
-            for mp in mutated_params:
-                if mp not in seen_targets:
-                    raise TypeCheckError(f"{r.pos.text()}: parameter '{mp}' is modified in body but missing from depends clause")
+            for mt in mutated_targets:
+                if mt not in seen_targets:
+                    raise TypeCheckError(f"{r.pos.text()}: target '{mt}' is modified in body but missing from depends clause")
 
             for target in seen_targets:
-                if target in param_names and target not in mutated_params:
-                    raise TypeCheckError(f"{r.pos.text()}: dependency target parameter '{target}' is not modified in body")
+                if target != "result" and target not in mutated_targets:
+                    raise TypeCheckError(f"{r.pos.text()}: dependency target '{target}' is not modified in body")
 
             if r.kind == "function" and "result" not in seen_targets:
                 raise TypeCheckError(f"{r.pos.text()}: function dependency contract must specify 'result'")
 
             # Information Flow Analysis
             dependencies = {}
-            for p in r.params:
-                dependencies[p.name] = {p.name}
+            for name in valid_sources:
+                dependencies[name] = {name}
             
             control_deps = []
             
@@ -507,46 +596,68 @@ class Verifier:
                         expr_val = getattr(stmt, "value", getattr(stmt, "expr", None))
                         dependencies["result"] = dependencies.get("result", set()) | dependencies_of(expr_val) | get_active_control_deps()
                     elif isinstance(stmt, CallStmt):
-                        callee = env.get(stmt.name)
-                        if callee and hasattr(callee, "depends_specs") and callee.depends_specs:
-                            callee_params = [p.name for p in callee.params]
-                            new_arg_deps = {}
-                            for d_callee in callee.depends_specs:
-                                if d_callee.target in callee_params:
-                                    t_idx = callee_params.index(d_callee.target)
-                                    if t_idx < len(stmt.args):
-                                        arg_target = stmt.args[t_idx]
-                                        target_var = None
-                                        if isinstance(arg_target, VarExpr):
-                                            target_var = arg_target.name
-                                        elif isinstance(arg_target, (FieldAccessExpr, IndexExpr, IndexedFieldAccessExpr)):
-                                            target_var = getattr(arg_target, "name", None) or getattr(arg_target, "path", [None])[0]
+                        callee = None
+                        try:
+                            callee = ctx.routine(stmt.name, stmt.pos)
+                        except TypeCheckError:
+                            pass
+                        if callee:
+                            callee_param_names = {p.name for p in callee.params}
+                            if hasattr(callee, "depends_specs") and callee.depends_specs:
+                                callee_params = [p.name for p in callee.params]
+                                new_arg_deps = {}
+                                
+                                for d_callee in callee.depends_specs:
+                                    target_var = None
+                                    is_global_target = False
+                                    if d_callee.target in callee_params:
+                                        t_idx = callee_params.index(d_callee.target)
+                                        if t_idx < len(stmt.args):
+                                            arg_target = stmt.args[t_idx]
+                                            if isinstance(arg_target, VarExpr):
+                                                target_var = arg_target.name
+                                            elif isinstance(arg_target, (FieldAccessExpr, IndexExpr, IndexedFieldAccessExpr)):
+                                                target_var = getattr(arg_target, "name", None) or getattr(arg_target, "path", [None])[0]
+                                    else:
+                                        target_var = d_callee.target
+                                        is_global_target = True
                                         
-                                        if target_var:
-                                            accumulated = set()
-                                            for src in d_callee.sources:
-                                                if src == "+":
+                                    if target_var:
+                                        accumulated = set()
+                                        for src in d_callee.sources:
+                                            if src == "+":
+                                                if is_global_target:
+                                                    accumulated |= dependencies.get(target_var, set())
+                                                else:
                                                     accumulated |= dependencies_of(arg_target)
-                                                elif src in callee_params:
-                                                    s_idx = callee_params.index(src)
-                                                    if s_idx < len(stmt.args):
-                                                        accumulated |= dependencies_of(stmt.args[s_idx])
-                                            new_arg_deps[target_var] = accumulated | get_active_control_deps()
-                            for t_var, deps in new_arg_deps.items():
-                                dependencies[t_var] = deps
-                        else:
-                            all_args_deps = set()
-                            for arg in stmt.args:
-                                all_args_deps |= dependencies_of(arg)
-                            all_args_deps |= get_active_control_deps()
-                            for arg in stmt.args:
-                                target_var = None
-                                if isinstance(arg, VarExpr):
-                                    target_var = arg.name
-                                elif isinstance(arg, (FieldAccessExpr, IndexExpr, IndexedFieldAccessExpr)):
-                                    target_var = getattr(arg, "name", None) or getattr(arg, "path", [None])[0]
-                                if target_var:
-                                    dependencies[target_var] = all_args_deps
+                                            elif src in callee_params:
+                                                s_idx = callee_params.index(src)
+                                                if s_idx < len(stmt.args):
+                                                    accumulated |= dependencies_of(stmt.args[s_idx])
+                                            else:
+                                                accumulated |= dependencies.get(src, set())
+                                        new_arg_deps[target_var] = accumulated | get_active_control_deps()
+                                for t_var, deps in new_arg_deps.items():
+                                    dependencies[t_var] = deps
+                            else:
+                                all_args_deps = set()
+                                for arg in stmt.args:
+                                    all_args_deps |= dependencies_of(arg)
+                                all_args_deps |= get_active_control_deps()
+                                
+                                for arg in stmt.args:
+                                    target_var = None
+                                    if isinstance(arg, VarExpr):
+                                        target_var = arg.name
+                                    elif isinstance(arg, (FieldAccessExpr, IndexExpr, IndexedFieldAccessExpr)):
+                                        target_var = getattr(arg, "name", None) or getattr(arg, "path", [None])[0]
+                                    if target_var:
+                                        dependencies[target_var] = all_args_deps
+                                        
+                                if hasattr(callee, "global_specs") and callee.global_specs:
+                                    for cg in callee.global_specs:
+                                        if cg.name not in callee_param_names and cg.mode in ("Output", "In_Out"):
+                                            dependencies[cg.name] = all_args_deps | dependencies.get(cg.name, set())
                     elif isinstance(stmt, IfStmt):
                         before_deps = {k: set(v) for k, v in dependencies.items()}
                         control_deps.append(dependencies_of(stmt.condition))
@@ -601,7 +712,7 @@ class Verifier:
                     elif isinstance(stmt, WhileStmt):
                         control_deps.append(dependencies_of(stmt.condition))
                         loop_reads = collect_read_vars(stmt.condition) | collect_read_vars(stmt.body)
-                        loop_mutated = self.collect_mutated_vars(stmt.body)
+                        loop_mutated = self.collect_mutated_vars(stmt.body, env, ctx)
                         
                         loop_read_deps = set()
                         for r_var in loop_reads:
@@ -1485,6 +1596,7 @@ class Verifier:
 class Ctx:
     def __init__(self, module_name, types, records, generic_records, errors, routines, imports=None, imported_modules=None):
         self.module_name=module_name; self.types=types; self.records=records; self.generic_records=generic_records; self.errors=errors; self.routines=routines
+        self.services={}
         self.imports=imports or []; self.imported_modules=imported_modules or {}; self.validate_exposing_conflicts(); self.exposed_routines=self.build_exposed_routines()
         self.add_exposed_types_records_and_errors()
         self.current_routine=None; self.current_type_params=set(); self.current_async=False

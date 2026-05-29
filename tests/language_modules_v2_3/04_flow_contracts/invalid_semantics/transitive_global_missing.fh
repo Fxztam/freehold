@@ -1,0 +1,28 @@
+module TransitiveGlobalMissing
+
+type QueryRequest is record
+    val: Integer proto 1
+end record
+
+type QueryResponse is record
+    res: Integer proto 1
+end record
+
+service MyService is
+    rpc query(request: QueryRequest): QueryResponse
+end MyService
+
+procedure service_accessor(val: Integer, res: Integer)
+global Input MyService, In_Out res
+depends res => (val, MyService)
+is
+    res := val
+end service_accessor
+
+procedure transitive_accessor(a: Integer, b: Integer)
+global In_Out b
+is
+    call service_accessor(a, b)
+end transitive_accessor
+
+end TransitiveGlobalMissing

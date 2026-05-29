@@ -2,6 +2,12 @@
 
 ## 2026-05-29
 
+### Transitive Information Flow Analysis (Taint-Tracking)
+
+- **Transitive Information Flow (Taint-Tracking):** Evolved local dependency verification into inter-procedural flow contract tracking. The verifier now recursively traces variable dependencies across called routines and nested statement blocks, constructing a complete transitive flow graph to verify mathematical flow contracts.
+- **Transitive Globals Propagation:** Enforced propagation checks for global variables/services accessed transitively through call stacks. Callers are now required to declare all transitively accessed globals with compatible modes (`Input`, `Output`, `In_Out`) in their own `global` contracts.
+- **Verification Conformant Tests:** Added positive and negative test cases (`transitive_global_pos.fh` and `transitive_global_missing.fh`) under `04_flow_contracts`. Automatically updated expected diagnostics to match new generalized target/source messages. All 26 language conformance tests and compiler core v1 verification checks pass successfully.
+
 ### Multi-Solver SMT Verification & System Env Language Conformance
 
 - **Environment-Driven Multi-Solver Orchestration:** Added support for executing SMT solvers sequentially (e.g. `"z3,cvc5"`) via `FREEHOLD_PROVER` and configurable timeout limits via `FREEHOLD_TIMEOUT`. Implemented fallback mechanism in the Python verifier and Stage 3 bootstrapped compiler core (`Verifier.fh`).
