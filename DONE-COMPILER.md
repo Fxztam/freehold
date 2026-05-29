@@ -120,4 +120,30 @@ Die zukünftige Entwicklungsphase eines Go-nativen Control-Flow-Analyzers wurde 
 - **Verträge & Verifikation:**
   - Anpassung der Build-Umgebung (`verify_stage3_compiler_core_contracts.py`), um Fixtures in das Build-Verzeichnis zu kopieren.
   - Aktualisierung der Manifest-Dateien (`manifest.json` auf 13 Dateien) und des erwarteten Outputs.
-  - Die Stage-3 Compiler-Kern-Pipeline (`verify-stage3-compiler-core-v1.cmd`) läuft vollständig grün durch und matcht die geänderten Goldenen Testergebnisse.
+  - Die Stage-3 Compiler-Kern-Pipeline (`verify-stage3-compiler-core-v1.cmd`) läuft vollständig grün durch und matcht die geänderten Goldenen Testergebnisse.
+
+## Go EXE-Builder & Toolchain Integration
+
+**Completed on:** 2026-05-29
+
+- **Komfortabler CLI-Befehl (`freehold build-exe <entry.fh>`):**
+  - Implementierung eines bequemen Build-Befehls in `freehold/cli/main.py`.
+  - Der Befehl automatisiert das Kompilieren von Freehold-Modulen über die Go-Codegen-Infrastruktur direkt zu nativen Binaries in einem sauberen Release-Verzeichnis (`/bin/`).
+- **Dynamische Modulabhängigkeits-Generierung (`go.mod`):**
+  - Automatisches Scannen aller importierten Go-Module durch Ausführen von `go mod tidy` in den generierten Projektstrukturen zur Erstellung des korrekten Abhängigkeitsgraphen.
+- **Cross-Platform Support (`build.sh`):**
+  - Neben der Windows-spezifischen `build.cmd` wird nun auch ein POSIX-konformes `build.sh` Skript in jedem generierten Go-Projekt erzeugt. Beide Skripte führen nun standardmäßig `go mod tidy` aus.
+  - Das Stage-3 Manifest (`manifest.json`) wurde aktualisiert und erwartet nun 4 statt 3 Build-Dateien.
+
+## Formale Verifikation der AST-Erweiterungen
+
+**Completed on:** 2026-05-29
+
+- **Erweiterung der Vor- und Nachbedingungen (requires / ensures):**
+  - Hinzufügen von formalen Verträgen für `parse_expr` und `parse_stmt` in `Compiler.Core.Parser.fh`.
+  - Hinzufügen von formalen Verträgen für `resolve_expr` und `resolve_stmt` in `Compiler.Core.Resolve.fh`.
+- **Mathematische Array-Grenzen-Sicherheit (Out-of-Bounds Prevention):**
+  - Ergänzung von expliziten Index-Grenzen-Checks (`< 64`) beim Zugriff auf das `exprs` Array in `resolve_stmt` für `LET` / `ASSIGN` / `IF` / `WHILE` Anweisungen.
+  - Dadurch ist mathematisch bewiesen, dass der Resolver niemals out-of-bounds auf das AST-Array zugreift.
+- **Verifikation:**
+  - Die formale Verifikations-Engine von Freehold hat alle Proof Obligations erfolgreich gelöst; `verify-stage3-compiler-core-v1.cmd` läuft zu 100% grün durch.

@@ -686,6 +686,8 @@ is
 end parse_general_module_result
 
 function parse_expr(p: GeneralParser) returns ParserExprResult
+requires String.instr(p.curr_tok.lexeme, "") = 0, String.instr(p.curr_tok.kind.name, "") = 0
+ensures result.parser.has_error = true or result.parser.has_error = false
 is
     let empty_span: SourceSpan = SourceSpan { source_name: p.source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
     let empty_expr: ExprNode = make_expr_node(empty_span, "ERROR", "", "", "", -1, -1, "", -1, -1, 0)
@@ -728,6 +730,8 @@ is
 end parse_expr
 
 function parse_stmt(p: GeneralParser) returns ParserStmtResult
+requires String.instr(p.curr_tok.lexeme, "") = 0, String.instr(p.curr_tok.kind.name, "") = 0
+ensures result.parser.has_error = true or result.parser.has_error = false
 is
     let empty_span: SourceSpan = SourceSpan { source_name: p.source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
     let empty_stmt: StmtNode = make_stmt_node(empty_span, "ERROR", "", "", -1, -1, -1, 0, -1, 0, "", "")
