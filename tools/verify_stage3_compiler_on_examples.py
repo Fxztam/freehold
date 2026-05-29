@@ -54,6 +54,7 @@ SUPPORTED_EXAMPLES = [
     SupportedExample("20_grpc_binding", "examples/compiler_v1/20_grpc_binding/App/Main.fh"),
     SupportedExample("21_concurrent_grpc_channel_demo", "examples/compiler_v1/21_concurrent_grpc_channel_demo/App/Main.fh"),
     SupportedExample("22_subtype_range", "examples/compiler_v1/22_subtype_range/App/Main.fh"),
+    SupportedExample("24_flow_contracts", "examples/compiler_v1/24_flow_contracts/App/Main.fh"),
     SupportedExample("old_BigNumbers", "examples/BigNumbers.fh", "examples/expected_logs/BigNumbers.expected.log"),
     SupportedExample("old_ChudnovskyFeynmanPoint", "examples/ChudnovskyFeynmanPoint.fh", "examples/expected_logs/ChudnovskyFeynmanPoint.expected.log"),
     SupportedExample("old_ChudnovskyPi", "examples/ChudnovskyPi.fh", "examples/expected_logs/ChudnovskyPi.expected.log"),

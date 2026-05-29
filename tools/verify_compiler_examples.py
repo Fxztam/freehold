@@ -67,6 +67,7 @@ SUPPORTED_EXAMPLES = [
 
 UNSUPPORTED_EXAMPLES = [
     UnsupportedExample("unsupported_generic_function", "examples/compiler_v1/unsupported/generic_function/App/Main.fh", "FH-GOCODEGEN-0001"),
+    UnsupportedExample("23_generic_type_inference_and_constraints", "examples/compiler_v1/23_generic_type_inference_and_constraints/App/Main.fh", "FH-GOCODEGEN-0001"),
 ]
 
 

@@ -118,11 +118,14 @@ class AstBuilder:
         if kind == "function":
             ret = self.return_type(tree.children[idx]); idx += 1
         requires, aborts, ensures = [], [], []
+        global_specs, depends_specs = [], []
         if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "contract_block":
             for c in tree.children[idx].children:
-                if c.data == "requires_clause": requires.extend(self.expr_list(c.children[0]))
+                if c.data == "requires_clause": requires.extend(self.constraint_list(c.children[0]))
                 elif c.data == "aborts_clause": aborts.append(AbortClause(str(c.children[0]), self.expr(c.children[1]) if len(c.children) > 1 else None, pos(c)))
                 elif c.data == "ensures_clause": ensures.extend(self.expr_list(c.children[0]))
+                elif c.data == "global_clause": global_specs.extend(self.global_clause(c))
+                elif c.data == "depends_clause": depends_specs.extend(self.depends_clause(c))
             idx += 1
         end_name = None
         for child in reversed(tree.children):
@@ -132,7 +135,38 @@ class AstBuilder:
         if end_name != name:
             raise TypeCheckError(f"{pos(tree).text()}: {kind} end name mismatch: expected {name}, got {end_name}")
         body = [self.stmt(s.children[0] if s.data == "stmt" else s) for s in tree.children[idx:] if isinstance(s, Tree)]
-        return RoutineDecl(kind, name, params, ret, requires, aborts, ensures, body, pos(tree), type_params, is_async)
+        return RoutineDecl(kind, name, params, ret, requires, aborts, ensures, body, pos(tree), type_params, is_async, global_specs, depends_specs)
+
+    def global_clause(self, tree: Tree) -> list[GlobalSpec]:
+        specs = []
+        for child in tree.children:
+            if isinstance(child, Tree) and child.data == "global_spec":
+                mode = None
+                name_idx = 0
+                if len(child.children) == 2:
+                    mode = str(child.children[0].children[0]) if isinstance(child.children[0], Tree) else str(child.children[0])
+                    name_idx = 1
+                name = str(child.children[name_idx])
+                specs.append(GlobalSpec(mode, name, pos(child)))
+        return specs
+
+    def depends_clause(self, tree: Tree) -> list[DependsSpec]:
+        specs = []
+        for child in tree.children:
+            if isinstance(child, Tree) and child.data == "dependency_spec":
+                target = str(child.children[0])
+                sources_tree = child.children[1]
+                sources = []
+                def collect_sources(node):
+                    if isinstance(node, Tree):
+                        if node.data == "dependency_source":
+                            sources.append(str(node.children[0]))
+                        else:
+                            for c in node.children:
+                                collect_sources(c)
+                collect_sources(sources_tree)
+                specs.append(DependsSpec(target, sources, pos(child)))
+        return specs
 
     def return_type(self, tree: Tree):
         inner = tree.children[0]
@@ -141,6 +175,11 @@ class AstBuilder:
     def param_type(self, tree: Tree):
         inner = grammar_children(tree)[0] if tree.data == "param_type" else tree
         return self.type_ref_tree(inner)
+
+    def constraint_list(self, tree: Tree):
+        if isinstance(tree, Tree) and tree.data == "constraint_list":
+            return [self.expr(child) for child in tree.children]
+        return [self.expr(tree)]
 
     def expr_list(self, tree: Tree):
         if isinstance(tree, Tree) and tree.data == "expr_list":
@@ -279,6 +318,10 @@ class AstBuilder:
         if tree.data == "result_value_index_field_access": return IndexedFieldAccessExpr("value", self.expr(tree.children[0]), [str(x) for x in tree.children[1:]], pos(tree))
         if tree.data == "index_expr": return IndexExpr(str(tree.children[0]), self.expr(tree.children[1]), pos(tree))
         if tree.data == "await_expr": return AwaitExpr(self.expr(tree.children[0]), pos(tree))
+        if tree.data == "is_expr":
+            left_token = tree.children[0]
+            left_var = VarExpr(str(left_token), pos(left_token))
+            return IsExpr(left_var, str(tree.children[1]), pos(tree))
         if tree.data in ("neg_expr","not_expr"): return UnaryExpr("-" if tree.data=="neg_expr" else "not", self.expr(tree.children[0]), pos(tree))
         ops = {"add_expr":"+","sub_expr":"-","mul_expr":"*","div_expr":"/","eq_expr":"=","neq_expr":"!=","lt_expr":"<","le_expr":"<=","gt_expr":">","ge_expr":">=","and_expr":"and","or_expr":"or"}
         if tree.data in ops: return BinaryExpr(ops[tree.data], self.expr(tree.children[0]), self.expr(tree.children[1]), pos(tree))

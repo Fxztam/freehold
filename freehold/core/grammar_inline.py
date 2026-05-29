@@ -35,7 +35,10 @@ result_type: "Result" TYPE_ARG_START result_payload_type "," type_ref ">"
 array_type: NAME TYPE_ARG_START type_ref "," INT_NUMBER ">"
 
 contract_block: requires_clause* aborts_clause* ensures_clause*
-requires_clause: "requires" expr_list
+requires_clause: "requires" constraint_list
+constraint_list: constraint ("," constraint)*
+?constraint: NAME "is" NAME -> is_expr
+           | expr
 aborts_clause: "aborts" NAME ("when" expr)?
 ensures_clause: "ensures" expr_list
 

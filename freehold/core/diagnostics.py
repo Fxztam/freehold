@@ -189,6 +189,22 @@ Example:
     type Count is Integer range 0..100
 """
 
+TYPE_VALUE_OUT_OF_RANGE_HINT = """A constant value assigned to a range subtype must lie within the declared bounds.
+
+Example:
+    type Percent is Integer range 0..100
+    let x: Percent = 50 -- OK
+    let y: Percent = 150 -- Error: 150 out of range
+"""
+
+FORMAL_VERIFICATION_HINT = """The SMT solver could not prove that the verification condition holds under the given preconditions and path conditions.
+
+To satisfy the verifier:
+- Add requires clauses to restrict inputs
+- Add loop invariants to carry properties
+- Check for overflow or potential violations
+"""
+
 GENERIC_DUPLICATE_PARAM_HINT = """A generic declaration may list each type parameter only once.
 
 Example:
@@ -957,6 +973,16 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
     if integer_range_match:
         line, column = _source_position_from_message(message)
         return Diagnostic("VF-T006", "integer range bounds must be integers", line, column, "fractional bound", "integer bounds", TYPE_INTEGER_RANGE_HINT, phase="semantic")
+    out_of_range_match = re.search(r"value (-?\d+(?:\.\d+)?) out of range for type ([A-Za-z_][A-Za-z0-9_]*) \((-?\d+(?:\.\d+)?)\.\.(-?\d+(?:\.\d+)?)\)", message)
+    if out_of_range_match:
+        line, column = _source_position_from_message(message)
+        val, type_name, min_val, max_val = out_of_range_match.groups()
+        return Diagnostic("VF-T007", "value out of range", line, column, val, f"{min_val}..{max_val}", TYPE_VALUE_OUT_OF_RANGE_HINT, phase="semantic")
+    verification_match = re.search(r"verification failed: (.+)", message)
+    if verification_match:
+        line, column = _source_position_from_message(message)
+        details = verification_match.group(1)
+        return Diagnostic("VF-V001", "formal verification failed", line, column, details, "proven verification conditions", FORMAL_VERIFICATION_HINT, phase="semantic")
     duplicate_record_field_match = re.search(r"duplicate record field: ([A-Za-z_][A-Za-z0-9_]*)", message)
     if duplicate_record_field_match:
         line, column = _source_position_from_message(message)

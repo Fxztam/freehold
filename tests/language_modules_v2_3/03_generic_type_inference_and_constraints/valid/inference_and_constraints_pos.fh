@@ -1,0 +1,26 @@
+module InferenceAndConstraintsPos
+
+function check_value<T>(val: T) returns T
+requires T is Comparable
+is
+    if val > val then
+        return val
+    end if
+    return val
+end check_value
+
+procedure log_val<T>(val: T)
+requires T is Comparable
+is
+    let x: T = val
+end log_val
+
+procedure main()
+is
+    let a: Integer = check_value(42)
+    let b: Double = check_value(3.14)
+    call log_val(42)
+    call log_val(3.14)
+end main
+
+end InferenceAndConstraintsPos

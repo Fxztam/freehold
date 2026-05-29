@@ -1,0 +1,23 @@
+module FlowContractsPos
+
+procedure modify_param(x: Integer, y: Integer)
+global Input x, In_Out y
+depends y => x
+is
+    y := x
+end modify_param
+
+procedure modify_both(x: Integer, y: Integer)
+depends x => (x, y), y => x
+is
+    x := x + y
+    y := x
+end modify_both
+
+function add_one(x: Integer) returns Integer
+depends result => x
+is
+    return x + 1
+end add_one
+
+end FlowContractsPos

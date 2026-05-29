@@ -22,7 +22,7 @@ RESERVED_NAMES = {
     "invariant", "is", "let", "module", "not", "ok", "or", "procedure",
     "record", "requires", "aborts", "return", "abort", "returns", "success", "then", "true",
     "type", "value", "variant", "when", "while", "async", "await", "scope", "spawn", "join", "result",
-    "service", "rpc", "proto",
+    "service", "rpc", "proto", "global", "depends", "Input", "Output", "In_Out",
 }
 
 @dataclass
@@ -92,8 +92,17 @@ class Verifier:
         self.services(services, records)
         flow_summaries = ControlFlowAnalyzer(routines, program.module_name).analyze_routines()
         vp = VerifiedProgram(program, types, records, errors, routines, services, obs, flow_summaries)
-        from freehold.core.symbolic import symbolic_obligations
-        obs.extend(symbolic_obligations(vp))
+        from freehold.core.symbolic import symbolic_obligations, solve_smt_query
+        new_obs = symbolic_obligations(vp)
+        failed_obs = []
+        for ob in new_obs:
+            res = solve_smt_query(ob["smt_query"])
+            if res == "sat":
+                failed_obs.append(ob)
+        if failed_obs:
+            first = failed_obs[0]
+            raise VerificationError(f"{first['location']}: verification failed: {first['kind']} obligation is satisfiable (violated)")
+        obs.extend(new_obs)
         return vp
 
     def validate_proto_fields(self, declaration: RecordTypeDecl) -> dict[str, int]:
@@ -277,10 +286,12 @@ class Verifier:
         previous_async = ctx.current_async
         previous_scopes = ctx.scope_vars
         previous_scope_handles = ctx.scope_handles
+        previous_constraints = ctx.type_param_constraints
         ctx.current_type_params = set(r.type_params or [])
         ctx.current_async = r.is_async
         ctx.scope_vars = set()
         ctx.scope_handles = {}
+        ctx.type_param_constraints = {}
         env = {}
         try:
             seen_params = set()
@@ -305,6 +316,7 @@ class Verifier:
                 if clause.condition is not None:
                     self.contract_bool("aborts", clause.condition, env, ctx, False, None)
             for e in r.ensures: self.contract_bool("ensures", e, env, ctx, True, r.return_type)
+            self.validate_flow_contracts(r, env, ctx)
             ret = self.block(r.body, r, env, ctx, list(r.requires))
             ctx.require_no_unjoined_scope_handles(r.pos)
             if r.kind == "function" and not ret: raise TypeCheckError(f"{r.pos.text()}: function {r.name} has no guaranteed return")
@@ -313,6 +325,82 @@ class Verifier:
             ctx.current_async = previous_async
             ctx.scope_vars = previous_scopes
             ctx.scope_handles = previous_scope_handles
+            ctx.type_param_constraints = previous_constraints
+
+    def collect_mutated_vars(self, body: list[Any]) -> set[str]:
+        mutated = set()
+        def visit(stmt):
+            if isinstance(stmt, AssignStmt):
+                mutated.add(stmt.name)
+            elif isinstance(stmt, FieldAssignStmt):
+                if stmt.path:
+                    mutated.add(stmt.path[0])
+            elif isinstance(stmt, IfStmt):
+                for s in stmt.then_body: visit(s)
+                for s in stmt.else_body: visit(s)
+            elif isinstance(stmt, WhileStmt):
+                for s in stmt.body: visit(s)
+            elif isinstance(stmt, CaseStmt):
+                for branch in stmt.branches:
+                    for s in branch.body: visit(s)
+                if stmt.default_body:
+                    for s in stmt.default_body: visit(s)
+            elif isinstance(stmt, ScopeStmt):
+                for s in stmt.spawn_body: visit(s)
+                for s in stmt.join_body: visit(s)
+                for s in stmt.result_body: visit(s)
+        for stmt in body:
+            visit(stmt)
+        return mutated
+
+    def validate_flow_contracts(self, r, env, ctx):
+        if r.global_specs:
+            seen_globals = set()
+            for g in r.global_specs:
+                if g.mode not in ("Input", "Output", "In_Out", None):
+                    raise TypeCheckError(f"{g.pos.text()}: invalid global mode: {g.mode}")
+                if g.name in seen_globals:
+                    raise TypeCheckError(f"{g.pos.text()}: duplicate global variable: {g.name}")
+                seen_globals.add(g.name)
+                if g.name not in env and g.name not in ctx.services:
+                    raise TypeCheckError(f"{g.pos.text()}: unknown global variable or service: {g.name}")
+
+        if r.depends_specs:
+            seen_targets = set()
+            param_names = {p.name for p in r.params}
+            mutated_vars = self.collect_mutated_vars(r.body)
+            mutated_params = mutated_vars & param_names
+
+            for d in r.depends_specs:
+                if d.target in seen_targets:
+                    raise TypeCheckError(f"{d.pos.text()}: duplicate dependency target: {d.target}")
+                seen_targets.add(d.target)
+
+                if r.kind == "function":
+                    if d.target != "result" and d.target not in param_names:
+                        raise TypeCheckError(f"{d.pos.text()}: invalid dependency target for function: {d.target} (must be result or parameter)")
+                else:
+                    if d.target not in param_names:
+                        raise TypeCheckError(f"{d.pos.text()}: dependency target must be a parameter: {d.target}")
+
+                for src in d.sources:
+                    if src == "+":
+                        if d.target not in param_names:
+                            raise TypeCheckError(f"{d.pos.text()}: '+' source is only allowed for parameter targets")
+                    else:
+                        if src not in param_names:
+                            raise TypeCheckError(f"{d.pos.text()}: dependency source not found as parameter: {src}")
+
+            for mp in mutated_params:
+                if mp not in seen_targets:
+                    raise TypeCheckError(f"{r.pos.text()}: parameter '{mp}' is modified in body but missing from depends clause")
+
+            for target in seen_targets:
+                if target in param_names and target not in mutated_params:
+                    raise TypeCheckError(f"{r.pos.text()}: dependency target parameter '{target}' is not modified in body")
+
+            if r.kind == "function" and "result" not in seen_targets:
+                raise TypeCheckError(f"{r.pos.text()}: function dependency contract must specify 'result'")
 
     def abort_names(self, r):
         return {clause.error_name for clause in r.aborts}
@@ -374,14 +462,17 @@ class Verifier:
                 ctx.require_return_type(s.type_ref, s.pos)
                 actual = self.infer(s.expr, env, ctx, False, None)
                 self.assign(actual, s.type_ref, ctx, s.pos); env[s.name]=s.type_ref
+                self.check_range_bounds(s.expr, s.type_ref, ctx, s.pos)
                 ctx.note_let(s.name, s.type_ref, s.expr, s.pos)
             elif isinstance(s, AssignStmt):
                 if s.name not in env:
                     raise TypeCheckError(f"{s.pos.text()}: unknown assignment target: {s.name}")
                 self.assign(self.infer(s.expr, env, ctx, False, None), env[s.name], ctx, s.pos)
+                self.check_range_bounds(s.expr, env[s.name], ctx, s.pos)
             elif isinstance(s, FieldAssignStmt):
                 target_type = self.infer_field_path_obj(s.path, s.pos, env, ctx, False, None)
                 self.assign(self.infer(s.expr, env, ctx, False, None), target_type, ctx, s.pos)
+                self.check_range_bounds(s.expr, target_type, ctx, s.pos)
             elif isinstance(s, ReturnStmt):
                 ctx.reject_scope_handle_escape(s.value)
                 ctx.require_no_unjoined_scope_handles(s.pos)
@@ -451,7 +542,7 @@ class Verifier:
                     continue
                 cal = ctx.routine(s.name, s.pos)
                 if cal.kind != "procedure": raise TypeCheckError(f"{s.pos.text()}: call requires procedure")
-                substitutions = self.routine_type_substitutions(cal, s.type_args, s.pos)
+                substitutions = self.routine_type_substitutions(cal, s.type_args, s.pos, s.args, env, ctx)
                 self.args(cal, s.args, env, ctx, s.pos, substitutions)
                 self.require_abort_propagation(r, cal, s.pos)
         return saw
@@ -490,6 +581,7 @@ class Verifier:
                 if self.base(actual, ctx) != self.base(ok_type, ctx):
                     raise TypeCheckError(f"{rv.pos.text()}: Result ok type mismatch: expected {type_to_string(ok_type)}, got {type_to_string(actual)}")
                 self.assign(actual, ok_type, ctx, rv.pos)
+                self.check_range_bounds(rv.expr, ok_type, ctx, rv.pos)
             elif isinstance(rv, ReturnError):
                 if rv.error_name not in ctx.errors:
                     raise TypeCheckError(f"{rv.pos.text()}: unknown error: {rv.error_name}")
@@ -507,6 +599,7 @@ class Verifier:
             if self.base(actual, ctx) != self.base(expected, ctx):
                 raise TypeCheckError(f"{rv.pos.text()}: function return type mismatch: expected {type_to_string(expected)}, got {type_to_string(actual)}")
             self.assign(actual, expected, ctx, rv.pos)
+            self.check_range_bounds(rv.expr, expected, ctx, rv.pos)
 
     def infer_field_path_obj(self, path, pos, env, ctx, allow_result, result_type):
         root = path[0]
@@ -860,8 +953,9 @@ class Verifier:
             for a in e.args:
                 if a.name in seen: raise TypeCheckError(f"{a.pos.text()}: duplicate record literal field: {a.name}")
                 seen.add(a.name)
-                if a.name not in rec.fields: raise TypeCheckError(f"{a.pos.text()}: unknown field for {e.type_name}: {a.name}")
-                self.assign(self.infer(a.expr, env, ctx, allow_result, result_type), self.parse_type_ref(rec.fields[a.name], ctx), ctx, a.pos)
+                field_type = self.parse_type_ref(rec.fields[a.name], ctx)
+                self.assign(self.infer(a.expr, env, ctx, allow_result, result_type), field_type, ctx, a.pos)
+                self.check_range_bounds(a.expr, field_type, ctx, a.pos)
             missing = set(rec.fields) - seen
             if missing: raise TypeCheckError(f"{e.pos.text()}: missing record field(s) for {e.type_name}: {', '.join(sorted(missing))}")
             return TypeName(e.type_name)
@@ -898,6 +992,25 @@ class Verifier:
                     return TypeName(join_inner)
                 raise TypeCheckError(f"{e.pos.text()}: await requires an awaitable expression, got {type_to_string(awaited)}")
             return awaited.inner_type
+        if isinstance(e, IsExpr):
+            left_name = None
+            if isinstance(e.left, VarExpr): left_name = e.left.name
+            elif isinstance(e.left, TypeName): left_name = e.left.name
+            if left_name in ctx.current_type_params:
+                if e.right not in ("Comparable", "Equatable", "Numeric"):
+                    raise TypeCheckError(f"{e.pos.text()}: unknown type constraint: {e.right}")
+                ctx.type_param_constraints[left_name] = e.right
+                return TypeName("Boolean")
+            else:
+                if left_name in ctx.types or left_name in ctx.records:
+                    if e.right not in ("Comparable", "Equatable", "Numeric"):
+                        raise TypeCheckError(f"{e.pos.text()}: unknown type constraint: {e.right}")
+                    if e.right == "Comparable" and left_name not in ("Integer", "Double"):
+                        raise TypeCheckError(f"{e.pos.text()}: type {left_name} is not Comparable")
+                    if e.right == "Numeric" and left_name not in ("Integer", "Double"):
+                        raise TypeCheckError(f"{e.pos.text()}: type {left_name} is not Numeric")
+                    return TypeName("Boolean")
+                raise TypeCheckError(f"{e.pos.text()}: type parameter {left_name} not found in scope")
         if isinstance(e, UnaryExpr):
             operand = self.infer(e.expr, env, ctx, allow_result, result_type)
             if e.op == "not":
@@ -910,7 +1023,15 @@ class Verifier:
         if isinstance(e, BinaryExpr):
             if e.op in ("=","!="):
                 a,b = self.infer(e.left, env, ctx, allow_result, result_type), self.infer(e.right, env, ctx, allow_result, result_type)
-                if self.base(a, ctx) != self.base(b, ctx):
+                base_a = self.base(a, ctx)
+                base_b = self.base(b, ctx)
+                is_a_param = isinstance(a, TypeName) and a.name in ctx.current_type_params
+                is_b_param = isinstance(b, TypeName) and b.name in ctx.current_type_params
+                if is_a_param and is_b_param and a.name == b.name:
+                    constraint = ctx.type_param_constraints.get(a.name)
+                    if constraint not in ("Equatable", "Comparable", "Numeric"):
+                        raise TypeCheckError(f"{e.pos.text()}: type parameter {a.name} does not support equality comparison (requires Equatable, Comparable, or Numeric)")
+                elif base_a != base_b:
                     raise TypeCheckError(f"{e.pos.text()}: cannot compare {type_to_string(a)} with {type_to_string(b)}")
                 return TypeName("Boolean")
             if e.op in ("and", "or"):
@@ -920,13 +1041,29 @@ class Verifier:
                 return TypeName("Boolean")
             if e.op in ("<","<=",">",">="):
                 a,b = self.infer(e.left, env, ctx, allow_result, result_type), self.infer(e.right, env, ctx, allow_result, result_type)
-                if self.base(a, ctx) not in ("Integer", "Double") or self.base(b, ctx) not in ("Integer", "Double"):
+                base_a = self.base(a, ctx)
+                base_b = self.base(b, ctx)
+                is_a_param = isinstance(a, TypeName) and a.name in ctx.current_type_params
+                is_b_param = isinstance(b, TypeName) and b.name in ctx.current_type_params
+                if is_a_param and is_b_param and a.name == b.name:
+                    constraint = ctx.type_param_constraints.get(a.name)
+                    if constraint not in ("Comparable", "Numeric"):
+                        raise TypeCheckError(f"{e.pos.text()}: type parameter {a.name} does not support ordering comparison (requires Comparable or Numeric)")
+                elif base_a not in ("Integer", "Double") or base_b not in ("Integer", "Double"):
                     raise TypeCheckError(f"{e.pos.text()}: comparison operator {e.op} requires numeric operands, got {type_to_string(a)} and {type_to_string(b)}")
                 return TypeName("Boolean")
             a,b = self.infer(e.left, env, ctx, allow_result, result_type), self.infer(e.right, env, ctx, allow_result, result_type)
-            if self.base(a,ctx) not in ("Integer","Double") or self.base(b,ctx) not in ("Integer","Double"):
+            base_a = self.base(a, ctx)
+            base_b = self.base(b, ctx)
+            is_a_param = isinstance(a, TypeName) and a.name in ctx.current_type_params
+            is_b_param = isinstance(b, TypeName) and b.name in ctx.current_type_params
+            if is_a_param and is_b_param and a.name == b.name:
+                constraint = ctx.type_param_constraints.get(a.name)
+                if constraint != "Numeric":
+                    raise TypeCheckError(f"{e.pos.text()}: type parameter {a.name} does not support arithmetic (requires Numeric)")
+            elif base_a not in ("Integer", "Double") or base_b not in ("Integer", "Double"):
                 raise TypeCheckError(f"{e.pos.text()}: arithmetic operator {e.op} requires numeric operands, got {type_to_string(a)} and {type_to_string(b)}")
-            return TypeName("Double" if self.base(a,ctx)=="Double" or self.base(b,ctx)=="Double" else "Integer")
+            return TypeName("Double" if base_a=="Double" or base_b=="Double" else "Integer")
         raise TypeCheckError(f"unsupported expression {e}")
 
     def call_expr_type(self, e, env, ctx, allow_result, result_type):
@@ -936,7 +1073,7 @@ class Verifier:
         r = ctx.routine(e.name, e.pos)
         if r.kind != "function":
             raise TypeCheckError(f"{e.pos.text()}: function call requires function")
-        substitutions = ctx.routine_type_substitutions(r, e.type_args, e.pos)
+        substitutions = self.routine_type_substitutions(r, e.type_args, e.pos, e.args, env, ctx)
         self.args(r, e.args, env, ctx, e.pos, substitutions)
         self.require_abort_propagation(ctx.current_routine, r, e.pos)
         return_type = ctx.substitute_type_ref(r.return_type, substitutions)
@@ -970,6 +1107,38 @@ class Verifier:
         if self.base(s,ctx) != self.base(t,ctx): raise TypeCheckError(f"{pos.text()}: cannot assign {type_to_string(s)} to {type_to_string(t)}")
         if isinstance(t, TypeName) and t.name in ctx.records and (not isinstance(s, TypeName) or s.name != t.name):
             raise TypeCheckError(f"{pos.text()}: cannot assign {type_to_string(s)} to {type_to_string(t)}")
+    def get_constant_value(self, e):
+        if isinstance(e, NumberExpr):
+            return e.value
+        if isinstance(e, DoubleExpr):
+            return e.value
+        if isinstance(e, UnaryExpr):
+            val = self.get_constant_value(e.expr)
+            if val is not None:
+                if e.op == "-":
+                    return -val
+        if isinstance(e, BinaryExpr):
+            l = self.get_constant_value(e.left)
+            r = self.get_constant_value(e.right)
+            if l is not None and r is not None:
+                if e.op == "+": return l + r
+                if e.op == "-": return l - r
+                if e.op == "*": return l * r
+                if e.op == "/":
+                    if r == 0:
+                        return None
+                    return l / r if (isinstance(l, float) or isinstance(r, float)) else l // r
+        return None
+
+    def check_range_bounds(self, expr, target_type, ctx, pos):
+        if isinstance(target_type, TypeName) and target_type.name in ctx.types:
+            td = ctx.types[target_type.name]
+            if td.min_value is not None:
+                val = self.get_constant_value(expr)
+                if val is not None:
+                    if val < td.min_value or val > td.max_value:
+                        raise TypeCheckError(f"{pos.text()}: value {val} out of range for type {target_type.name} ({td.min_value}..{td.max_value})")
+
     def base(self,t,ctx):
         if isinstance(t, AwaitableType): return "Awaitable"
         if isinstance(t, ResultTypeName): return "Result"
@@ -979,6 +1148,78 @@ class Verifier:
         if t.name in ctx.records: return "Record"
         if t.name in ctx.errors: return t.name
         return ctx.types[t.name].base
+    def match_types(self, formal: TypeRef, actual: TypeRef, type_params: set[str], inferred: dict[str, set[str]], ctx: Any) -> None:
+        if isinstance(formal, TypeName):
+            if formal.name in type_params:
+                inferred[formal.name].add(type_to_string(actual))
+                return
+            generic_formal = ctx.parse_generic_instance(formal.name)
+            if generic_formal is not None:
+                if not isinstance(actual, TypeName):
+                    return
+                generic_actual = ctx.parse_generic_instance(actual.name)
+                if generic_actual is not None:
+                    base_formal, args_formal = generic_formal
+                    base_actual, args_actual = generic_actual
+                    if base_formal == base_actual and len(args_formal) == len(args_actual):
+                        for f_arg, a_arg in zip(args_formal, args_actual):
+                            self.match_types(self.parse_type_ref(f_arg, ctx), self.parse_type_ref(a_arg, ctx), type_params, inferred, ctx)
+        elif isinstance(formal, ArrayTypeName):
+            if isinstance(actual, (ArrayTypeName, ArrayLiteralType)):
+                self.match_types(self.parse_type_ref(formal.element_type, ctx), self.parse_type_ref(actual.element_type, ctx), type_params, inferred, ctx)
+        elif isinstance(formal, ResultTypeName):
+            if isinstance(actual, ResultTypeName):
+                self.match_types(formal.ok_type, actual.ok_type, type_params, inferred, ctx)
+                if formal.error_type in type_params:
+                    inferred[formal.error_type].add(actual.error_type)
+
+    def routine_type_substitutions(self, routine: RoutineDecl, type_args: list[str] | None, pos: SourcePos, args: list[Any], env: dict[str, Any], ctx: Any) -> dict[str, str]:
+        params = routine.type_params or []
+        if not params:
+            if type_args:
+                raise TypeCheckError(f"{pos.text()}: non-generic routine used with type arguments: {routine.name}")
+            return {}
+        if len(args) != len(routine.params):
+            raise TypeCheckError(f"{pos.text()}: routine {routine.name} expects {len(routine.params)} argument(s), got {len(args)}")
+        routine_constraints = {}
+        for req in routine.requires:
+            if isinstance(req, IsExpr):
+                if isinstance(req.left, VarExpr) and req.left.name in params:
+                    routine_constraints[req.left.name] = req.right
+        if type_args:
+            if len(type_args) != len(params):
+                raise TypeCheckError(f"{pos.text()}: generic routine {routine.name} expects {len(params)} type argument(s), got {len(type_args)}")
+            for arg in type_args:
+                ctx.require_type_or_record(arg, pos)
+            resolved = dict(zip(params, type_args))
+        else:
+            inferred = {p: set() for p in params}
+            for index, (a, p) in enumerate(zip(args, routine.params)):
+                actual_type = self.infer(a, env, ctx, False, None)
+                formal_type_ref = self.param_type_ref(p, ctx)
+                self.match_types(formal_type_ref, actual_type, set(params), inferred, ctx)
+            resolved = {}
+            for p in params:
+                types_set = inferred[p]
+                if not types_set:
+                    raise TypeCheckError(f"{pos.text()}: cannot infer type parameter {p} for generic routine {routine.name}")
+                if len(types_set) == 1:
+                    resolved[p] = list(types_set)[0]
+                else:
+                    bases = {self.base(self.parse_type_ref(t, ctx), ctx) for t in types_set}
+                    if len(bases) == 1:
+                        resolved[p] = list(bases)[0]
+                    else:
+                        raise TypeCheckError(f"{pos.text()}: cannot infer type parameter {p} due to conflicting types: {', '.join(sorted(types_set))}")
+        for p in params:
+            if p in routine_constraints:
+                const = routine_constraints[p]
+                arg_type = resolved[p]
+                if const in ("Comparable", "Numeric"):
+                    if arg_type not in ("Integer", "Double"):
+                        raise TypeCheckError(f"{pos.text()}: type {arg_type} does not satisfy constraint {const}")
+        return resolved
+
     def args(self,r,args,env,ctx,pos,substitutions=None):
         substitutions = substitutions or {}
         if len(args) != len(r.params):
@@ -991,6 +1232,7 @@ class Verifier:
             if self.base(actual, ctx) != self.base(expected, ctx):
                 raise TypeCheckError(f"{a.pos.text()}: routine argument {index} type mismatch for {r.name}: expected {type_to_string(expected)}, got {type_to_string(actual)}")
             self.assign(actual, expected, ctx, a.pos)
+            self.check_range_bounds(a, expected, ctx, a.pos)
 
     def parse_type_ref(self, type_name: str, ctx) -> TypeRef:
         generic = ctx.parse_generic_instance(type_name)
@@ -1011,7 +1253,7 @@ class Ctx:
         self.imports=imports or []; self.imported_modules=imported_modules or {}; self.validate_exposing_conflicts(); self.exposed_routines=self.build_exposed_routines()
         self.add_exposed_types_records_and_errors()
         self.current_routine=None; self.current_type_params=set(); self.current_async=False
-        self.scope_vars=set(); self.scope_handles={}
+        self.scope_vars=set(); self.scope_handles={}; self.type_param_constraints={}
 
     def validate_exposing_conflicts(self) -> None:
         exposed_modules: dict[str, str] = {}
@@ -1249,19 +1491,6 @@ class Ctx:
         if isinstance(type_ref, ResultTypeName):
             return ResultTypeName(self.substitute_type_ref(type_ref.ok_type, substitutions), self.substitute_type(type_ref.error_type, substitutions))
         return type_ref
-    def routine_type_substitutions(self, routine: RoutineDecl, type_args: list[str] | None, pos: SourcePos) -> dict[str, str]:
-        params = routine.type_params or []
-        if not params:
-            if type_args:
-                raise TypeCheckError(f"{pos.text()}: non-generic routine used with type arguments: {routine.name}")
-            return {}
-        if not type_args:
-            raise TypeCheckError(f"{pos.text()}: generic routine requires {len(params)} type argument(s): {routine.name}")
-        if len(type_args) != len(params):
-            raise TypeCheckError(f"{pos.text()}: generic routine {routine.name} expects {len(params)} type argument(s), got {len(type_args)}")
-        for arg in type_args:
-            self.require_type_or_record(arg, pos)
-        return dict(zip(params, type_args))
     def require_return_type(self,t,pos):
         if isinstance(t, TypeName): self.require_type_or_record(t.name,pos)
         elif isinstance(t, ArrayTypeName): self.require_type_or_record(t.element_type,pos)

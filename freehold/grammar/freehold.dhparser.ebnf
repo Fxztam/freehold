@@ -43,7 +43,9 @@ param_list = param { "," param }
 param = IDENT ":" type_ref
 
 contract_block = { requires_clause } { aborts_clause } { ensures_clause }
-requires_clause = "requires" expr_list
+requires_clause = "requires" constraint_list
+constraint_list = constraint { "," constraint }
+constraint = IDENT "is" IDENT | expr
 aborts_clause = "aborts" IDENT [ "when" expr ]
 ensures_clause = "ensures" expr_list
 

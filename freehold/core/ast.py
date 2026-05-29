@@ -119,9 +119,23 @@ class Program:
     imports: list[ImportDecl] | None = None
 
 @dataclass
+class GlobalSpec:
+    mode: str | None # "Input" | "Output" | "In_Out" or None
+    name: str
+    pos: SourcePos
+
+@dataclass
+class DependsSpec:
+    target: str
+    sources: list[str]
+    pos: SourcePos
+
+@dataclass
 class RoutineDecl:
     kind: str; name: str; params: list[Param]; return_type: TypeRef | None
     requires: list[Any]; aborts: list[Any]; ensures: list[Any]; body: list[Any]; pos: SourcePos; type_params: list[str] | None = None; is_async: bool = False
+    global_specs: list[GlobalSpec] | None = None
+    depends_specs: list[DependsSpec] | None = None
 
 @dataclass
 class AbortClause:
@@ -234,6 +248,10 @@ class UnaryExpr:
 @dataclass(frozen=True)
 class BinaryExpr:
     op: str; left: Any; right: Any; pos: SourcePos
+
+@dataclass(frozen=True)
+class IsExpr:
+    left: Any; right: str; pos: SourcePos
 
 class FreeholdError(Exception): pass
 class TypeCheckError(FreeholdError): pass

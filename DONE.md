@@ -2,6 +2,19 @@
 
 ## 2026-05-29
 
+### V3 Flow Contracts (Global and Depends Annotations)
+
+- **Syntax & Parsing Implementation:** Expanded Lark grammar (`freehold.lark`) with `global` and `depends` clauses in the routine contract block. Structured `global_spec` with mode `GLOBAL_MODE.2` (`Input`, `Output`, `In_Out`) using high priority to resolve lexer conflicts. Added `GlobalSpec` and `DependsSpec` AST representations to `ast.py` and implemented parsing routines in `parser_legacy.py`.
+- **Semantic Validation Engine:** Integrated comprehensive validation inside `verifier.py`:
+  - Verified global variable/service names and access modes.
+  - Checked dependency targets: must be `result` for functions, or parameters for procedures.
+  - Tracked all mutated variables in the routine body (via `collect_mutated_vars`) and matched them with the `depends` target list to enforce parity.
+- **Language Conformance Demos (`tests/language_modules_v2_3/04_flow_contracts`)**:
+  - Provided a comprehensive set of positive and negative demos.
+  - Covered all 17 conformance tests and updated AST/error diagnostics.
+  - Created a new supported compiler example (`examples/compiler_v1/24_flow_contracts`).
+  - Verified compilation and runtime log correctness using the native bootstrapped stage-3 compiler.
+
 ### Formale Verifikations-Härtung (Compiler-Kern-Module)
 
 - **Vollständige Verifikation der erweiterten Module:** Die erweiterten und neuen Compiler-Kern-Module (`Ast.fh`, `Parser.fh`, `Resolve.fh`, `Transform.fh`, `Flow.fh`) wurden durch Integration mathematischer Verträge (`requires`, `ensures` und `invariant`-Schleifenbedingungen) formal abgesichert.
