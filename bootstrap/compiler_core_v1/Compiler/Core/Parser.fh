@@ -1,6 +1,6 @@
 module Compiler.Core.Parser
 
-import Compiler.Core.Ast exposing FunctionImportReferenceNode, FunctionNode, IdentifierNode, ImportNode, ImportReferenceNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, ProcedureNode, RecordTypeNode, ModuleWithRecordLiteralNode, RecordLiteralNode, ModuleWithReturnNode, ReturnStmtNode, ModuleWithCallNode, CallStmtNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, make_function_import_reference_node, make_function_node, make_identifier_node, make_import_node, make_import_reference_node, make_literal_node, make_module_node, make_module_with_function_node, make_module_with_import_node, make_module_with_import_reference_node, make_module_with_procedure_node, make_module_with_record_node, make_procedure_node, make_record_type_node, make_record_literal_node, make_module_with_record_literal_node, make_return_stmt_node, make_module_with_return_node, make_module_with_call_node, make_call_stmt_node, make_nested_call_stmt_node, make_module_with_nested_call_node, make_lowered_call_node, make_module_with_lowered_calls_node, module_text, module_with_function_text, module_with_import_reference_text, module_with_import_text, module_with_procedure_text, module_with_record_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text
+import Compiler.Core.Ast exposing FunctionImportReferenceNode, FunctionNode, IdentifierNode, ImportNode, ImportReferenceNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, ProcedureNode, RecordTypeNode, ModuleWithRecordLiteralNode, RecordLiteralNode, ModuleWithReturnNode, ReturnStmtNode, ModuleWithCallNode, CallStmtNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, make_function_import_reference_node, make_function_node, make_identifier_node, make_import_node, make_import_reference_node, make_literal_node, make_module_node, make_module_with_function_node, make_module_with_import_node, make_module_with_import_reference_node, make_module_with_procedure_node, make_module_with_record_node, make_procedure_node, make_record_type_node, make_record_literal_node, make_module_with_record_literal_node, make_return_stmt_node, make_module_with_return_node, make_module_with_call_node, make_call_stmt_node, make_nested_call_stmt_node, make_module_with_nested_call_node, make_lowered_call_node, make_module_with_lowered_calls_node, module_text, module_with_function_text, module_with_import_reference_text, module_with_import_text, module_with_procedure_text, module_with_record_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text, ExprNode, StmtNode, make_expr_node, make_stmt_node
 import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, MiniRecordLiteralModuleTokens, MiniReturnStmtModuleTokens, MiniCallModuleTokens, MiniNestedCallModuleTokens, Lexer, LexerResult, make_lexer, lex_next_token
 import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok
 import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_token, make_token_kind
@@ -370,6 +370,17 @@ type ParserFunctionNodeResult is record
     func_import_ref_node: FunctionImportReferenceNode
 end record
 
+type ParserExprResult is record
+    parser: GeneralParser
+    node: ExprNode
+end record
+
+type ParserStmtResult is record
+    parser: GeneralParser
+    node: StmtNode
+end record
+
+
 function init_general_parser(source_name: String, source: String) returns GeneralParser
 is
     let lex: Lexer = make_lexer(source_name, source)
@@ -673,6 +684,119 @@ is
     
     return parse_ok(module_node)
 end parse_general_module_result
+
+function parse_expr(p: GeneralParser) returns ParserExprResult
+is
+    let empty_span: SourceSpan = SourceSpan { source_name: p.source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_expr: ExprNode = make_expr_node(empty_span, "ERROR", "", "", "", -1, -1, "", -1, -1, 0)
+    
+    if is_literal_token(p.curr_tok) then
+        let lit_kind: String = "Integer"
+        if p.curr_tok.kind.name = "StringLiteral" then
+            lit_kind := "String"
+        else
+            if p.curr_tok.kind.name = "DoubleLiteral" then
+                lit_kind := "Double"
+            else
+                if p.curr_tok.kind.name = "BooleanLiteral" then
+                    lit_kind := "Boolean"
+                end if
+            end if
+        end if
+        let node_lit: ExprNode = make_expr_node(p.curr_tok.span, "LITERAL", lit_kind, p.curr_tok.lexeme, "", -1, -1, "", -1, -1, 0)
+        let p_next_lit: GeneralParser = advance_parser(p)
+        return ParserExprResult { parser: p_next_lit, node: node_lit }
+    else
+        if p.curr_tok.kind.name = "Identifier" then
+            let node_id: ExprNode = make_expr_node(p.curr_tok.span, "IDENTIFIER", "", p.curr_tok.lexeme, "", -1, -1, "", -1, -1, 0)
+            let p_next_id: GeneralParser = advance_parser(p)
+            return ParserExprResult { parser: p_next_id, node: node_id }
+        else
+            let err_msg: String = String.template("Expected expression, got ${lexeme}", lexeme: p.curr_tok.lexeme)
+            let err: ParseError = make_parse_error("FH-PARSE-0003", err_msg, p.curr_tok.span)
+            let p_err: GeneralParser = GeneralParser {
+                lexer: p.lexer,
+                curr_tok: p.curr_tok,
+                peek_tok: p.peek_tok,
+                has_error: true,
+                issue: err,
+                source_name: p.source_name
+            }
+            return ParserExprResult { parser: p_err, node: empty_expr }
+        end if
+    end if
+end parse_expr
+
+function parse_stmt(p: GeneralParser) returns ParserStmtResult
+is
+    let empty_span: SourceSpan = SourceSpan { source_name: p.source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_stmt: StmtNode = make_stmt_node(empty_span, "ERROR", "", "", -1, -1, -1, 0, -1, 0, "", "")
+    
+    if p.curr_tok.kind.name = "KeywordLet" then
+        let p_let1: GeneralParser = advance_parser(p)
+        let res_var: ParserIdentifierResult = parse_identifier(p_let1)
+        let p_let2: GeneralParser = expect_kind(res_var.parser, "Colon", "FH-PARSE-0002", "Expected ':'")
+        let res_type: ParserIdentifierResult = parse_identifier(p_let2)
+        let p_let3: GeneralParser = expect_kind(res_type.parser, "Equal", "FH-PARSE-0002", "Expected '='")
+        let res_expr: ParserExprResult = parse_expr(p_let3)
+        if res_expr.parser.has_error then
+            return ParserStmtResult { parser: res_expr.parser, node: empty_stmt }
+        end if
+        let node_let: StmtNode = make_stmt_node(p.curr_tok.span, "LET", res_var.node.name, res_type.node.name, 0, -1, -1, 0, -1, 0, "", "")
+        return ParserStmtResult { parser: res_expr.parser, node: node_let }
+    else
+        if p.curr_tok.kind.name = "KeywordIf" then
+            let p_if1: GeneralParser = advance_parser(p)
+            let res_cond: ParserExprResult = parse_expr(p_if1)
+            let p_if2: GeneralParser = expect_kind(res_cond.parser, "KeywordThen", "FH-PARSE-0002", "Expected 'then'")
+            let p_if3: GeneralParser = expect_kind(p_if2, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
+            let p_if4: GeneralParser = expect_kind(p_if3, "KeywordIf", "FH-PARSE-0002", "Expected 'if'")
+            if p_if4.has_error then
+                return ParserStmtResult { parser: p_if4, node: empty_stmt }
+            end if
+            let node_if: StmtNode = make_stmt_node(p.curr_tok.span, "IF", "", "", -1, 0, -1, 0, -1, 0, "", "")
+            return ParserStmtResult { parser: p_if4, node: node_if }
+        else
+            if p.curr_tok.kind.name = "KeywordWhile" then
+                let p_wh1: GeneralParser = advance_parser(p)
+                let res_wcond: ParserExprResult = parse_expr(p_wh1)
+                let p_wh2: GeneralParser = expect_kind(res_wcond.parser, "KeywordInvariant", "FH-PARSE-0002", "Expected 'invariant'")
+                let res_winv: ParserExprResult = parse_expr(p_wh2)
+                let p_wh3: GeneralParser = expect_kind(res_winv.parser, "KeywordDo", "FH-PARSE-0002", "Expected 'do'")
+                let p_wh4: GeneralParser = expect_kind(p_wh3, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
+                let p_wh5: GeneralParser = expect_kind(p_wh4, "KeywordWhile", "FH-PARSE-0002", "Expected 'while'")
+                if p_wh5.has_error then
+                    return ParserStmtResult { parser: p_wh5, node: empty_stmt }
+                end if
+                let node_wh: StmtNode = make_stmt_node(p.curr_tok.span, "WHILE", "", "", -1, 0, -1, 0, -1, 0, "", "")
+                return ParserStmtResult { parser: p_wh5, node: node_wh }
+            else
+                if p.curr_tok.kind.name = "Identifier" and p.peek_tok.kind.name = "ColonEqual" then
+                    let res_avar: ParserIdentifierResult = parse_identifier(p)
+                    let p_as1: GeneralParser = expect_kind(res_avar.parser, "ColonEqual", "FH-PARSE-0002", "Expected ':='")
+                    let res_aexpr: ParserExprResult = parse_expr(p_as1)
+                    if res_aexpr.parser.has_error then
+                        return ParserStmtResult { parser: res_aexpr.parser, node: empty_stmt }
+                    end if
+                    let node_assign: StmtNode = make_stmt_node(p.curr_tok.span, "ASSIGN", res_avar.node.name, "", 0, -1, -1, 0, -1, 0, "", "")
+                    return ParserStmtResult { parser: res_aexpr.parser, node: node_assign }
+                else
+                    let err_msg: String = String.template("Expected statement, got ${lexeme}", lexeme: p.curr_tok.lexeme)
+                    let err: ParseError = make_parse_error("FH-PARSE-0004", err_msg, p.curr_tok.span)
+                    let p_err: GeneralParser = GeneralParser {
+                        lexer: p.lexer,
+                        curr_tok: p.curr_tok,
+                        peek_tok: p.peek_tok,
+                        has_error: true,
+                        issue: err,
+                        source_name: p.source_name
+                    }
+                    return ParserStmtResult { parser: p_err, node: empty_stmt }
+                end if
+            end if
+        end if
+    end if
+end parse_stmt
 
 end Compiler.Core.Parser
 
