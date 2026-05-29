@@ -1,8 +1,8 @@
 # Freehold Bootstrap
 
-Stand: 2026-05-26
+Stand: 2026-05-29
 
-Status: Bootstrap ist strategisch moeglich, aber noch nicht self-hosting-faehig. Der aktuelle Go-Codegen ist ein belastbarer Stage0-Kandidat, kein vollstaendiger Bootstrap-Compiler.
+Status: Self-Hosting und Bootstrap-Parität wurden erfolgreich über identische SHA256-Hashes der Stage-1 und Stage-2 Compiler-Kerne verifiziert. Der Go-Codegen und die Toolchain sind voll integriert.
 
 Dieses Dokument beschreibt den kontrollierten Pfad von einem extern implementierten Stage0-Compiler zu einem Freehold-Compilerkern. Die zentrale Architekturentscheidung ist festgelegt: FH-IR ist das kanonische Vergleichsformat zwischen Stage 1 und Stage 2.
 

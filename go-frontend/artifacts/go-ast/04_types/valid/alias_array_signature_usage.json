@@ -1,0 +1,100 @@
+{
+  "source_file": "..\\tests\\language_modules\\04_types\\valid\\alias_array_signature_usage.fh",
+  "source_snippet": "module AliasArraySignatureUsage\r\n\r\ntype Money is Integer\r\n\r\nfunction values() returns Array\u003cMoney, 3\u003e\r\nis\r\n    return [1, 2, 3]\r\nend values\r\n\r\nprocedure main()\r\nis\r\n    let amounts: Array\u003cMoney, 3\u003e = values()\r\n    let amount: Money = amounts[0]\r\n    check amount = 1\r\nend main\r\n\r\nend AliasArraySignatureUsage",
+  "module_name": "04_types",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "AliasArraySignatureUsage",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Money",
+        "base": "Integer"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "values",
+        "params": null,
+        "return_type": "Array\u003cMoney, 3\u003e",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ArrayLiteralExpr",
+              "elements": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                },
+                {
+                  "kind": "NumberExpr",
+                  "value": "2"
+                },
+                {
+                  "kind": "NumberExpr",
+                  "value": "3"
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "values"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "amounts",
+            "type": "Array\u003cMoney, 3\u003e",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "values"
+              },
+              "arguments": null
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "amount",
+            "type": "Money",
+            "value": {
+              "kind": "IndexExpr",
+              "array": {
+                "kind": "IdentifierExpr",
+                "name": "amounts"
+              },
+              "index": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "AliasArraySignatureUsage"
+  }
+}

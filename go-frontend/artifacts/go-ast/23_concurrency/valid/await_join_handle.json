@@ -1,0 +1,48 @@
+{
+  "source_file": "..\\tests\\language_modules\\23_concurrency\\valid\\await_join_handle.fh",
+  "source_snippet": "module Concurrency.AwaitJoinHandle\r\n\r\nasync function read(handle: JoinHandle\u003cInteger\u003e) returns Integer\r\nis\r\n    let item: Integer = await handle\r\n    return item\r\nend read\r\n\r\nend Concurrency.AwaitJoinHandle",
+  "module_name": "23_concurrency",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Concurrency.AwaitJoinHandle",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "read",
+        "is_async": true,
+        "params": [
+          {
+            "name": "handle",
+            "type": "JoinHandle\u003cInteger\u003e"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "item",
+            "type": "Integer",
+            "value": {
+              "kind": "AwaitExpr",
+              "value": {
+                "kind": "IdentifierExpr",
+                "name": "handle"
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "item"
+            }
+          }
+        ],
+        "end_name": "read"
+      }
+    ],
+    "end_name": "Concurrency.AwaitJoinHandle"
+  }
+}

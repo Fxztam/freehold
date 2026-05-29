@@ -1,0 +1,73 @@
+{
+  "source_file": "..\\tests\\language_modules\\22_generics\\valid\\generic_record_box.fh",
+  "source_snippet": "module GenericRecordBox\r\n\r\ntype Box\u003cT\u003e is record\r\n    item: T\r\nend record\r\n\r\nprocedure main()\r\nis\r\n    let b: Box\u003cInteger\u003e = Box\u003cInteger\u003e { item: 1 }\r\n    check b.item = 1\r\nend main\r\n\r\nend GenericRecordBox",
+  "module_name": "22_generics",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "GenericRecordBox",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Box",
+        "type_params": [
+          "T"
+        ],
+        "base": "record",
+        "fields": [
+          {
+            "name": "item",
+            "type": "T"
+          }
+        ]
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "b",
+            "type": "Box\u003cInteger\u003e",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Box\u003cInteger\u003e",
+              "fields": [
+                {
+                  "name": "item",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "b"
+                },
+                "field": "item"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "GenericRecordBox"
+  }
+}

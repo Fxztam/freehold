@@ -1,0 +1,66 @@
+{
+  "source_file": "..\\tests\\language_modules\\21_abort_handling\\valid\\else_path_covers_abort_condition.fh",
+  "source_snippet": "module AbortElsePathCoversCondition\r\n\r\nerror NotReady\r\n\r\nprocedure read(ready: Boolean)\r\naborts NotReady when not ready\r\nis\r\n    if ready then\r\n        check ready\r\n    else\r\n        abort NotReady\r\n    end if\r\nend read\r\n\r\nend AbortElsePathCoversCondition",
+  "module_name": "21_abort_handling",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "AbortElsePathCoversCondition",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotReady"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "read",
+        "params": [
+          {
+            "name": "ready",
+            "type": "Boolean"
+          }
+        ],
+        "aborts": [
+          {
+            "error": "NotReady",
+            "condition": {
+              "kind": "UnaryExpr",
+              "op": "not",
+              "value": {
+                "kind": "IdentifierExpr",
+                "name": "ready"
+              }
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "IdentifierExpr",
+              "name": "ready"
+            },
+            "then_body": [
+              {
+                "kind": "CheckStmt",
+                "condition": {
+                  "kind": "IdentifierExpr",
+                  "name": "ready"
+                }
+              }
+            ],
+            "else_body": [
+              {
+                "kind": "AbortStmt",
+                "error": "NotReady"
+              }
+            ]
+          }
+        ],
+        "end_name": "read"
+      }
+    ],
+    "end_name": "AbortElsePathCoversCondition"
+  }
+}

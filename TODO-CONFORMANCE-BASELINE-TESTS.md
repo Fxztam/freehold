@@ -77,7 +77,14 @@ Hinweis:
 - [ ] Bei FH-IR-V1-Checks: `cmd /c compare-fhir-v1.cmd` liefert `Mismatching FH-IR: 0`.
 - [ ] Verify-Standardlauf enthaelt das V1-Gate; nur bei Bedarf mit `--disable-fhir-v1-gate` abschalten.
 
-## Offene TODOs
-- [ ] Optional: separates Script `verify-parser-conformance-update-baseline.cmd` fuer explizite Baseline-Pflege anlegen.
-- [ ] Optional: PR-Template um Pflichtfeld "Baseline geaendert: ja/nein + Begruendung" erweitern.
-- [ ] Optional: CI-Guard, der das Update-Flag in Standard-Pipelines verbietet.
+## Implementierte Features & Schutzmechanismen
+- **Explizites Baseline-Pflegeskript (`verify-parser-conformance-update-baseline.cmd`):**
+  - Ein dediziertes Skript wurde angelegt, um die Go- und Python-Baselines kontrolliert zu aktualisieren. Es delegiert an `verify-parser-conformance.cmd` mit den entsprechenden Update-Flags.
+- **CI-Guard-Integration:**
+  - In `verify-parser-conformance.cmd` wurde eine Sperre integriert, die die Verwendung von Update-Flags in Standard-Pipelines verbietet. Ein Update wird verweigert, es sei denn, die Umgebungsvariable `FREEHOLD_ALLOW_BASELINE_UPDATE=1` ist explizit gesetzt.
+- **Dirty-Repository-Schutz & `--force` Flag:**
+  - Um unbeabsichtigten Drift oder unsaubere Baselines im Git-Repository zu verhindern, blockieren Updates standardmäßig, wenn nicht-committete oder untrackte Dateien im Repository vorhanden sind.
+  - Dieser Block kann bewusst mit dem `--force` Parameter (oder der Umgebungsvariable `FORCE_BASELINE_UPDATE=1`) überschrieben werden.
+- **Bypass des Additive-Test-Line-Checks:**
+  - Der `verify_additive_test_line.py`-Check wird bei aktiven Baseline-Updates automatisch übersprungen, um Fehlalarme bei der bewussten Pflege der Artefakte zu vermeiden.
+

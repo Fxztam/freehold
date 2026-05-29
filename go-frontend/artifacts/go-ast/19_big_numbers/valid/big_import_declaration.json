@@ -1,0 +1,85 @@
+{
+  "source_file": "..\\tests\\language_modules\\19_big_numbers\\valid\\big_import_declaration.fh",
+  "source_snippet": "module BigImportDeclaration\r\n\r\nimport Big\r\n\r\nprocedure main()\r\nis\r\n    let item: BigInteger = Big.integer(\"42\")\r\n    let text: String = Big.toString(item)\r\n    check text = \"42\"\r\nend main\r\n\r\nend BigImportDeclaration\r\n",
+  "module_name": "19_big_numbers",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "BigImportDeclaration",
+    "declarations": [
+      {
+        "kind": "ImportDecl",
+        "module": "Big"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "item",
+            "type": "BigInteger",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "Big"
+                },
+                "field": "integer"
+              },
+              "arguments": [
+                {
+                  "kind": "StringExpr",
+                  "value": "42"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "text",
+            "type": "String",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "Big"
+                },
+                "field": "toString"
+              },
+              "arguments": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "item"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "text"
+              },
+              "right": {
+                "kind": "StringExpr",
+                "value": "42"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "BigImportDeclaration"
+  }
+}

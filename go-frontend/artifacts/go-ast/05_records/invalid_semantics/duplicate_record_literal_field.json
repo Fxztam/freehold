@@ -1,0 +1,80 @@
+{
+  "source_file": "..\\tests\\language_modules\\05_records\\invalid_semantics\\duplicate_record_literal_field.fh",
+  "source_snippet": "module DuplicateRecordLiteralField\r\n\r\ntype Account is record\r\n    id: Integer\r\n    active: Boolean\r\nend record\r\n\r\nprocedure main()\r\nis\r\n    let account: Account = Account { id: 1, id: 2, active: true }\r\n    check account.active\r\nend main\r\n\r\nend DuplicateRecordLiteralField",
+  "module_name": "05_records",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "DuplicateRecordLiteralField",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Account",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "active",
+            "type": "Boolean"
+          }
+        ]
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "account",
+            "type": "Account",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Account",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                },
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "2"
+                  }
+                },
+                {
+                  "name": "active",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "true"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "FieldAccessExpr",
+              "object": {
+                "kind": "IdentifierExpr",
+                "name": "account"
+              },
+              "field": "active"
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "DuplicateRecordLiteralField"
+  }
+}

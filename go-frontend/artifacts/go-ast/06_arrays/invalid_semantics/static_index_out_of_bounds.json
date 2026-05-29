@@ -1,0 +1,66 @@
+{
+  "source_file": "..\\tests\\language_modules\\06_arrays\\invalid_semantics\\static_index_out_of_bounds.fh",
+  "source_snippet": "module StaticIndexOutOfBounds\r\n\r\nprocedure main()\r\nis\r\n    let values: Array\u003cInteger, 3\u003e = [1, 2, 3]\r\n    check values[3] = 0\r\nend main\r\n\r\nend StaticIndexOutOfBounds",
+  "module_name": "06_arrays",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "StaticIndexOutOfBounds",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "values",
+            "type": "Array\u003cInteger, 3\u003e",
+            "value": {
+              "kind": "ArrayLiteralExpr",
+              "elements": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                },
+                {
+                  "kind": "NumberExpr",
+                  "value": "2"
+                },
+                {
+                  "kind": "NumberExpr",
+                  "value": "3"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IndexExpr",
+                "array": {
+                  "kind": "IdentifierExpr",
+                  "name": "values"
+                },
+                "index": {
+                  "kind": "NumberExpr",
+                  "value": "3"
+                }
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "StaticIndexOutOfBounds"
+  }
+}

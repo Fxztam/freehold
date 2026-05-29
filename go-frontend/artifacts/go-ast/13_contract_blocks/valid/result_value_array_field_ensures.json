@@ -1,0 +1,196 @@
+{
+  "source_file": "..\\tests\\language_modules\\13_contract_blocks\\valid\\result_value_array_field_ensures.fh",
+  "source_snippet": "module result_value_array_field_ensures\r\n\r\nerror NotFound\r\n\r\ntype Address is record\r\n    city_id: Integer\r\nend record\r\n\r\ntype Customer is record\r\n    id: Integer\r\n    address: Address\r\nend record\r\n\r\nfunction load() returns Result\u003cArray\u003cCustomer, 2\u003e, NotFound\u003e\r\nensures success\r\nensures value[0].id = 1\r\nensures value[1].address.city_id = 7\r\nis\r\n    let first: Customer = Customer { id: 1, address: Address { city_id: 42 } }\r\n    let second: Customer = Customer { id: 2, address: Address { city_id: 7 } }\r\n    return ok [first, second]\r\nend load\r\n\r\nend result_value_array_field_ensures",
+  "module_name": "13_contract_blocks",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "result_value_array_field_ensures",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "Address",
+        "base": "record",
+        "fields": [
+          {
+            "name": "city_id",
+            "type": "Integer"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "Customer",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "address",
+            "type": "Address"
+          }
+        ]
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "load",
+        "params": null,
+        "return_type": "Result\u003cArray\u003cCustomer, 2\u003e, NotFound\u003e",
+        "ensures": [
+          {
+            "kind": "IdentifierExpr",
+            "name": "success"
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "object": {
+                "kind": "IndexExpr",
+                "array": {
+                  "kind": "IdentifierExpr",
+                  "name": "value"
+                },
+                "index": {
+                  "kind": "NumberExpr",
+                  "value": "0"
+                }
+              },
+              "field": "id"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "1"
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "object": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IndexExpr",
+                  "array": {
+                    "kind": "IdentifierExpr",
+                    "name": "value"
+                  },
+                  "index": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                },
+                "field": "address"
+              },
+              "field": "city_id"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "7"
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "first",
+            "type": "Customer",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Customer",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                },
+                {
+                  "name": "address",
+                  "value": {
+                    "kind": "RecordLiteralExpr",
+                    "type": "Address",
+                    "fields": [
+                      {
+                        "name": "city_id",
+                        "value": {
+                          "kind": "NumberExpr",
+                          "value": "42"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "second",
+            "type": "Customer",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Customer",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "2"
+                  }
+                },
+                {
+                  "name": "address",
+                  "value": {
+                    "kind": "RecordLiteralExpr",
+                    "type": "Address",
+                    "fields": [
+                      {
+                        "name": "city_id",
+                        "value": {
+                          "kind": "NumberExpr",
+                          "value": "7"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "OkExpr",
+              "value": {
+                "kind": "ArrayLiteralExpr",
+                "elements": [
+                  {
+                    "kind": "IdentifierExpr",
+                    "name": "first"
+                  },
+                  {
+                    "kind": "IdentifierExpr",
+                    "name": "second"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "end_name": "load"
+      }
+    ],
+    "end_name": "result_value_array_field_ensures"
+  }
+}

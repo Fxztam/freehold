@@ -1,0 +1,71 @@
+{
+  "source_file": "..\\tests\\language_modules\\13_contract_blocks\\valid\\result_value_ensures.fh",
+  "source_snippet": "module ResultValueEnsures\r\n\r\nerror NotFound\r\n\r\nfunction load() returns Result\u003cInteger, NotFound\u003e\r\nensures value \u003e= 0\r\nensures error = NotFound or success\r\nis\r\n    return ok 1\r\nend load\r\n\r\nend ResultValueEnsures",
+  "module_name": "13_contract_blocks",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "ResultValueEnsures",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "load",
+        "params": null,
+        "return_type": "Result\u003cInteger, NotFound\u003e",
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "\u003e=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "value"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "0"
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "or",
+            "left": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "error"
+              },
+              "right": {
+                "kind": "IdentifierExpr",
+                "name": "NotFound"
+              }
+            },
+            "right": {
+              "kind": "IdentifierExpr",
+              "name": "success"
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "OkExpr",
+              "value": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "load"
+      }
+    ],
+    "end_name": "ResultValueEnsures"
+  }
+}

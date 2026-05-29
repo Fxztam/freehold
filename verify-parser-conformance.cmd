@@ -6,6 +6,7 @@ pushd "%~dp0" || exit /b 1
 set "UPDATE_GO_BASELINE=0"
 set "UPDATE_PYTHON_BASELINE=0"
 set "ENABLE_FHIR_V1_GATE=1"
+set "FORCE_BASELINE_UPDATE=0"
 
 :parse_args
 if "%~1"=="" goto :args_done
@@ -29,12 +30,34 @@ if /i "%~1"=="--disable-fhir-v1-gate" (
 	shift
 	goto :parse_args
 )
+if /i "%~1"=="--force" (
+	set "FORCE_BASELINE_UPDATE=1"
+	shift
+	goto :parse_args
+)
 echo Unknown argument: %~1
-echo Supported flags: --update-go-baseline --update-python-baseline --enable-fhir-v1-gate --disable-fhir-v1-gate
+echo Supported flags: --update-go-baseline --update-python-baseline --enable-fhir-v1-gate --disable-fhir-v1-gate --force
 popd
 exit /b 1
 
 :args_done
+
+if "%UPDATE_GO_BASELINE%"=="1" (
+	if "%CI%"=="true" (
+		if not "%FREEHOLD_ALLOW_BASELINE_UPDATE%"=="1" goto :ci_blocked
+	)
+	if "%GITHUB_ACTIONS%"=="true" (
+		if not "%FREEHOLD_ALLOW_BASELINE_UPDATE%"=="1" goto :ci_blocked
+	)
+)
+if "%UPDATE_PYTHON_BASELINE%"=="1" (
+	if "%CI%"=="true" (
+		if not "%FREEHOLD_ALLOW_BASELINE_UPDATE%"=="1" goto :ci_blocked
+	)
+	if "%GITHUB_ACTIONS%"=="true" (
+		if not "%FREEHOLD_ALLOW_BASELINE_UPDATE%"=="1" goto :ci_blocked
+	)
+)
 
 set "GO_AST_ROOT=.\artifacts\go-ast"
 if "%UPDATE_GO_BASELINE%"=="1" goto :go_mode_ready
@@ -176,8 +199,10 @@ if errorlevel 1 goto :fail
 
 echo.
 echo [18/22] Compare FH-IR
+set "FORCE_FLAG="
+if "%FORCE_BASELINE_UPDATE%"=="1" set "FORCE_FLAG=--force"
 if "%UPDATE_PYTHON_BASELINE%"=="1" (
-	python ".\tools\compare_fhir.py" --out "%COMPARE_FHIR_ROOT%" --update
+	python ".\tools\compare_fhir.py" --out "%COMPARE_FHIR_ROOT%" --update %FORCE_FLAG%
 ) else (
 	python ".\tools\compare_fhir.py" --out "%COMPARE_FHIR_ROOT%"
 )
@@ -197,7 +222,7 @@ if "%ENABLE_FHIR_V1_GATE%"=="1" (
 	echo.
 	echo [20b/22] Compare FH-IR V1
 	if "%UPDATE_PYTHON_BASELINE%"=="1" (
-		python ".\tools\compare_fhir.py" --mode project-v1 --expected .\artifacts\fhir-v1 --out "%COMPARE_FHIR_V1_ROOT%" --update
+		python ".\tools\compare_fhir.py" --mode project-v1 --expected .\artifacts\fhir-v1 --out "%COMPARE_FHIR_V1_ROOT%" --update %FORCE_FLAG%
 	) else (
 		python ".\tools\compare_fhir.py" --mode project-v1 --expected .\artifacts\fhir-v1 --out "%COMPARE_FHIR_V1_ROOT%"
 	)
@@ -206,8 +231,14 @@ if "%ENABLE_FHIR_V1_GATE%"=="1" (
 
 echo.
 echo [21/22] Verify additive test line
-call ".\verify-additive-test-line.cmd"
-if errorlevel 1 goto :fail
+if "%UPDATE_GO_BASELINE%"=="1" (
+	echo [mode] Skipped additive test line check - baseline update active
+) else if "%UPDATE_PYTHON_BASELINE%"=="1" (
+	echo [mode] Skipped additive test line check - baseline update active
+) else (
+	call ".\verify-additive-test-line.cmd"
+	if errorlevel 1 goto :fail
+)
 
 echo.
 echo [22/22] Go tests
@@ -237,3 +268,9 @@ if "%UPDATE_PYTHON_BASELINE%"=="0" (
 echo.
 echo Parser conformance verify failed with exit code %exit_code%.
 exit /b %exit_code%
+
+:ci_blocked
+echo [ERROR] Conformance baseline updates are forbidden in standard CI pipelines!
+echo To perform a conscious baseline update in a dedicated maintenance run, set the environment variable FREEHOLD_ALLOW_BASELINE_UPDATE=1.
+popd
+exit /b 2

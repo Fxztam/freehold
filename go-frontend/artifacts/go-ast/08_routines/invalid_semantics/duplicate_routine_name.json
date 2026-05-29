@@ -1,0 +1,45 @@
+{
+  "source_file": "..\\tests\\language_modules\\08_routines\\invalid_semantics\\duplicate_routine_name.fh",
+  "source_snippet": "module DuplicateRoutineName\r\n\r\nprocedure main()\r\nis\r\n    check true\r\nend main\r\n\r\nfunction main() returns Integer\r\nis\r\n    return 1\r\nend main\r\n\r\nend DuplicateRoutineName",
+  "module_name": "08_routines",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "DuplicateRoutineName",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "IdentifierExpr",
+              "name": "true"
+            }
+          }
+        ],
+        "end_name": "main"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "main",
+        "params": null,
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "1"
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "DuplicateRoutineName"
+  }
+}

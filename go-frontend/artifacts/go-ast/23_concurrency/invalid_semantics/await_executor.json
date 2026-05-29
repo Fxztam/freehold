@@ -1,0 +1,48 @@
+{
+  "source_file": "..\\tests\\language_modules\\23_concurrency\\invalid_semantics\\await_executor.fh",
+  "source_snippet": "module Concurrency.AwaitExecutor\r\n\r\nasync function bad(executor: Executor) returns Integer\r\nis\r\n    let item: Integer = await executor\r\n    return item\r\nend bad\r\n\r\nend Concurrency.AwaitExecutor",
+  "module_name": "23_concurrency",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Concurrency.AwaitExecutor",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "bad",
+        "is_async": true,
+        "params": [
+          {
+            "name": "executor",
+            "type": "Executor"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "item",
+            "type": "Integer",
+            "value": {
+              "kind": "AwaitExpr",
+              "value": {
+                "kind": "IdentifierExpr",
+                "name": "executor"
+              }
+            }
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "item"
+            }
+          }
+        ],
+        "end_name": "bad"
+      }
+    ],
+    "end_name": "Concurrency.AwaitExecutor"
+  }
+}

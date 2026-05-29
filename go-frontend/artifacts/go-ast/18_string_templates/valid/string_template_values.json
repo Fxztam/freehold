@@ -1,0 +1,71 @@
+{
+  "source_file": "..\\tests\\language_modules\\18_string_templates\\valid\\string_template_values.fh",
+  "source_snippet": "module StringTemplateValues\r\n\r\nprocedure main()\r\nis\r\n    let message: String = String.template(\"id=${}, active=${}, rate=${}\", 7, true, 2.5)\r\n    check message = \"id=7, active=true, rate=2.5\"\r\nend main\r\n\r\nend StringTemplateValues",
+  "module_name": "18_string_templates",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "StringTemplateValues",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "message",
+            "type": "String",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "String"
+                },
+                "field": "template"
+              },
+              "arguments": [
+                {
+                  "kind": "StringExpr",
+                  "value": "id=${}, active=${}, rate=${}"
+                },
+                {
+                  "kind": "NumberExpr",
+                  "value": "7"
+                },
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "true"
+                },
+                {
+                  "kind": "NumberExpr",
+                  "value": "2.5"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "message"
+              },
+              "right": {
+                "kind": "StringExpr",
+                "value": "id=7, active=true, rate=2.5"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "StringTemplateValues"
+  }
+}

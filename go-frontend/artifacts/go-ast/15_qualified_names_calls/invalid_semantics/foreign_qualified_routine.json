@@ -1,0 +1,63 @@
+{
+  "source_file": "..\\tests\\language_modules\\15_qualified_names_calls\\invalid_semantics\\foreign_qualified_routine.fh",
+  "source_snippet": "module Qualified.UnknownForeign\r\n\r\nprocedure main()\r\nis\r\n    let total: Integer = Other.Module.increment(1)\r\n    check total = 2\r\nend main\r\n\r\nend Qualified.UnknownForeign",
+  "module_name": "15_qualified_names_calls",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Qualified.UnknownForeign",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": "Integer",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "FieldAccessExpr",
+                  "object": {
+                    "kind": "IdentifierExpr",
+                    "name": "Other"
+                  },
+                  "field": "Module"
+                },
+                "field": "increment"
+              },
+              "arguments": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "total"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "2"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "Qualified.UnknownForeign"
+  }
+}

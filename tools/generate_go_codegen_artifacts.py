@@ -23,6 +23,7 @@ def main() -> int:
     parser.add_argument("root", nargs="?", default=str(DEFAULT_ROOT), help="language_modules root")
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="artifact output directory")
     parser.add_argument("--additive", action="store_true", help="write only missing artifacts; never update existing artifact files")
+    parser.add_argument("--update", action="store_true", help="update expected go files/directories in tests/language_modules")
     args = parser.parse_args()
 
     root = Path(args.root)
@@ -37,14 +38,14 @@ def main() -> int:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         for case in manifest.get("cases", []):
             if case.get("kind") == "valid_go_project_codegen":
-                row = run_project_case(module_dir, case, out_root, additive=args.additive)
+                row = run_project_case(module_dir, case, out_root, additive=args.additive, update=args.update)
                 rows.append(row)
                 if row["status"] != "match":
                     mismatches.append(row)
                 continue
             if case.get("kind") != "valid_go_codegen":
                 continue
-            row = run_case(module_dir, case, out_root, additive=args.additive)
+            row = run_case(module_dir, case, out_root, additive=args.additive, update=args.update)
             rows.append(row)
             if row["status"] != "match":
                 mismatches.append(row)
@@ -63,7 +64,7 @@ def main() -> int:
     return 1 if mismatches else 0
 
 
-def run_case(module_dir: Path, case: dict[str, Any], out_root: Path, *, additive: bool) -> dict[str, Any]:
+def run_case(module_dir: Path, case: dict[str, Any], out_root: Path, *, additive: bool, update: bool) -> dict[str, Any]:
     source_path = case_source_path(module_dir, case)
     expected_path = module_dir / case["expected_go"]
     artifact_path = artifact_file_path(out_root, module_dir, case, source_path, ".go")
@@ -83,6 +84,11 @@ def run_case(module_dir: Path, case: dict[str, Any], out_root: Path, *, additive
         actual = ""
         error = {"type": type(exc).__name__, "message": str(exc)}
         result = None
+
+    if update and error is None:
+        expected_path.parent.mkdir(parents=True, exist_ok=True)
+        expected_path.write_text(actual, encoding="utf-8")
+
     expected = expected_path.read_text(encoding="utf-8") if expected_path.exists() else ""
     frozen_mismatch = write_artifact(artifact_path, actual, additive=additive)
     status = "match" if error is None and normalize(actual) == normalize(expected) else "mismatch"
@@ -112,7 +118,7 @@ def run_case(module_dir: Path, case: dict[str, Any], out_root: Path, *, additive
     return row
 
 
-def run_project_case(module_dir: Path, case: dict[str, Any], out_root: Path, *, additive: bool) -> dict[str, Any]:
+def run_project_case(module_dir: Path, case: dict[str, Any], out_root: Path, *, additive: bool, update: bool) -> dict[str, Any]:
     entry_path = module_dir / case["root"] / case["entry"]
     expected_root = module_dir / case["expected_go_dir"]
     artifact_root = out_root / module_dir.name / Path(case["root"]).name / "project"
@@ -135,6 +141,16 @@ def run_project_case(module_dir: Path, case: dict[str, Any], out_root: Path, *, 
         extra_files = []
         actual = {}
         error = {"type": type(exc).__name__, "message": str(exc)}
+
+    if update and error is None:
+        if expected_root.exists():
+            shutil.rmtree(expected_root)
+        expected_root.mkdir(parents=True, exist_ok=True)
+        for output_path, source in actual.items():
+            dest = expected_root / output_path
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(source, encoding="utf-8")
+
     expected = {
         path.relative_to(expected_root).as_posix(): path.read_text(encoding="utf-8")
         for path in sorted(path for path in expected_root.rglob("*") if path.is_file())

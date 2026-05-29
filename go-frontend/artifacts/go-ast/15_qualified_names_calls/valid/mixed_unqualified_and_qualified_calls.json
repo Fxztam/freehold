@@ -1,0 +1,110 @@
+{
+  "source_file": "..\\tests\\language_modules\\15_qualified_names_calls\\valid\\mixed_unqualified_and_qualified_calls.fh",
+  "source_snippet": "module Qualified.Mixed\r\n\r\nfunction increment(amount: Integer) returns Integer\r\nis\r\n    return amount + 1\r\nend increment\r\n\r\nprocedure main()\r\nis\r\n    let short_name: Integer = increment(1)\r\n    let qualified_name: Integer = Qualified.Mixed.increment(short_name)\r\n    check qualified_name = 3\r\nend main\r\n\r\nend Qualified.Mixed",
+  "module_name": "15_qualified_names_calls",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Qualified.Mixed",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "increment",
+        "params": [
+          {
+            "name": "amount",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "increment"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "short_name",
+            "type": "Integer",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "increment"
+              },
+              "arguments": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "qualified_name",
+            "type": "Integer",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "FieldAccessExpr",
+                  "object": {
+                    "kind": "IdentifierExpr",
+                    "name": "Qualified"
+                  },
+                  "field": "Mixed"
+                },
+                "field": "increment"
+              },
+              "arguments": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "short_name"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "qualified_name"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "3"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "Qualified.Mixed"
+  }
+}

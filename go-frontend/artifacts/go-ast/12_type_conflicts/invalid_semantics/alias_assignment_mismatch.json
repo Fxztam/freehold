@@ -1,0 +1,40 @@
+{
+  "source_file": "..\\tests\\language_modules\\12_type_conflicts\\invalid_semantics\\alias_assignment_mismatch.fh",
+  "source_snippet": "module AliasAssignmentMismatch\r\n\r\ntype Count is Integer range 0..100\r\n\r\nprocedure main()\r\nis\r\n    let total: Count = true\r\nend main\r\n\r\nend AliasAssignmentMismatch",
+  "module_name": "12_type_conflicts",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "AliasAssignmentMismatch",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Count",
+        "base": "Integer",
+        "range": {
+          "min": "0",
+          "max": "100"
+        }
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": "Count",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "true"
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "AliasAssignmentMismatch"
+  }
+}

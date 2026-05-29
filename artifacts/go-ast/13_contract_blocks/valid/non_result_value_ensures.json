@@ -1,0 +1,229 @@
+{
+  "source_file": "..\\tests\\language_modules\\13_contract_blocks\\valid\\non_result_value_ensures.fh",
+  "source_snippet": "module NonResultValueEnsures\r\n\r\ntype Point is record\r\n    x: Integer\r\n    y: Integer\r\nend record\r\n\r\nfunction increment(amount: Integer) returns Integer\r\nensures value = amount + 1\r\nis\r\n    return amount + 1\r\nend increment\r\n\r\nfunction make_point(x: Integer, y: Integer) returns Point\r\nensures value.x = x\r\nensures value.y = y\r\nis\r\n    return Point { x: x, y: y }\r\nend make_point\r\n\r\nfunction make_pair(a: Integer, b: Integer) returns Array\u003cInteger, 2\u003e\r\nensures value[0] = a\r\nensures value[1] = b\r\nis\r\n    return [a, b]\r\nend make_pair\r\n\r\nend NonResultValueEnsures",
+  "module_name": "13_contract_blocks",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "NonResultValueEnsures",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Point",
+        "base": "record",
+        "fields": [
+          {
+            "name": "x",
+            "type": "Integer"
+          },
+          {
+            "name": "y",
+            "type": "Integer"
+          }
+        ]
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "increment",
+        "params": [
+          {
+            "name": "amount",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Integer",
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "value"
+            },
+            "right": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "increment"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "make_point",
+        "params": [
+          {
+            "name": "x",
+            "type": "Integer"
+          },
+          {
+            "name": "y",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Point",
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "object": {
+                "kind": "IdentifierExpr",
+                "name": "value"
+              },
+              "field": "x"
+            },
+            "right": {
+              "kind": "IdentifierExpr",
+              "name": "x"
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "object": {
+                "kind": "IdentifierExpr",
+                "name": "value"
+              },
+              "field": "y"
+            },
+            "right": {
+              "kind": "IdentifierExpr",
+              "name": "y"
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Point",
+              "fields": [
+                {
+                  "name": "x",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "x"
+                  }
+                },
+                {
+                  "name": "y",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "y"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "make_point"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "make_pair",
+        "params": [
+          {
+            "name": "a",
+            "type": "Integer"
+          },
+          {
+            "name": "b",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Array\u003cInteger, 2\u003e",
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "IndexExpr",
+              "array": {
+                "kind": "IdentifierExpr",
+                "name": "value"
+              },
+              "index": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            },
+            "right": {
+              "kind": "IdentifierExpr",
+              "name": "a"
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "IndexExpr",
+              "array": {
+                "kind": "IdentifierExpr",
+                "name": "value"
+              },
+              "index": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            },
+            "right": {
+              "kind": "IdentifierExpr",
+              "name": "b"
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ArrayLiteralExpr",
+              "elements": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "a"
+                },
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "b"
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "make_pair"
+      }
+    ],
+    "end_name": "NonResultValueEnsures"
+  }
+}

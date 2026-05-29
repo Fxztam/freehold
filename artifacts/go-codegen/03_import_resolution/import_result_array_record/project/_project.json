@@ -39,7 +39,12 @@
     {
       "output_path": "build.cmd",
       "kind": "build_cmd",
-      "content": "@echo off\nsetlocal\ngo test ./...\n"
+      "content": "@echo off\nsetlocal\ngo mod tidy\nif errorlevel 1 exit /b %errorlevel%\ngo test ./...\n"
+    },
+    {
+      "output_path": "build.sh",
+      "kind": "build_sh",
+      "content": "#!/bin/bash\nset -e\ngo mod tidy\ngo test ./...\n"
     }
   ],
   "error": null

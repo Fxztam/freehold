@@ -1,0 +1,64 @@
+{
+  "source_file": "..\\tests\\language_modules\\09_statements\\invalid_semantics\\case_branch_type_mismatch.fh",
+  "source_snippet": "module CaseBranchTypeMismatch\r\n\r\nprocedure main()\r\nis\r\n    let choice: Integer = 1\r\n    case choice is\r\n        when true =\u003e\r\n            check true\r\n        default =\u003e\r\n            check true\r\n    end case\r\nend main\r\n\r\nend CaseBranchTypeMismatch",
+  "module_name": "09_statements",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "CaseBranchTypeMismatch",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "choice",
+            "type": "Integer",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "1"
+            }
+          },
+          {
+            "kind": "CaseStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "choice"
+            },
+            "when": [
+              {
+                "value": {
+                  "kind": "IdentifierExpr",
+                  "name": "true"
+                },
+                "body": [
+                  {
+                    "kind": "CheckStmt",
+                    "condition": {
+                      "kind": "IdentifierExpr",
+                      "name": "true"
+                    }
+                  }
+                ]
+              }
+            ],
+            "default": [
+              {
+                "kind": "CheckStmt",
+                "condition": {
+                  "kind": "IdentifierExpr",
+                  "name": "true"
+                }
+              }
+            ]
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "CaseBranchTypeMismatch"
+  }
+}

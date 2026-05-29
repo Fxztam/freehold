@@ -1,0 +1,93 @@
+{
+  "source_file": "..\\tests\\language_modules\\18_string_templates\\valid\\string_template_named_values.fh",
+  "source_snippet": "module StringTemplateNamedValues\r\n\r\nprocedure main()\r\nis\r\n    let id: Integer = 7\r\n    let active: Boolean = true\r\n    let message: String = String.template(\"id=${id}, active=${active}\", id: id, active: active)\r\n    check message = \"id=7, active=true\"\r\nend main\r\n\r\nend StringTemplateNamedValues",
+  "module_name": "18_string_templates",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "StringTemplateNamedValues",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "id",
+            "type": "Integer",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "7"
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "active",
+            "type": "Boolean",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "true"
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "message",
+            "type": "String",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "String"
+                },
+                "field": "template"
+              },
+              "arguments": [
+                {
+                  "kind": "StringExpr",
+                  "value": "id=${id}, active=${active}"
+                },
+                {
+                  "kind": "NamedArgumentExpr",
+                  "name": "id",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "id"
+                  }
+                },
+                {
+                  "kind": "NamedArgumentExpr",
+                  "name": "active",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "active"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "message"
+              },
+              "right": {
+                "kind": "StringExpr",
+                "value": "id=7, active=true"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "StringTemplateNamedValues"
+  }
+}

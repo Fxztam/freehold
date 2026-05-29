@@ -1,0 +1,92 @@
+{
+  "source_file": "..\\tests\\language_modules\\15_qualified_names_calls\\valid\\current_module_qualified_function_call.fh",
+  "source_snippet": "module Qualified.Calls\r\n\r\nfunction increment(amount: Integer) returns Integer\r\nis\r\n    return amount + 1\r\nend increment\r\n\r\nprocedure main()\r\nis\r\n    let total: Integer = Qualified.Calls.increment(1)\r\n    check total = 2\r\nend main\r\n\r\nend Qualified.Calls",
+  "module_name": "15_qualified_names_calls",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Qualified.Calls",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "increment",
+        "params": [
+          {
+            "name": "amount",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "increment"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": "Integer",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "FieldAccessExpr",
+                  "object": {
+                    "kind": "IdentifierExpr",
+                    "name": "Qualified"
+                  },
+                  "field": "Calls"
+                },
+                "field": "increment"
+              },
+              "arguments": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "total"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "2"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "Qualified.Calls"
+  }
+}

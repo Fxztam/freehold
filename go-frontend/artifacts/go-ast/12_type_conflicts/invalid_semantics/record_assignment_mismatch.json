@@ -1,0 +1,91 @@
+{
+  "source_file": "..\\tests\\language_modules\\12_type_conflicts\\invalid_semantics\\record_assignment_mismatch.fh",
+  "source_snippet": "module RecordAssignmentMismatch\r\n\r\ntype Account is record\r\n    id: Integer\r\nend record\r\n\r\ntype User is record\r\n    id: Integer\r\nend record\r\n\r\nprocedure main()\r\nis\r\n    let account: Account = Account { id: 1 }\r\n    let user: User = User { id: 2 }\r\n    account := user\r\nend main\r\n\r\nend RecordAssignmentMismatch",
+  "module_name": "12_type_conflicts",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "RecordAssignmentMismatch",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Account",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "User",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ]
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "account",
+            "type": "Account",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Account",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "user",
+            "type": "User",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "User",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "2"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "AssignmentStmt",
+            "target": {
+              "kind": "IdentifierExpr",
+              "name": "account"
+            },
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "user"
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "RecordAssignmentMismatch"
+  }
+}

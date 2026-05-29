@@ -1,0 +1,96 @@
+{
+  "source_file": "..\\tests\\language_modules\\16_control_flow_edges\\invalid_semantics\\case_branch_local_not_visible_after.fh",
+  "source_snippet": "module Control.CaseScopeAfter\r\n\r\nprocedure main()\r\nis\r\n    let choice: Integer = 1\r\n    case choice is\r\n        when 1 =\u003e\r\n            let branch_total: Integer = 1\r\n            check branch_total = 1\r\n        default =\u003e\r\n            check true\r\n    end case\r\n    check branch_total = 1\r\nend main\r\n\r\nend Control.CaseScopeAfter",
+  "module_name": "16_control_flow_edges",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Control.CaseScopeAfter",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "choice",
+            "type": "Integer",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "1"
+            }
+          },
+          {
+            "kind": "CaseStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "choice"
+            },
+            "when": [
+              {
+                "value": {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                },
+                "body": [
+                  {
+                    "kind": "LetStmt",
+                    "name": "branch_total",
+                    "type": "Integer",
+                    "value": {
+                      "kind": "NumberExpr",
+                      "value": "1"
+                    }
+                  },
+                  {
+                    "kind": "CheckStmt",
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "IdentifierExpr",
+                        "name": "branch_total"
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": "1"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "default": [
+              {
+                "kind": "CheckStmt",
+                "condition": {
+                  "kind": "IdentifierExpr",
+                  "name": "true"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "branch_total"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "Control.CaseScopeAfter"
+  }
+}

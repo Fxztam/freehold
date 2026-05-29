@@ -1,0 +1,158 @@
+{
+  "source_file": "..\\tests\\language_modules\\19_big_numbers\\valid\\big_number_inside_expression.fh",
+  "source_snippet": "module Matrix.BigNumberExpression\r\n\r\nimport Big\r\n\r\nprocedure main()\r\nis\r\n    let base: BigInteger = Big.int(\"21\")\r\n    let doubled: BigInteger = Big.mulInt(base, Big.fromInteger(2))\r\n    let message: String = String.template(\"answer=${}\", Big.toString(doubled))\r\n    check String.instr(message, \"42\") \u003e= 0\r\nend main\r\n\r\nend Matrix.BigNumberExpression",
+  "module_name": "19_big_numbers",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Matrix.BigNumberExpression",
+    "declarations": [
+      {
+        "kind": "ImportDecl",
+        "module": "Big"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "base",
+            "type": "BigInteger",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "Big"
+                },
+                "field": "int"
+              },
+              "arguments": [
+                {
+                  "kind": "StringExpr",
+                  "value": "21"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "doubled",
+            "type": "BigInteger",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "Big"
+                },
+                "field": "mulInt"
+              },
+              "arguments": [
+                {
+                  "kind": "IdentifierExpr",
+                  "name": "base"
+                },
+                {
+                  "kind": "CallExpr",
+                  "callee": {
+                    "kind": "FieldAccessExpr",
+                    "object": {
+                      "kind": "IdentifierExpr",
+                      "name": "Big"
+                    },
+                    "field": "fromInteger"
+                  },
+                  "arguments": [
+                    {
+                      "kind": "NumberExpr",
+                      "value": "2"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "message",
+            "type": "String",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "String"
+                },
+                "field": "template"
+              },
+              "arguments": [
+                {
+                  "kind": "StringExpr",
+                  "value": "answer=${}"
+                },
+                {
+                  "kind": "CallExpr",
+                  "callee": {
+                    "kind": "FieldAccessExpr",
+                    "object": {
+                      "kind": "IdentifierExpr",
+                      "name": "Big"
+                    },
+                    "field": "toString"
+                  },
+                  "arguments": [
+                    {
+                      "kind": "IdentifierExpr",
+                      "name": "doubled"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "\u003e=",
+              "left": {
+                "kind": "CallExpr",
+                "callee": {
+                  "kind": "FieldAccessExpr",
+                  "object": {
+                    "kind": "IdentifierExpr",
+                    "name": "String"
+                  },
+                  "field": "instr"
+                },
+                "arguments": [
+                  {
+                    "kind": "IdentifierExpr",
+                    "name": "message"
+                  },
+                  {
+                    "kind": "StringExpr",
+                    "value": "42"
+                  }
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "Matrix.BigNumberExpression"
+  }
+}

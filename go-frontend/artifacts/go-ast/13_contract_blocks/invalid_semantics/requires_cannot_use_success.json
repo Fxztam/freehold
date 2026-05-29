@@ -1,0 +1,43 @@
+{
+  "source_file": "..\\tests\\language_modules\\13_contract_blocks\\invalid_semantics\\requires_cannot_use_success.fh",
+  "source_snippet": "module RequiresCannotUseSuccess\r\n\r\nerror NotFound\r\n\r\nfunction load() returns Result\u003cInteger, NotFound\u003e\r\nrequires success\r\nis\r\n    return ok 1\r\nend load\r\n\r\nend RequiresCannotUseSuccess",
+  "module_name": "13_contract_blocks",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "RequiresCannotUseSuccess",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "load",
+        "params": null,
+        "return_type": "Result\u003cInteger, NotFound\u003e",
+        "requires": [
+          {
+            "kind": "IdentifierExpr",
+            "name": "success"
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "OkExpr",
+              "value": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "load"
+      }
+    ],
+    "end_name": "RequiresCannotUseSuccess"
+  }
+}

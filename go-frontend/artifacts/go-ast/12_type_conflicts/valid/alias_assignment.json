@@ -1,0 +1,51 @@
+{
+  "source_file": "..\\tests\\language_modules\\12_type_conflicts\\valid\\alias_assignment.fh",
+  "source_snippet": "module AliasAssignment\r\n\r\ntype Count is Integer range 0..100\r\n\r\nprocedure main()\r\nis\r\n    let total: Count = 1\r\n    total := 2\r\nend main\r\n\r\nend AliasAssignment",
+  "module_name": "12_type_conflicts",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "AliasAssignment",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Count",
+        "base": "Integer",
+        "range": {
+          "min": "0",
+          "max": "100"
+        }
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "total",
+            "type": "Count",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "1"
+            }
+          },
+          {
+            "kind": "AssignmentStmt",
+            "target": {
+              "kind": "IdentifierExpr",
+              "name": "total"
+            },
+            "value": {
+              "kind": "NumberExpr",
+              "value": "2"
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "AliasAssignment"
+  }
+}

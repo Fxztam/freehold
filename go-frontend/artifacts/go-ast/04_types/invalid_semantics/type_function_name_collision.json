@@ -1,0 +1,35 @@
+{
+  "source_file": "..\\tests\\language_modules\\04_types\\invalid_semantics\\type_function_name_collision.fh",
+  "source_snippet": "module TypeFunctionNameCollision\r\n\r\ntype Money is Integer\r\n\r\nfunction Money() returns Integer\r\nis\r\n    return 0\r\nend Money\r\n\r\nend TypeFunctionNameCollision",
+  "module_name": "04_types",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "TypeFunctionNameCollision",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Money",
+        "base": "Integer"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "Money",
+        "params": null,
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "0"
+            }
+          }
+        ],
+        "end_name": "Money"
+      }
+    ],
+    "end_name": "TypeFunctionNameCollision"
+  }
+}

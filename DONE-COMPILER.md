@@ -146,4 +146,19 @@ Die zukünftige Entwicklungsphase eines Go-nativen Control-Flow-Analyzers wurde 
   - Ergänzung von expliziten Index-Grenzen-Checks (`< 64`) beim Zugriff auf das `exprs` Array in `resolve_stmt` für `LET` / `ASSIGN` / `IF` / `WHILE` Anweisungen.
   - Dadurch ist mathematisch bewiesen, dass der Resolver niemals out-of-bounds auf das AST-Array zugreift.
 - **Verifikation:**
-  - Die formale Verifikations-Engine von Freehold hat alle Proof Obligations erfolgreich gelöst; `verify-stage3-compiler-core-v1.cmd` läuft zu 100% grün durch.
+  - Die formale Verifikations-Engine von Freehold hat alle Proof Obligations erfolgreich gelöst; `verify-stage3-compiler-core-v1.cmd` läuft zu 100% grün durch.
+
+## Härtung der Conformance-Pipeline & Baseline-Schutz
+
+**Completed on:** 2026-05-29
+
+- **Explizites Baseline-Pflegeskript (`verify-parser-conformance-update-baseline.cmd`):**
+  - Neues Skript zur gesteuerten Aktualisierung der Go- und Python-Baselines.
+- **CI-Guard-Integration:**
+  - Blockiert unbeabsichtigte Baseline-Updates in CI. Updates erfordern das Setzen von `FREEHOLD_ALLOW_BASELINE_UPDATE=1`.
+- **Git State Blocker und `--force` Flag:**
+  - Verhindert unkontrollierten Drift, indem Updates bei ausstehenden Änderungen im Arbeitsverzeichnis abbrechen.
+  - Das `--force` Flag (oder `FORCE_BASELINE_UPDATE=1`) ermöglicht das bewusste Überschreiben dieses Blocks.
+- **Additive-Test-Line Check Bypass:**
+  - Der Test-Zeilen-Check wird während Baseline-Updates automatisch umgangen, um Fehlalarme bei absichtlichen Pflege- und Updatearbeiten zu vermeiden.
+

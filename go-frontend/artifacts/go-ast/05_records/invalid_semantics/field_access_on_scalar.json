@@ -1,0 +1,50 @@
+{
+  "source_file": "..\\tests\\language_modules\\05_records\\invalid_semantics\\field_access_on_scalar.fh",
+  "source_snippet": "module FieldAccessOnScalar\r\n\r\nprocedure main()\r\nis\r\n    let amount: Integer = 1\r\n    check amount.id = 1\r\nend main\r\n\r\nend FieldAccessOnScalar",
+  "module_name": "05_records",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "FieldAccessOnScalar",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "amount",
+            "type": "Integer",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "1"
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                },
+                "field": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "FieldAccessOnScalar"
+  }
+}

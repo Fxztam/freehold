@@ -145,3 +145,18 @@ This document tracks the milestones, architecture decisions, and implementation 
 - **Verifikation:**
   - Die formale Verifikations-Engine von Freehold hat alle Proof Obligations erfolgreich gelöst; `verify-stage3-compiler-core-v1.cmd` läuft zu 100% grün durch.
 
+## Härtung der Conformance-Pipeline & Baseline-Schutz
+
+**Completed on:** 2026-05-29
+
+- **Explizites Baseline-Pflegeskript (`verify-parser-conformance-update-baseline.cmd`):**
+  - Implementierung eines separaten Steuerungsskripts für manuelle, bewusste Baseline-Updates.
+- **CI-Guard-Integration:**
+  - Standardmäßige Sperrung von Updates. Updates brechen ab, wenn die Umgebungsvariable `FREEHOLD_ALLOW_BASELINE_UPDATE=1` nicht gesetzt ist.
+- **Git State Blocker und `--force` Flag:**
+  - Updates werden unterbunden, wenn Git uncommittete oder untrackte Änderungen meldet.
+  - Mit dem `--force` Flag (oder `FORCE_BASELINE_UPDATE=1`) kann diese Blockade für dedizierte Synchronisationsläufe bewusst übergangen werden.
+- **Bypass für Additive-Test-Line Checks:**
+  - Vermeidung falscher Fehler bei aktiven Baseline-Updates durch Aussetzen des Additive-Test-Line-Checks.
+
+

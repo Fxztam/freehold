@@ -1,0 +1,100 @@
+{
+  "source_file": "..\\tests\\language_modules\\16_control_flow_edges\\valid\\while_zero_iteration_edge.fh",
+  "source_snippet": "module Control.WhileZero\r\n\r\nprocedure main()\r\nis\r\n    let amount: Integer = 0\r\n    while amount \u003e 0\r\n        invariant amount \u003e= 0\r\n        variant amount\r\n    do\r\n        amount := amount - 1\r\n    end while\r\n    check amount = 0\r\nend main\r\n\r\nend Control.WhileZero",
+  "module_name": "16_control_flow_edges",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Control.WhileZero",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "amount",
+            "type": "Integer",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "0"
+            }
+          },
+          {
+            "kind": "WhileStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "\u003e",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            },
+            "invariants": [
+              {
+                "kind": "BinaryExpr",
+                "op": "\u003e=",
+                "left": {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": "0"
+                }
+              }
+            ],
+            "variant": {
+              "kind": "IdentifierExpr",
+              "name": "amount"
+            },
+            "body": [
+              {
+                "kind": "AssignmentStmt",
+                "target": {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                },
+                "value": {
+                  "kind": "BinaryExpr",
+                  "op": "-",
+                  "left": {
+                    "kind": "IdentifierExpr",
+                    "name": "amount"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "Control.WhileZero"
+  }
+}

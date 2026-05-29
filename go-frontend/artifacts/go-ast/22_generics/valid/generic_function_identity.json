@@ -1,0 +1,118 @@
+{
+  "source_file": "..\\tests\\language_modules\\22_generics\\valid\\generic_function_identity.fh",
+  "source_snippet": "module GenericFunctionIdentity\r\n\r\nfunction identity\u003cT\u003e(x: T) returns T\r\nis\r\n    return x\r\nend identity\r\n\r\nprocedure main()\r\nis\r\n    let x: Integer = identity\u003cInteger\u003e(1)\r\n    let text: String = identity\u003cString\u003e(\"ok\")\r\n    check x = 1\r\n    check text = \"ok\"\r\nend main\r\n\r\nend GenericFunctionIdentity",
+  "module_name": "22_generics",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "GenericFunctionIdentity",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "identity",
+        "type_params": [
+          "T"
+        ],
+        "params": [
+          {
+            "name": "x",
+            "type": "T"
+          }
+        ],
+        "return_type": "T",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "x"
+            }
+          }
+        ],
+        "end_name": "identity"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "x",
+            "type": "Integer",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "identity"
+              },
+              "type_args": [
+                "Integer"
+              ],
+              "arguments": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "text",
+            "type": "String",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "identity"
+              },
+              "type_args": [
+                "String"
+              ],
+              "arguments": [
+                {
+                  "kind": "StringExpr",
+                  "value": "ok"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "x"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "text"
+              },
+              "right": {
+                "kind": "StringExpr",
+                "value": "ok"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "GenericFunctionIdentity"
+  }
+}

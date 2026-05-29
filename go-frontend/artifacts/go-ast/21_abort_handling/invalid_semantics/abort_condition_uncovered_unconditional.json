@@ -1,0 +1,52 @@
+{
+  "source_file": "..\\tests\\language_modules\\21_abort_handling\\invalid_semantics\\abort_condition_uncovered_unconditional.fh",
+  "source_snippet": "module AbortConditionUncoveredUnconditional\r\n\r\nerror NotFound\r\n\r\nprocedure main(id: Integer)\r\naborts NotFound when id = 0\r\nis\r\n    abort NotFound\r\nend main\r\n\r\nend AbortConditionUncoveredUnconditional",
+  "module_name": "21_abort_handling",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "AbortConditionUncoveredUnconditional",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "aborts": [
+          {
+            "error": "NotFound",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "AbortStmt",
+            "error": "NotFound"
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "AbortConditionUncoveredUnconditional"
+  }
+}

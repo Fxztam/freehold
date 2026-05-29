@@ -1,0 +1,160 @@
+{
+  "source_file": "..\\tests\\language_modules\\16_control_flow_edges\\valid\\nested_if_case_while.fh",
+  "source_snippet": "module Control.NestedEdges\r\n\r\nprocedure main()\r\nis\r\n    let amount: Integer = 1\r\n    if amount = 1 then\r\n        case amount is\r\n            when 1 =\u003e\r\n                check true\r\n            default =\u003e\r\n                check false = false\r\n        end case\r\n    else\r\n        while amount \u003e 0\r\n            invariant amount \u003e= 0\r\n            variant amount\r\n        do\r\n            amount := amount - 1\r\n        end while\r\n    end if\r\n    check amount = 1\r\nend main\r\n\r\nend Control.NestedEdges",
+  "module_name": "16_control_flow_edges",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Control.NestedEdges",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "amount",
+            "type": "Integer",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "1"
+            }
+          },
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            },
+            "then_body": [
+              {
+                "kind": "CaseStmt",
+                "value": {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                },
+                "when": [
+                  {
+                    "value": {
+                      "kind": "NumberExpr",
+                      "value": "1"
+                    },
+                    "body": [
+                      {
+                        "kind": "CheckStmt",
+                        "condition": {
+                          "kind": "IdentifierExpr",
+                          "name": "true"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "default": [
+                  {
+                    "kind": "CheckStmt",
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "IdentifierExpr",
+                        "name": "false"
+                      },
+                      "right": {
+                        "kind": "IdentifierExpr",
+                        "name": "false"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "else_body": [
+              {
+                "kind": "WhileStmt",
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": "\u003e",
+                  "left": {
+                    "kind": "IdentifierExpr",
+                    "name": "amount"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": "0"
+                  }
+                },
+                "invariants": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "\u003e=",
+                    "left": {
+                      "kind": "IdentifierExpr",
+                      "name": "amount"
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": "0"
+                    }
+                  }
+                ],
+                "variant": {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                },
+                "body": [
+                  {
+                    "kind": "AssignmentStmt",
+                    "target": {
+                      "kind": "IdentifierExpr",
+                      "name": "amount"
+                    },
+                    "value": {
+                      "kind": "BinaryExpr",
+                      "op": "-",
+                      "left": {
+                        "kind": "IdentifierExpr",
+                        "name": "amount"
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": "1"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "Control.NestedEdges"
+  }
+}

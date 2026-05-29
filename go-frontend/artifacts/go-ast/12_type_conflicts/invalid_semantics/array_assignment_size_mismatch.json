@@ -1,0 +1,64 @@
+{
+  "source_file": "..\\tests\\language_modules\\12_type_conflicts\\invalid_semantics\\array_assignment_size_mismatch.fh",
+  "source_snippet": "module ArrayAssignmentSizeMismatch\r\n\r\nfunction values() returns Array\u003cInteger, 3\u003e\r\nis\r\n    return [1, 2, 3]\r\nend values\r\n\r\nprocedure main()\r\nis\r\n    let xs: Array\u003cInteger, 2\u003e = values()\r\nend main\r\n\r\nend ArrayAssignmentSizeMismatch",
+  "module_name": "12_type_conflicts",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "ArrayAssignmentSizeMismatch",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "values",
+        "params": null,
+        "return_type": "Array\u003cInteger, 3\u003e",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ArrayLiteralExpr",
+              "elements": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                },
+                {
+                  "kind": "NumberExpr",
+                  "value": "2"
+                },
+                {
+                  "kind": "NumberExpr",
+                  "value": "3"
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "values"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "xs",
+            "type": "Array\u003cInteger, 2\u003e",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "values"
+              },
+              "arguments": null
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "ArrayAssignmentSizeMismatch"
+  }
+}

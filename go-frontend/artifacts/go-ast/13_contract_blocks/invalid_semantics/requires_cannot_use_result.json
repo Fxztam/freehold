@@ -1,0 +1,44 @@
+{
+  "source_file": "..\\tests\\language_modules\\13_contract_blocks\\invalid_semantics\\requires_cannot_use_result.fh",
+  "source_snippet": "module RequiresCannotUseResult\r\n\r\nfunction current() returns Integer\r\nrequires result = 1\r\nis\r\n    return 1\r\nend current\r\n\r\nend RequiresCannotUseResult",
+  "module_name": "13_contract_blocks",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "RequiresCannotUseResult",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "current",
+        "params": null,
+        "return_type": "Integer",
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "1"
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "NumberExpr",
+              "value": "1"
+            }
+          }
+        ],
+        "end_name": "current"
+      }
+    ],
+    "end_name": "RequiresCannotUseResult"
+  }
+}

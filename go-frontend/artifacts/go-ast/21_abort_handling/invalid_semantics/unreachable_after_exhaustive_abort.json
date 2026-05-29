@@ -1,0 +1,62 @@
+{
+  "source_file": "..\\tests\\language_modules\\21_abort_handling\\invalid_semantics\\unreachable_after_exhaustive_abort.fh",
+  "source_snippet": "module AbortUnreachableAfterExhaustiveAbort\r\n\r\nerror NotFound\r\n\r\nprocedure main(flag: Boolean)\r\naborts NotFound\r\nis\r\n    if flag then\r\n        abort NotFound\r\n    else\r\n        abort NotFound\r\n    end if\r\n\r\n    check true\r\nend main\r\n\r\nend AbortUnreachableAfterExhaustiveAbort",
+  "module_name": "21_abort_handling",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "AbortUnreachableAfterExhaustiveAbort",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": [
+          {
+            "name": "flag",
+            "type": "Boolean"
+          }
+        ],
+        "aborts": [
+          {
+            "error": "NotFound"
+          }
+        ],
+        "body": [
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "IdentifierExpr",
+              "name": "flag"
+            },
+            "then_body": [
+              {
+                "kind": "AbortStmt",
+                "error": "NotFound"
+              }
+            ],
+            "else_body": [
+              {
+                "kind": "AbortStmt",
+                "error": "NotFound"
+              }
+            ]
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "IdentifierExpr",
+              "name": "true"
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "AbortUnreachableAfterExhaustiveAbort"
+  }
+}

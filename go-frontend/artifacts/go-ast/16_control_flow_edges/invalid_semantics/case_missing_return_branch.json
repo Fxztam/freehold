@@ -1,0 +1,69 @@
+{
+  "source_file": "..\\tests\\language_modules\\16_control_flow_edges\\invalid_semantics\\case_missing_return_branch.fh",
+  "source_snippet": "module Control.CaseMissingReturn\r\n\r\nfunction score(choice: Integer) returns Integer\r\nis\r\n    case choice is\r\n        when 1 =\u003e\r\n            return 10\r\n        default =\u003e\r\n            check choice != 1\r\n    end case\r\nend score\r\n\r\nend Control.CaseMissingReturn",
+  "module_name": "16_control_flow_edges",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Control.CaseMissingReturn",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "score",
+        "params": [
+          {
+            "name": "choice",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "CaseStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "choice"
+            },
+            "when": [
+              {
+                "value": {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                },
+                "body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "NumberExpr",
+                      "value": "10"
+                    }
+                  }
+                ]
+              }
+            ],
+            "default": [
+              {
+                "kind": "CheckStmt",
+                "condition": {
+                  "kind": "BinaryExpr",
+                  "op": "!=",
+                  "left": {
+                    "kind": "IdentifierExpr",
+                    "name": "choice"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "end_name": "score"
+      }
+    ],
+    "end_name": "Control.CaseMissingReturn"
+  }
+}

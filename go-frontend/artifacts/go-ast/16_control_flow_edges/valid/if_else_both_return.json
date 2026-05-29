@@ -1,0 +1,93 @@
+{
+  "source_file": "..\\tests\\language_modules\\16_control_flow_edges\\valid\\if_else_both_return.fh",
+  "source_snippet": "module Control.IfElseReturn\r\n\r\nfunction classify(amount: Integer) returns Integer\r\nis\r\n    if amount \u003e 0 then\r\n        return 1\r\n    else\r\n        return 0\r\n    end if\r\nend classify\r\n\r\nprocedure main()\r\nis\r\n    check classify(1) = 1\r\nend main\r\n\r\nend Control.IfElseReturn",
+  "module_name": "16_control_flow_edges",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "Control.IfElseReturn",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "classify",
+        "params": [
+          {
+            "name": "amount",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "\u003e",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "amount"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            },
+            "then_body": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                }
+              }
+            ],
+            "else_body": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "NumberExpr",
+                  "value": "0"
+                }
+              }
+            ]
+          }
+        ],
+        "end_name": "classify"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "CallExpr",
+                "callee": {
+                  "kind": "IdentifierExpr",
+                  "name": "classify"
+                },
+                "arguments": [
+                  {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "Control.IfElseReturn"
+  }
+}

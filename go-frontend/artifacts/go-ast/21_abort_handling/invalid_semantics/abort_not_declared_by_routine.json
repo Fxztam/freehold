@@ -1,0 +1,60 @@
+{
+  "source_file": "..\\tests\\language_modules\\21_abort_handling\\invalid_semantics\\abort_not_declared_by_routine.fh",
+  "source_snippet": "module AbortNotDeclaredByRoutine\r\n\r\nerror NotFound\r\n\r\nfunction read(id: Integer) returns Integer\r\nis\r\n    if id = 0 then\r\n        abort NotFound\r\n    end if\r\n\r\n    return id\r\nend read\r\n\r\nend AbortNotDeclaredByRoutine",
+  "module_name": "21_abort_handling",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "AbortNotDeclaredByRoutine",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "read",
+        "params": [
+          {
+            "name": "id",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Integer",
+        "body": [
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            },
+            "then_body": [
+              {
+                "kind": "AbortStmt",
+                "error": "NotFound"
+              }
+            ]
+          },
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "id"
+            }
+          }
+        ],
+        "end_name": "read"
+      }
+    ],
+    "end_name": "AbortNotDeclaredByRoutine"
+  }
+}

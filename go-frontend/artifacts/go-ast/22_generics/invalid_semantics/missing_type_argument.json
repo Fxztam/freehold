@@ -1,0 +1,54 @@
+{
+  "source_file": "..\\tests\\language_modules\\22_generics\\invalid_semantics\\missing_type_argument.fh",
+  "source_snippet": "module GenericMissingTypeArgument\r\n\r\ntype Box\u003cT\u003e is record\r\n    item: T\r\nend record\r\n\r\nprocedure main()\r\nis\r\n    let b: Box = Box\u003cInteger\u003e { item: 1 }\r\nend main\r\n\r\nend GenericMissingTypeArgument",
+  "module_name": "22_generics",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "GenericMissingTypeArgument",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Box",
+        "type_params": [
+          "T"
+        ],
+        "base": "record",
+        "fields": [
+          {
+            "name": "item",
+            "type": "T"
+          }
+        ]
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "b",
+            "type": "Box",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Box\u003cInteger\u003e",
+              "fields": [
+                {
+                  "name": "item",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "GenericMissingTypeArgument"
+  }
+}

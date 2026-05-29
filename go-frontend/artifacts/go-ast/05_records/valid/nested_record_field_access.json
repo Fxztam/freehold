@@ -1,0 +1,114 @@
+{
+  "source_file": "..\\tests\\language_modules\\05_records\\valid\\nested_record_field_access.fh",
+  "source_snippet": "module NestedRecordFieldAccess\r\n\r\ntype Address is record\r\n    city_id: Integer\r\nend record\r\n\r\ntype Customer is record\r\n    id: Integer\r\n    address: Address\r\nend record\r\n\r\nprocedure main()\r\nis\r\n    let address: Address = Address { city_id: 7 }\r\n    let customer: Customer = Customer { id: 1, address: address }\r\n    check customer.address.city_id = 7\r\nend main\r\n\r\nend NestedRecordFieldAccess",
+  "module_name": "05_records",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "NestedRecordFieldAccess",
+    "declarations": [
+      {
+        "kind": "TypeDecl",
+        "name": "Address",
+        "base": "record",
+        "fields": [
+          {
+            "name": "city_id",
+            "type": "Integer"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "Customer",
+        "base": "record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "Integer"
+          },
+          {
+            "name": "address",
+            "type": "Address"
+          }
+        ]
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "address",
+            "type": "Address",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Address",
+              "fields": [
+                {
+                  "name": "city_id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "7"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "customer",
+            "type": "Customer",
+            "value": {
+              "kind": "RecordLiteralExpr",
+              "type": "Customer",
+              "fields": [
+                {
+                  "name": "id",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                },
+                {
+                  "name": "address",
+                  "value": {
+                    "kind": "IdentifierExpr",
+                    "name": "address"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "=",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "object": {
+                  "kind": "FieldAccessExpr",
+                  "object": {
+                    "kind": "IdentifierExpr",
+                    "name": "customer"
+                  },
+                  "field": "address"
+                },
+                "field": "city_id"
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": "7"
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "NestedRecordFieldAccess"
+  }
+}

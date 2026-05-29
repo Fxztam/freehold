@@ -1,0 +1,58 @@
+{
+  "source_file": "..\\tests\\language_modules\\12_type_conflicts\\invalid_semantics\\result_assignment_ok_type_mismatch.fh",
+  "source_snippet": "module ResultAssignmentOkTypeMismatch\r\n\r\nerror NotFound\r\n\r\nfunction load() returns Result\u003cInteger, NotFound\u003e\r\nis\r\n    return ok 1\r\nend load\r\n\r\nprocedure main()\r\nis\r\n    let outcome: Result\u003cBoolean, NotFound\u003e = load()\r\nend main\r\n\r\nend ResultAssignmentOkTypeMismatch",
+  "module_name": "12_type_conflicts",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "ResultAssignmentOkTypeMismatch",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "load",
+        "params": null,
+        "return_type": "Result\u003cInteger, NotFound\u003e",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "OkExpr",
+              "value": {
+                "kind": "NumberExpr",
+                "value": "1"
+              }
+            }
+          }
+        ],
+        "end_name": "load"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "outcome",
+            "type": "Result\u003cBoolean, NotFound\u003e",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "load"
+              },
+              "arguments": null
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "ResultAssignmentOkTypeMismatch"
+  }
+}

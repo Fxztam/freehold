@@ -1,0 +1,34 @@
+{
+  "source_file": "..\\tests\\language_modules\\11_errors_results\\invalid_semantics\\nested_result_ok_payload.fh",
+  "source_snippet": "module NestedResultOkPayload\r\n\r\nerror NotFound\r\n\r\nfunction nested() returns Result\u003cResult\u003cInteger, NotFound\u003e, NotFound\u003e\r\nis\r\n    return error NotFound\r\nend nested\r\n\r\nend NestedResultOkPayload",
+  "module_name": "11_errors_results",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "NestedResultOkPayload",
+    "declarations": [
+      {
+        "kind": "ErrorDecl",
+        "name": "NotFound"
+      },
+      {
+        "kind": "FunctionDecl",
+        "name": "nested",
+        "params": null,
+        "return_type": "Result\u003cResult\u003cInteger, NotFound\u003e, NotFound\u003e",
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ErrorExpr",
+              "name": "NotFound"
+            }
+          }
+        ],
+        "end_name": "nested"
+      }
+    ],
+    "end_name": "NestedResultOkPayload"
+  }
+}

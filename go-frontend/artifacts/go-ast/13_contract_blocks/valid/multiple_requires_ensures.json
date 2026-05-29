@@ -1,0 +1,87 @@
+{
+  "source_file": "..\\tests\\language_modules\\13_contract_blocks\\valid\\multiple_requires_ensures.fh",
+  "source_snippet": "module MultipleRequiresEnsures\r\n\r\nfunction clamp(amount: Integer) returns Integer\r\nrequires amount \u003e= 0\r\nrequires amount \u003c= 10\r\nensures result \u003e= 0\r\nensures result \u003c= 10\r\nis\r\n    return amount\r\nend clamp\r\n\r\nend MultipleRequiresEnsures",
+  "module_name": "13_contract_blocks",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "MultipleRequiresEnsures",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "clamp",
+        "params": [
+          {
+            "name": "amount",
+            "type": "Integer"
+          }
+        ],
+        "return_type": "Integer",
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": "\u003e=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "amount"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "0"
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "\u003c=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "amount"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "10"
+            }
+          }
+        ],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "\u003e=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "0"
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "\u003c=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "10"
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "IdentifierExpr",
+              "name": "amount"
+            }
+          }
+        ],
+        "end_name": "clamp"
+      }
+    ],
+    "end_name": "MultipleRequiresEnsures"
+  }
+}
