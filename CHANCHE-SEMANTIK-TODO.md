@@ -317,3 +317,12 @@ Record Initializers, weil named arguments jetzt fuer Calls/Bindings etabliert si
 JSON templates, weil named bindings und placeholder completeness stabil diagnostiziert sind.
 Requires/Ensures comma notation, weil der Spec-Checker-Prozess fuer neue Regeln steht.
 ```
+
+## Geparkte V2/V3-Themen (Nicht Teil des V1-Scopes)
+
+Die folgenden komplexen Sprach- und Runtime-Features sind bewusst geparkt und blockieren das V1-Self-Hosting nicht:
+- **gRPC-Client-Bindings, Streaming, Deadlines und Metadaten-Annotationen.**
+- **Async-Runtime-Executor (Scheduling, Cancellation Tokens).**
+- **REST/WebSocket-Verbindungsbibliotheken.**
+- **Generics-Inferenz und Monomorphisierung des generierten Go-Codes.**
+- **Pfadsensitive Kontrollfluss-Analyse (Path-aware analysis) und Abort-Implikationsprüfung.**

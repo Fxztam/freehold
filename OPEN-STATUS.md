@@ -40,6 +40,15 @@ Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V
 
 Diese Themen sind absichtlich nicht Teil des aktuellen V1-Abschlusses:
 
+### 3. Geparkte V2/V3-Themen (Nicht Teil des V1-Scopes)
+Die folgenden komplexen Sprach- und Runtime-Features sind bewusst geparkt und blockieren das V1-Self-Hosting nicht:
+- **gRPC-Client-Bindings, Streaming, Deadlines und Metadaten-Annotationen.**
+- **Async-Runtime-Executor (Scheduling, Cancellation Tokens).**
+- **REST/WebSocket-Verbindungsbibliotheken.**
+- **Generics-Inferenz und Monomorphisierung des generierten Go-Codes.**
+- **Pfadsensitive Kontrollfluss-Analyse (Path-aware analysis) und Abort-Implikationsprüfung.**
+
+Weitere Details:
 - gRPC client bindings and explicit service implementation binding from generated `.proto` files.
 - gRPC custom error/status-code mapping and schema-evolution rules such as `reserved proto`.
 - gRPC streaming, cancellation, deadlines, metadata, and auth annotations.

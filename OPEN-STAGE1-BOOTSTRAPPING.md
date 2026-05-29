@@ -88,3 +88,12 @@ Die wesentlichen Kernschritte des Bootstrappings sind vollständig umgesetzt. Ve
 
 Diese nachgelagerten CI-, Tooling- und Verifikationspunkte sind für spätere Integrationsphasen vorgesehen und blockieren die bereits erfolgreich abgeschlossene Core-Entwicklung und den Self-Hosting-Bootstrap nicht.
 
+## 5. Geparkte V2/V3-Themen (Nicht Teil des V1-Scopes)
+
+Die folgenden komplexen Sprach- und Runtime-Features sind bewusst geparkt und blockieren das V1-Self-Hosting nicht:
+- **gRPC-Client-Bindings, Streaming, Deadlines und Metadaten-Annotationen.**
+- **Async-Runtime-Executor (Scheduling, Cancellation Tokens).**
+- **REST/WebSocket-Verbindungsbibliotheken.**
+- **Generics-Inferenz und Monomorphisierung des generierten Go-Codes.**
+- **Pfadsensitive Kontrollfluss-Analyse (Path-aware analysis) und Abort-Implikationsprüfung.**
+
