@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -12,6 +13,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from freehold.core.go_codegen import go_executable_name
+from tools.freehold_fuzzer import build_typing_positive, build_typing_negative
 
 
 @dataclass(frozen=True)
@@ -96,10 +98,13 @@ def main() -> int:
     for example in UNSUPPORTED_EXAMPLES:
         failed = run_unsupported(example) or failed
 
+    # Run dynamically generated fuzzy tests
+    failed = run_fuzzy_tests() or failed
+
     if failed:
-        print("\n[FAIL] Stage 3 compiler example verification failed.")
+        print("\n[FAIL] Stage 3 compiler example and fuzzy verification failed.")
         return 1
-    print("\n[OK] Stage 3 compiler example verification passed.")
+    print("\n[OK] Stage 3 compiler example and fuzzy verification passed.")
     return 0
 
 
@@ -307,6 +312,81 @@ def run(command: list[str], cwd: Path, quiet: bool = False) -> subprocess.Comple
     if quiet:
         return subprocess.run(command, cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return subprocess.run(command, cwd=cwd, text=True)
+
+
+def run_fuzzy_tests() -> bool:
+    print("\n=== RUNNING DYNAMIC FUZZY TESTS ===")
+    failed = False
+
+    # 1. Positive typing fuzz tests (typing_pos): must compile & build with stage3
+    print("\n--- Running 5 Positive Fuzzing Tests (typing_pos) ---")
+    for i in range(1, 6):
+        seed = 42000 + i * 111
+        source = build_typing_positive(seed)
+        
+        match = re.search(r'module\s+([A-Za-z0-9_\.]+)', source)
+        if not match:
+            print(f"[FAIL] Could not extract module name from typing_pos fuzz source (seed {seed})")
+            failed = True
+            continue
+        module_name = match.group(1)
+        
+        parts = module_name.split(".")
+        fuzz_root = OUT_ROOT / f"fuzz_pos_{i}"
+        fuzz_root.mkdir(parents=True, exist_ok=True)
+        
+        fuzz_dir = fuzz_root / "fuzz"
+        fuzz_dir.mkdir(parents=True, exist_ok=True)
+        
+        entry_file = fuzz_dir / f"{parts[1]}.fh"
+        entry_file.write_text(source, encoding="utf-8")
+        
+        example = SupportedExample(
+            name=f"fuzz_pos_{i}",
+            entry=str(entry_file.relative_to(ROOT)),
+            expected_log=None
+        )
+        
+        if run_supported_with_stage3(example):
+            failed = True
+            print(f"[FAIL] Positive fuzz test {i} (seed {seed}) failed.")
+        else:
+            print(f"[OK] Positive fuzz test {i} (seed {seed}) verified successfully.")
+
+    # 2. Negative typing fuzz tests (typing_neg): must be rejected by verifier
+    print("\n--- Running 5 Negative Fuzzing Tests (typing_neg) ---")
+    for i in range(1, 6):
+        seed = 52000 + i * 111
+        source, mutation = build_typing_negative(seed)
+        
+        match = re.search(r'module\s+([A-Za-z0-9_\.]+)', source)
+        if not match:
+            print(f"[FAIL] Could not extract module name from typing_neg fuzz source (seed {seed})")
+            failed = True
+            continue
+        module_name = match.group(1)
+        
+        parts = module_name.split(".")
+        fuzz_root = OUT_ROOT / f"fuzz_neg_{i}"
+        fuzz_root.mkdir(parents=True, exist_ok=True)
+        
+        fuzz_dir = fuzz_root / "fuzz"
+        fuzz_dir.mkdir(parents=True, exist_ok=True)
+        
+        entry_file = fuzz_dir / f"{parts[1]}.fh"
+        entry_file.write_text(source, encoding="utf-8")
+        
+        print(f"[STAGE3 FUZZ NEG] fuzz_neg_{i} (mutation: {mutation})")
+        
+        # Verify must fail
+        res = run([sys.executable, "-m", "freehold", "verify", str(entry_file)], ROOT, quiet=True)
+        if res.returncode == 0:
+            print(f"[FAIL] Negative fuzz test {i} (seed {seed}, mutation {mutation}) unexpectedly verified successfully.")
+            failed = True
+        else:
+            print(f"[OK] Negative fuzz test {i} (seed {seed}, mutation {mutation}) correctly rejected.")
+
+    return failed
 
 
 if __name__ == "__main__":
