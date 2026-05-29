@@ -3,11 +3,12 @@ package ast
 import "freehold-go-frontend/internal/token"
 
 type Module struct {
-	Kind         string         `json:"kind"`
-	Pos          token.Position `json:"-"`
-	Name         string         `json:"name"`
-	Declarations []Decl         `json:"declarations"`
-	EndName      string         `json:"end_name"`
+	Kind          string                        `json:"kind"`
+	Pos           token.Position                `json:"-"`
+	Name          string                        `json:"name"`
+	Declarations  []Decl                        `json:"declarations"`
+	EndName       string                        `json:"end_name"`
+	FlowSummaries map[string]RoutineFlowSummary `json:"flow_summaries,omitempty"`
 }
 
 type Decl interface{}
@@ -277,4 +278,15 @@ type BinaryExpr struct {
 	Op    string         `json:"op"`
 	Left  Expr           `json:"left"`
 	Right Expr           `json:"right"`
+}
+
+type RoutineFlowSummary struct {
+	RoutineName          string          `json:"routine_name"`
+	RoutineKind          string          `json:"routine_kind"`
+	NormalReturnPossible bool            `json:"normal_return_possible"`
+	GuaranteedExit       bool            `json:"guaranteed_exit"`
+	DeclaredAborts       map[string]bool `json:"declared_aborts,omitempty"`
+	EmittedAborts        map[string]bool `json:"emitted_aborts,omitempty"`
+	CalledRoutines       map[string]bool `json:"called_routines,omitempty"`
+	PropagatedAborts     map[string]bool `json:"propagated_aborts,omitempty"`
 }

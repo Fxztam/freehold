@@ -13,7 +13,7 @@
       "source_file": "bootstrap/compiler_core_v1/App/Main.fh",
       "expected": {
         "module_path": "freehold.local",
-        "total_files": 10,
+        "total_files": 11,
         "total_build_files": 3,
         "total_extra_files": 0,
         "supported": true
@@ -65,6 +65,17 @@
             "diag.import_ref.unknown = %v",
             "resolver.import_ref.result = %v",
             "resolver.import_ref.unknown = %v",
+            "transform.import_ref.canonical = %v",
+            "lexer.call.count = %v",
+            "lexer.call.summary = %v",
+            "parser.call.summary = %v",
+            "parser.call.result = %v",
+            "transform.call.lowered = %v",
+            "lexer.nested_call.count = %v",
+            "lexer.nested_call.summary = %v",
+            "parser.nested_call.summary = %v",
+            "parser.nested_call.result = %v",
+            "transform.nested_call.flattened = %v",
             "parse.ok = %v",
             "parse.error = %v"
           ]
@@ -174,7 +185,8 @@
             "func ParseMiniImportModuleResult(tokens compiler_core_lexer.MiniImportModuleTokens) compiler_core_parseresult.ParseResult",
             "func ParseMiniImportReferenceModule(tokens compiler_core_lexer.MiniImportReferenceModuleTokens) compiler_core_ast.ModuleWithImportReferenceNode",
             "func ParseMiniImportReferenceModuleResult(tokens compiler_core_lexer.MiniImportReferenceModuleTokens) compiler_core_parseresult.ParseResult",
-            "FH-PARSE-0002",
+            "func ParseMiniNestedCallModule(tokens compiler_core_lexer.MiniNestedCallModuleTokens) compiler_core_ast.ModuleWithNestedCallNode",
+            "func ParseMiniNestedCallModuleResult(tokens compiler_core_lexer.MiniNestedCallModuleTokens) compiler_core_parseresult.ParseResult",
             "func BuildMiniModuleNode(tokens compiler_core_lexer.MiniModuleTokens) compiler_core_ast.ModuleNode",
             "func ParsedModuleName(moduleNode compiler_core_ast.ModuleNode) string",
             "func MiniModuleParserSummary(moduleNode compiler_core_ast.ModuleNode) string",
@@ -183,6 +195,7 @@
             "func MiniProcedureModuleParserSummary(moduleNode compiler_core_ast.ModuleWithProcedureNode) string",
             "func MiniImportModuleParserSummary(moduleNode compiler_core_ast.ModuleWithImportNode) string",
             "func MiniImportReferenceModuleParserSummary(moduleNode compiler_core_ast.ModuleWithImportReferenceNode) string",
+            "func MiniNestedCallModuleParserSummary(moduleNode compiler_core_ast.ModuleWithNestedCallNode) string",
             "compiler_core_parseresult.ParseOk(moduleNode)",
             "compiler_core_parseresult.ParseErrorResult(issue, moduleNode)",
             "compiler_core_ast.MakeModuleWithRecordNode(moduleNode, recordType)",
@@ -203,10 +216,20 @@
             "func MakeResolveStatus(name string) ResolveStatus",
             "func ResolveOk(importModuleFull string, symbolRaw string) ResolveResult",
             "func ResolveError(issue compiler_core_diagnostics.Diagnostic, importModuleFull string, symbolRaw string) ResolveResult",
-            "func ResolveMiniImportReferenceModule(tokens compiler_core_lexer.MiniImportReferenceModuleTokens) ResolveResult",
+            "func ResolveMiniImportReferenceModule(astNode compiler_core_ast.ModuleWithImportReferenceNode) ResolveResult",
             "func ResolveResultSummary(resolveResult ResolveResult) string",
             "compiler_core_diagnostics.MakeUnknownExposedSymbolDiagnostic",
             "compiler_core_diagnostics.DiagnosticText"
+          ]
+        },
+        {
+          "output_path": "compiler/core/transform/transform.go",
+          "module": "Compiler.Core.Transform",
+          "supported": true,
+          "must_contain": [
+            "func CanonicalizeImportReferences(astNode compiler_core_ast.ModuleWithImportReferenceNode) compiler_core_ast.ModuleWithImportReferenceNode",
+            "func LowerAbortPropagation(astNode compiler_core_ast.ModuleWithCallNode) compiler_core_ast.ModuleWithReturnNode",
+            "func FlattenNestedCall(astNode compiler_core_ast.ModuleWithNestedCallNode) compiler_core_ast.ModuleWithLoweredCallsNode"
           ]
         },
         {

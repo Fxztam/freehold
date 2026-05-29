@@ -1026,31 +1026,22 @@ func buildModuleEnv(project *Project, moduleName string, cache map[string]module
 			return moduleEnv{}, err
 		}
 		for _, symbol := range importDecl.Exposing {
-			exposesSymbol := false
 			if value, ok := imported.Types[symbol]; ok {
-				exposesSymbol = true
 				if _, exists := env.Types[symbol]; !exists {
 					env.Types[symbol] = value
 				}
+				addImportedTypeDependencies(&env, symbol, imported, map[string]bool{})
 			}
-			if value, ok := imported.Records[symbol]; ok {
-				exposesSymbol = true
-				if _, exists := env.Records[symbol]; !exists {
-					env.Records[symbol] = value
-				}
+			if _, ok := imported.Records[symbol]; ok {
+				addImportedRecordWithDependencies(&env, symbol, imported, map[string]bool{})
 			}
 			if imported.Errors[symbol] {
-				exposesSymbol = true
 				env.Errors[symbol] = true
 			}
 			if value, ok := imported.Routines[symbol]; ok {
-				exposesSymbol = true
 				if _, exists := env.Routines[symbol]; !exists {
 					env.Routines[symbol] = value
 				}
-			}
-			if exposesSymbol {
-				mergeImportedTypeEnv(&env, imported)
 			}
 		}
 	}
@@ -1059,19 +1050,55 @@ func buildModuleEnv(project *Project, moduleName string, cache map[string]module
 	return env, nil
 }
 
-func mergeImportedTypeEnv(env *moduleEnv, imported moduleEnv) {
-	for name, value := range imported.Types {
-		if _, exists := env.Types[name]; !exists {
-			env.Types[name] = value
+func extractTypeNames(typeStr string) []string {
+	var names []string
+	var current strings.Builder
+	for _, r := range typeStr {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '.' {
+			current.WriteRune(r)
+		} else {
+			if current.Len() > 0 {
+				names = append(names, current.String())
+				current.Reset()
+			}
 		}
 	}
-	for name, value := range imported.Records {
-		if _, exists := env.Records[name]; !exists {
-			env.Records[name] = value
+	if current.Len() > 0 {
+		names = append(names, current.String())
+	}
+	return names
+}
+
+func addImportedTypeDependencies(env *moduleEnv, typeStr string, imported moduleEnv, seen map[string]bool) {
+	for _, name := range extractTypeNames(typeStr) {
+		if typeDef, ok := imported.Types[name]; ok {
+			if _, exists := env.Types[name]; !exists {
+				env.Types[name] = typeDef
+			}
+		}
+		if _, ok := imported.Records[name]; ok {
+			addImportedRecordWithDependencies(env, name, imported, seen)
+		}
+		if imported.Errors[name] {
+			env.Errors[name] = true
 		}
 	}
-	for name := range imported.Errors {
-		env.Errors[name] = true
+}
+
+func addImportedRecordWithDependencies(env *moduleEnv, name string, imported moduleEnv, seen map[string]bool) {
+	if seen[name] {
+		return
+	}
+	seen[name] = true
+	record, ok := imported.Records[name]
+	if !ok {
+		return
+	}
+	if _, exists := env.Records[name]; !exists {
+		env.Records[name] = record
+	}
+	for _, field := range record.Fields {
+		addImportedTypeDependencies(env, field.Type, imported, seen)
 	}
 }
 

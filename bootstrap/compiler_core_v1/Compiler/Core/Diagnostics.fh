@@ -20,7 +20,7 @@ function diagnostic_key(diagnostic: Diagnostic) returns String
 requires String.instr(diagnostic.code, "FH-") = 0
 ensures String.instr(result, diagnostic.code) = 0
 is
-    return String.template("${code}:${module}.${symbol}", code: diagnostic.code, module: diagnostic.module_name.full, symbol: diagnostic.symbol_name.raw)
+    return String.template("${code}:${module_name}.${symbol}", code: diagnostic.code, module_name: diagnostic.module_name.full, symbol: diagnostic.symbol_name.raw)
 end diagnostic_key
 
 function diagnostic_text(diagnostic: Diagnostic) returns String
@@ -36,7 +36,7 @@ ensures result.code = "FH-REF-1001", result.module_name.full = import_module_ful
 is
     let module_name: ModuleName = make_module_name(import_module_full)
     let symbol_name: SymbolName = make_symbol_name(symbol_raw)
-    let message: String = String.template("unknown exposed symbol ${symbol} in ${module}", symbol: symbol_raw, module: import_module_full)
+    let message: String = String.template("unknown exposed symbol ${symbol} in ${module_name}", symbol: symbol_raw, module_name: import_module_full)
     return make_diagnostic("FH-REF-1001", message, module_name, symbol_name)
 end make_unknown_exposed_symbol_diagnostic
 

@@ -84,6 +84,75 @@ type ModuleWithImportReferenceNode is record
     routine: FunctionImportReferenceNode
 end record
 
+type RecordLiteralNode is record
+    span: SourceSpan
+    type_name: IdentifierNode
+    field0_name: IdentifierNode
+    field0_value: LiteralNode
+    field1_name: IdentifierNode
+    field1_value: LiteralNode
+    field2_name: IdentifierNode
+    field2_value: LiteralNode
+    field_count: Integer
+end record
+
+type ModuleWithRecordLiteralNode is record
+    module_node: ModuleNode
+    record_literal: RecordLiteralNode
+end record
+
+type ReturnStmtNode is record
+    span: SourceSpan
+    kind: String
+    val: LiteralNode
+    error_ref: IdentifierNode
+end record
+
+type ModuleWithReturnNode is record
+    module_node: ModuleNode
+    return_stmt: ReturnStmtNode
+end record
+
+type CallStmtNode is record
+    span: SourceSpan
+    routine_name: IdentifierNode
+    argument: LiteralNode
+    aborts_type: IdentifierNode
+end record
+
+type ModuleWithCallNode is record
+    module_node: ModuleNode
+    call_stmt: CallStmtNode
+end record
+
+type NestedCallStmtNode is record
+    span: SourceSpan
+    var_name: IdentifierNode
+    outer_routine: IdentifierNode
+    inner_routine: IdentifierNode
+    argument: LiteralNode
+end record
+
+type ModuleWithNestedCallNode is record
+    module_node: ModuleNode
+    nested_call: NestedCallStmtNode
+end record
+
+type LoweredCallNode is record
+    span: SourceSpan
+    var_name: IdentifierNode
+    routine_name: IdentifierNode
+    argument_var: String
+end record
+
+type ModuleWithLoweredCallsNode is record
+    module_node: ModuleNode
+    first_call: LoweredCallNode
+    second_call: LoweredCallNode
+end record
+
+
+
 function make_ast_node_kind(name: String) returns AstNodeKind
 requires String.instr(name, "") = 0
 ensures result.name = name
@@ -228,7 +297,7 @@ function module_with_record_text(module_node: ModuleWithRecordNode) returns Stri
 requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.record_type.name.name, "") = 0
 ensures String.instr(result, module_node.record_type.name.name) >= 0
 is
-    return String.template("${module}:record=${record}", module: module_text(module_node.module_node), record: record_type_text(module_node.record_type))
+    return String.template("${module_name}:record=${record_val}", module_name: module_text(module_node.module_node), record_val: record_type_text(module_node.record_type))
 end module_with_record_text
 
 function function_text(routine: FunctionNode) returns String
@@ -242,7 +311,7 @@ function module_with_function_text(module_node: ModuleWithFunctionNode) returns 
 requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.routine.name.name, "") = 0
 ensures String.instr(result, module_node.routine.name.name) >= 0
 is
-    return String.template("${module}:function=${routine}", module: module_text(module_node.module_node), routine: function_text(module_node.routine))
+    return String.template("${module_name}:function=${routine}", module_name: module_text(module_node.module_node), routine: function_text(module_node.routine))
 end module_with_function_text
 
 function procedure_text(routine: ProcedureNode) returns String
@@ -256,28 +325,28 @@ function module_with_procedure_text(module_node: ModuleWithProcedureNode) return
 requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.routine.name.name, "") = 0
 ensures String.instr(result, module_node.routine.name.name) >= 0
 is
-    return String.template("${module}:procedure=${routine}", module: module_text(module_node.module_node), routine: procedure_text(module_node.routine))
+    return String.template("${module_name}:procedure=${routine}", module_name: module_text(module_node.module_node), routine: procedure_text(module_node.routine))
 end module_with_procedure_text
 
 function import_text(import_decl: ImportNode) returns String
 requires String.instr(import_decl.module_name.name, "") = 0, String.instr(import_decl.exposed_name.name, "") = 0
 ensures String.instr(result, import_decl.exposed_name.name) >= 0
 is
-    return String.template("Import:${module}@${source}:${line}:${column}:exposing=${exposed}", module: import_decl.module_name.name, source: import_decl.span.source_name, line: import_decl.span.start_line, column: import_decl.span.start_column, exposed: import_decl.exposed_name.name)
+    return String.template("Import:${module_name}@${source}:${line}:${column}:exposing=${exposed}", module_name: import_decl.module_name.name, source: import_decl.span.source_name, line: import_decl.span.start_line, column: import_decl.span.start_column, exposed: import_decl.exposed_name.name)
 end import_text
 
 function module_with_import_text(module_node: ModuleWithImportNode) returns String
 requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.import_decl.module_name.name, "") = 0
 ensures String.instr(result, module_node.import_decl.module_name.name) >= 0
 is
-    return String.template("${module}:import=${import_decl}", module: module_text(module_node.module_node), import_decl: import_text(module_node.import_decl))
+    return String.template("${module_name}:import=${import_decl}", module_name: module_text(module_node.module_node), import_decl: import_text(module_node.import_decl))
 end module_with_import_text
 
 function import_reference_text(import_reference: ImportReferenceNode) returns String
 requires String.instr(import_reference.import_decl.module_name.name, "") = 0, String.instr(import_reference.symbol_name.name, "") = 0
 ensures String.instr(result, import_reference.symbol_name.name) >= 0
 is
-    return String.template("ImportRef:${symbol}@${source}:${line}:${column}:from=${module}", symbol: import_reference.symbol_name.name, source: import_reference.span.source_name, line: import_reference.span.start_line, column: import_reference.span.start_column, module: import_reference.import_decl.module_name.name)
+    return String.template("ImportRef:${symbol}@${source}:${line}:${column}:from=${module_name}", symbol: import_reference.symbol_name.name, source: import_reference.span.source_name, line: import_reference.span.start_line, column: import_reference.span.start_column, module_name: import_reference.import_decl.module_name.name)
 end import_reference_text
 
 function function_import_reference_text(routine: FunctionImportReferenceNode) returns String
@@ -291,7 +360,168 @@ function module_with_import_reference_text(module_node: ModuleWithImportReferenc
 requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.routine.name.name, "") = 0
 ensures String.instr(result, module_node.routine.return_symbol.symbol_name.name) >= 0
 is
-    return String.template("${module}:import=${import_decl}:function=${routine}", module: module_text(module_node.module_node), import_decl: import_text(module_node.import_decl), routine: function_import_reference_text(module_node.routine))
+    return String.template("${module_name}:import=${import_decl}:function=${routine}", module_name: module_text(module_node.module_node), import_decl: import_text(module_node.import_decl), routine: function_import_reference_text(module_node.routine))
 end module_with_import_reference_text
+
+function make_record_literal_node(span: SourceSpan, type_name: IdentifierNode, field0_name: IdentifierNode, field0_value: LiteralNode, field1_name: IdentifierNode, field1_value: LiteralNode, field2_name: IdentifierNode, field2_value: LiteralNode, field_count: Integer) returns RecordLiteralNode
+requires String.instr(type_name.name, "") = 0
+ensures result.type_name.name = type_name.name, result.field_count = field_count
+is
+    return RecordLiteralNode {
+        span: span,
+        type_name: type_name,
+        field0_name: field0_name,
+        field0_value: field0_value,
+        field1_name: field1_name,
+        field1_value: field1_value,
+        field2_name: field2_name,
+        field2_value: field2_value,
+        field_count: field_count
+    }
+end make_record_literal_node
+
+function make_module_with_record_literal_node(module_node: ModuleNode, record_literal: RecordLiteralNode) returns ModuleWithRecordLiteralNode
+requires String.instr(module_node.name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name
+is
+    return ModuleWithRecordLiteralNode { module_node: module_node, record_literal: record_literal }
+end make_module_with_record_literal_node
+
+function make_return_stmt_node(span: SourceSpan, kind: String, val: LiteralNode, error_ref: IdentifierNode) returns ReturnStmtNode
+requires String.instr(kind, "") = 0
+ensures result.kind = kind
+is
+    return ReturnStmtNode { span: span, kind: kind, val: val, error_ref: error_ref }
+end make_return_stmt_node
+
+function make_module_with_return_node(module_node: ModuleNode, return_stmt: ReturnStmtNode) returns ModuleWithReturnNode
+requires String.instr(module_node.name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name
+is
+    return ModuleWithReturnNode { module_node: module_node, return_stmt: return_stmt }
+end make_module_with_return_node
+
+function make_call_stmt_node(span: SourceSpan, routine_name: IdentifierNode, argument: LiteralNode, aborts_type: IdentifierNode) returns CallStmtNode
+requires String.instr(routine_name.name, "") = 0
+ensures result.routine_name.name = routine_name.name
+is
+    return CallStmtNode {
+        span: span,
+        routine_name: routine_name,
+        argument: argument,
+        aborts_type: aborts_type
+    }
+end make_call_stmt_node
+
+function make_module_with_call_node(module_node: ModuleNode, call_stmt: CallStmtNode) returns ModuleWithCallNode
+requires String.instr(module_node.name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name
+is
+    return ModuleWithCallNode { module_node: module_node, call_stmt: call_stmt }
+end make_module_with_call_node
+
+
+function record_literal_text(record_literal: RecordLiteralNode) returns String
+requires String.instr(record_literal.type_name.name, "") = 0
+ensures String.instr(result, record_literal.type_name.name) >= 0
+is
+    return String.template("RecordLiteral:${type_name}:fields=${count}", type_name: record_literal.type_name.name, count: record_literal.field_count)
+end record_literal_text
+
+function module_with_record_literal_text(module_node: ModuleWithRecordLiteralNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.record_literal.type_name.name, "") = 0
+ensures String.instr(result, module_node.record_literal.type_name.name) >= 0
+is
+    return String.template("${module_name}:literal=${literal}", module_name: module_text(module_node.module_node), literal: record_literal_text(module_node.record_literal))
+end module_with_record_literal_text
+
+function return_stmt_text(return_stmt: ReturnStmtNode) returns String
+requires String.instr(return_stmt.kind, "") = 0
+ensures String.instr(result, return_stmt.kind) >= 0
+is
+    return String.template("ReturnStmt:${kind}", kind: return_stmt.kind)
+end return_stmt_text
+
+function module_with_return_text(module_node: ModuleWithReturnNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.return_stmt.kind, "") = 0
+ensures String.instr(result, module_node.return_stmt.kind) >= 0
+is
+    return String.template("${module_name}:return=${ret}", module_name: module_text(module_node.module_node), ret: return_stmt_text(module_node.return_stmt))
+end module_with_return_text
+
+function call_stmt_text(call_stmt: CallStmtNode) returns String
+requires String.instr(call_stmt.routine_name.name, "") = 0
+ensures String.instr(result, call_stmt.routine_name.name) >= 0
+is
+    return String.template("CallStmt:${name}:aborts=${err}", name: call_stmt.routine_name.name, err: call_stmt.aborts_type.name)
+end call_stmt_text
+
+function module_with_call_text(module_node: ModuleWithCallNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.call_stmt.routine_name.name, "") = 0
+ensures String.instr(result, module_node.call_stmt.routine_name.name) >= 0
+is
+    return String.template("${module_name}:call=${call_val}", module_name: module_text(module_node.module_node), call_val: call_stmt_text(module_node.call_stmt))
+end module_with_call_text
+
+function make_nested_call_stmt_node(span: SourceSpan, var_name: IdentifierNode, outer_routine: IdentifierNode, inner_routine: IdentifierNode, argument: LiteralNode) returns NestedCallStmtNode
+is
+    return NestedCallStmtNode { span: span, var_name: var_name, outer_routine: outer_routine, inner_routine: inner_routine, argument: argument }
+end make_nested_call_stmt_node
+
+function make_module_with_nested_call_node(module_node: ModuleNode, nested_call: NestedCallStmtNode) returns ModuleWithNestedCallNode
+is
+    return ModuleWithNestedCallNode { module_node: module_node, nested_call: nested_call }
+end make_module_with_nested_call_node
+
+function make_lowered_call_node(span: SourceSpan, var_name: IdentifierNode, routine_name: IdentifierNode, argument_var: String) returns LoweredCallNode
+is
+    return LoweredCallNode { span: span, var_name: var_name, routine_name: routine_name, argument_var: argument_var }
+end make_lowered_call_node
+
+function make_module_with_lowered_calls_node(module_node: ModuleNode, first_call: LoweredCallNode, second_call: LoweredCallNode) returns ModuleWithLoweredCallsNode
+is
+    return ModuleWithLoweredCallsNode { module_node: module_node, first_call: first_call, second_call: second_call }
+end make_module_with_lowered_calls_node
+
+function nested_call_stmt_text(nested_call: NestedCallStmtNode) returns String
+requires String.instr(nested_call.var_name.name, "") = 0
+ensures String.instr(result, nested_call.var_name.name) >= 0
+is
+    return String.template("NestedCallStmt:var=${var}:outer=${outer}:inner=${inner}:arg=${arg}",
+        var: nested_call.var_name.name,
+        outer: nested_call.outer_routine.name,
+        inner: nested_call.inner_routine.name,
+        arg: nested_call.argument.text
+    )
+end nested_call_stmt_text
+
+function module_with_nested_call_text(module_node: ModuleWithNestedCallNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.nested_call.var_name.name, "") = 0
+ensures String.instr(result, module_node.nested_call.var_name.name) >= 0
+is
+    return String.template("${module_name}:nested_call=${call_val}", module_name: module_text(module_node.module_node), call_val: nested_call_stmt_text(module_node.nested_call))
+end module_with_nested_call_text
+
+function lowered_call_text(lowered: LoweredCallNode) returns String
+requires String.instr(lowered.var_name.name, "") = 0
+ensures String.instr(result, lowered.var_name.name) >= 0
+is
+    return String.template("LoweredCall:var=${var}:routine=${routine}:arg=${arg}",
+        var: lowered.var_name.name,
+        routine: lowered.routine_name.name,
+        arg: lowered.argument_var
+    )
+end lowered_call_text
+
+function module_with_lowered_calls_text(module_node: ModuleWithLoweredCallsNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.first_call.var_name.name, "") = 0, String.instr(module_node.second_call.var_name.name, "") = 0
+ensures String.instr(result, module_node.first_call.var_name.name) >= 0
+is
+    return String.template("${module_name}:first=${first}:second=${second}",
+        module_name: module_text(module_node.module_node),
+        first: lowered_call_text(module_node.first_call),
+        second: lowered_call_text(module_node.second_call)
+    )
+end module_with_lowered_calls_text
 
 end Compiler.Core.Ast

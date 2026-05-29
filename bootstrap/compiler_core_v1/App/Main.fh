@@ -1,14 +1,16 @@
 module App.Main
 
-import Compiler.Core.Ast exposing IdentifierNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, identifier_key, literal_text, make_identifier_node, make_literal_node, make_module_node, module_key, module_text
+import Compiler.Core.Ast exposing IdentifierNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, ModuleWithRecordLiteralNode, ModuleWithReturnNode, ModuleWithCallNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, identifier_key, literal_text, make_identifier_node, make_literal_node, make_module_node, module_key, module_text, module_with_import_reference_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text
 import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic_text, make_diagnostic, make_unknown_exposed_symbol_diagnostic
 import Compiler.Core.Fixtures exposing CompilerFixtureResult, evaluate_fixture
-import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, lex_mini_function_module, lex_mini_import_module, lex_mini_import_reference_module, lex_mini_import_reference_module_pair, lex_mini_module, lex_mini_module_pair, lex_mini_procedure_module, lex_mini_record_module, mini_function_module_lexer_summary, mini_function_module_token_count, mini_import_module_lexer_summary, mini_import_module_token_count, mini_import_reference_module_lexer_summary, mini_import_reference_module_token_count, mini_module_lexer_summary, mini_module_token_count, mini_procedure_module_lexer_summary, mini_procedure_module_token_count, mini_record_module_lexer_summary, mini_record_module_token_count
+import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, MiniRecordLiteralModuleTokens, MiniReturnStmtModuleTokens, MiniCallModuleTokens, MiniNestedCallModuleTokens, lex_mini_function_module, lex_mini_import_module, lex_mini_import_reference_module, lex_mini_import_reference_module_pair, lex_mini_module, lex_mini_module_pair, lex_mini_procedure_module, lex_mini_record_module, lex_mini_record_literal_module, lex_mini_return_stmt_module, lex_mini_call_module, lex_mini_nested_call_module, mini_function_module_lexer_summary, mini_function_module_token_count, mini_import_module_lexer_summary, mini_import_module_token_count, mini_import_reference_module_lexer_summary, mini_import_reference_module_token_count, mini_module_lexer_summary, mini_module_token_count, mini_procedure_module_lexer_summary, mini_procedure_module_token_count, mini_record_module_lexer_summary, mini_record_module_token_count, mini_record_literal_module_lexer_summary, mini_record_literal_module_token_count, mini_return_stmt_module_lexer_summary, mini_return_stmt_module_token_count, mini_call_module_lexer_summary, mini_call_module_token_count, mini_nested_call_module_lexer_summary, mini_nested_call_module_token_count
 import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, exported_go_name, make_module_name, make_symbol_name, module_to_go_package
 import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok, parse_result_summary
-import Compiler.Core.Parser exposing mini_function_module_parser_summary, mini_import_module_parser_summary, mini_import_reference_module_parser_summary, mini_module_parser_summary, mini_procedure_module_parser_summary, mini_record_module_parser_summary, parse_mini_function_module, parse_mini_function_module_result, parse_mini_import_module, parse_mini_import_module_result, parse_mini_import_reference_module, parse_mini_import_reference_module_result, parse_mini_module, parse_mini_module_result, parse_mini_procedure_module, parse_mini_procedure_module_result, parse_mini_record_module, parse_mini_record_module_result, parsed_module_name
+import Compiler.Core.Parser exposing mini_function_module_parser_summary, mini_import_module_parser_summary, mini_import_reference_module_parser_summary, mini_module_parser_summary, mini_procedure_module_parser_summary, mini_record_module_parser_summary, mini_record_literal_module_parser_summary, mini_return_stmt_module_parser_summary, mini_call_module_parser_summary, mini_nested_call_module_parser_summary, parse_mini_function_module, parse_mini_function_module_result, parse_mini_import_module, parse_mini_import_module_result, parse_mini_import_reference_module, parse_mini_import_reference_module_result, parse_mini_module, parse_mini_module_result, parse_mini_procedure_module, parse_mini_procedure_module_result, parse_mini_record_module, parse_mini_record_module_result, parse_mini_record_literal_module, parse_mini_record_literal_module_result, parse_mini_return_stmt_module, parse_mini_return_stmt_module_result, parse_mini_call_module, parse_mini_call_module_result, parse_mini_nested_call_module, parse_mini_nested_call_module_result, parsed_module_name
 import Compiler.Core.Resolve exposing ResolveResult, resolve_mini_import_reference_module, resolve_result_summary
 import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_source_span, make_token, make_token_kind, token_key, token_text
+import Compiler.Core.Transform exposing canonicalize_import_references, normalize_record_literal, wrap_return_stmt, lower_abort_propagation, flatten_nested_call
+
 import Std.IO
 
 function build_sample_diagnostic() returns Diagnostic
@@ -68,6 +70,11 @@ is
     let import_tokens: MiniImportModuleTokens = lex_mini_import_module("mini_import_module.fh", "Demo", "Demo.Support", "answer")
     let import_reference_tokens: MiniImportReferenceModuleTokens = lex_mini_import_reference_module("mini_import_reference_module.fh", "Demo", "Demo.Support", "answer", "use")
     let missing_import_reference_tokens: MiniImportReferenceModuleTokens = lex_mini_import_reference_module_pair("mini_import_reference_missing.fh", "Demo", "Demo.Support", "answer", "use", "missing")
+    let record_literal_tokens: MiniRecordLiteralModuleTokens = lex_mini_record_literal_module("mini_record_literal.fh", "Demo", "Point", "y", "2", "x", "1")
+    let return_tokens: MiniReturnStmtModuleTokens = lex_mini_return_stmt_module("mini_return.fh", "Demo", "ok", "100", "some_err")
+    let call_tokens: MiniCallModuleTokens = lex_mini_call_module("mini_call.fh", "Demo", "foo", "arg", "SomeError")
+    let nested_call_tokens: MiniNestedCallModuleTokens = lex_mini_nested_call_module("mini_nested_call.fh", "Demo", "y", "foo", "bar", "z")
+
 
     call Std.IO.logf("lexer.count = ${}", mini_module_token_count(mini_tokens))
     call Std.IO.logf("lexer.first = ${}", token_text(mini_tokens.module_keyword))
@@ -85,6 +92,13 @@ is
     call Std.IO.logf("lexer.import_ref.count = ${}", mini_import_reference_module_token_count(import_reference_tokens))
     call Std.IO.logf("lexer.import_ref.summary = ${}", mini_import_reference_module_lexer_summary(import_reference_tokens))
     call Std.IO.logf("lexer.import_ref.missing.summary = ${}", mini_import_reference_module_lexer_summary(missing_import_reference_tokens))
+    call Std.IO.logf("lexer.record_literal.summary = ${}", mini_record_literal_module_lexer_summary(record_literal_tokens))
+    call Std.IO.logf("lexer.return.summary = ${}", mini_return_stmt_module_lexer_summary(return_tokens))
+    call Std.IO.logf("lexer.call.count = ${}", mini_call_module_token_count(call_tokens))
+    call Std.IO.logf("lexer.call.summary = ${}", mini_call_module_lexer_summary(call_tokens))
+    call Std.IO.logf("lexer.nested_call.count = ${}", mini_nested_call_module_token_count(nested_call_tokens))
+    call Std.IO.logf("lexer.nested_call.summary = ${}", mini_nested_call_module_lexer_summary(nested_call_tokens))
+
 
     let parsed_module: ModuleNode = parse_mini_module(mini_tokens)
     let parsed_result: ParseResult = parse_mini_module_result(mini_tokens)
@@ -99,10 +113,23 @@ is
     let parsed_import_result: ParseResult = parse_mini_import_module_result(import_tokens)
     let parsed_import_reference_module: ModuleWithImportReferenceNode = parse_mini_import_reference_module(import_reference_tokens)
     let parsed_import_reference_result: ParseResult = parse_mini_import_reference_module_result(import_reference_tokens)
+    let missing_import_reference_module: ModuleWithImportReferenceNode = parse_mini_import_reference_module(missing_import_reference_tokens)
     let missing_import_reference_result: ParseResult = parse_mini_import_reference_module_result(missing_import_reference_tokens)
     let missing_import_reference_diagnostic: Diagnostic = make_unknown_exposed_symbol_diagnostic(missing_import_reference_tokens.import_module_name.lexeme, missing_import_reference_tokens.return_symbol.lexeme)
-    let resolved_import_reference: ResolveResult = resolve_mini_import_reference_module(import_reference_tokens)
-    let resolved_missing_import_reference: ResolveResult = resolve_mini_import_reference_module(missing_import_reference_tokens)
+    let resolved_import_reference: ResolveResult = resolve_mini_import_reference_module(parsed_import_reference_module)
+    let resolved_missing_import_reference: ResolveResult = resolve_mini_import_reference_module(missing_import_reference_module)
+    let canonicalized_import_reference: ModuleWithImportReferenceNode = canonicalize_import_references(parsed_import_reference_module)
+    let parsed_record_literal_module: ModuleWithRecordLiteralNode = parse_mini_record_literal_module(record_literal_tokens)
+    let parsed_return_module: ModuleWithReturnNode = parse_mini_return_stmt_module(return_tokens)
+    let parsed_call_module: ModuleWithCallNode = parse_mini_call_module(call_tokens)
+    let parsed_call_result: ParseResult = parse_mini_call_module_result(call_tokens)
+    let normalized_record_literal_module: ModuleWithRecordLiteralNode = normalize_record_literal(parsed_record_literal_module)
+    let wrapped_return_module: ModuleWithReturnNode = wrap_return_stmt(parsed_return_module)
+    let lowered_call_module: ModuleWithReturnNode = lower_abort_propagation(parsed_call_module)
+    let parsed_nested_call_module: ModuleWithNestedCallNode = parse_mini_nested_call_module(nested_call_tokens)
+    let parsed_nested_call_result: ParseResult = parse_mini_nested_call_module_result(nested_call_tokens)
+    let flattened_nested_call_module: ModuleWithLoweredCallsNode = flatten_nested_call(parsed_nested_call_module)
+
 
     call Std.IO.logf("parser.module = ${}", parsed_module_name(parsed_module))
     call Std.IO.logf("parser.summary = ${}", mini_module_parser_summary(parsed_module))
@@ -122,6 +149,16 @@ is
     call Std.IO.logf("diag.import_ref.unknown = ${}", diagnostic_text(missing_import_reference_diagnostic))
     call Std.IO.logf("resolver.import_ref.result = ${}", resolve_result_summary(resolved_import_reference))
     call Std.IO.logf("resolver.import_ref.unknown = ${}", resolve_result_summary(resolved_missing_import_reference))
+    call Std.IO.logf("transform.import_ref.canonical = ${}", module_with_import_reference_text(canonicalized_import_reference))
+    call Std.IO.logf("transform.record_literal.normalized = ${}:${} = ${}, ${} = ${}", normalized_record_literal_module.record_literal.type_name.name, normalized_record_literal_module.record_literal.field0_name.name, normalized_record_literal_module.record_literal.field0_value.text, normalized_record_literal_module.record_literal.field1_name.name, normalized_record_literal_module.record_literal.field1_value.text)
+    call Std.IO.logf("transform.return_stmt.wrapped = ${}", wrapped_return_module.return_stmt.kind)
+    call Std.IO.logf("parser.call.summary = ${}", mini_call_module_parser_summary(parsed_call_module))
+    call Std.IO.logf("parser.call.result = ${}", parse_result_summary(parsed_call_result))
+    call Std.IO.logf("transform.call.lowered = ${}:${}", lowered_call_module.return_stmt.kind, lowered_call_module.return_stmt.error_ref.name)
+    call Std.IO.logf("parser.nested_call.summary = ${}", mini_nested_call_module_parser_summary(parsed_nested_call_module))
+    call Std.IO.logf("parser.nested_call.result = ${}", parse_result_summary(parsed_nested_call_result))
+    call Std.IO.logf("transform.nested_call.flattened = ${}", module_with_lowered_calls_text(flattened_nested_call_module))
+
 
     let ok_result: ParseResult = parse_ok(parsed_module)
     let mismatch_error_span: SourceSpan = make_source_span("mini_module.fh", 2, 5, 2, 10)

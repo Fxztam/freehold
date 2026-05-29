@@ -21,6 +21,13 @@ Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V
 | Transport Scope Architecture | `OPEN-CONRURRENT-GRPC-WEBSOCKET-REST.md` | V1 architecture decision recorded: transport libs reuse common Concurrent.Scope. |
 | Generics | `OPEN-GENERICS.md` | V1b record and function generics implemented; codegen/inference/bounds parked. |
 
+## Bootstrapping & Compiler Core (Stage 3)
+
+| Bereich | Dokument | Status |
+| --- | --- | --- |
+| Stage 3 Compiler Core | `OPEN-STAGE3-COMPILER-CORE.md` | Mini-Compilerkern in Freehold implementiert, Go-transpiliert und verifiziert. |
+| Stage 1 Bootstrapping | `OPEN-STAGE1-BOOTSTRAPPING.md` | Meilenstein 1 (Lexer), 2 (Parser), 3 (Resolver) und 4 (Lowering/Transform) abgeschlossen. Meilenstein 5 (Selbstübersetzung/Self-Hosting) gestartet. |
+
 ## Naechste Phase: Go Compiler Vorbereitung
 
 | Bereich | Dokument | Status |

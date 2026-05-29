@@ -4,13 +4,18 @@ This document captures the planned Control Flow Analyzer work after the current 
 
 ## Status
 
-V1 foundation completed. V0 is implemented as an internal routine-summary layer; Abort V2 propagation, Abort V3 main-specific requires rejection, Result-return flow, structured scope flow, and the gRPC IDL no-control-flow boundary are recorded in `spec/analyzer.cflow`. Later path-aware diagnostics remain parked for V2/V3.
+V1 foundation completed. 
+- **Python implementation:** V0 is implemented as an internal routine-summary layer in `freehold/core/control_flow.py`.
+- **Go implementation:** Go-native V0 Control-Flow Analyzer is implemented in `go-frontend/internal/semantic/control_flow.go` and verified in `control_flow_test.go`.
+
+Abort V2 propagation, Abort V3 main-specific requires rejection, Result-return flow, structured scope flow, and the gRPC IDL no-control-flow boundary are recorded in `spec/analyzer.cflow`. Later path-aware diagnostics remain parked for V2/V3.
 
 The current completed foundation is:
 
 ```text
 Parser / AST
 Diagnostics / Rules / Spec
+Go-native Control-Flow Analyzer V0
 ```
 
 That foundation makes syntax stable, ASTs comparable across parser frontends, and semantic errors addressable through stable diagnostic codes. The Control Flow Analyzer builds on that foundation by reasoning about routine paths rather than isolated statements.

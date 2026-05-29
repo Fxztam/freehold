@@ -341,7 +341,17 @@ func (l *Lexer) lexString(pos token.Position) token.Token {
 	l.advance()
 	start := l.pos
 
-	for !l.eof() && l.peek() != '"' && l.peek() != '\n' {
+	for !l.eof() && l.peek() != '\n' {
+		if l.peek() == '\\' {
+			l.advance()
+			if !l.eof() {
+				l.advance()
+			}
+			continue
+		}
+		if l.peek() == '"' {
+			break
+		}
 		l.advance()
 	}
 

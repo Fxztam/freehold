@@ -173,6 +173,8 @@ class Interpreter:
             if e.name == "String.instr":
                 s, needle = args
                 return s.find(needle)
+            if e.name == "String.length":
+                return len(args[0])
             if e.name == "String.template":
                 named = {a.name: self.eval(a.expr, env) for a in e.args[1:] if isinstance(a, NamedArg)}
                 return render_template(args[0], args[1:], named)

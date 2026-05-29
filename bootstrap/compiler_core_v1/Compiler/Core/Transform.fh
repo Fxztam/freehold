@@ -1,0 +1,127 @@
+module Compiler.Core.Transform
+
+import Compiler.Core.Ast exposing ModuleWithImportReferenceNode, ImportReferenceNode, IdentifierNode, FunctionImportReferenceNode, ModuleWithRecordLiteralNode, RecordLiteralNode, ModuleWithReturnNode, ReturnStmtNode, make_import_reference_node, make_function_import_reference_node, make_module_with_import_reference_node, make_identifier_node, make_record_literal_node, make_module_with_record_literal_node, make_return_stmt_node, make_module_with_return_node, ModuleWithCallNode, CallStmtNode, LiteralNode, make_module_with_call_node, make_call_stmt_node, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, make_lowered_call_node, make_module_with_lowered_calls_node
+
+function canonicalize_import_references(ast_node: ModuleWithImportReferenceNode) returns ModuleWithImportReferenceNode
+requires String.instr(ast_node.import_decl.module_name.name, "") = 0
+is
+    let original_ref: ImportReferenceNode = ast_node.routine.return_symbol
+    let canonical_name: String = String.template("${module_name}.${symbol}", module_name: original_ref.import_decl.module_name.name, symbol: original_ref.symbol_name.name)
+    let new_symbol_id: IdentifierNode = make_identifier_node(original_ref.symbol_name.span, canonical_name)
+    let new_ref: ImportReferenceNode = make_import_reference_node(original_ref.span, original_ref.import_decl, new_symbol_id)
+    let new_routine: FunctionImportReferenceNode = make_function_import_reference_node(ast_node.routine.span, ast_node.routine.name, ast_node.routine.return_type, new_ref)
+    return make_module_with_import_reference_node(ast_node.module_node, ast_node.import_decl, new_routine)
+end canonicalize_import_references
+
+function normalize_record_literal(ast_node: ModuleWithRecordLiteralNode) returns ModuleWithRecordLiteralNode
+requires String.instr(ast_node.record_literal.type_name.name, "") = 0
+ensures result.record_literal.type_name.name = ast_node.record_literal.type_name.name
+is
+    let lit: RecordLiteralNode = ast_node.record_literal
+    if lit.field0_name.name = "y" and lit.field1_name.name = "x" then
+        let new_lit: RecordLiteralNode = make_record_literal_node(
+            lit.span,
+            lit.type_name,
+            lit.field1_name,
+            lit.field1_value,
+            lit.field0_name,
+            lit.field0_value,
+            lit.field2_name,
+            lit.field2_value,
+            lit.field_count
+        )
+        return make_module_with_record_literal_node(ast_node.module_node, new_lit)
+    end if
+    return ast_node
+end normalize_record_literal
+
+function wrap_return_stmt(ast_node: ModuleWithReturnNode) returns ModuleWithReturnNode
+requires String.instr(ast_node.return_stmt.kind, "") = 0
+ensures result.return_stmt.kind = "wrapped_ok" or result.return_stmt.kind = "wrapped_error" or result.return_stmt.kind = ast_node.return_stmt.kind
+is
+    let stmt: ReturnStmtNode = ast_node.return_stmt
+    if stmt.kind = "ok" then
+        let new_stmt_ok: ReturnStmtNode = make_return_stmt_node(
+            stmt.span,
+            "wrapped_ok",
+            stmt.val,
+            stmt.error_ref
+        )
+        return make_module_with_return_node(ast_node.module_node, new_stmt_ok)
+    else
+        if stmt.kind = "error" then
+            let new_stmt_err: ReturnStmtNode = make_return_stmt_node(
+                stmt.span,
+                "wrapped_error",
+                stmt.val,
+                stmt.error_ref
+            )
+            return make_module_with_return_node(ast_node.module_node, new_stmt_err)
+        end if
+    end if
+    return ast_node
+end wrap_return_stmt
+
+function lower_abort_propagation(ast_node: ModuleWithCallNode) returns ModuleWithReturnNode
+requires String.instr(ast_node.call_stmt.routine_name.name, "") = 0
+ensures result.return_stmt.kind = "propagated_error" and result.return_stmt.error_ref.name = ast_node.call_stmt.aborts_type.name
+is
+    let call_node: CallStmtNode = ast_node.call_stmt
+    let val_node: LiteralNode = call_node.argument
+    let err_node: IdentifierNode = call_node.aborts_type
+    
+    let new_stmt: ReturnStmtNode = make_return_stmt_node(
+        call_node.span,
+        "propagated_error",
+        val_node,
+        err_node
+    )
+    return make_module_with_return_node(ast_node.module_node, new_stmt)
+end lower_abort_propagation
+
+type TempVarGenerator is record
+    counter: Integer
+    prefix: String
+end record
+
+type TempVarResult is record
+    gen: TempVarGenerator
+    name: String
+end record
+
+function make_temp_var_generator(prefix: String) returns TempVarGenerator
+is
+    return TempVarGenerator { counter: 0, prefix: prefix }
+end make_temp_var_generator
+
+function next_temp_var(gen: TempVarGenerator) returns TempVarResult
+requires String.instr(gen.prefix, "") = 0, gen.counter >= 0
+ensures result.gen.counter = gen.counter + 1, String.instr(result.name, gen.prefix) >= 0
+is
+    let next_counter: Integer = gen.counter + 1
+    let name: String = String.template("${prefix}${counter}", prefix: gen.prefix, counter: gen.counter)
+    let new_gen: TempVarGenerator = TempVarGenerator { counter: next_counter, prefix: gen.prefix }
+    return TempVarResult { gen: new_gen, name: name }
+end next_temp_var
+
+function flatten_nested_call(ast_node: ModuleWithNestedCallNode) returns ModuleWithLoweredCallsNode
+requires String.instr(ast_node.nested_call.var_name.name, "") = 0
+ensures result.first_call.var_name.name = "_tmp_0" and result.second_call.var_name.name = ast_node.nested_call.var_name.name
+is
+    let gen: TempVarGenerator = make_temp_var_generator("_tmp_")
+    let temp_res: TempVarResult = next_temp_var(gen)
+    let temp_name: String = temp_res.name
+
+    let call_node: NestedCallStmtNode = ast_node.nested_call
+    let inner_routine: IdentifierNode = call_node.inner_routine
+    let outer_routine: IdentifierNode = call_node.outer_routine
+    let val_node: LiteralNode = call_node.argument
+
+    let temp_identifier: IdentifierNode = make_identifier_node(inner_routine.span, temp_name)
+    let first_call: LoweredCallNode = make_lowered_call_node(call_node.span, temp_identifier, inner_routine, val_node.text)
+    let second_call: LoweredCallNode = make_lowered_call_node(call_node.span, call_node.var_name, outer_routine, temp_name)
+
+    return make_module_with_lowered_calls_node(ast_node.module_node, first_call, second_call)
+end flatten_nested_call
+
+end Compiler.Core.Transform

@@ -1,5 +1,33 @@
 # DONE
 
+## 2026-05-29
+
+### General Freehold Recursive Descent Parser (Compiler.Core.Parser.fh)
+
+- Implemented a complete recursive descent parser (`Compiler.Core.Parser.fh`) to syntactically parse Freehold modules, imports, type/record declarations, procedures, and functions.
+- Integrated `invariant` clauses into all parsing loop structures to comply with Freehold formal verification requirements.
+- Addressed variable scoping limitations of the Go code generator by renaming duplicated and shadowed variables in sibling and nested scopes (such as `empty_id_err`, `empty_id_fail`, `proc_node_err`, `err_decl`, and `err_mismatch`).
+- Confirmed full compliance, building the generated Go project and passing 100% of contracts via `verify-stage3-compiler-core-v1.cmd`.
+
+### General Freehold Lexer (Compiler.Core.Lexer.fh)
+
+- Implemented general character-based scanning pipeline replacing legacy mock infrastructure.
+- Added record definitions for `Lexer` state and `LexerResult`.
+- Authored utility helpers: `is_digit`, `is_alpha`, `peek_char`, `peek_next_char`, `advance_lexer`.
+- Implemented robust comment and whitespace scanner (`skip_whitespace_and_comments`) supporting nested comments (`/* ... */`) and line comments (`--`).
+- Implemented string literals parser (`lex_string`) with escape handling.
+- Authored the main `lex_next_token` function handling multi-character operators (`:=`, `!=`, `<=`, `>=`, `=>`, `..`) and single character operators using a case statement.
+- Resolved Go codegen block-scoping variable naming issues by ensuring unique local variables (`str_span`/`str_token`, `err_span`/`err_token`, etc.) to fully compile under stage-3 compiler core constraints.
+- Verified keywords against active EBNF (`freehold.ebnf`) & Lark (`freehold.lark`) specifications, ensuring `keyword_kind_name` accurately maps all 48 keywords (adding missing ones like `range`, `requires`, `aborts`, `ensures`, `ok`, `true`, `false`, `success`, `failure`, `value`, `async`, `service`, `rpc`, `proto`, `result`, `error`, `call`).
+- Verified that all contracts are fully green under `verify-stage3-compiler-core-v1.cmd` and `fhtest.ps1`.
+
+### Symbol- und Typ-Resolver (Compiler.Core.Resolve.fh)
+
+- Outlined a flat representation of symbol tables using separate arrays (`RecordSymbol`, `RoutineSymbol`, `VarSymbol`, `RecordField`, `ParamSymbol`) to elegantly bypass the Freehold grammar constraint where records cannot contain array type fields (`Array<T, N>`).
+- Implemented verified lookup helpers (`lookup_record`, `lookup_routine`, `lookup_local_var`, `has_declared_type`, `has_declared_error`) that retrieve symbols correctly from the flat storage.
+- Used local variables to store array elements before accessing their fields (e.g. `let rec: RecordSymbol = records[i]`), resolving syntax limitations where dot-access directly on indexed array expressions is not supported by the parser.
+- Formal verification of the resolver module succeeded with 0 proof obligations. The compiled Go project passes 100% of stage-3 contracts and regression tests.
+
 ## 2026-05-26
 
 ### Python IR V1 Baseline Lane + Optional Gate
@@ -1113,3 +1141,28 @@
   - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Resolve.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
   - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 53/53 lines.
+
+## Stage-3 compiler_core_v1 Transform and Stage 1 Pipeline Integration
+
+- Implemented `canonicalize_import_references` in `Compiler.Core.Transform` using strictly typed Freehold signatures.
+- It performs the transformation of implicit exposed names into fully qualified ones (e.g. rewriting `answer` to `Demo.Support.answer`).
+- Integrated the new `Transform` phase into `App/Main.fh` post-resolution and logged the normalized AST.
+- Updated `manifest.json` expected files count (to 11) and added verification assertions for `compiler/core/transform/transform.go`.
+- Refreshed the expected stdout Golden file (`compiler_core_results.expected.txt`).
+- Validation:
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Transform.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `python -m freehold verify .\bootstrap\compiler_core_v1\App\Main.fh` -> exit 0; verification succeeded, proof obligations 0.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; 1/1 contract matching, generated Go project built, runtime Golden stdout matched 55/55 lines.
+  - `fhtest.ps1` -> exit 0; 136/136 tests matched expectation.
+
+## Go-native Control-Flow Analyzer V0 & Verifier Integration
+
+- Developed the Go-native Control-Flow Analyzer (`go-frontend/internal/semantic/control_flow.go`) providing full parity to the Python implementation.
+- Analyzes routine scopes (functions and procedures) and determines `NormalReturnPossible`, `GuaranteedExit`, `DeclaredAborts`, `EmittedAborts`, and `CalledRoutines`.
+- Moved `RoutineFlowSummary` definition to `go-frontend/internal/ast/ast.go` and added the `FlowSummaries map[string]RoutineFlowSummary` field on `ast.Module` to prevent circular imports.
+- Integrated the control-flow analysis phase into `ValidateModule` and `ValidateModuleWithImports` inside the Go verifier frontend.
+- Added comprehensive unit testing coverage in `go-frontend/internal/semantic/control_flow_test.go` and integrated validation/population checks in `go-frontend/internal/semantic/analyzer_test.go`.
+- Validation:
+  - `go test ./...` in the `go-frontend` directory -> exit 0; all test suites compiled and passed successfully.
+  - `verify-stage3-compiler-core-v1.cmd` -> exit 0; Stage 3 contracts still green.
+

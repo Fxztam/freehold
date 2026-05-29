@@ -708,6 +708,11 @@ class Verifier:
                 raise TypeCheckError(f"{e.pos.text()}: String.instr expects 2 arguments")
             expect_arg(0, "String"); expect_arg(1, "String")
             return TypeName("Integer")
+        if e.name == "String.length":
+            if len(e.args) != 1:
+                raise TypeCheckError(f"{e.pos.text()}: String.length expects 1 arguments")
+            expect_arg(0, "String")
+            return TypeName("Integer")
         if e.name == "String.template":
             if len(e.args) < 1:
                 raise TypeCheckError(f"{e.pos.text()}: String.template expects at least 1 argument")

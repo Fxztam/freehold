@@ -126,8 +126,10 @@ artifacts/stage3/compiler_core_v1/manifest.json
 
 Das Manifest beschreibt den ersten Contract `compiler_core_v1_go_project`.
 
-## Naechste Schritte
+## Naechste Schritte (Abgeschlossen)
 
-1. Den Mini-Resolver ueber Tokens hinaus auf das positive Import-Reference-AST-Modell ausweiten.
-2. Danach Import-/Exposing-Diagnostik und Parser-Result-Pfad konsolidieren, sobald Resolver und Parser die Phasengrenze sauber teilen.
-3. Stage1-Ausfuehrung erst beginnen, wenn die Mini-Fixtures stabil sind.
+1. [x] Den Mini-Resolver ueber Tokens hinaus auf das positive Import-Reference-AST-Modell ausweiten.
+2. [x] Danach Import-/Exposing-Diagnostik und Parser-Result-Pfad konsolidieren, sobald Resolver und Parser die Phasengrenze sauber teilen.
+3. [x] Mini-Fixtures stabilisieren und erste kanonische AST-Transformation (`Compiler.Core.Transform`) integrieren.
+
+Der Übergang zur eigentlichen Stage-1-Ausführung ist nun bereit und wird in `OPEN-STAGE1-BOOTSTRAPPING.md` geplant und durchgeführt.

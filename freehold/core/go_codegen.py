@@ -1417,6 +1417,8 @@ class GoGenerator:
             self.std_imports.add("strings")
             args = [self.expr(arg) for arg in expr.args]
             return f"int64(strings.Index({args[0]}, {args[1]}))"
+        if expr.name == "String.length":
+            return f"int64(len({self.expr(expr.args[0])}))"
         return None
 
     def render_call_args(self, args: list[Any], routine: RoutineDecl | None) -> str:

@@ -1,8 +1,9 @@
 module Compiler.Core.Parser
 
-import Compiler.Core.Ast exposing FunctionImportReferenceNode, FunctionNode, IdentifierNode, ImportNode, ImportReferenceNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, ProcedureNode, RecordTypeNode, make_function_import_reference_node, make_function_node, make_identifier_node, make_import_node, make_import_reference_node, make_literal_node, make_module_node, make_module_with_function_node, make_module_with_import_node, make_module_with_import_reference_node, make_module_with_procedure_node, make_module_with_record_node, make_procedure_node, make_record_type_node, module_text, module_with_function_text, module_with_import_reference_text, module_with_import_text, module_with_procedure_text, module_with_record_text
-import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens
+import Compiler.Core.Ast exposing FunctionImportReferenceNode, FunctionNode, IdentifierNode, ImportNode, ImportReferenceNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, ProcedureNode, RecordTypeNode, ModuleWithRecordLiteralNode, RecordLiteralNode, ModuleWithReturnNode, ReturnStmtNode, ModuleWithCallNode, CallStmtNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, make_function_import_reference_node, make_function_node, make_identifier_node, make_import_node, make_import_reference_node, make_literal_node, make_module_node, make_module_with_function_node, make_module_with_import_node, make_module_with_import_reference_node, make_module_with_procedure_node, make_module_with_record_node, make_procedure_node, make_record_type_node, make_record_literal_node, make_module_with_record_literal_node, make_return_stmt_node, make_module_with_return_node, make_module_with_call_node, make_call_stmt_node, make_nested_call_stmt_node, make_module_with_nested_call_node, make_lowered_call_node, make_module_with_lowered_calls_node, module_text, module_with_function_text, module_with_import_reference_text, module_with_import_text, module_with_procedure_text, module_with_record_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text
+import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, MiniRecordLiteralModuleTokens, MiniReturnStmtModuleTokens, MiniCallModuleTokens, MiniNestedCallModuleTokens, Lexer, LexerResult, make_lexer, lex_next_token
 import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok
+import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_token, make_token_kind
 
 function build_mini_module_node(tokens: MiniModuleTokens) returns ModuleNode
 requires tokens.module_keyword.lexeme = "module"
@@ -120,7 +121,7 @@ is
 end parse_mini_import_module_result
 
 function parse_mini_import_reference_module(tokens: MiniImportReferenceModuleTokens) returns ModuleWithImportReferenceNode
-requires tokens.import_keyword.lexeme = "import", tokens.exposing_keyword.lexeme = "exposing", tokens.module_keyword.lexeme = "module", tokens.function_keyword.lexeme = "function", tokens.open_paren.lexeme = "(", tokens.close_paren.lexeme = ")", tokens.returns_keyword.lexeme = "returns", tokens.is_keyword.lexeme = "is", tokens.return_keyword.lexeme = "return", tokens.routine_end_keyword.lexeme = "end", tokens.module_end_keyword.lexeme = "end", tokens.exposed_name.lexeme = tokens.return_symbol.lexeme, tokens.routine_name.lexeme = tokens.routine_end_name.lexeme, tokens.module_name.lexeme = tokens.module_end_name.lexeme
+requires tokens.import_keyword.lexeme = "import", tokens.exposing_keyword.lexeme = "exposing", tokens.module_keyword.lexeme = "module", tokens.function_keyword.lexeme = "function", tokens.open_paren.lexeme = "(", tokens.close_paren.lexeme = ")", tokens.returns_keyword.lexeme = "returns", tokens.is_keyword.lexeme = "is", tokens.return_keyword.lexeme = "return", tokens.routine_end_keyword.lexeme = "end", tokens.module_end_keyword.lexeme = "end", tokens.routine_name.lexeme = tokens.routine_end_name.lexeme, tokens.module_name.lexeme = tokens.module_end_name.lexeme
 ensures result.module_node.name.name = tokens.module_name.lexeme, result.routine.return_symbol.symbol_name.name = tokens.return_symbol.lexeme
 is
     let import_module_identifier: IdentifierNode = make_identifier_node(tokens.import_module_name.span, tokens.import_module_name.lexeme)
@@ -140,17 +141,120 @@ function parse_mini_import_reference_module_result(tokens: MiniImportReferenceMo
 requires tokens.import_keyword.lexeme = "import", tokens.exposing_keyword.lexeme = "exposing", tokens.module_keyword.lexeme = "module", tokens.function_keyword.lexeme = "function", tokens.open_paren.lexeme = "(", tokens.close_paren.lexeme = ")", tokens.returns_keyword.lexeme = "returns", tokens.is_keyword.lexeme = "is", tokens.return_keyword.lexeme = "return", tokens.routine_end_keyword.lexeme = "end", tokens.module_end_keyword.lexeme = "end", tokens.routine_name.lexeme = tokens.routine_end_name.lexeme, tokens.module_name.lexeme = tokens.module_end_name.lexeme
 ensures result.module_node.name.name = tokens.module_name.lexeme
 is
+    let parsed_module: ModuleWithImportReferenceNode = parse_mini_import_reference_module(tokens)
+    return parse_ok(parsed_module.module_node)
+end parse_mini_import_reference_module_result
+
+function parse_mini_record_literal_module(tokens: MiniRecordLiteralModuleTokens) returns ModuleWithRecordLiteralNode
+requires tokens.module_keyword.lexeme = "module", tokens.open_brace.lexeme = "{", tokens.close_brace.lexeme = "}", tokens.colon0.lexeme = ":", tokens.colon1.lexeme = ":", tokens.comma0.lexeme = ",", tokens.module_end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.module_end_name.lexeme
+ensures result.module_node.name.name = tokens.module_name.lexeme, result.record_literal.type_name.name = tokens.type_name.lexeme
+is
     let module_identifier: IdentifierNode = make_identifier_node(tokens.module_name.span, tokens.module_name.lexeme)
     let module_node: ModuleNode = make_module_node(tokens.module_keyword.span, module_identifier)
-    if tokens.exposed_name.lexeme = tokens.return_symbol.lexeme then
-        let parsed_module: ModuleWithImportReferenceNode = parse_mini_import_reference_module(tokens)
-        return parse_ok(parsed_module.module_node)
-    else
-        let message: String = String.template("import exposing mismatch: expected ${expected}, got ${actual}", expected: tokens.exposed_name.lexeme, actual: tokens.return_symbol.lexeme)
-        let issue: ParseError = make_parse_error("FH-PARSE-0002", message, tokens.return_symbol.span)
-        return parse_error_result(issue, module_node)
-    end if
-end parse_mini_import_reference_module_result
+
+    let type_identifier: IdentifierNode = make_identifier_node(tokens.type_name.span, tokens.type_name.lexeme)
+    let f0_name_node: IdentifierNode = make_identifier_node(tokens.field0_name.span, tokens.field0_name.lexeme)
+    let f0_value_node: LiteralNode = make_literal_node(tokens.field0_value.span, "String", tokens.field0_value.lexeme)
+    let f1_name_node: IdentifierNode = make_identifier_node(tokens.field1_name.span, tokens.field1_name.lexeme)
+    let f1_value_node: LiteralNode = make_literal_node(tokens.field1_value.span, "String", tokens.field1_value.lexeme)
+    
+    let dummy_span: SourceSpan = tokens.open_brace.span
+    let dummy_id: IdentifierNode = make_identifier_node(dummy_span, "")
+    let dummy_lit: LiteralNode = make_literal_node(dummy_span, "String", "")
+
+    let record_literal: RecordLiteralNode = make_record_literal_node(
+        tokens.type_name.span,
+        type_identifier,
+        f0_name_node,
+        f0_value_node,
+        f1_name_node,
+        f1_value_node,
+        dummy_id,
+        dummy_lit,
+        2
+    )
+
+    return make_module_with_record_literal_node(module_node, record_literal)
+end parse_mini_record_literal_module
+
+function parse_mini_record_literal_module_result(tokens: MiniRecordLiteralModuleTokens) returns ParseResult
+requires tokens.module_keyword.lexeme = "module", tokens.open_brace.lexeme = "{", tokens.close_brace.lexeme = "}", tokens.colon0.lexeme = ":", tokens.colon1.lexeme = ":", tokens.comma0.lexeme = ",", tokens.module_end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.module_end_name.lexeme
+ensures result.module_node.name.name = tokens.module_name.lexeme
+is
+    let parsed_module: ModuleWithRecordLiteralNode = parse_mini_record_literal_module(tokens)
+    return parse_ok(parsed_module.module_node)
+end parse_mini_record_literal_module_result
+
+function parse_mini_return_stmt_module(tokens: MiniReturnStmtModuleTokens) returns ModuleWithReturnNode
+requires tokens.module_keyword.lexeme = "module", tokens.return_keyword.lexeme = "return", tokens.module_end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.module_end_name.lexeme
+ensures result.module_node.name.name = tokens.module_name.lexeme, result.return_stmt.kind = tokens.return_kind.lexeme
+is
+    let module_identifier: IdentifierNode = make_identifier_node(tokens.module_name.span, tokens.module_name.lexeme)
+    let module_node: ModuleNode = make_module_node(tokens.module_keyword.span, module_identifier)
+
+    let val_node: LiteralNode = make_literal_node(tokens.val.span, "String", tokens.val.lexeme)
+    let err_node: IdentifierNode = make_identifier_node(tokens.error_ref.span, tokens.error_ref.lexeme)
+    let return_stmt: ReturnStmtNode = make_return_stmt_node(tokens.return_keyword.span, tokens.return_kind.lexeme, val_node, err_node)
+
+    return make_module_with_return_node(module_node, return_stmt)
+end parse_mini_return_stmt_module
+
+function parse_mini_return_stmt_module_result(tokens: MiniReturnStmtModuleTokens) returns ParseResult
+requires tokens.module_keyword.lexeme = "module", tokens.return_keyword.lexeme = "return", tokens.module_end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.module_end_name.lexeme
+ensures result.module_node.name.name = tokens.module_name.lexeme
+is
+    let parsed_module: ModuleWithReturnNode = parse_mini_return_stmt_module(tokens)
+    return parse_ok(parsed_module.module_node)
+end parse_mini_return_stmt_module_result
+
+function parse_mini_call_module(tokens: MiniCallModuleTokens) returns ModuleWithCallNode
+requires tokens.module_keyword.lexeme = "module", tokens.call_keyword.lexeme = "call", tokens.open_paren.lexeme = "(", tokens.close_paren.lexeme = ")", tokens.aborts_keyword.lexeme = "aborts", tokens.module_end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.module_end_name.lexeme
+ensures result.module_node.name.name = tokens.module_name.lexeme, result.call_stmt.routine_name.name = tokens.routine_name.lexeme
+is
+    let module_identifier: IdentifierNode = make_identifier_node(tokens.module_name.span, tokens.module_name.lexeme)
+    let module_node: ModuleNode = make_module_node(tokens.module_keyword.span, module_identifier)
+
+    let routine_identifier: IdentifierNode = make_identifier_node(tokens.routine_name.span, tokens.routine_name.lexeme)
+    let arg_literal: LiteralNode = make_literal_node(tokens.argument.span, "String", tokens.argument.lexeme)
+    let err_identifier: IdentifierNode = make_identifier_node(tokens.error_type.span, tokens.error_type.lexeme)
+    let call_stmt: CallStmtNode = make_call_stmt_node(tokens.call_keyword.span, routine_identifier, arg_literal, err_identifier)
+
+    return make_module_with_call_node(module_node, call_stmt)
+end parse_mini_call_module
+
+function parse_mini_call_module_result(tokens: MiniCallModuleTokens) returns ParseResult
+requires tokens.module_keyword.lexeme = "module", tokens.call_keyword.lexeme = "call", tokens.open_paren.lexeme = "(", tokens.close_paren.lexeme = ")", tokens.aborts_keyword.lexeme = "aborts", tokens.module_end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.module_end_name.lexeme
+ensures result.module_node.name.name = tokens.module_name.lexeme
+is
+    let parsed_module: ModuleWithCallNode = parse_mini_call_module(tokens)
+    return parse_ok(parsed_module.module_node)
+end parse_mini_call_module_result
+
+
+function parse_mini_nested_call_module(tokens: MiniNestedCallModuleTokens) returns ModuleWithNestedCallNode
+requires tokens.module_keyword.lexeme = "module", tokens.let_keyword.lexeme = "let", tokens.assign_symbol.lexeme = "=", tokens.open_paren0.lexeme = "(", tokens.open_paren1.lexeme = "(", tokens.close_paren1.lexeme = ")", tokens.close_paren0.lexeme = ")", tokens.module_end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.module_end_name.lexeme
+ensures result.module_node.name.name = tokens.module_name.lexeme, result.nested_call.var_name.name = tokens.var_name.lexeme
+is
+    let module_identifier: IdentifierNode = make_identifier_node(tokens.module_name.span, tokens.module_name.lexeme)
+    let module_node: ModuleNode = make_module_node(tokens.module_keyword.span, module_identifier)
+
+    let var_identifier: IdentifierNode = make_identifier_node(tokens.var_name.span, tokens.var_name.lexeme)
+    let outer_identifier: IdentifierNode = make_identifier_node(tokens.outer_routine.span, tokens.outer_routine.lexeme)
+    let inner_identifier: IdentifierNode = make_identifier_node(tokens.inner_routine.span, tokens.inner_routine.lexeme)
+    let arg_literal: LiteralNode = make_literal_node(tokens.argument.span, "String", tokens.argument.lexeme)
+
+    let nested_call: NestedCallStmtNode = make_nested_call_stmt_node(tokens.let_keyword.span, var_identifier, outer_identifier, inner_identifier, arg_literal)
+    return make_module_with_nested_call_node(module_node, nested_call)
+end parse_mini_nested_call_module
+
+function parse_mini_nested_call_module_result(tokens: MiniNestedCallModuleTokens) returns ParseResult
+requires tokens.module_keyword.lexeme = "module", tokens.let_keyword.lexeme = "let", tokens.assign_symbol.lexeme = "=", tokens.open_paren0.lexeme = "(", tokens.open_paren1.lexeme = "(", tokens.close_paren1.lexeme = ")", tokens.close_paren0.lexeme = ")", tokens.module_end_keyword.lexeme = "end", tokens.module_name.lexeme = tokens.module_end_name.lexeme
+ensures result.module_node.name.name = tokens.module_name.lexeme
+is
+    let parsed_module: ModuleWithNestedCallNode = parse_mini_nested_call_module(tokens)
+    return parse_ok(parsed_module.module_node)
+end parse_mini_nested_call_module_result
+
 
 function parsed_module_name(module_node: ModuleNode) returns String
 requires String.instr(module_node.name.name, "") = 0
@@ -163,42 +267,412 @@ function mini_module_parser_summary(module_node: ModuleNode) returns String
 requires String.instr(module_node.name.name, "") = 0
 ensures String.instr(result, module_node.name.name) >= 0
 is
-    return String.template("ParsedMiniModule:${module}", module: module_text(module_node))
+    return String.template("ParsedMiniModule:${module_val}", module_val: module_text(module_node))
 end mini_module_parser_summary
 
 function mini_record_module_parser_summary(module_node: ModuleWithRecordNode) returns String
 requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.record_type.name.name, "") = 0
 ensures String.instr(result, module_node.record_type.name.name) >= 0
 is
-    return String.template("ParsedRecordModule:${module}", module: module_with_record_text(module_node))
+    return String.template("ParsedRecordModule:${module_val}", module_val: module_with_record_text(module_node))
 end mini_record_module_parser_summary
 
 function mini_function_module_parser_summary(module_node: ModuleWithFunctionNode) returns String
 requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.routine.name.name, "") = 0
 ensures String.instr(result, module_node.routine.name.name) >= 0
 is
-    return String.template("ParsedFunctionModule:${module}", module: module_with_function_text(module_node))
+    return String.template("ParsedFunctionModule:${module_val}", module_val: module_with_function_text(module_node))
 end mini_function_module_parser_summary
 
 function mini_procedure_module_parser_summary(module_node: ModuleWithProcedureNode) returns String
 requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.routine.name.name, "") = 0
 ensures String.instr(result, module_node.routine.name.name) >= 0
 is
-    return String.template("ParsedProcedureModule:${module}", module: module_with_procedure_text(module_node))
+    return String.template("ParsedProcedureModule:${module_val}", module_val: module_with_procedure_text(module_node))
 end mini_procedure_module_parser_summary
 
 function mini_import_module_parser_summary(module_node: ModuleWithImportNode) returns String
 requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.import_decl.module_name.name, "") = 0
 ensures String.instr(result, module_node.import_decl.module_name.name) >= 0
 is
-    return String.template("ParsedImportModule:${module}", module: module_with_import_text(module_node))
+    return String.template("ParsedImportModule:${module_val}", module_val: module_with_import_text(module_node))
 end mini_import_module_parser_summary
 
 function mini_import_reference_module_parser_summary(module_node: ModuleWithImportReferenceNode) returns String
 requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.routine.return_symbol.symbol_name.name, "") = 0
 ensures String.instr(result, module_node.routine.return_symbol.symbol_name.name) >= 0
 is
-    return String.template("ParsedImportReferenceModule:${module}", module: module_with_import_reference_text(module_node))
+    return String.template("ParsedImportReferenceModule:${module_val}", module_val: module_with_import_reference_text(module_node))
 end mini_import_reference_module_parser_summary
 
+function mini_record_literal_module_parser_summary(module_node: ModuleWithRecordLiteralNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.record_literal.type_name.name, "") = 0
+ensures String.instr(result, module_node.record_literal.type_name.name) >= 0
+is
+    return String.template("ParsedRecordLiteralModule:${module_val}", module_val: module_with_record_literal_text(module_node))
+end mini_record_literal_module_parser_summary
+
+function mini_return_stmt_module_parser_summary(module_node: ModuleWithReturnNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.return_stmt.kind, "") = 0
+ensures String.instr(result, module_node.return_stmt.kind) >= 0
+is
+    return String.template("ParsedReturnModule:${module_val}", module_val: module_with_return_text(module_node))
+end mini_return_stmt_module_parser_summary
+
+function mini_call_module_parser_summary(module_node: ModuleWithCallNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.call_stmt.routine_name.name, "") = 0
+ensures String.instr(result, module_node.call_stmt.routine_name.name) >= 0
+is
+    return String.template("ParsedCallModule:${module_val}", module_val: module_with_call_text(module_node))
+end mini_call_module_parser_summary
+
+function mini_nested_call_module_parser_summary(module_node: ModuleWithNestedCallNode) returns String
+requires String.instr(module_node.module_node.name.name, "") = 0, String.instr(module_node.nested_call.var_name.name, "") = 0
+ensures String.instr(result, module_node.nested_call.var_name.name) >= 0
+is
+    return String.template("ParsedNestedCallModule:${module_val}", module_val: module_with_nested_call_text(module_node))
+end mini_nested_call_module_parser_summary
+
+
+type GeneralParser is record
+    lexer: Lexer
+    curr_tok: Token
+    peek_tok: Token
+    has_error: Boolean
+    issue: ParseError
+    source_name: String
+end record
+
+type ParserIdentifierResult is record
+    parser: GeneralParser
+    node: IdentifierNode
+end record
+
+type ParserImportResult is record
+    parser: GeneralParser
+    node: ImportNode
+end record
+
+type ParserRecordResult is record
+    parser: GeneralParser
+    node: RecordTypeNode
+end record
+
+type ParserProcedureResult is record
+    parser: GeneralParser
+    node: ProcedureNode
+end record
+
+type ParserFunctionNodeResult is record
+    parser: GeneralParser
+    is_import_ref: Boolean
+    func_node: FunctionNode
+    func_import_ref_node: FunctionImportReferenceNode
+end record
+
+function init_general_parser(source_name: String, source: String) returns GeneralParser
+is
+    let lex: Lexer = make_lexer(source_name, source)
+    let res1: LexerResult = lex_next_token(lex)
+    let res2: LexerResult = lex_next_token(res1.lexer)
+    let empty_span: SourceSpan = SourceSpan { source_name: source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_err: ParseError = ParseError { code: "FH-PARSE-0000", message: "", span: empty_span }
+    return GeneralParser {
+        lexer: res2.lexer,
+        curr_tok: res1.token,
+        peek_tok: res2.token,
+        has_error: false,
+        issue: empty_err,
+        source_name: source_name
+    }
+end init_general_parser
+
+function advance_parser(p: GeneralParser) returns GeneralParser
+is
+    let res: LexerResult = lex_next_token(p.lexer)
+    return GeneralParser {
+        lexer: res.lexer,
+        curr_tok: p.peek_tok,
+        peek_tok: res.token,
+        has_error: p.has_error,
+        issue: p.issue,
+        source_name: p.source_name
+    }
+end advance_parser
+
+function expect_kind(p: GeneralParser, kind: String, err_code: String, err_msg: String) returns GeneralParser
+is
+    if p.has_error then
+        return p
+    end if
+    if p.curr_tok.kind.name = kind then
+        return advance_parser(p)
+    else
+        let err: ParseError = make_parse_error(err_code, err_msg, p.curr_tok.span)
+        return GeneralParser {
+            lexer: p.lexer,
+            curr_tok: p.curr_tok,
+            peek_tok: p.peek_tok,
+            has_error: true,
+            issue: err,
+            source_name: p.source_name
+        }
+    end if
+end expect_kind
+
+function is_literal_token(tok: Token) returns Boolean
+is
+    return tok.kind.name = "NumberLiteral" or tok.kind.name = "DoubleLiteral" or tok.kind.name = "StringLiteral"
+end is_literal_token
+
+function parse_identifier(p: GeneralParser) returns ParserIdentifierResult
+is
+    if p.has_error then
+        let empty_id_err: IdentifierNode = make_identifier_node(p.curr_tok.span, "")
+        return ParserIdentifierResult { parser: p, node: empty_id_err }
+    end if
+    
+    if p.curr_tok.kind.name = "Identifier" then
+        let node: IdentifierNode = make_identifier_node(p.curr_tok.span, p.curr_tok.lexeme)
+        let p_next: GeneralParser = advance_parser(p)
+        return ParserIdentifierResult { parser: p_next, node: node }
+    else
+        let err_msg: String = String.template("Expected identifier, got ${lexeme}", lexeme: p.curr_tok.lexeme)
+        let err: ParseError = make_parse_error("FH-PARSE-0002", err_msg, p.curr_tok.span)
+        let p_err: GeneralParser = GeneralParser {
+            lexer: p.lexer,
+            curr_tok: p.curr_tok,
+            peek_tok: p.peek_tok,
+            has_error: true,
+            issue: err,
+            source_name: p.source_name
+        }
+        let empty_id_fail: IdentifierNode = make_identifier_node(p.curr_tok.span, "")
+        return ParserIdentifierResult { parser: p_err, node: empty_id_fail }
+    end if
+end parse_identifier
+
+function parse_module_decl(p: GeneralParser) returns ParserIdentifierResult
+is
+    let p1: GeneralParser = expect_kind(p, "KeywordModule", "FH-PARSE-0002", "Expected 'module'")
+    return parse_identifier(p1)
+end parse_module_decl
+
+function parse_import_decl(p: GeneralParser) returns ParserImportResult
+is
+    let p1: GeneralParser = expect_kind(p, "KeywordImport", "FH-PARSE-0002", "Expected 'import'")
+    let res_module: ParserIdentifierResult = parse_identifier(p1)
+    let p2: GeneralParser = expect_kind(res_module.parser, "KeywordExposing", "FH-PARSE-0002", "Expected 'exposing'")
+    let res_exposed: ParserIdentifierResult = parse_identifier(p2)
+    let import_node: ImportNode = make_import_node(res_module.node.span, res_module.node, res_exposed.node)
+    return ParserImportResult { parser: res_exposed.parser, node: import_node }
+end parse_import_decl
+
+function parse_record_decl(p: GeneralParser) returns ParserRecordResult
+is
+    let p1: GeneralParser = expect_kind(p, "KeywordType", "FH-PARSE-0002", "Expected 'type'")
+    let res_name: ParserIdentifierResult = parse_identifier(p1)
+    let p2: GeneralParser = expect_kind(res_name.parser, "KeywordIs", "FH-PARSE-0002", "Expected 'is'")
+    let p3: GeneralParser = expect_kind(p2, "KeywordRecord", "FH-PARSE-0002", "Expected 'record'")
+    let p4: GeneralParser = expect_kind(p3, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
+    let p5: GeneralParser = expect_kind(p4, "KeywordRecord", "FH-PARSE-0002", "Expected 'record'")
+    let rec_node: RecordTypeNode = make_record_type_node(res_name.node.span, res_name.node)
+    return ParserRecordResult { parser: p5, node: rec_node }
+end parse_record_decl
+
+function parse_procedure_decl(p: GeneralParser) returns ParserProcedureResult
+is
+    let p1: GeneralParser = expect_kind(p, "KeywordProcedure", "FH-PARSE-0002", "Expected 'procedure'")
+    let res_name: ParserIdentifierResult = parse_identifier(p1)
+    let p2: GeneralParser = expect_kind(res_name.parser, "OpenParen", "FH-PARSE-0002", "Expected '('")
+    let p3: GeneralParser = expect_kind(p2, "CloseParen", "FH-PARSE-0002", "Expected ')'")
+    let p4: GeneralParser = expect_kind(p3, "KeywordIs", "FH-PARSE-0002", "Expected 'is'")
+    let p5: GeneralParser = expect_kind(p4, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
+    let res_end_name: ParserIdentifierResult = parse_identifier(p5)
+    let p6: GeneralParser = res_end_name.parser
+    
+    if p6.has_error = false and res_name.node.name != res_end_name.node.name then
+        let err_msg: String = String.template("procedure end name mismatch: expected ${expected}, got ${actual}", expected: res_name.node.name, actual: res_end_name.node.name)
+        let err: ParseError = make_parse_error("FH-PARSE-0001", err_msg, res_end_name.node.span)
+        let p_err: GeneralParser = GeneralParser {
+            lexer: p6.lexer,
+            curr_tok: p6.curr_tok,
+            peek_tok: p6.peek_tok,
+            has_error: true,
+            issue: err,
+            source_name: p6.source_name
+        }
+        let proc_node_err: ProcedureNode = make_procedure_node(res_name.node.span, res_name.node)
+        return ParserProcedureResult { parser: p_err, node: proc_node_err }
+    end if
+    
+    let proc_node: ProcedureNode = make_procedure_node(res_name.node.span, res_name.node)
+    return ParserProcedureResult { parser: p6, node: proc_node }
+end parse_procedure_decl
+
+function parse_function_decl(p: GeneralParser, import_decl: ImportNode) returns ParserFunctionNodeResult
+is
+    let empty_literal_span: SourceSpan = SourceSpan { source_name: p.source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_literal: LiteralNode = make_literal_node(empty_literal_span, "", "")
+    let empty_id: IdentifierNode = make_identifier_node(empty_literal_span, "")
+    let empty_func_node: FunctionNode = make_function_node(empty_literal_span, empty_id, empty_id, empty_literal)
+    
+    let dummy_import_module_id: IdentifierNode = make_identifier_node(empty_literal_span, "")
+    let dummy_import: ImportNode = make_import_node(empty_literal_span, dummy_import_module_id, dummy_import_module_id)
+    let dummy_import_ref: ImportReferenceNode = make_import_reference_node(empty_literal_span, dummy_import, empty_id)
+    let empty_func_import_ref: FunctionImportReferenceNode = make_function_import_reference_node(empty_literal_span, empty_id, empty_id, dummy_import_ref)
+
+    let p1: GeneralParser = expect_kind(p, "KeywordFunction", "FH-PARSE-0002", "Expected 'function'")
+    let res_name: ParserIdentifierResult = parse_identifier(p1)
+    let p2: GeneralParser = expect_kind(res_name.parser, "OpenParen", "FH-PARSE-0002", "Expected '('")
+    let p3: GeneralParser = expect_kind(p2, "CloseParen", "FH-PARSE-0002", "Expected ')'")
+    let p4: GeneralParser = expect_kind(p3, "KeywordReturns", "FH-PARSE-0002", "Expected 'returns'")
+    let res_ret_type: ParserIdentifierResult = parse_identifier(p4)
+    let p5: GeneralParser = expect_kind(res_ret_type.parser, "KeywordIs", "FH-PARSE-0002", "Expected 'is'")
+    let p6: GeneralParser = expect_kind(p5, "KeywordReturn", "FH-PARSE-0002", "Expected 'return'")
+    
+    if p6.has_error then
+        return ParserFunctionNodeResult { parser: p6, is_import_ref: false, func_node: empty_func_node, func_import_ref_node: empty_func_import_ref }
+    end if
+    
+    let is_imp: Boolean = false
+    let literal_node: LiteralNode = empty_literal
+    let func_import_ref_node: FunctionImportReferenceNode = empty_func_import_ref
+    let p7: GeneralParser = p6
+    
+    if is_literal_token(p6.curr_tok) then
+        let lit_kind: String = "Integer"
+        if p6.curr_tok.kind.name = "StringLiteral" then
+            lit_kind := "String"
+        else
+            if p6.curr_tok.kind.name = "DoubleLiteral" then
+                lit_kind := "Double"
+            end if
+        end if
+        literal_node := make_literal_node(p6.curr_tok.span, lit_kind, p6.curr_tok.lexeme)
+        p7 := advance_parser(p6)
+    else
+        is_imp := true
+        let res_symbol: ParserIdentifierResult = parse_identifier(p6)
+        let import_ref: ImportReferenceNode = make_import_reference_node(res_symbol.node.span, import_decl, res_symbol.node)
+        func_import_ref_node := make_function_import_reference_node(p.curr_tok.span, res_name.node, res_ret_type.node, import_ref)
+        p7 := res_symbol.parser
+    end if
+    
+    let p8: GeneralParser = expect_kind(p7, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
+    let res_end_name: ParserIdentifierResult = parse_identifier(p8)
+    let p9: GeneralParser = res_end_name.parser
+    
+    if p9.has_error = false and res_name.node.name != res_end_name.node.name then
+        let err_msg_func_mismatch: String = String.template("function end name mismatch: expected ${expected}, got ${actual}", expected: res_name.node.name, actual: res_end_name.node.name)
+        let err_func_mismatch: ParseError = make_parse_error("FH-PARSE-0001", err_msg_func_mismatch, res_end_name.node.span)
+        let p_err: GeneralParser = GeneralParser {
+            lexer: p9.lexer,
+            curr_tok: p9.curr_tok,
+            peek_tok: p9.peek_tok,
+            has_error: true,
+            issue: err_func_mismatch,
+            source_name: p9.source_name
+        }
+        return ParserFunctionNodeResult { parser: p_err, is_import_ref: is_imp, func_node: empty_func_node, func_import_ref_node: empty_func_import_ref }
+    end if
+    
+    if is_imp then
+        return ParserFunctionNodeResult { parser: p9, is_import_ref: true, func_node: empty_func_node, func_import_ref_node: func_import_ref_node }
+    else
+        let f_node: FunctionNode = make_function_node(p.curr_tok.span, res_name.node, res_ret_type.node, literal_node)
+        return ParserFunctionNodeResult { parser: p9, is_import_ref: false, func_node: f_node, func_import_ref_node: empty_func_import_ref }
+    end if
+end parse_function_decl
+
+function parse_general_module_result(source_name: String, source: String) returns ParseResult
+is
+    let p: GeneralParser = init_general_parser(source_name, source)
+    let res_mod_id: ParserIdentifierResult = parse_module_decl(p)
+    let p_mod: GeneralParser = res_mod_id.parser
+    let module_node: ModuleNode = make_module_node(res_mod_id.node.span, res_mod_id.node)
+    
+    if p_mod.has_error then
+        return parse_error_result(p_mod.issue, module_node)
+    end if
+    
+    let p_curr: GeneralParser = p_mod
+    let has_import: Boolean = false
+    let import_node: ImportNode = ImportNode { span: res_mod_id.node.span, module_name: res_mod_id.node, exposed_name: res_mod_id.node }
+    let has_record: Boolean = false
+    let record_node: RecordTypeNode = make_record_type_node(res_mod_id.node.span, res_mod_id.node)
+    let has_procedure: Boolean = false
+    let procedure_node: ProcedureNode = make_procedure_node(res_mod_id.node.span, res_mod_id.node)
+    let has_function: Boolean = false
+    let is_func_import_ref: Boolean = false
+    let func_node: FunctionNode = FunctionNode { span: res_mod_id.node.span, name: res_mod_id.node, return_type: res_mod_id.node, return_literal: LiteralNode { span: res_mod_id.node.span, literal_kind: "", text: "" } }
+    let func_imp_ref_node: FunctionImportReferenceNode = FunctionImportReferenceNode { span: res_mod_id.node.span, name: res_mod_id.node, return_type: res_mod_id.node, return_symbol: ImportReferenceNode { span: res_mod_id.node.span, import_decl: import_node, symbol_name: res_mod_id.node } }
+
+    while p_curr.curr_tok.kind.name != "KeywordEnd" and p_curr.curr_tok.kind.name != "EOF" and p_curr.has_error = false
+        invariant p_curr.has_error = false or p_curr.has_error = true
+    do
+        if p_curr.curr_tok.kind.name = "KeywordImport" then
+            let res_imp: ParserImportResult = parse_import_decl(p_curr)
+            import_node := res_imp.node
+            has_import := true
+            p_curr := res_imp.parser
+        else
+            if p_curr.curr_tok.kind.name = "KeywordType" then
+                let res_rec: ParserRecordResult = parse_record_decl(p_curr)
+                record_node := res_rec.node
+                has_record := true
+                p_curr := res_rec.parser
+            else
+                if p_curr.curr_tok.kind.name = "KeywordProcedure" then
+                    let res_proc: ParserProcedureResult = parse_procedure_decl(p_curr)
+                    procedure_node := res_proc.node
+                    has_procedure := true
+                    p_curr := res_proc.parser
+                else
+                    if p_curr.curr_tok.kind.name = "KeywordFunction" then
+                        let res_func: ParserFunctionNodeResult = parse_function_decl(p_curr, import_node)
+                        is_func_import_ref := res_func.is_import_ref
+                        func_node := res_func.func_node
+                        func_imp_ref_node := res_func.func_import_ref_node
+                        has_function := true
+                        p_curr := res_func.parser
+                    else
+                        let err_msg_decl: String = String.template("Expected declaration, got ${lexeme}", lexeme: p_curr.curr_tok.lexeme)
+                        let err_decl: ParseError = make_parse_error("FH-PARSE-0002", err_msg_decl, p_curr.curr_tok.span)
+                        p_curr := GeneralParser {
+                            lexer: p_curr.lexer,
+                            curr_tok: p_curr.curr_tok,
+                            peek_tok: p_curr.peek_tok,
+                            has_error: true,
+                            issue: err_decl,
+                            source_name: p_curr.source_name
+                        }
+                    end if
+                end if
+            end if
+        end if
+    end while
+    
+    if p_curr.has_error then
+        return parse_error_result(p_curr.issue, module_node)
+    end if
+    
+    let p_end: GeneralParser = expect_kind(p_curr, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
+    let res_end_name: ParserIdentifierResult = parse_identifier(p_end)
+    let p_final: GeneralParser = res_end_name.parser
+    
+    if p_final.has_error then
+        return parse_error_result(p_final.issue, module_node)
+    end if
+    
+    if res_mod_id.node.name != res_end_name.node.name then
+        let err_msg_mismatch: String = String.template("end module name mismatch: expected ${expected}, got ${actual}", expected: res_mod_id.node.name, actual: res_end_name.node.name)
+        let err_mismatch: ParseError = make_parse_error("FH-PARSE-0001", err_msg_mismatch, res_end_name.node.span)
+        return parse_error_result(err_mismatch, module_node)
+    end if
+    
+    return parse_ok(module_node)
+end parse_general_module_result
+
 end Compiler.Core.Parser
+

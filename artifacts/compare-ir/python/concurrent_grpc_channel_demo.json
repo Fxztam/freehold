@@ -1,7 +1,8 @@
 {
-  "schema": "fh-compare-ir-v0",
+  "schema": "fh-compare-ir-v1",
   "language_version": "freehold-v1",
   "module": {
+    "node": "Module",
     "name": "examples.concurrent_grpc_channel_demo",
     "imports": [],
     "declarations": [
@@ -12,11 +13,19 @@
           {
             "name": "message",
             "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            },
             "proto_id": 2
           },
           {
             "name": "trace_id",
             "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            },
             "proto_id": 1
           }
         ]
@@ -28,16 +37,28 @@
           {
             "name": "accepted",
             "type": "Boolean",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Boolean"
+            },
             "proto_id": 2
           },
           {
             "name": "audit",
             "type": "AuditEvent",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "AuditEvent"
+            },
             "proto_id": 3
           },
           {
             "name": "total",
             "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
             "proto_id": 1
           }
         ]
@@ -49,16 +70,28 @@
           {
             "name": "quantity",
             "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
             "proto_id": 2
           },
           {
             "name": "sku",
             "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            },
             "proto_id": 1
           },
           {
             "name": "trace_id",
             "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            },
             "proto_id": 3
           }
         ]
@@ -72,7 +105,15 @@
             "name": "Quote",
             "request_name": "request",
             "request_type": "PriceRequest",
-            "response_type": "PriceReply"
+            "request_type_repr": {
+              "kind": "TypeName",
+              "name": "PriceRequest"
+            },
+            "response_type": "PriceReply",
+            "response_type_repr": {
+              "kind": "TypeName",
+              "name": "PriceReply"
+            }
           }
         ]
       },
@@ -85,15 +126,41 @@
         "params": [
           {
             "name": "sender",
-            "type": "Sender<AuditEvent>"
+            "type": "Sender<AuditEvent>",
+            "type_repr": {
+              "kind": "GenericTypeName",
+              "name": "Sender",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Sender<AuditEvent>"
+            }
           },
           {
             "name": "receiver",
-            "type": "Receiver<AuditEvent>"
+            "type": "Receiver<AuditEvent>",
+            "type_repr": {
+              "kind": "GenericTypeName",
+              "name": "Receiver",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Receiver<AuditEvent>"
+            }
           },
           {
             "name": "trace_id",
-            "type": "String"
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
           }
         ],
         "return_type": {
@@ -103,6 +170,101 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "AuditEvent"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "AuditEvent"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "AuditEvent"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -236,13 +398,115 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "PriceReply"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "PriceReply"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "PriceReply"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
             "name": "audit_channel",
             "type": {
-              "kind": "TypeName",
-              "name": "Channel<AuditEvent>"
+              "kind": "GenericTypeName",
+              "name": "Channel",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Channel<AuditEvent>"
             },
             "value": {
               "kind": "CallExpr",
@@ -265,8 +529,15 @@
             "kind": "LetStmt",
             "name": "sender",
             "type": {
-              "kind": "TypeName",
-              "name": "Sender<AuditEvent>"
+              "kind": "GenericTypeName",
+              "name": "Sender",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Sender<AuditEvent>"
             },
             "value": {
               "kind": "CallExpr",
@@ -289,8 +560,15 @@
             "kind": "LetStmt",
             "name": "receiver",
             "type": {
-              "kind": "TypeName",
-              "name": "Receiver<AuditEvent>"
+              "kind": "GenericTypeName",
+              "name": "Receiver",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Receiver<AuditEvent>"
             },
             "value": {
               "kind": "CallExpr",
@@ -394,7 +672,11 @@
         "params": [
           {
             "name": "sku",
-            "type": "String"
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
           }
         ],
         "return_type": {
@@ -404,6 +686,101 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "CheckStmt",
@@ -457,15 +834,41 @@
         "params": [
           {
             "name": "request",
-            "type": "PriceRequest"
+            "type": "PriceRequest",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "PriceRequest"
+            }
           },
           {
             "name": "sender",
-            "type": "Sender<AuditEvent>"
+            "type": "Sender<AuditEvent>",
+            "type_repr": {
+              "kind": "GenericTypeName",
+              "name": "Sender",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Sender<AuditEvent>"
+            }
           },
           {
             "name": "receiver",
-            "type": "Receiver<AuditEvent>"
+            "type": "Receiver<AuditEvent>",
+            "type_repr": {
+              "kind": "GenericTypeName",
+              "name": "Receiver",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Receiver<AuditEvent>"
+            }
           }
         ],
         "return_type": {
@@ -475,6 +878,101 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "PriceReply"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "PriceReply"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "PriceReply"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "ScopeStmt",
@@ -484,8 +982,15 @@
                 "kind": "LetStmt",
                 "name": "price_handle",
                 "type": {
-                  "kind": "TypeName",
-                  "name": "JoinHandle<Integer>"
+                  "kind": "GenericTypeName",
+                  "name": "JoinHandle",
+                  "args": [
+                    {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  ],
+                  "text": "JoinHandle<Integer>"
                 },
                 "value": {
                   "kind": "CallExpr",
@@ -520,8 +1025,15 @@
                 "kind": "LetStmt",
                 "name": "reserve_handle",
                 "type": {
-                  "kind": "TypeName",
-                  "name": "JoinHandle<Boolean>"
+                  "kind": "GenericTypeName",
+                  "name": "JoinHandle",
+                  "args": [
+                    {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  ],
+                  "text": "JoinHandle<Boolean>"
                 },
                 "value": {
                   "kind": "CallExpr",
@@ -556,8 +1068,15 @@
                 "kind": "LetStmt",
                 "name": "audit_handle",
                 "type": {
-                  "kind": "TypeName",
-                  "name": "JoinHandle<AuditEvent>"
+                  "kind": "GenericTypeName",
+                  "name": "JoinHandle",
+                  "args": [
+                    {
+                      "kind": "TypeName",
+                      "name": "AuditEvent"
+                    }
+                  ],
+                  "text": "JoinHandle<AuditEvent>"
                 },
                 "value": {
                   "kind": "CallExpr",
@@ -759,7 +1278,11 @@
         "params": [
           {
             "name": "quantity",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           }
         ],
         "return_type": {
@@ -769,6 +1292,101 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Boolean"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "CheckStmt",
@@ -802,49 +1420,100 @@
   "analysis": {
     "types": [
       {
+        "kind": "TypeDef",
         "name": "BigFloat",
-        "base": "BigFloat"
+        "base": "BigFloat",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigFloat"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "BigInteger",
-        "base": "BigInteger"
+        "base": "BigInteger",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigInteger"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Boolean",
-        "base": "Boolean"
+        "base": "Boolean",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Boolean"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Double",
-        "base": "Double"
+        "base": "Double",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Double"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Executor",
-        "base": "Executor"
+        "base": "Executor",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Executor"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Integer",
-        "base": "Integer"
+        "base": "Integer",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "Scope",
-        "base": "Scope"
+        "base": "Scope",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Scope"
+        }
       },
       {
+        "kind": "TypeDef",
         "name": "String",
-        "base": "String"
+        "base": "String",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "String"
+        }
       }
     ],
     "records": [
       {
+        "kind": "RecordDef",
         "name": "AuditEvent",
         "fields": [
           {
+            "kind": "RecordFieldDef",
             "name": "message",
-            "type": "String"
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
           },
           {
+            "kind": "RecordFieldDef",
             "name": "trace_id",
-            "type": "String"
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
           }
         ],
         "proto_fields": [
@@ -859,19 +1528,35 @@
         ]
       },
       {
+        "kind": "RecordDef",
         "name": "PriceReply",
         "fields": [
           {
+            "kind": "RecordFieldDef",
             "name": "accepted",
-            "type": "Boolean"
+            "type": "Boolean",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Boolean"
+            }
           },
           {
+            "kind": "RecordFieldDef",
             "name": "audit",
-            "type": "AuditEvent"
+            "type": "AuditEvent",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "AuditEvent"
+            }
           },
           {
+            "kind": "RecordFieldDef",
             "name": "total",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           }
         ],
         "proto_fields": [
@@ -890,19 +1575,35 @@
         ]
       },
       {
+        "kind": "RecordDef",
         "name": "PriceRequest",
         "fields": [
           {
+            "kind": "RecordFieldDef",
             "name": "quantity",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           },
           {
+            "kind": "RecordFieldDef",
             "name": "sku",
-            "type": "String"
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
           },
           {
+            "kind": "RecordFieldDef",
             "name": "trace_id",
-            "type": "String"
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
           }
         ],
         "proto_fields": [
@@ -932,15 +1633,41 @@
         "params": [
           {
             "name": "sender",
-            "type": "Sender<AuditEvent>"
+            "type": "Sender<AuditEvent>",
+            "type_repr": {
+              "kind": "GenericTypeName",
+              "name": "Sender",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Sender<AuditEvent>"
+            }
           },
           {
             "name": "receiver",
-            "type": "Receiver<AuditEvent>"
+            "type": "Receiver<AuditEvent>",
+            "type_repr": {
+              "kind": "GenericTypeName",
+              "name": "Receiver",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Receiver<AuditEvent>"
+            }
           },
           {
             "name": "trace_id",
-            "type": "String"
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
           }
         ],
         "return_type": {
@@ -950,6 +1677,101 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "AuditEvent"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "AuditEvent"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "AuditEvent"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
@@ -1083,13 +1905,115 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "PriceReply"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "PriceReply"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "PriceReply"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "LetStmt",
             "name": "audit_channel",
             "type": {
-              "kind": "TypeName",
-              "name": "Channel<AuditEvent>"
+              "kind": "GenericTypeName",
+              "name": "Channel",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Channel<AuditEvent>"
             },
             "value": {
               "kind": "CallExpr",
@@ -1112,8 +2036,15 @@
             "kind": "LetStmt",
             "name": "sender",
             "type": {
-              "kind": "TypeName",
-              "name": "Sender<AuditEvent>"
+              "kind": "GenericTypeName",
+              "name": "Sender",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Sender<AuditEvent>"
             },
             "value": {
               "kind": "CallExpr",
@@ -1136,8 +2067,15 @@
             "kind": "LetStmt",
             "name": "receiver",
             "type": {
-              "kind": "TypeName",
-              "name": "Receiver<AuditEvent>"
+              "kind": "GenericTypeName",
+              "name": "Receiver",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Receiver<AuditEvent>"
             },
             "value": {
               "kind": "CallExpr",
@@ -1241,7 +2179,11 @@
         "params": [
           {
             "name": "sku",
-            "type": "String"
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
           }
         ],
         "return_type": {
@@ -1251,6 +2193,101 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "CheckStmt",
@@ -1304,15 +2341,41 @@
         "params": [
           {
             "name": "request",
-            "type": "PriceRequest"
+            "type": "PriceRequest",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "PriceRequest"
+            }
           },
           {
             "name": "sender",
-            "type": "Sender<AuditEvent>"
+            "type": "Sender<AuditEvent>",
+            "type_repr": {
+              "kind": "GenericTypeName",
+              "name": "Sender",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Sender<AuditEvent>"
+            }
           },
           {
             "name": "receiver",
-            "type": "Receiver<AuditEvent>"
+            "type": "Receiver<AuditEvent>",
+            "type_repr": {
+              "kind": "GenericTypeName",
+              "name": "Receiver",
+              "args": [
+                {
+                  "kind": "TypeName",
+                  "name": "AuditEvent"
+                }
+              ],
+              "text": "Receiver<AuditEvent>"
+            }
           }
         ],
         "return_type": {
@@ -1322,6 +2385,101 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "PriceReply"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "PriceReply"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "PriceReply"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "ScopeStmt",
@@ -1331,8 +2489,15 @@
                 "kind": "LetStmt",
                 "name": "price_handle",
                 "type": {
-                  "kind": "TypeName",
-                  "name": "JoinHandle<Integer>"
+                  "kind": "GenericTypeName",
+                  "name": "JoinHandle",
+                  "args": [
+                    {
+                      "kind": "TypeName",
+                      "name": "Integer"
+                    }
+                  ],
+                  "text": "JoinHandle<Integer>"
                 },
                 "value": {
                   "kind": "CallExpr",
@@ -1367,8 +2532,15 @@
                 "kind": "LetStmt",
                 "name": "reserve_handle",
                 "type": {
-                  "kind": "TypeName",
-                  "name": "JoinHandle<Boolean>"
+                  "kind": "GenericTypeName",
+                  "name": "JoinHandle",
+                  "args": [
+                    {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  ],
+                  "text": "JoinHandle<Boolean>"
                 },
                 "value": {
                   "kind": "CallExpr",
@@ -1403,8 +2575,15 @@
                 "kind": "LetStmt",
                 "name": "audit_handle",
                 "type": {
-                  "kind": "TypeName",
-                  "name": "JoinHandle<AuditEvent>"
+                  "kind": "GenericTypeName",
+                  "name": "JoinHandle",
+                  "args": [
+                    {
+                      "kind": "TypeName",
+                      "name": "AuditEvent"
+                    }
+                  ],
+                  "text": "JoinHandle<AuditEvent>"
                 },
                 "value": {
                   "kind": "CallExpr",
@@ -1606,7 +2785,11 @@
         "params": [
           {
             "name": "quantity",
-            "type": "Integer"
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
           }
         ],
         "return_type": {
@@ -1616,6 +2799,101 @@
         "requires": [],
         "aborts": [],
         "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Boolean"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
         "body": [
           {
             "kind": "CheckStmt",
@@ -1655,7 +2933,15 @@
             "name": "Quote",
             "request_name": "request",
             "request_type": "PriceRequest",
-            "response_type": "PriceReply"
+            "request_type_repr": {
+              "kind": "TypeName",
+              "name": "PriceRequest"
+            },
+            "response_type": "PriceReply",
+            "response_type_repr": {
+              "kind": "TypeName",
+              "name": "PriceReply"
+            }
           }
         ]
       }

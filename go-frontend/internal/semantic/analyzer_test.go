@@ -704,3 +704,33 @@ func assertSingleDiagnostic(t *testing.T, diagnostics []*diagnostic.Diagnostic, 
 		t.Fatalf("diagnostic Found = %q, want %q", diag.Found, found)
 	}
 }
+
+func TestValidateModulePopulatesFlowSummaries(t *testing.T) {
+	module := parseModule(t, `module ValidationCFG
+function main() returns Integer is
+    return 1
+end main
+end ValidationCFG`)
+
+	diagnostics := ValidateModule(module)
+	if len(diagnostics) != 0 {
+		t.Fatalf("ValidateModule() diagnostics = %#v, want none", diagnostics)
+	}
+
+	if module.FlowSummaries == nil {
+		t.Fatal("Expected module.FlowSummaries to be populated")
+	}
+
+	summary, ok := module.FlowSummaries["main"]
+	if !ok {
+		t.Fatal("Expected flow summary for main routine")
+	}
+
+	if !summary.NormalReturnPossible {
+		t.Error("Expected NormalReturnPossible to be true")
+	}
+	if !summary.GuaranteedExit {
+		t.Error("Expected GuaranteedExit to be true")
+	}
+}
+

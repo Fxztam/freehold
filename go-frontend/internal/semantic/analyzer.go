@@ -24,10 +24,11 @@ type RoutineType struct {
 }
 
 type SymbolTable struct {
-	Records  map[string]RecordType
-	Routines map[string]RoutineType
-	Types    map[string]bool
-	Errors   map[string]bool
+	Records   map[string]RecordType
+	Routines  map[string]RoutineType
+	Types     map[string]bool
+	Errors    map[string]bool
+	TypeBases map[string]string
 }
 
 type Analyzer struct {
@@ -36,7 +37,16 @@ type Analyzer struct {
 }
 
 func BuildSymbolTable(module *ast.Module) SymbolTable {
-	symbols := SymbolTable{Records: map[string]RecordType{}, Routines: map[string]RoutineType{}, Types: builtinTypes(), Errors: map[string]bool{}}
+	symbols := SymbolTable{
+		Records:   map[string]RecordType{},
+		Routines:  map[string]RoutineType{},
+		Types:     builtinTypes(),
+		Errors:    map[string]bool{},
+		TypeBases: map[string]string{},
+	}
+	for name := range symbols.Types {
+		symbols.TypeBases[name] = name
+	}
 	if module == nil {
 		return symbols
 	}
@@ -44,6 +54,7 @@ func BuildSymbolTable(module *ast.Module) SymbolTable {
 		switch value := decl.(type) {
 		case ast.TypeDecl:
 			symbols.Types[value.Name] = true
+			symbols.TypeBases[value.Name] = value.Base
 			if value.Base != "record" {
 				continue
 			}
@@ -120,6 +131,10 @@ func buildSymbolTableWithImports(module *ast.Module, importedByName map[string]*
 			if importedSymbols.Types[exposed] {
 				addType(&symbols, exposed)
 				addType(&symbols, qualifiedName(imported, exposed))
+				if base, ok := importedSymbols.TypeBases[exposed]; ok {
+					addTypeBase(&symbols, exposed, base)
+					addTypeBase(&symbols, qualifiedName(imported, exposed), base)
+				}
 			}
 			if importedSymbols.Errors[exposed] {
 				addError(&symbols, exposed)
@@ -147,6 +162,12 @@ func addRoutine(target *SymbolTable, routine RoutineType) {
 func addType(target *SymbolTable, name string) {
 	if name != "" {
 		target.Types[name] = true
+	}
+}
+
+func addTypeBase(target *SymbolTable, name string, base string) {
+	if name != "" && base != "" {
+		target.TypeBases[name] = base
 	}
 }
 
@@ -202,12 +223,20 @@ func resolveRecordFieldTypes(source SymbolTable, record RecordType) RecordType {
 func ValidateModule(module *ast.Module) []*diagnostic.Diagnostic {
 	analyzer := Analyzer{symbols: BuildSymbolTable(module)}
 	analyzer.validateModule(module)
+	if module != nil {
+		cfAnalyzer := NewControlFlowAnalyzer(module)
+		module.FlowSummaries = cfAnalyzer.AnalyzeRoutines()
+	}
 	return analyzer.diagnostics
 }
 
 func ValidateModuleWithImports(module *ast.Module, importedModules ...*ast.Module) []*diagnostic.Diagnostic {
 	analyzer := Analyzer{symbols: BuildSymbolTableWithImports(module, importedModules...)}
 	analyzer.validateModule(module)
+	if module != nil {
+		cfAnalyzer := NewControlFlowAnalyzer(module)
+		module.FlowSummaries = cfAnalyzer.AnalyzeRoutines()
+	}
 	return analyzer.diagnostics
 }
 
@@ -330,14 +359,14 @@ func (a *Analyzer) validateBlock(body []ast.Stmt, env map[string]string) {
 			if _, exists := env[value.Name]; exists {
 				a.diagnostics = append(a.diagnostics, diagnostic.DuplicateLocalName(locationFromPosition(value.Pos), value.Name))
 			}
-			if valueOK && a.knownType(value.Type) && !sameType(value.Type, valueType) {
+			if valueOK && a.knownType(value.Type) && !a.sameType(value.Type, valueType) {
 				a.diagnostics = append(a.diagnostics, diagnostic.AssignmentTypeMismatch(locationFromPosition(value.Pos), value.Type, valueType))
 			}
 			env[value.Name] = value.Type
 		case ast.AssignmentStmt:
 			targetType, targetOK := a.inferAssignmentTarget(value.Target, env)
 			valueType, valueOK := a.inferExpr(value.Value, env)
-			if targetOK && valueOK && a.knownType(targetType) && !sameType(targetType, valueType) {
+			if targetOK && valueOK && a.knownType(targetType) && !a.sameType(targetType, valueType) {
 				a.diagnostics = append(a.diagnostics, diagnostic.AssignmentTypeMismatch(locationFromPosition(value.Pos), targetType, valueType))
 			}
 		case ast.ReturnStmt:
@@ -452,7 +481,7 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 	case ast.IndexExpr:
 		arrayType, ok := a.inferExpr(value.Array, env)
 		indexType, indexOK := a.inferExpr(value.Index, env)
-		if indexOK && !sameType("Integer", indexType) {
+		if indexOK && !a.sameType("Integer", indexType) {
 			a.diagnostics = append(a.diagnostics, diagnostic.ArrayIndexRequiresInteger(locationFromExpr(value.Index), indexType))
 		}
 		if !ok {
@@ -667,15 +696,69 @@ func (a *Analyzer) validateCall(call ast.CallExpr, env map[string]string, locati
 		if !argOK[index] {
 			continue
 		}
-		if !sameType(param.Type, argTypes[index]) {
+		if !a.sameType(param.Type, argTypes[index]) {
 			a.diagnostics = append(a.diagnostics, diagnostic.RoutineArgumentTypeMismatch(locationFromExpr(call.Arguments[index]), routine.Name, index+1, param.Type, argTypes[index]))
 		}
 	}
 	return routine.ReturnType, routine.ReturnType != ""
 }
 
-func sameType(expected string, found string) bool {
-	return expected == found
+func (a *Analyzer) sameType(expected string, found string) bool {
+	return a.baseType(expected) == a.baseType(found)
+}
+
+func (a *Analyzer) baseType(t string) string {
+	t = stripPackagePrefixes(t)
+	t = strings.TrimSpace(t)
+	if strings.HasPrefix(t, "Awaitable<") {
+		return "Awaitable"
+	}
+	if strings.HasPrefix(t, "Result<") {
+		return "Result"
+	}
+	if strings.HasPrefix(t, "Array<") {
+		return "Array"
+	}
+	if _, ok := a.symbols.Records[t]; ok {
+		return "Record"
+	}
+	if a.symbols.Errors[t] {
+		return t
+	}
+	if base, ok := a.symbols.TypeBases[t]; ok {
+		if base != t {
+			return a.baseType(base)
+		}
+	}
+	return t
+}
+
+func stripPackagePrefixes(t string) string {
+	var builder strings.Builder
+	var current strings.Builder
+
+	flush := func() {
+		if current.Len() > 0 {
+			s := current.String()
+			if idx := strings.LastIndex(s, "."); idx != -1 {
+				builder.WriteString(s[idx+1:])
+			} else {
+				builder.WriteString(s)
+			}
+			current.Reset()
+		}
+	}
+
+	for _, r := range t {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '.' {
+			current.WriteRune(r)
+		} else {
+			flush()
+			builder.WriteRune(r)
+		}
+	}
+	flush()
+	return builder.String()
 }
 
 func locationFromExpr(expr ast.Expr) diagnostic.Location {

@@ -1,7 +1,7 @@
 module Compiler.Core.Resolve
 
 import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_text, make_unknown_exposed_symbol_diagnostic
-import Compiler.Core.Lexer exposing MiniImportReferenceModuleTokens
+import Compiler.Core.Ast exposing ModuleWithImportReferenceNode
 import Compiler.Core.Names exposing ModuleName, SymbolName
 
 type ResolveStatus is record
@@ -13,6 +13,38 @@ type ResolveResult is record
     module_name: String
     symbol_name: String
     issue: Diagnostic
+end record
+
+type RecordField is record
+    name: String
+    type_ref: String
+end record
+
+type RecordSymbol is record
+    name: String
+    qualified_name: String
+    first_field_idx: Integer
+    field_count: Integer
+end record
+
+type ParamSymbol is record
+    name: String
+    type_ref: String
+end record
+
+type RoutineSymbol is record
+    name: String
+    qualified_name: String
+    first_param_idx: Integer
+    param_count: Integer
+    return_type: String
+    is_async: Boolean
+end record
+
+type VarSymbol is record
+    name: String
+    type_ref: String
+    scope_depth: Integer
 end record
 
 function make_resolve_status(name: String) returns ResolveStatus
@@ -41,15 +73,15 @@ is
     return ResolveResult { status: status, module_name: import_module_full, symbol_name: symbol_raw, issue: issue }
 end resolve_error
 
-function resolve_mini_import_reference_module(tokens: MiniImportReferenceModuleTokens) returns ResolveResult
-requires tokens.import_keyword.lexeme = "import", tokens.exposing_keyword.lexeme = "exposing", tokens.return_keyword.lexeme = "return"
-ensures result.module_name = tokens.import_module_name.lexeme, result.symbol_name = tokens.return_symbol.lexeme
+function resolve_mini_import_reference_module(ast_node: ModuleWithImportReferenceNode) returns ResolveResult
+requires String.instr(ast_node.import_decl.module_name.name, "") = 0, String.instr(ast_node.routine.return_symbol.symbol_name.name, "") = 0
+ensures result.module_name = ast_node.import_decl.module_name.name, result.symbol_name = ast_node.routine.return_symbol.symbol_name.name
 is
-    if tokens.exposed_name.lexeme = tokens.return_symbol.lexeme then
-        return resolve_ok(tokens.import_module_name.lexeme, tokens.return_symbol.lexeme)
+    if ast_node.import_decl.exposed_name.name = ast_node.routine.return_symbol.symbol_name.name then
+        return resolve_ok(ast_node.import_decl.module_name.name, ast_node.routine.return_symbol.symbol_name.name)
     else
-        let issue: Diagnostic = make_unknown_exposed_symbol_diagnostic(tokens.import_module_name.lexeme, tokens.return_symbol.lexeme)
-        return resolve_error(issue, tokens.import_module_name.lexeme, tokens.return_symbol.lexeme)
+        let issue: Diagnostic = make_unknown_exposed_symbol_diagnostic(ast_node.import_decl.module_name.name, ast_node.routine.return_symbol.symbol_name.name)
+        return resolve_error(issue, ast_node.import_decl.module_name.name, ast_node.routine.return_symbol.symbol_name.name)
     end if
 end resolve_mini_import_reference_module
 
@@ -58,10 +90,82 @@ requires String.instr(resolve_result.status.name, "") = 0
 ensures String.instr(result, resolve_result.status.name) = 0
 is
     if resolve_result.status.name = "ok" then
-        return String.template("ok:${module}.${symbol}", module: resolve_result.module_name, symbol: resolve_result.symbol_name)
+        return String.template("ok:${module_name}.${symbol}", module_name: resolve_result.module_name, symbol: resolve_result.symbol_name)
     else
         return String.template("error:${diagnostic}", diagnostic: diagnostic_text(resolve_result.issue))
     end if
 end resolve_result_summary
+
+function lookup_record(records: Array<RecordSymbol, 64>, record_count: Integer, name: String) returns RecordSymbol
+is
+    let i: Integer = 0
+    let found: RecordSymbol = records[0]
+    while i < record_count invariant i >= 0 do
+        let rec: RecordSymbol = records[i]
+        if rec.name = name or rec.qualified_name = name then
+            found := rec
+        end if
+        i := i + 1
+    end while
+    return found
+end lookup_record
+
+function lookup_routine(routines: Array<RoutineSymbol, 64>, routine_count: Integer, name: String) returns RoutineSymbol
+is
+    let i: Integer = 0
+    let found: RoutineSymbol = routines[0]
+    while i < routine_count invariant i >= 0 do
+        let rt: RoutineSymbol = routines[i]
+        if rt.name = name or rt.qualified_name = name then
+            found := rt
+        end if
+        i := i + 1
+    end while
+    return found
+end lookup_routine
+
+function has_declared_type(declared_types: Array<String, 32>, type_count: Integer, name: String) returns Boolean
+is
+    let i: Integer = 0
+    let found: Boolean = false
+    while i < type_count invariant i >= 0 do
+        let ty: String = declared_types[i]
+        if ty = name then
+            found := true
+        end if
+        i := i + 1
+    end while
+    return found
+end has_declared_type
+
+function has_declared_error(declared_errors: Array<String, 32>, error_count: Integer, name: String) returns Boolean
+is
+    let i: Integer = 0
+    let found: Boolean = false
+    while i < error_count invariant i >= 0 do
+        let err: String = declared_errors[i]
+        if err = name then
+            found := true
+        end if
+        i := i + 1
+    end while
+    return found
+end has_declared_error
+
+function lookup_local_var(locals: Array<VarSymbol, 128>, local_count: Integer, name: String) returns VarSymbol
+is
+    let i: Integer = local_count - 1
+    let found: VarSymbol = VarSymbol { name: "", type_ref: "", scope_depth: 0 }
+    while i >= 0 invariant i >= -1 do
+        let v: VarSymbol = locals[i]
+        if v.name = name then
+            found := v
+            i := -1
+        else
+            i := i - 1
+        end if
+    end while
+    return found
+end lookup_local_var
 
 end Compiler.Core.Resolve

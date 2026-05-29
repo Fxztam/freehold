@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"strconv"
+
 	"freehold-go-frontend/internal/ast"
 	"freehold-go-frontend/internal/diagnostic"
 	"freehold-go-frontend/internal/token"
@@ -897,10 +899,14 @@ func (p *Parser) parseAtom() ast.Expr {
 
 	if p.at(token.String) {
 		tok := p.expect(token.String)
+		val := tok.Lexeme
+		if unquoted, err := strconv.Unquote("\"" + tok.Lexeme + "\""); err == nil {
+			val = unquoted
+		}
 		return ast.StringExpr{
 			Kind:  "StringExpr",
 			Pos:   tok.Pos,
-			Value: tok.Lexeme,
+			Value: val,
 		}
 	}
 
