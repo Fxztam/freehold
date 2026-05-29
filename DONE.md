@@ -6,7 +6,7 @@
 
 - **Transitive Information Flow (Taint-Tracking):** Evolved local dependency verification into inter-procedural flow contract tracking. The verifier now recursively traces variable dependencies across called routines and nested statement blocks, constructing a complete transitive flow graph to verify mathematical flow contracts.
 - **Transitive Globals Propagation:** Enforced propagation checks for global variables/services accessed transitively through call stacks. Callers are now required to declare all transitively accessed globals with compatible modes (`Input`, `Output`, `In_Out`) in their own `global` contracts.
-- **Verification Conformant Tests:** Added positive and negative test cases (`transitive_global_pos.fh` and `transitive_global_missing.fh`) under `04_flow_contracts`. Automatically updated expected diagnostics to match new generalized target/source messages. All 26 language conformance tests and compiler core v1 verification checks pass successfully.
+- **Verification Conformant Tests:** Added positive and negative test cases (`transitive_global_pos.fh`, `transitive_global_missing.fh`, `transitive_flow_pos.fh`, and `transitive_flow_neg.fh`) under `04_flow_contracts` to validate transitive dependency tracking for both global resources and parameters. Automatically updated expected diagnostics to match new generalized target/source messages. All 28 language conformance tests and compiler core v1 verification checks pass successfully.
 
 ### Multi-Solver SMT Verification & System Env Language Conformance
 
