@@ -158,7 +158,7 @@ class FreeholdGrammar(Grammar):
     stmt = Forward()
     type_ref = Forward()
     unary = Forward()
-    source_hash__ = "7c8d502ca123d174f9a483af91e1ce95"
+    source_hash__ = "65dc7333c1d1a76259849e8cb9acd846"
     disposable__ = re.compile('$.')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
@@ -228,18 +228,20 @@ class FreeholdGrammar(Grammar):
     assign_stmt = Series(wsp__, IDENT, Series(Text(":="), wsp__), expr)
     field_assign_stmt = Series(wsp__, FIELD_PATH, Series(Text(":="), wsp__), expr)
     result_type = Series(Series(Text("Result"), wsp__), Series(Text("<"), wsp__), result_payload_type, Series(Text(","), wsp__), type_ref, Series(Text(">"), wsp__))
-    call_stmt = Series(wsp__, Series(Text("call"), wsp__), qualified_name, Series(Text("("), wsp__), Option(arg_list), Series(Text(")"), wsp__))
+    call_stmt = Series(wsp__, Series(Text("call"), wsp__), qualified_name, Option(type_arg_list), Series(Text("("), wsp__), Option(arg_list), Series(Text(")"), wsp__))
     ensures_clause = Series(Series(Text("ensures"), wsp__), expr_list)
     aborts_clause = Series(Series(Text("aborts"), wsp__), IDENT, Option(Series(Series(Text("when"), wsp__), expr)))
-    requires_clause = Series(Series(Text("requires"), wsp__), expr_list)
+    constraint = Alternative(Series(IDENT, Series(Text("is"), wsp__), IDENT), expr)
+    constraint_list = Series(constraint, ZeroOrMore(Series(Series(Text(","), wsp__), constraint)))
+    requires_clause = Series(Series(Text("requires"), wsp__), constraint_list)
     contract_block = Series(ZeroOrMore(requires_clause), ZeroOrMore(aborts_clause), ZeroOrMore(ensures_clause))
     param = Series(IDENT, Series(Text(":"), wsp__), type_ref)
     param_list = Series(param, ZeroOrMore(Series(Series(Text(","), wsp__), param)))
     rpc_decl = Series(wsp__, Series(Text("rpc"), wsp__), IDENT, Series(Text("("), wsp__), IDENT, Series(Text(":"), wsp__), type_ref, Series(Text(")"), wsp__), Series(Text(":"), wsp__), type_ref)
     service_decl = Series(wsp__, Series(Text("service"), wsp__), IDENT, Series(Text("is"), wsp__), rpc_decl, ZeroOrMore(rpc_decl), Series(Text("end"), wsp__), IDENT)
-    procedure_decl = Series(wsp__, Series(Text("procedure"), wsp__), IDENT, Series(Text("("), wsp__), Option(param_list), Series(Text(")"), wsp__), Option(contract_block), Series(Text("is"), wsp__), ZeroOrMore(stmt), Series(Text("end"), wsp__), IDENT)
-    async_marker = Series(Text("async"), wsp__)
     type_param_list = Series(Series(Text("<"), wsp__), IDENT, ZeroOrMore(Series(Series(Text(","), wsp__), IDENT)), Series(Text(">"), wsp__))
+    async_marker = Series(Text("async"), wsp__)
+    procedure_decl = Series(wsp__, Series(Text("procedure"), wsp__), IDENT, Option(type_param_list), Series(Text("("), wsp__), Option(param_list), Series(Text(")"), wsp__), Option(contract_block), Series(Text("is"), wsp__), ZeroOrMore(stmt), Series(Text("end"), wsp__), IDENT)
     return_type = Alternative(array_type, result_type, type_ref)
     function_decl = Series(wsp__, Option(async_marker), Series(Text("function"), wsp__), IDENT, Option(type_param_list), Series(Text("("), wsp__), Option(param_list), Series(Text(")"), wsp__), Series(Text("returns"), wsp__), return_type, Option(contract_block), Series(Text("is"), wsp__), ZeroOrMore(stmt), Series(Text("end"), wsp__), IDENT)
     module_end = Series(wsp__, Series(Text("end"), wsp__), wsp__, qualified_name)
@@ -333,6 +335,8 @@ Freehold_AST_transformation_table = {
     "param": [],
     "contract_block": [],
     "requires_clause": [],
+    "constraint_list": [],
+    "constraint": [],
     "aborts_clause": [],
     "ensures_clause": [],
     "stmt": [],
@@ -526,6 +530,12 @@ class FreeholdCompiler(Compiler):
     #     return node
 
     # def on_requires_clause(self, node):
+    #     return node
+
+    # def on_constraint_list(self, node):
+    #     return node
+
+    # def on_constraint(self, node):
     #     return node
 
     # def on_aborts_clause(self, node):

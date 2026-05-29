@@ -354,8 +354,8 @@ class Verifier:
         return mutated
 
     def validate_flow_contracts(self, r, env, ctx):
+        seen_globals = set()
         if r.global_specs:
-            seen_globals = set()
             for g in r.global_specs:
                 if g.mode not in ("Input", "Output", "In_Out", None):
                     raise TypeCheckError(f"{g.pos.text()}: invalid global mode: {g.mode}")
@@ -401,6 +401,239 @@ class Verifier:
 
             if r.kind == "function" and "result" not in seen_targets:
                 raise TypeCheckError(f"{r.pos.text()}: function dependency contract must specify 'result'")
+
+            # Information Flow Analysis
+            dependencies = {}
+            for p in r.params:
+                dependencies[p.name] = {p.name}
+            
+            control_deps = []
+            
+            def get_active_control_deps():
+                union_set = set()
+                for s in control_deps:
+                    union_set |= s
+                return union_set
+            
+            def dependencies_of(expr) -> set[str]:
+                if expr is None:
+                    return set()
+                if isinstance(expr, VarExpr):
+                    if expr.name in dependencies:
+                        return set(dependencies[expr.name])
+                    if expr.name in param_names or expr.name in seen_globals:
+                        return {expr.name}
+                    return set()
+                elif isinstance(expr, FieldAccessExpr):
+                    root = expr.path[0]
+                    if root in dependencies:
+                        return set(dependencies[root])
+                    if root in param_names or root in seen_globals:
+                        return {root}
+                    return set()
+                elif isinstance(expr, IndexExpr):
+                    return dependencies_of(VarExpr(expr.name, expr.pos)) | dependencies_of(expr.index)
+                elif isinstance(expr, IndexedFieldAccessExpr):
+                    return dependencies_of(VarExpr(expr.name, expr.pos)) | dependencies_of(expr.index)
+                elif isinstance(expr, UnaryExpr):
+                    return dependencies_of(expr.expr)
+                elif isinstance(expr, BinaryExpr):
+                    return dependencies_of(expr.left) | dependencies_of(expr.right)
+                elif isinstance(expr, CallExpr):
+                    deps = set()
+                    for arg in expr.args:
+                        deps |= dependencies_of(arg)
+                    return deps
+                elif isinstance(expr, RecordLiteralExpr):
+                    deps = set()
+                    for arg in expr.args:
+                        deps |= dependencies_of(arg.expr)
+                    return deps
+                elif isinstance(expr, ArrayLiteralExpr):
+                    deps = set()
+                    for item in expr.items:
+                        deps |= dependencies_of(item)
+                    return deps
+                elif isinstance(expr, AwaitExpr):
+                    return dependencies_of(expr.expr)
+                elif isinstance(expr, IsExpr):
+                    return dependencies_of(expr.left)
+                elif isinstance(expr, SpecialResultExpr):
+                    return {"result"}
+                return set()
+
+            def collect_read_vars(nodes) -> set[str]:
+                reads = set()
+                visited = set()
+                def visit(node):
+                    if node is None:
+                        return
+                    node_id = id(node)
+                    if node_id in visited:
+                        return
+                    visited.add(node_id)
+                    
+                    if isinstance(node, VarExpr):
+                        reads.add(node.name)
+                    elif isinstance(node, FieldAccessExpr):
+                        reads.add(node.path[0])
+                    elif isinstance(node, IndexExpr):
+                        reads.add(node.name)
+                        visit(node.index)
+                    elif isinstance(node, IndexedFieldAccessExpr):
+                        reads.add(node.name)
+                        visit(node.index)
+                    elif isinstance(node, list):
+                        for child in node: 
+                            visit(child)
+                    elif hasattr(node, "__dict__"):
+                        for k, v in node.__dict__.items():
+                            if k == "pos":
+                                continue
+                            visit(v)
+                visit(nodes)
+                return reads
+
+            def walk_body(stmts):
+                for stmt in stmts:
+                    if isinstance(stmt, LetStmt):
+                        dependencies[stmt.name] = dependencies_of(stmt.expr) | get_active_control_deps()
+                    elif isinstance(stmt, AssignStmt):
+                        dependencies[stmt.name] = dependencies_of(stmt.expr) | get_active_control_deps()
+                    elif isinstance(stmt, FieldAssignStmt):
+                        root = stmt.path[0]
+                        dependencies[root] = dependencies.get(root, set()) | dependencies_of(stmt.expr) | get_active_control_deps()
+                    elif isinstance(stmt, (ReturnStmt, ReturnPlain, ReturnOk)):
+                        expr_val = getattr(stmt, "value", getattr(stmt, "expr", None))
+                        dependencies["result"] = dependencies.get("result", set()) | dependencies_of(expr_val) | get_active_control_deps()
+                    elif isinstance(stmt, CallStmt):
+                        callee = env.get(stmt.name)
+                        if callee and hasattr(callee, "depends_specs") and callee.depends_specs:
+                            callee_params = [p.name for p in callee.params]
+                            new_arg_deps = {}
+                            for d_callee in callee.depends_specs:
+                                if d_callee.target in callee_params:
+                                    t_idx = callee_params.index(d_callee.target)
+                                    if t_idx < len(stmt.args):
+                                        arg_target = stmt.args[t_idx]
+                                        target_var = None
+                                        if isinstance(arg_target, VarExpr):
+                                            target_var = arg_target.name
+                                        elif isinstance(arg_target, (FieldAccessExpr, IndexExpr, IndexedFieldAccessExpr)):
+                                            target_var = getattr(arg_target, "name", None) or getattr(arg_target, "path", [None])[0]
+                                        
+                                        if target_var:
+                                            accumulated = set()
+                                            for src in d_callee.sources:
+                                                if src == "+":
+                                                    accumulated |= dependencies_of(arg_target)
+                                                elif src in callee_params:
+                                                    s_idx = callee_params.index(src)
+                                                    if s_idx < len(stmt.args):
+                                                        accumulated |= dependencies_of(stmt.args[s_idx])
+                                            new_arg_deps[target_var] = accumulated | get_active_control_deps()
+                            for t_var, deps in new_arg_deps.items():
+                                dependencies[t_var] = deps
+                        else:
+                            all_args_deps = set()
+                            for arg in stmt.args:
+                                all_args_deps |= dependencies_of(arg)
+                            all_args_deps |= get_active_control_deps()
+                            for arg in stmt.args:
+                                target_var = None
+                                if isinstance(arg, VarExpr):
+                                    target_var = arg.name
+                                elif isinstance(arg, (FieldAccessExpr, IndexExpr, IndexedFieldAccessExpr)):
+                                    target_var = getattr(arg, "name", None) or getattr(arg, "path", [None])[0]
+                                if target_var:
+                                    dependencies[target_var] = all_args_deps
+                    elif isinstance(stmt, IfStmt):
+                        before_deps = {k: set(v) for k, v in dependencies.items()}
+                        control_deps.append(dependencies_of(stmt.condition))
+                        
+                        walk_body(stmt.then_body)
+                        then_deps = {k: set(v) for k, v in dependencies.items()}
+                        
+                        dependencies.clear()
+                        for k, v in before_deps.items():
+                            dependencies[k] = set(v)
+                        walk_body(stmt.else_body)
+                        else_deps = {k: set(v) for k, v in dependencies.items()}
+                        
+                        dependencies.clear()
+                        all_keys = set(then_deps.keys()) | set(else_deps.keys()) | set(before_deps.keys())
+                        for k in all_keys:
+                            dependencies[k] = then_deps.get(k, before_deps.get(k, set())) | else_deps.get(k, before_deps.get(k, set()))
+                        
+                        control_deps.pop()
+                    elif isinstance(stmt, CaseStmt):
+                        before_deps = {k: set(v) for k, v in dependencies.items()}
+                        control_deps.append(dependencies_of(stmt.expr))
+                        
+                        branch_deps_list = []
+                        for branch in stmt.branches:
+                            dependencies.clear()
+                            for k, v in before_deps.items():
+                                dependencies[k] = set(v)
+                            walk_body(branch.body)
+                            branch_deps_list.append({k: set(v) for k, v in dependencies.items()})
+                        
+                        if stmt.default_body:
+                            dependencies.clear()
+                            for k, v in before_deps.items():
+                                dependencies[k] = set(v)
+                            walk_body(stmt.default_body)
+                            branch_deps_list.append({k: set(v) for k, v in dependencies.items()})
+                        else:
+                            branch_deps_list.append(before_deps)
+                            
+                        dependencies.clear()
+                        all_keys = set(before_deps.keys())
+                        for bd in branch_deps_list:
+                            all_keys |= set(bd.keys())
+                        for k in all_keys:
+                            union_k = set()
+                            for bd in branch_deps_list:
+                                union_k |= bd.get(k, before_deps.get(k, set()))
+                            dependencies[k] = union_k
+                        
+                        control_deps.pop()
+                    elif isinstance(stmt, WhileStmt):
+                        control_deps.append(dependencies_of(stmt.condition))
+                        loop_reads = collect_read_vars(stmt.condition) | collect_read_vars(stmt.body)
+                        loop_mutated = self.collect_mutated_vars(stmt.body)
+                        
+                        loop_read_deps = set()
+                        for r_var in loop_reads:
+                            if r_var in dependencies:
+                                loop_read_deps |= dependencies[r_var]
+                            elif r_var in param_names or r_var in seen_globals:
+                                loop_read_deps.add(r_var)
+                        
+                        loop_deps = loop_read_deps | dependencies_of(stmt.condition) | get_active_control_deps()
+                        walk_body(stmt.body)
+                        for v in loop_mutated:
+                            dependencies[v] = dependencies.get(v, set()) | loop_deps
+                        
+                        control_deps.pop()
+                    elif isinstance(stmt, ScopeStmt):
+                        walk_body(stmt.spawn_body)
+                        walk_body(stmt.join_body)
+                        walk_body(stmt.result_body)
+
+            walk_body(r.body)
+            
+            for d in r.depends_specs:
+                target = d.target
+                actual_sources = dependencies.get(target, set())
+                declared_sources = {s for s in d.sources if s != "+"}
+                if "+" in d.sources:
+                    declared_sources.add(target)
+                
+                extra_sources = actual_sources - declared_sources
+                extra_sources = {s for s in extra_sources if s in param_names or s in seen_globals}
+                if extra_sources:
+                    raise TypeCheckError(f"{d.pos.text()}: dependency violation: target '{target}' depends on undeclared source(s): {', '.join(sorted(extra_sources))}")
 
     def abort_names(self, r):
         return {clause.error_name for clause in r.aborts}
@@ -953,6 +1186,8 @@ class Verifier:
             for a in e.args:
                 if a.name in seen: raise TypeCheckError(f"{a.pos.text()}: duplicate record literal field: {a.name}")
                 seen.add(a.name)
+                if a.name not in rec.fields:
+                    raise TypeCheckError(f"{a.pos.text()}: unknown field for {e.type_name}: {a.name}")
                 field_type = self.parse_type_ref(rec.fields[a.name], ctx)
                 self.assign(self.infer(a.expr, env, ctx, allow_result, result_type), field_type, ctx, a.pos)
                 self.check_range_bounds(a.expr, field_type, ctx, a.pos)

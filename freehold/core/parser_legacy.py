@@ -160,7 +160,10 @@ class AstBuilder:
                 def collect_sources(node):
                     if isinstance(node, Tree):
                         if node.data == "dependency_source":
-                            sources.append(str(node.children[0]))
+                            if node.children:
+                                sources.append(str(node.children[0]))
+                            else:
+                                sources.append("+")
                         else:
                             for c in node.children:
                                 collect_sources(c)

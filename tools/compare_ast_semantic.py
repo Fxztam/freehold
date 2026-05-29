@@ -288,7 +288,7 @@ def normalize_dhparser_decl(node: dict[str, Any]) -> dict[str, Any]:
             "kind": kind,
             "name": nth_ident(node, 0),
             "params": [normalize_dhparser_param(param) for param in children(first_child(node, "param_list"), "param")],
-            "requires": [dh_expr(expr) for req in children(first_child(node, "contract_block"), "requires_clause") for expr in children(first_child(req, "expr_list"), "expr")],
+            "requires": [dh_constraint(constraint) for req in children(first_child(node, "contract_block"), "requires_clause") for constraint in children(first_child(req, "constraint_list"), "constraint")],
             "aborts": [normalize_dhparser_abort_clause(clause) for clause in children(first_child(node, "contract_block"), "aborts_clause")],
             "ensures": [dh_expr(expr) for req in children(first_child(node, "contract_block"), "ensures_clause") for expr in children(first_child(req, "expr_list"), "expr")],
             "body": [normalize_dhparser_stmt(stmt) for stmt in children(node, "stmt")],
@@ -394,6 +394,23 @@ def dh_return_value(node: dict[str, Any] | None) -> dict[str, Any]:
     if node_name(first) == ":Text" and text_of(first) == "error":
         return {"kind": "ErrorExpr", "name": nth_ident(node, 0)}
     return dh_expr(first_child(node, "expr") or first_named(node))
+
+
+def dh_constraint(node: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(node, dict):
+        return {"kind": "MissingExpr"}
+    expr_child = first_child(node, "expr")
+    if expr_child:
+        return dh_expr(expr_child)
+    is_keyword = any(node_name(child) == ":Text" and text_of(child).strip() == "is" for child in children(node))
+    if is_keyword:
+        return {
+            "kind": "BinaryExpr",
+            "op": "is",
+            "left": ident_expr(nth_ident(node, 0)),
+            "right": ident_expr(nth_ident(node, 1)),
+        }
+    return {"kind": "UnknownConstraint"}
 
 
 def dh_expr(node: dict[str, Any] | None) -> dict[str, Any]:

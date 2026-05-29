@@ -2,6 +2,13 @@
 
 ## 2026-05-29
 
+### AST-Reconciliation & Conformance Completion
+
+- **AST-Shape-Synchronisation:** In `tools/compare_ast_shape.py` wurde die Traversierung von Contract-Clauses korrigiert, um korrekt `constraint_list/constraint`-Knoten anstelle von `expr_list/expr` zu verwenden.
+- **Semantische AST-Synchronisation:** In `tools/compare_ast_semantic.py` wurde die Normalisierung um einen spezialisierten `dh_constraint`-Handler erweitert, um binäre `is`-Bedingungen in Verträgen (z. B. `x is Integer`) korrekt abzubilden.
+- **Volle Conformance:** Erreichen von 100% Parität bei semantischen ASTs (295/295 Fälle) und Status-Matches (340/340) in `verify-parser-conformance.cmd`.
+- **Baseline-Updates:** Die FH-IR-Baselines (`artifacts/fhir/old_retail_cli_demo_v11f.json` und `artifacts/fhir-v1/old_retail_cli_demo_v11f.json`) wurden mit den durch neue Härtungen generierten Bereichsprüfungen aktualisiert.
+
 ### V3 Flow Contracts (Global and Depends Annotations)
 
 - **Syntax & Parsing Implementation:** Expanded Lark grammar (`freehold.lark`) with `global` and `depends` clauses in the routine contract block. Structured `global_spec` with mode `GLOBAL_MODE.2` (`Input`, `Output`, `In_Out`) using high priority to resolve lexer conflicts. Added `GlobalSpec` and `DependsSpec` AST representations to `ast.py` and implemented parsing routines in `parser_legacy.py`.

@@ -414,14 +414,34 @@ func (p *Parser) parseAbortClause() ast.AbortClause {
 }
 
 func (p *Parser) parseContractExprList() []ast.Expr {
-	exprs := []ast.Expr{p.parseExpr()}
+	exprs := []ast.Expr{p.parseContractExpr()}
 
 	for p.at(token.Comma) {
 		p.expect(token.Comma)
-		exprs = append(exprs, p.parseExpr())
+		exprs = append(exprs, p.parseContractExpr())
 	}
 
 	return exprs
+}
+
+func (p *Parser) parseContractExpr() ast.Expr {
+	if (p.peek().Kind == token.Ident || p.peek().Kind == token.Result) && p.peekAhead(1).Kind == token.Is && p.peekAhead(2).Kind == token.Ident {
+		leftTok := p.parseNameToken()
+		isTok := p.expect(token.Is)
+		rightTok := p.parseNameToken()
+
+		left := ast.IdentifierExpr{Kind: "IdentifierExpr", Pos: leftTok.Pos, Name: leftTok.Lexeme}
+		right := ast.IdentifierExpr{Kind: "IdentifierExpr", Pos: rightTok.Pos, Name: rightTok.Lexeme}
+
+		return ast.BinaryExpr{
+			Kind:  "BinaryExpr",
+			Pos:   isTok.Pos,
+			Op:    "is",
+			Left:  left,
+			Right: right,
+		}
+	}
+	return p.parseExpr()
 }
 
 func (p *Parser) parseStatements(stop func() bool) []ast.Stmt {

@@ -343,7 +343,7 @@ def normalize_dhparser_decl(node: dict[str, Any]) -> dict[str, Any]:
             "kind": kind,
             "name": nth_ident(node, 0),
             "params": [normalize_dhparser_param(param) for param in children(first_child(node, "param_list"), "param")],
-            "requires": [canonical_expr_text(text_of(expr)) for req in children(first_child(node, "contract_block"), "requires_clause") for expr in children(first_child(req, "expr_list"), "expr")],
+            "requires": [canonical_expr_text(text_of(constraint)) for req in children(first_child(node, "contract_block"), "requires_clause") for constraint in children(first_child(req, "constraint_list"), "constraint")],
             "aborts": [normalize_dhparser_abort_clause(clause) for clause in children(first_child(node, "contract_block"), "aborts_clause")],
             "ensures": [canonical_expr_text(text_of(expr)) for req in children(first_child(node, "contract_block"), "ensures_clause") for expr in children(first_child(req, "expr_list"), "expr")],
             "body": [normalize_dhparser_stmt(stmt) for stmt in children(node, "stmt")],
