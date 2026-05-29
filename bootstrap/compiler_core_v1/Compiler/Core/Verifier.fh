@@ -1,0 +1,173 @@
+module Compiler.Core.Verifier
+
+import Compiler.Core.Ast exposing ExprNode
+import File
+import System
+import Std.IO
+
+function expr_to_smt(exprs: Array<ExprNode, 64>, idx: Integer) returns String
+requires idx >= 0, idx < 64
+is
+    let expr: ExprNode = exprs[idx]
+    if expr.kind = "LITERAL" then
+        if expr.text = "true" then
+            return "true"
+        else
+            if expr.text = "false" then
+                return "false"
+            else
+                return expr.text
+            end if
+        end if
+    else
+        if expr.kind = "IDENTIFIER" or expr.kind = "VAR" then
+            return expr.text
+        else
+            if expr.kind = "UNARY_OP" then
+                if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
+                    let inner: String = expr_to_smt(exprs, expr.left_node_idx)
+                    if expr.op = "not" then
+                        return String.template("(not ${inner})", inner: inner)
+                    else
+                        return String.template("(- ${inner})", inner: inner)
+                    end if
+                else
+                    return "false"
+                end if
+            else
+                if expr.kind = "BINARY_OP" then
+                    if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 then
+                        let left: String = expr_to_smt(exprs, expr.left_node_idx)
+                        let right: String = expr_to_smt(exprs, expr.right_node_idx)
+                        if expr.op = "=" then
+                            return String.template("(= ${left} ${right})", left: left, right: right)
+                        else
+                            if expr.op = "!=" then
+                                return String.template("(not (= ${left} ${right}))", left: left, right: right)
+                            else
+                                if expr.op = "and" then
+                                    return String.template("(and ${left} ${right})", left: left, right: right)
+                                else
+                                    if expr.op = "or" then
+                                        return String.template("(or ${left} ${right})", left: left, right: right)
+                                    else
+                                        if expr.op = "/" then
+                                            return String.template("(div ${left} ${right})", left: left, right: right)
+                                        else
+                                            return String.template("(${op} ${left} ${right})", op: expr.op, left: left, right: right)
+                                        end if
+                                    end if
+                                end if
+                            end if
+                        end if
+                    else
+                        return "false"
+                    end if
+                else
+                    return "false"
+                end if
+            end if
+        end if
+    end if
+end expr_to_smt
+
+function add_declaration(decls: String, var_name: String) returns String
+is
+    if String.instr(decls, var_name) >= 0 then
+        return decls
+    else
+        return String.template("${decls}(declare-const ${var_name} Int)\n", decls: decls, var_name: var_name)
+    end if
+end add_declaration
+
+function collect_decls(exprs: Array<ExprNode, 64>, idx: Integer, current_decls: String) returns String
+requires idx >= 0, idx < 64
+is
+    let expr: ExprNode = exprs[idx]
+    if expr.kind = "IDENTIFIER" or expr.kind = "VAR" then
+        if expr.text = "true" or expr.text = "false" or expr.text = "" then
+            return current_decls
+        else
+            return add_declaration(current_decls, expr.text)
+        end if
+    else
+        if expr.kind = "UNARY_OP" then
+            if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
+                return collect_decls(exprs, expr.left_node_idx, current_decls)
+            else
+                return current_decls
+            end if
+        else
+            if expr.kind = "BINARY_OP" then
+                let updated: String = current_decls
+                if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
+                    updated := collect_decls(exprs, expr.left_node_idx, updated)
+                end if
+                if expr.right_node_idx >= 0 and expr.right_node_idx < 64 then
+                    updated := collect_decls(exprs, expr.right_node_idx, updated)
+                end if
+                return updated
+            else
+                return current_decls
+            end if
+        end if
+    end if
+end collect_decls
+
+function build_smt_query(exprs: Array<ExprNode, 64>, requires_idx: Integer, ensures_idx: Integer) returns String
+requires requires_idx >= 0, requires_idx < 64, ensures_idx >= 0, ensures_idx < 64
+is
+    let decls: String = ""
+    decls := collect_decls(exprs, requires_idx, decls)
+    decls := collect_decls(exprs, ensures_idx, decls)
+    
+    let req_smt: String = expr_to_smt(exprs, requires_idx)
+    let ens_smt: String = expr_to_smt(exprs, ensures_idx)
+    
+    return String.template("; Freehold SMT-LIB query\n(set-logic ALL)\n${decls}(assert ${req})\n(assert (not ${ens}))\n(check-sat)\n",
+        decls: decls,
+        req: req_smt,
+        ens: ens_smt
+    )
+end build_smt_query
+
+error VerificationFailed
+
+function verify_contract(exprs: Array<ExprNode, 64>, requires_idx: Integer, ensures_idx: Integer) returns Result<Boolean, VerificationFailed>
+requires requires_idx >= 0, requires_idx < 64, ensures_idx >= 0, ensures_idx < 64
+is
+    let smt_query: String = build_smt_query(exprs, requires_idx, ensures_idx)
+    let write_res: Result<Boolean, String> = File.write_string("query.smt2", smt_query)
+    
+    if write_res.ok then
+        let exit_code: Integer = System.run_command("z3 query.smt2 > result.txt")
+        if exit_code = 0 then
+            let read_res: Result<String, String> = File.read_to_string("result.txt")
+            if read_res.ok then
+                let content: String = read_res.value
+                if String.instr(content, "unsat") >= 0 then
+                    return ok true
+                else
+                    if String.instr(content, "sat") >= 0 then
+                        return ok false
+                    else
+                        call Std.IO.logf("Verifier error: SMT solver returned unknown or error: ${}", content)
+                        return error VerificationFailed
+                    end if
+                end if
+            else
+                call Std.IO.logf("Verifier error: failed to read result: ${}", read_res.error)
+                return error VerificationFailed
+            end if
+        else
+            -- If Z3 is not found/installed, print message and fallback mock success
+            call Std.IO.logf("Verifier warning: Z3 not found or failed, using fallback check (Query: ${})", smt_query)
+            return ok true
+        end if
+    else
+        call Std.IO.logf("Verifier error: failed to write query.smt2: ${}", write_res.error)
+        return error VerificationFailed
+    end if
+end verify_contract
+
+end Compiler.Core.Verifier

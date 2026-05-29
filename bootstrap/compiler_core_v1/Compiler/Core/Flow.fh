@@ -1,0 +1,62 @@
+module Compiler.Core.Flow
+
+import Compiler.Core.Ast exposing StmtNode
+
+type FlowSummary is record
+    normal_return_possible: Boolean
+    guaranteed_exit: Boolean
+    has_aborts: Boolean
+end record
+
+function analyze_stmt_flow(stmt: StmtNode, stmts: Array<StmtNode, 64>, start_idx: Integer, len: Integer) returns FlowSummary
+requires start_idx >= 0, len >= 0
+ensures result.normal_return_possible = true or result.normal_return_possible = false
+is
+    let i: Integer = start_idx
+    i := 0
+    let normal_possible: Boolean = true
+    let exit_guar: Boolean = false
+    let has_ab: Boolean = false
+
+    while i < len invariant i >= 0 and i <= len do
+        let s_idx: Integer = start_idx + i
+        if s_idx >= 0 and s_idx < 64 then
+            let s: StmtNode = stmts[s_idx]
+            if s.kind = "RETURN" then
+                normal_possible := true
+                exit_guar := true
+                i := len
+            else
+                if s.kind = "ABORT" then
+                    normal_possible := false
+                    exit_guar := true
+                    has_ab := true
+                    i := len
+                else
+                    if s.kind = "IF" then
+                        let then_flow: FlowSummary = analyze_stmt_flow(s, stmts, s.then_block_start_idx, s.then_block_len)
+                        let else_flow: FlowSummary = analyze_stmt_flow(s, stmts, s.else_block_start_idx, s.else_block_len)
+                        
+                        if then_flow.guaranteed_exit and else_flow.guaranteed_exit then
+                            exit_guar := true
+                            normal_possible := then_flow.normal_return_possible or else_flow.normal_return_possible
+                            i := len
+                        end if
+                        if then_flow.has_aborts or else_flow.has_aborts then
+                            has_ab := true
+                        end if
+                    end if
+                end if
+            end if
+        end if
+        i := i + 1
+    end while
+
+    return FlowSummary {
+        normal_return_possible: normal_possible,
+        guaranteed_exit: exit_guar,
+        has_aborts: has_ab
+    }
+end analyze_stmt_flow
+
+end Compiler.Core.Flow
