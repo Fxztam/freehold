@@ -253,6 +253,21 @@ This document tracks the milestones, architecture decisions, and implementation 
 - **Transformations- und Hex-Serialisierungs-Härtung (Compiler.Core.Transform.fh):** `int_to_hex4` und `int_to_hex2` wurden durch explizite Wertbegrenzungen (`temp <= 65535` bzw. `temp <= 255`) mathematisch gegen Out-of-Bounds-Zugriffe auf die Hex-Ziffern-Tabelle abgesichert.
 - **Verifikations-Gate:** Der Freehold-Verifikator verifiziert alle Dateien (`Ast.fh`, `Parser.fh`, `Resolve.fh`, `Transform.fh`, `Flow.fh`) fehlerfrei mit jeweils 0 verbleibenden ungelösten Proof Obligations.
 
+## Stabilisierung der Compiler-Grammatik & Conformance
+
+**Completed on:** 2026-05-29
+
+> [!IMPORTANT]
+> **Grammatik & Parser Source of Truth:**
+> - `freehold/grammar/freehold.lark` ist die exakt auszuführende Parser-Grammatik (Lark) und die primäre Source of Truth für den Parser.
+> - `freehold/core/grammar_inline.py` (enthält `FREEHOLD_GRAMMAR`) enthält die exakt gespiegelte Inline-Variante der Lark-Grammatik und muss bei jeder Grammatikänderung absolut synchron gehalten werden.
+> - Die verschiedenen EBNF-Dateien in `freehold/grammar/freehold*.ebnf` dienen primär der Spezifikation, Dokumentation oder Visualisierung (z. B. Syntax-Highlighting, Railroad-Diagramme) und dürfen **nicht** mit der aktiven Lark-Grammatik verwechselt werden.
+
+- **Stabilisierung der Grammatik (Array<T>):** Behebung von Shift/Reduce-Konflikten im Lark-Parser durch Überführung der `array_type` Regel auf einen nicht-schlüsselwortartigen Präfix (`NAME` statt `"Array"`). Dies ermöglicht die problemlose Deklaration von dynamischen Arrays (`Array<T>`) ohne Größenparameter in Let-Statements und Record-Feldern.
+- **Go-Frontend & Verifier-Synchronisierung:** Anpassung von `arrayElementType` in `analyzer.go` (Go) und `require_type_or_record` in `verifier.py` (Python) auf die geänderten syntaktischen Eigenschaften der generic Arrays.
+- **AST-Builder Integration:** Erweiterung von `parser_legacy.py` zum Auslesen des neuen, optionalen ersten `NAME`-Kindes in `array_type`.
+- **Conformance:** Erfolgreiche Ausführung der kompletten Conformance-Gates (`verify-parser-conformance.cmd`), alle 22 Schritte bestanden.
+
 
 
 

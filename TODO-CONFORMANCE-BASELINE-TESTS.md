@@ -1,5 +1,11 @@
 # TODO Conformance Baseline Tests
 
+> [!IMPORTANT]
+> **Grammatik & Parser Source of Truth:**
+> - `freehold/grammar/freehold.lark` ist die exakt auszuführende Parser-Grammatik (Lark) und die primäre Source of Truth für den Parser.
+> - `freehold/core/grammar_inline.py` (enthält `FREEHOLD_GRAMMAR`) enthält die exakt gespiegelte Inline-Variante der Lark-Grammatik und muss bei jeder Grammatikänderung absolut synchron gehalten werden.
+> - Die verschiedenen EBNF-Dateien in `freehold/grammar/freehold*.ebnf` dienen primär der Spezifikation, Dokumentation oder Visualisierung (z. B. Syntax-Highlighting, Railroad-Diagramme) und dürfen **nicht** mit der aktiven Lark-Grammatik verwechselt werden.
+
 ## Ziel
 Die Conformance-Baseline darf nicht beiläufig im normalen Verify-Lauf ueberschrieben werden.
 Baseline-Updates sind ein bewusster, reviewter Vorgang.

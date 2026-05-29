@@ -1,5 +1,11 @@
 # Chanche Semantik Todo
 
+> [!IMPORTANT]
+> **Grammatik & Parser Source of Truth:**
+> - `freehold/grammar/freehold.lark` ist die exakt auszuführende Parser-Grammatik (Lark) und die primäre Source of Truth für den Parser.
+> - `freehold/core/grammar_inline.py` (enthält `FREEHOLD_GRAMMAR`) enthält die exakt gespiegelte Inline-Variante der Lark-Grammatik und muss bei jeder Grammatikänderung absolut synchron gehalten werden.
+> - Die verschiedenen EBNF-Dateien in `freehold/grammar/freehold*.ebnf` dienen primär der Spezifikation, Dokumentation oder Visualisierung (z. B. Syntax-Highlighting, Railroad-Diagramme) und dürfen **nicht** mit der aktiven Lark-Grammatik verwechselt werden.
+
 Dieses Dokument beschreibt den Prozess, mit dem der String-Templates-Change umgesetzt wurde. Es dient als schneller Einstieg fuer spaetere semantische Sprach-Changes, besonders wenn Grammatik, Parser, Diagnostics, Tests und Conformance gemeinsam bewegt werden muessen.
 
 ## Zielbild

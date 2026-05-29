@@ -1193,6 +1193,12 @@
 
 ## Stabilized Compiler Type Checking & Parser Conformance
 
+> [!IMPORTANT]
+> **Grammar & Parser Source of Truth:**
+> - `freehold/grammar/freehold.lark` is the executable Lark parser grammar and is the primary source of truth for the parser.
+> - `freehold/core/grammar_inline.py` (which defines `FREEHOLD_GRAMMAR`) contains the inline version of the Lark grammar and must always be kept in absolute synchronization.
+> - The various EBNF files under `freehold/grammar/freehold*.ebnf` are design specifications, documentation, or visualization aids, and must **not** be confused with the active Lark/inline grammar definition.
+
 - Fixed the verifier logic (`freehold/core/verifier.py`) to allow single-argument generic `Array<T>` declarations, supporting dynamic array types used in gRPC definitions.
 - Updated the Go semantic analyzer (`go-frontend/internal/semantic/analyzer.go`'s `arrayElementType`) to correctly parse `Array<T>` element types when no explicit size argument is supplied.
 - Resolved the Lark parser shift/reduce/unexpected token conflicts by refactoring `array_type` inside `freehold/grammar/freehold.lark` and `freehold/core/grammar_inline.py` to use a non-keyword `NAME` prefix instead of the literal `"Array"`, resolving the parsing of size-less arrays in record fields and let statements.
