@@ -96,3 +96,23 @@ This document tracks the milestones, architecture decisions, and implementation 
 - **Unescaped Strings:** Handled escaped quotes in string literals (`strconv.Unquote`) to yield identical AST values.
 - **Verified Parity Gate:** Generated stage1 and stage2 compile-core IR files, proving byte-for-byte identical output under SHA256 verification:
   `C2C65717B98E22B030FEA4244743642C805B04CD5E647521DDEA851BEACD1A94`.
+
+## Datei-I/O und CLI-Argumente (System & File Integration)
+
+**Completed on:** 2026-05-29
+
+- **Interpreter und Code-Generator-Erweiterung:**
+  - Implementierung von `System.args` im Go-Code-Generator (`go_codegen.py`) und im Python-Interpreter (`interpreter.py`), um Host-Kommandozeilenparameter an Freehold-Programme durchzureichen.
+  - Implementierung von `File.read_to_string` zur dynamischen Ingestion von Quelldateien direkt aus dem Dateisystem.
+- **Lexer & Parser Dateizugriff:**
+  - Umstellung des Lexers (`Compiler.Core.Lexer.fh`) von statischen Fixtures auf direkte Pfade und das Auslesen der Quellcodedateien über das neue `File` Modul.
+  - Fehlerbehandlung in `verifier.py` dahingehend entspannt, dass `Result<T, String>` (mit String als Fehlertyp) erlaubt ist, um einfache I/O-Fehlerrückgaben zu unterstützen.
+- **CLI Compiler-Driver (Option A):**
+  - Erweiterung der `App/Main.fh` um die Prüfung von `System.args()`.
+  - Wenn ein Pfad übergeben wird, prozessiert die Stage-3 Binary (`stage3_compiler_core_v1.exe`) diese Datei dynamisch; andernfalls läuft der integrierte Selbsttest mit Fixtures ab.
+- **Generische AST-Knoten (Option B Vorbereitung):**
+  - Definition von `ExprNode` und `StmtNode` sowie den zugehörigen Builder-Methoden in `Compiler.Core.Ast.fh` als Fundament für komplexe Ausdrücke und Kontrollflussstrukturen.
+- **Verträge & Verifikation:**
+  - Anpassung der Build-Umgebung (`verify_stage3_compiler_core_contracts.py`), um Fixtures in das Build-Verzeichnis zu kopieren.
+  - Aktualisierung der Manifest-Dateien (`manifest.json` auf 13 Dateien) und des erwarteten Outputs.
+  - Die Stage-3 Compiler-Kern-Pipeline (`verify-stage3-compiler-core-v1.cmd`) läuft vollständig grün durch und matcht die geänderten Goldenen Testergebnisse.
