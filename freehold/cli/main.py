@@ -24,7 +24,7 @@ def cmd_run(args):
     return 0
 
 def cmd_verify(args):
-    verified = verify_file(args.file)
+    verified = verify_file(args.file, prover=args.prover, timeout=args.timeout)
     count = len(getattr(verified, "proof_obligations", []) or [])
     print(f"[OK] verification succeeded: {args.file}")
     print(f"[INFO] proof obligations: {count}")
@@ -304,7 +304,11 @@ def build_parser():
     parser.add_argument("--version", action="store_true", help="Show CLI version/status and exit")
     sub = parser.add_subparsers(dest="command")
     p = sub.add_parser("run", help="Parse, verify, and run a .fh module"); p.add_argument("file"); p.set_defaults(func=cmd_run)
-    p = sub.add_parser("verify", help="Parse and verify a .fh module"); p.add_argument("file"); p.set_defaults(func=cmd_verify)
+    p = sub.add_parser("verify", help="Parse and verify a .fh module")
+    p.add_argument("file")
+    p.add_argument("--prover", default=None, help="SMT solvers to use, comma-separated (e.g. 'z3', 'cvc5', or 'z3,cvc5')")
+    p.add_argument("--timeout", type=int, default=None, help="Solver timeout in seconds")
+    p.set_defaults(func=cmd_verify)
     p = sub.add_parser("ast", help="Print parsed AST"); p.add_argument("file"); p.set_defaults(func=cmd_ast)
     p = sub.add_parser("ir", aliases=["fhir"], help="Export canonical FH-IR JSON (project-wide v1 by default)")
     p.add_argument("file")

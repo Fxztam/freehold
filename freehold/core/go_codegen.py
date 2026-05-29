@@ -1291,6 +1291,10 @@ class GoGenerator:
             self.std_imports.add("runtime")
             return f"func() int64 {{ cmdStr := {self.expr(expr.args[0])}; var cmd *exec.Cmd; if runtime.GOOS == \"windows\" {{ cmd = exec.Command(\"cmd\", \"/c\", cmdStr) }} else {{ cmd = exec.Command(\"sh\", \"-c\", cmdStr) }}; err := cmd.Run(); if err != nil {{ if exitError, ok := err.(*exec.ExitError); ok {{ return int64(exitError.ExitCode()) }}; return -1 }}; return 0 }}()"
 
+        if resolved_name == "System.get_env":
+            self.std_imports.add("os")
+            return f"os.Getenv({self.expr(expr.args[0])})"
+
         if resolved_name == "File.read_to_string":
             self.std_imports.add("os")
             res_type = ResultTypeName(TypeName("String"), "String")

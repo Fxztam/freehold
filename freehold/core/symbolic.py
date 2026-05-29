@@ -232,33 +232,53 @@ def symbolic_obligations(vp: VerifiedProgram) -> list[dict[str, str]]:
                 })
     return obs
 
-def solve_smt_query(smt_query: str) -> str:
-    try:
-        import z3
-        s = z3.Solver()
-        s.from_string(smt_query)
-        res = s.check()
-        if res == z3.unsat:
-            return "unsat"
-        elif res == z3.sat:
-            return "sat"
-        else:
-            return "unknown"
-    except (ImportError, Exception):
-        pass
-
-    import shutil
+def solve_smt_query(smt_query: str, prover: str | None = None, timeout: int | None = None) -> str:
     import os
+    import shutil
     import tempfile
     import subprocess
 
-    z3_bin = shutil.which("z3")
-    if z3_bin:
+    # 1. Parse provers list (from argument, or FREEHOLD_PROVER, default to "z3")
+    prover_str = prover or os.environ.get("FREEHOLD_PROVER", "z3")
+    provers = [p.strip().lower() for p in prover_str.split(",") if p.strip()]
+    if not provers:
+        provers = ["z3"]
+
+    # 2. Parse timeout (from argument, or FREEHOLD_TIMEOUT, default to 2)
+    if timeout is not None:
+        timeout_sec = timeout
+    else:
+        try:
+            timeout_sec = int(os.environ.get("FREEHOLD_TIMEOUT", "2"))
+        except ValueError:
+            timeout_sec = 2
+
+    # 3. Solver implementations
+    def run_z3_api(query_str: str) -> str | None:
+        try:
+            import z3
+            s = z3.Solver()
+            s.set("timeout", timeout_sec * 1000)
+            s.from_string(query_str)
+            res = s.check()
+            if res == z3.unsat:
+                return "unsat"
+            elif res == z3.sat:
+                return "sat"
+            else:
+                return "unknown"
+        except (ImportError, Exception):
+            return None
+
+    def run_cmd_solver(binary_name: str, query_str: str) -> str:
+        bin_path = shutil.which(binary_name)
+        if not bin_path:
+            return "unknown"
         fd, path = tempfile.mkstemp(suffix=".smt2")
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as tmp:
-                tmp.write(smt_query)
-            res = subprocess.run([z3_bin, path], capture_output=True, text=True, timeout=2)
+                tmp.write(query_str)
+            res = subprocess.run([bin_path, path], capture_output=True, text=True, timeout=timeout_sec)
             output = res.stdout.strip()
             if "unsat" in output:
                 return "unsat"
@@ -273,4 +293,38 @@ def solve_smt_query(smt_query: str) -> str:
                 os.remove(path)
             except OSError:
                 pass
+
+    # 4. Sequential search over configured provers
+    results = []
+    for p in provers:
+        if p == "z3":
+            api_res = run_z3_api(smt_query)
+            if api_res == "unsat":
+                return "unsat"
+            if api_res is not None:
+                results.append(api_res)
+                continue
+            cmd_res = run_cmd_solver("z3", smt_query)
+            if cmd_res == "unsat":
+                return "unsat"
+            results.append(cmd_res)
+        elif p == "cvc5":
+            cmd_res = run_cmd_solver("cvc5", smt_query)
+            if cmd_res == "unsat":
+                return "unsat"
+            results.append(cmd_res)
+        elif p == "alt-ergo":
+            cmd_res = run_cmd_solver("alt-ergo", smt_query)
+            if cmd_res == "unsat":
+                return "unsat"
+            results.append(cmd_res)
+        else:
+            cmd_res = run_cmd_solver(p, smt_query)
+            if cmd_res == "unsat":
+                return "unsat"
+            results.append(cmd_res)
+
+    # 5. Determine final verdict if no solver proved unsat
+    if "sat" in results:
+        return "sat"
     return "unknown"

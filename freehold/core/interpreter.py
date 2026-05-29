@@ -182,6 +182,9 @@ class Interpreter:
                     return res.returncode
                 except Exception:
                     return -1
+            if e.name == "System.get_env" or (e.name == "get_env" and "get_env" not in self.routines):
+                import os
+                return os.environ.get(args[0], "")
             if e.name == "File.read_to_string" or (e.name == "read_to_string" and "read_to_string" not in self.routines):
                 path = args[0]
                 try:

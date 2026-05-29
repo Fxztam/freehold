@@ -20,11 +20,13 @@ class ResolvedModule:
 
 
 class ModuleResolver:
-    def __init__(self, root: str | Path | None = None, runtime_modules: dict[str, set[str]] | None = None):
+    def __init__(self, root: str | Path | None = None, runtime_modules: dict[str, set[str]] | None = None, prover: str | None = None, timeout: int | None = None):
         self.root = Path(root) if root is not None else None
         self.runtime_modules = runtime_modules or {}
         self.resolved: dict[str, ResolvedModule] = {}
         self.entry: ResolvedModule | None = None
+        self.prover = prover
+        self.timeout = timeout
 
     def module_path(self, module_name: str) -> Path:
         if self.root is None:
@@ -94,7 +96,7 @@ class ModuleResolver:
             imported = self.resolved.get(import_decl.module_name)
             if imported is not None and imported.verified is not None:
                 imported_modules[import_decl.module_name] = imported.verified
-        return verify_program(resolved.ast, imported_modules)
+        return verify_program(resolved.ast, imported_modules, prover=self.prover, timeout=self.timeout)
 
     def _check_runtime_exposing(self, import_decl) -> None:
         if not import_decl.exposing:

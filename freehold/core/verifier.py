@@ -37,7 +37,7 @@ class VerifiedProgram:
     flow_summaries: dict[str, RoutineFlowSummary]
 
 class Verifier:
-    def verify(self, program: Program, imported_modules: dict[str, VerifiedProgram] | None = None) -> VerifiedProgram:
+    def verify(self, program: Program, imported_modules: dict[str, VerifiedProgram] | None = None, prover: str | None = None, timeout: int | None = None) -> VerifiedProgram:
         imported_modules = imported_modules or {}
         self.validate_imports(program)
         self.validate_qualified_name(program.module_name, program.pos)
@@ -96,7 +96,7 @@ class Verifier:
         new_obs = symbolic_obligations(vp)
         failed_obs = []
         for ob in new_obs:
-            res = solve_smt_query(ob["smt_query"])
+            res = solve_smt_query(ob["smt_query"], prover=prover, timeout=timeout)
             if res == "sat":
                 failed_obs.append(ob)
         if failed_obs:
@@ -1763,5 +1763,5 @@ class Ctx:
         prefix = f"{self.module_name}."
         return n[len(prefix):] if n.startswith(prefix) else n
 
-def verify_program(program: Program, imported_modules: dict[str, VerifiedProgram] | None = None) -> VerifiedProgram: return Verifier().verify(program, imported_modules)
+def verify_program(program: Program, imported_modules: dict[str, VerifiedProgram] | None = None, prover: str | None = None, timeout: int | None = None) -> VerifiedProgram: return Verifier().verify(program, imported_modules, prover=prover, timeout=timeout)
 def proof_json(vp: VerifiedProgram) -> str: return json.dumps(vp.proof_obligations, indent=2)

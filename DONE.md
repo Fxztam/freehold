@@ -2,6 +2,12 @@
 
 ## 2026-05-29
 
+### Multi-Solver SMT Verification & System Env Language Conformance
+
+- **Environment-Driven Multi-Solver Orchestration:** Added support for executing SMT solvers sequentially (e.g. `"z3,cvc5"`) via `FREEHOLD_PROVER` and configurable timeout limits via `FREEHOLD_TIMEOUT`. Implemented fallback mechanism in the Python verifier and Stage 3 bootstrapped compiler core (`Verifier.fh`).
+- **Stage 3 Verification Hardening:** Fixed AST type resolution and nesting structure of if-else diagnostics in the bootstrapped `Verifier.fh` to match golden error diagnostics.
+- **Language Conformance Testing (v2_3 - 05_system_env):** Introduced the `05_system_env` test module to validate `System.get_env` standard routine. Added a positive multi-file resolution test (`system_get_env_pos.fh`) and negative type/argument count mismatch tests with expected diagnostic errors (`system_get_env_args.err` and `system_get_env_type.err`). All 24 language conformance tests run and pass successfully.
+
 ### AST-Reconciliation & Conformance Completion
 
 - **AST-Shape-Synchronisation:** In `tools/compare_ast_shape.py` wurde die Traversierung von Contract-Clauses korrigiert, um korrekt `constraint_list/constraint`-Knoten anstelle von `expr_list/expr` zu verwenden.

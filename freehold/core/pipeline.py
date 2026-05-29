@@ -18,8 +18,8 @@ def read_source(path: str | Path) -> str:
 def parse_file(path: str | Path) -> Any:
     return parse_source(read_source(path))
 
-def verify_file(path: str | Path) -> Any:
-    return ModuleResolver().verify_entry(path)
+def verify_file(path: str | Path, prover: str | None = None, timeout: int | None = None) -> Any:
+    return ModuleResolver(prover=prover, timeout=timeout).verify_entry(path)
 
 def run_file(path: str | Path) -> Any:
     verified = verify_file(path)

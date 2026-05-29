@@ -133,34 +133,83 @@ end build_smt_query
 
 error VerificationFailed
 
-function verify_contract(exprs: Array<ExprNode, 64>, requires_idx: Integer, ensures_idx: Integer) returns Result<Boolean, VerificationFailed>
-requires requires_idx >= 0, requires_idx < 64, ensures_idx >= 0, ensures_idx < 64
+function run_solvers(smt_query: String) returns Result<Boolean, VerificationFailed>
 is
-    let smt_query: String = build_smt_query(exprs, requires_idx, ensures_idx)
     let write_res: Result<Boolean, String> = File.write_string("query.smt2", smt_query)
-    
     if write_res.ok then
-        let exit_code: Integer = System.run_command("z3 query.smt2 > result.txt")
-        if exit_code = 0 then
-            let read_res: Result<String, String> = File.read_to_string("result.txt")
-            if read_res.ok then
-                let content: String = read_res.value
-                if String.instr(content, "unsat") >= 0 then
-                    return ok true
-                else
-                    if String.instr(content, "sat") >= 0 then
-                        return ok false
+        let provers_env: String = System.get_env("FREEHOLD_PROVER")
+        if provers_env = "" then
+            provers_env := "z3"
+        end if
+        
+        let remaining: String = provers_env
+        let done: Boolean = false
+        let has_run_at_least_one: Boolean = false
+        let is_any_sat: Boolean = false
+        
+        while not done
+            invariant done = true or done = false
+        do
+            let comma_idx: Integer = String.instr(remaining, ",")
+            let current_prover: String = ""
+            if comma_idx >= 0 then
+                current_prover := String.substr(remaining, 0, comma_idx)
+                remaining := String.substr(remaining, comma_idx + 1, String.length(remaining) - (comma_idx + 1))
+            else
+                current_prover := remaining
+                done := true
+            end if
+            
+            let trim_done: Boolean = false
+            while not trim_done
+                invariant trim_done = true or trim_done = false
+            do
+                let len: Integer = String.length(current_prover)
+                if len > 0 then
+                    let first_char: String = String.substr(current_prover, 0, 1)
+                    let last_char: String = String.substr(current_prover, len - 1, 1)
+                    if first_char = " " then
+                        current_prover := String.substr(current_prover, 1, len - 1)
                     else
-                        call Std.IO.logf("Verifier error: SMT solver returned unknown or error: ${}", content)
-                        return error VerificationFailed
+                        if last_char = " " then
+                            current_prover := String.substr(current_prover, 0, len - 1)
+                        else
+                            trim_done := true
+                        end if
+                    end if
+                else
+                    trim_done := true
+                end if
+            end while
+            
+            if current_prover != "" then
+                let cmd: String = String.template("${prover} query.smt2 > result.txt", prover: current_prover)
+                let exit_code: Integer = System.run_command(cmd)
+                if exit_code = 0 then
+                    has_run_at_least_one := true
+                    let read_res: Result<String, String> = File.read_to_string("result.txt")
+                    if read_res.ok then
+                        let content: String = read_res.value
+                        if String.instr(content, "unsat") >= 0 then
+                            return ok true
+                        else
+                            if String.instr(content, "sat") >= 0 then
+                                is_any_sat := true
+                            end if
+                        end if
                     end if
                 end if
+            end if
+        end while
+        
+        if has_run_at_least_one then
+            if is_any_sat then
+                return ok false
             else
-                call Std.IO.logf("Verifier error: failed to read result: ${}", read_res.error)
+                call Std.IO.log("Verifier error: SMT solvers returned unknown or error")
                 return error VerificationFailed
             end if
         else
-            -- If Z3 is not found/installed, print message and fallback mock success
             call Std.IO.logf("Verifier warning: Z3 not found or failed, using fallback check (Query: ${})", smt_query)
             return ok true
         end if
@@ -168,6 +217,13 @@ is
         call Std.IO.logf("Verifier error: failed to write query.smt2: ${}", write_res.error)
         return error VerificationFailed
     end if
+end run_solvers
+
+function verify_contract(exprs: Array<ExprNode, 64>, requires_idx: Integer, ensures_idx: Integer) returns Result<Boolean, VerificationFailed>
+requires requires_idx >= 0, requires_idx < 64, ensures_idx >= 0, ensures_idx < 64
+is
+    let smt_query: String = build_smt_query(exprs, requires_idx, ensures_idx)
+    return run_solvers(smt_query)
 end verify_contract
 
 function build_range_smt_query(
@@ -205,37 +261,7 @@ function verify_subtype_range(
 requires requires_idx >= 0, requires_idx < 64, val_expr_idx >= 0, val_expr_idx < 64
 is
     let smt_query: String = build_range_smt_query(exprs, requires_idx, val_expr_idx, min_val, max_val)
-    let write_res: Result<Boolean, String> = File.write_string("query.smt2", smt_query)
-    
-    if write_res.ok then
-        let exit_code: Integer = System.run_command("z3 query.smt2 > result.txt")
-        if exit_code = 0 then
-            let read_res: Result<String, String> = File.read_to_string("result.txt")
-            if read_res.ok then
-                let content: String = read_res.value
-                if String.instr(content, "unsat") >= 0 then
-                    return ok true
-                else
-                    if String.instr(content, "sat") >= 0 then
-                        return ok false
-                    else
-                        call Std.IO.logf("Verifier error: SMT solver returned unknown or error: ${}", content)
-                        return error VerificationFailed
-                    end if
-                end if
-            else
-                call Std.IO.logf("Verifier error: failed to read result: ${}", read_res.error)
-                return error VerificationFailed
-            end if
-        else
-            -- If Z3 is not found/installed, print message and fallback mock success
-            call Std.IO.logf("Verifier warning: Z3 not found or failed, using fallback check (Query: ${})", smt_query)
-            return ok true
-        end if
-    else
-        call Std.IO.logf("Verifier error: failed to write query.smt2: ${}", write_res.error)
-        return error VerificationFailed
-    end if
+    return run_solvers(smt_query)
 end verify_subtype_range
 
 end Compiler.Core.Verifier
