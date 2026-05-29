@@ -155,6 +155,72 @@ def cmd_go_codegen_project(args):
         print("[INFO] Go executable not emitted: entry module has no Main() routine")
     return 0 if all(file.result.supported for file in files) else 1
 
+def cmd_build_exe(args):
+    import shutil
+    entry_file = Path(args.file)
+    if not entry_file.exists():
+        print(f"[ERROR] Entry file {args.file} does not exist.", file=sys.stderr)
+        return 1
+
+    exe_name = args.executable_name or entry_file.stem
+    out_dir = Path(args.output_dir or "bin")
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    tmp_build_dir = Path(".tmp/build_exe")
+    if tmp_build_dir.exists():
+        shutil.rmtree(tmp_build_dir, ignore_errors=True)
+    tmp_build_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"[INFO] Generating Go project files in temporary directory: {tmp_build_dir}...")
+    files = generate_go_project(str(entry_file))
+    entry_module_name = project_entry_module_name(files, str(entry_file))
+    
+    if not project_has_entry_main(files, entry_module_name):
+        print(f"[ERROR] Entry module {entry_module_name} has no Main() routine.", file=sys.stderr)
+        return 1
+
+    for file in files:
+        out_path = tmp_build_dir / file.output_path
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(file.result.go_source, encoding="utf-8")
+
+    extra_files = generate_go_project_extra_files(files)
+    for file in extra_files:
+        out_path = tmp_build_dir / file.output_path
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(file.content, encoding="utf-8")
+
+    build_files = generate_go_project_build_files(
+        files,
+        executable_name=exe_name,
+        entry_module_name=entry_module_name,
+    )
+    for file in build_files:
+        out_path = tmp_build_dir / file.output_path
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(file.content, encoding="utf-8")
+
+    print("[INFO] Resolving Go dependencies (go mod tidy)...")
+    res_tidy = subprocess.run(["go", "mod", "tidy"], cwd=tmp_build_dir, capture_output=True, text=True)
+    if res_tidy.returncode != 0:
+        print(f"[ERROR] go mod tidy failed:\n{res_tidy.stderr}", file=sys.stderr)
+        return res_tidy.returncode
+
+    print("[INFO] Compiling native binary...")
+    bin_name = f"{exe_name}.exe" if sys.platform == "win32" else exe_name
+    cmd_build = ["go", "build", "-trimpath", "-o", f"bin/{bin_name}", f"./cmd/{exe_name}"]
+    res_build = subprocess.run(cmd_build, cwd=tmp_build_dir, capture_output=True, text=True)
+    if res_build.returncode != 0:
+        print(f"[ERROR] go build failed:\n{res_build.stderr}", file=sys.stderr)
+        return res_build.returncode
+
+    source_bin = tmp_build_dir / "bin" / bin_name
+    dest_bin = out_dir / bin_name
+    shutil.copy2(source_bin, dest_bin)
+
+    print(f"[OK] Successfully built native executable: {dest_bin}")
+    return 0
+
 def project_entry_module_name(files, entry_file: str):
     entry_path = Path(entry_file)
     if not entry_path.is_absolute():
@@ -280,6 +346,11 @@ def build_parser():
     p.add_argument("--emit-executable", action="store_true", help="Emit a cmd/<name>/main.go wrapper and build a native Go executable")
     p.add_argument("--executable-name", default=None, help="Executable base name when --emit-executable is used")
     p.set_defaults(func=cmd_go_codegen_project)
+    p = sub.add_parser("build-exe", help="Compile a Freehold module graph into a native executable")
+    p.add_argument("file")
+    p.add_argument("--output-dir", "-o", default="bin", help="Output directory for the compiled binary")
+    p.add_argument("--executable-name", default=None, help="Executable base name")
+    p.set_defaults(func=cmd_build_exe)
     p = sub.add_parser("test", help="Run regression tests"); p.add_argument("--log", default=None); p.add_argument("--json-summary", default=None); p.add_argument("--no-console", action="store_true"); p.set_defaults(func=cmd_test)
     p = sub.add_parser("ebnf", help="Regenerate generated EBNF")
     p.add_argument("--dialects", action="store_true", help="Also generate Forge, RR/W3C, VS Code plugin, pyebnf, and parse-ebnf EBNF files")
@@ -297,7 +368,7 @@ def main(argv=None):
     parser = build_parser(); args = parser.parse_args(argv)
     if args.version:
         print("Freehold CLI: toolchain frontend")
-        print("Commands: run, verify, test, ebnf, ast, ir/fhir, compare-ir, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project")
+        print("Commands: run, verify, test, ebnf, ast, ir/fhir, compare-ir, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project, build-exe")
         print("FH-IR schemas: fh-ir-v1 (project-wide default), fh-ir-v0 (--module-only)")
         return 0
     if not args.command:

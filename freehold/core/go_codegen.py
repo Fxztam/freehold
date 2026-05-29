@@ -263,10 +263,24 @@ def generate_go_project_build_files(files: list[GoProjectFile], executable_name:
                 content=(
                     "@echo off\n"
                     "setlocal\n"
-                    f"{('go mod tidy\nif errorlevel 1 exit /b %errorlevel%\n') if grpc_required else ''}"
+                    "go mod tidy\n"
+                    "if errorlevel 1 exit /b %errorlevel%\n"
                     "go test ./...\n"
                     "if errorlevel 1 exit /b %errorlevel%\n"
                     f"go build -trimpath -o bin\\{exe_name}.exe .\\cmd\\{exe_name}\n"
+                ),
+            )
+        )
+        build_files.append(
+            GoProjectBuildFile(
+                output_path="build.sh",
+                kind="build_sh",
+                content=(
+                    "#!/bin/bash\n"
+                    "set -e\n"
+                    "go mod tidy\n"
+                    "go test ./...\n"
+                    f"go build -trimpath -o bin/{exe_name} ./cmd/{exe_name}\n"
                 ),
             )
         )
@@ -275,7 +289,14 @@ def generate_go_project_build_files(files: list[GoProjectFile], executable_name:
         GoProjectBuildFile(
             output_path="build.cmd",
             kind="build_cmd",
-            content="@echo off\nsetlocal\n" + ("go mod tidy\nif errorlevel 1 exit /b %errorlevel%\n" if grpc_required else "") + "go test ./...\n",
+            content="@echo off\nsetlocal\ngo mod tidy\nif errorlevel 1 exit /b %errorlevel%\ngo test ./...\n",
+        ),
+    )
+    build_files.append(
+        GoProjectBuildFile(
+            output_path="build.sh",
+            kind="build_sh",
+            content="#!/bin/bash\nset -e\ngo mod tidy\ngo test ./...\n",
         ),
     )
     return build_files
