@@ -91,7 +91,10 @@ class Verifier:
         for r in routines.values(): self.routine(r, ctx, obs)
         self.services(services, records)
         flow_summaries = ControlFlowAnalyzer(routines, program.module_name).analyze_routines()
-        return VerifiedProgram(program, types, records, errors, routines, services, obs, flow_summaries)
+        vp = VerifiedProgram(program, types, records, errors, routines, services, obs, flow_summaries)
+        from freehold.core.symbolic import symbolic_obligations
+        obs.extend(symbolic_obligations(vp))
+        return vp
 
     def validate_proto_fields(self, declaration: RecordTypeDecl) -> dict[str, int]:
         proto_fields: dict[str, int] = {}

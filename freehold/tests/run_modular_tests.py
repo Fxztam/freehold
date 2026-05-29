@@ -121,6 +121,52 @@ end SMTRecordSmoke
     if "result_id" not in obs[0]["obligation"]:
         raise AssertionError(f"record SMT obligation not field-based: {obs[0]['obligation']}")
 
+def run_symbolic_range_smoke() -> None:
+    src = """
+module SMTRangeSmoke
+type Percent is Integer range 0..100
+function set_val(x: Percent) returns Percent
+is
+    let y: Percent = x
+    return y
+end set_val
+end SMTRangeSmoke
+"""
+    ast = parse_source(src)
+    verified = verify_program(ast)
+    obs = symbolic_obligations(verified)
+    # y: Percent = x should generate a range_check obligation for assignment/let binding
+    range_checks = [o for o in obs if o["kind"] == "range_check"]
+    if not range_checks:
+        raise AssertionError("no range check obligations generated")
+    q = range_checks[0]["smt_query"]
+    if ">= x 0" not in q or "<= x 100" not in q:
+        raise AssertionError(f"range bounds missing in SMT query: {q}")
+
+def run_symbolic_abort_smoke() -> None:
+    src = """
+module SMTAbortSmoke
+error NotFound
+function get_val(x: Integer) returns Integer
+aborts NotFound when x = 0
+is
+    if x = 0 then
+        abort NotFound
+    end if
+    return x
+end get_val
+end SMTAbortSmoke
+"""
+    ast = parse_source(src)
+    verified = verify_program(ast)
+    obs = symbolic_obligations(verified)
+    abort_checks = [o for o in obs if o["kind"] == "abort_check"]
+    if not abort_checks:
+        raise AssertionError("no abort check obligations generated")
+    q = abort_checks[0]["smt_query"]
+    if "(= x 0)" not in q:
+        raise AssertionError(f"abort condition missing in SMT query: {q}")
+
 def run_determinism_smoke() -> None:
     src = """
 module DeterminismSmoke
@@ -305,6 +351,8 @@ def meta_tests():
         ("cfg_smt", "cfg loop smoke", run_cfg_loop_smoke),
         ("cfg_smt", "symbolic/smt basic smoke", run_symbolic_basic_smoke),
         ("cfg_smt", "symbolic/smt record smoke", run_symbolic_record_smoke),
+        ("cfg_smt", "symbolic/smt range smoke", run_symbolic_range_smoke),
+        ("cfg_smt", "symbolic/smt abort smoke", run_symbolic_abort_smoke),
         ("determinism", "repeat same program five times", run_determinism_smoke),
         ("recovery", "bad program followed by good program", run_recovery_smoke),
         ("runtime_vs_verifier", "positive consistency", run_runtime_vs_verifier_positive),
