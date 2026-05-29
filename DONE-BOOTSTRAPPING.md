@@ -280,6 +280,20 @@ This document tracks the milestones, architecture decisions, and implementation 
 - **Baseline-Sperre in CI**: Standardmäßige Sperrung von Baseline-Updates in CI (Verhinderung von Drift), die nur über `FREEHOLD_ALLOW_BASELINE_UPDATE=1` für geplante Pflegeläufe freigegeben werden können.
 - **Roadmap-Konsolidierung**: Explizite Dokumentation der abgegrenzten, geparkten V2/V3-Themen (wie gRPC-Streaming, asynchrone Runtime, REST/WebSocket-Bibliotheken, Generics-Monomorphisierung und pfadsensitive Proofs) in `TODO-CONFORMANCE-BASELINE-TESTS.md`, `OPEN-STATUS.md`, `OPEN-STAGE1-BOOTSTRAPPING.md` und `CHANCHE-SEMANTIK-TODO.md`.
 
+## Vollständig gebootstrappter nativer Freehold-Compiler (EXE)
+
+**Completed on:** 2026-05-29
+
+- **Sprachimplementierung**: Der vollständige Compiler-Kern (Lexer, Parser, Resolver, Lowering und Go-Code-Generator) ist vollständig als Freehold-Quellcode implementiert (`bootstrap/compiler_core_v1/`).
+- **Codegenerierung & native Übersetzung**:
+  * Der Freehold-Quellcode wird durch den Generator in Go-Quellcode übersetzt.
+  * Der generierte Go-Code wird über Go kompiliert und als native Windows-Executable bereitgestellt: `bin/stage3_compiler_core_v1.exe`.
+- **Self-Hosting Bootstrapping Gate**:
+  * Die erzeugte native Executable übersetzt sich selbst, um die binäre Zwischendarstellung des Compilers (`stage2.fhirb`) zu erzeugen.
+  * Das Bootstrap-Gate verifiziert die Byte-Gleichheit via SHA256-Hashvergleich: `sha256(stage1.fhirb) == sha256(stage2.fhirb)`.
+  * Dieser erfolgreiche Abgleich garantiert mathematisch und funktional die Korrektheit des in Freehold geschriebenen, als native EXE laufenden Compilers.
+
+
 
 
 

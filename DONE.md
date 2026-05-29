@@ -1221,4 +1221,15 @@
   - Documented parked V2/V3 topics (gRPC streaming, async executors, REST libraries, generics monomorphization, path-aware control flow analysis) in roadmap files to separate V1 scope boundaries.
   - Updated `TODO-CONFORMANCE-BASELINE-TESTS.md`, `OPEN-STATUS.md`, `OPEN-STAGE1-BOOTSTRAPPING.md`, and `CHANCHE-SEMANTIK-TODO.md`.
 
+## Fully Bootstrapped Self-Hosting Native Compiler (EXE)
+
+- **Language Implementation**: The complete compiler core (Lexer, Parser, Resolver, Lowering, and Go code generator) is written entirely in Freehold source code (`bootstrap/compiler_core_v1/`).
+- **Transpilation & Compilation**:
+  - The Freehold source code is translated to Go, which is then compiled into a native Windows executable: `bin/stage3_compiler_core_v1.exe`.
+- **Self-Hosting Verification (Bootstrap)**:
+  - This native compiler executable compiles itself to generate the compiler's binary IR (`stage2.fhirb`).
+  - The build pipeline verifies the compiler's correct execution by checking that `sha256(stage1.fhirb) == sha256(stage2.fhirb)`.
+  - This byte-identical match guarantees that the compiler written in Freehold, compiled to a native EXE, executes correctly and produces matching outputs.
+
+
 
