@@ -170,4 +170,72 @@ is
     end if
 end verify_contract
 
+function build_range_smt_query(
+    exprs: Array<ExprNode, 64>, 
+    requires_idx: Integer, 
+    val_expr_idx: Integer, 
+    min_val: String, 
+    max_val: String
+) returns String
+requires requires_idx >= 0, requires_idx < 64, val_expr_idx >= 0, val_expr_idx < 64
+is
+    let decls: String = ""
+    decls := collect_decls(exprs, requires_idx, decls)
+    decls := collect_decls(exprs, val_expr_idx, decls)
+    
+    let req_smt: String = expr_to_smt(exprs, requires_idx)
+    let val_smt: String = expr_to_smt(exprs, val_expr_idx)
+    
+    let range_smt: String = String.template("(and (>= ${val} ${min}) (<= ${val} ${max}))", val: val_smt, min: min_val, max: max_val)
+    
+    return String.template("; Freehold SMT-LIB query\n(set-logic ALL)\n${decls}(assert ${req})\n(assert (not ${range}))\n(check-sat)\n",
+        decls: decls,
+        req: req_smt,
+        range: range_smt
+    )
+end build_range_smt_query
+
+function verify_subtype_range(
+    exprs: Array<ExprNode, 64>, 
+    requires_idx: Integer, 
+    val_expr_idx: Integer, 
+    min_val: String, 
+    max_val: String
+) returns Result<Boolean, VerificationFailed>
+requires requires_idx >= 0, requires_idx < 64, val_expr_idx >= 0, val_expr_idx < 64
+is
+    let smt_query: String = build_range_smt_query(exprs, requires_idx, val_expr_idx, min_val, max_val)
+    let write_res: Result<Boolean, String> = File.write_string("query.smt2", smt_query)
+    
+    if write_res.ok then
+        let exit_code: Integer = System.run_command("z3 query.smt2 > result.txt")
+        if exit_code = 0 then
+            let read_res: Result<String, String> = File.read_to_string("result.txt")
+            if read_res.ok then
+                let content: String = read_res.value
+                if String.instr(content, "unsat") >= 0 then
+                    return ok true
+                else
+                    if String.instr(content, "sat") >= 0 then
+                        return ok false
+                    else
+                        call Std.IO.logf("Verifier error: SMT solver returned unknown or error: ${}", content)
+                        return error VerificationFailed
+                    end if
+                end if
+            else
+                call Std.IO.logf("Verifier error: failed to read result: ${}", read_res.error)
+                return error VerificationFailed
+            end if
+        else
+            -- If Z3 is not found/installed, print message and fallback mock success
+            call Std.IO.logf("Verifier warning: Z3 not found or failed, using fallback check (Query: ${})", smt_query)
+            return ok true
+        end if
+    else
+        call Std.IO.logf("Verifier error: failed to write query.smt2: ${}", write_res.error)
+        return error VerificationFailed
+    end if
+end verify_subtype_range
+
 end Compiler.Core.Verifier

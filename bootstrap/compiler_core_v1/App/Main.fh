@@ -11,7 +11,7 @@ import Compiler.Core.Resolve exposing ResolveResult, resolve_mini_import_referen
 import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_source_span, make_token, make_token_kind, token_key, token_text
 import Compiler.Core.Transform exposing canonicalize_import_references, normalize_record_literal, wrap_return_stmt, lower_abort_propagation, flatten_nested_call, emit_json_ir, emit_binary_ir
 import Compiler.Core.Codegen exposing emit_module_header
-import Compiler.Core.Verifier exposing verify_contract, VerificationFailed
+import Compiler.Core.Verifier exposing verify_contract, verify_subtype_range, VerificationFailed
 import Compiler.Core.Flow exposing FlowSummary, analyze_stmt_flow
 
 import Std.IO
@@ -655,13 +655,9 @@ is
     let node_ge: ExprNode = make_expr_node(dummy_span, "BINARY_OP", "", "", ">=", 0, 1, "", -1, -1, 0)
     let node_le: ExprNode = make_expr_node(dummy_span, "BINARY_OP", "", "", "<=", 0, 2, "", -1, -1, 0)
     let node_pre_range: ExprNode = make_expr_node(dummy_span, "BINARY_OP", "", "", "and", 3, 4, "", -1, -1, 0)
-    let node_post_range: ExprNode = make_expr_node(dummy_span, "BINARY_OP", "", "", "and", 3, 4, "", -1, -1, 0)
-    let node_50: ExprNode = make_expr_node(dummy_span, "LITERAL", "Integer", "50", "", -1, -1, "", -1, -1, 0)
-    let node_ge_50: ExprNode = make_expr_node(dummy_span, "BINARY_OP", "", "", ">=", 0, 7, "", -1, -1, 0)
-    let node_post_fail: ExprNode = make_expr_node(dummy_span, "BINARY_OP", "", "", "and", 8, 4, "", -1, -1, 0)
 
     let range_exprs: Array<ExprNode, 64> = [
-        node_p, node_min, node_max, node_ge, node_le, node_pre_range, node_post_range, node_50, node_ge_50, node_post_fail,
+        node_p, node_min, node_max, node_ge, node_le, node_pre_range, node_0, node_0, node_0, node_0,
         node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0,
         node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0,
         node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0, node_0,
@@ -670,14 +666,14 @@ is
         node_0, node_0, node_0, node_0
     ]
 
-    let range_ver_res: Result<Boolean, VerificationFailed> = verify_contract(range_exprs, 5, 6)
+    let range_ver_res: Result<Boolean, VerificationFailed> = verify_subtype_range(range_exprs, 5, 0, "0", "100")
     if range_ver_res.ok then
         call Std.IO.logf("verifier.subtype_range.valid = ${}", range_ver_res.value)
     else
         call Std.IO.logf("verifier.subtype_range.valid = VerificationFailed")
     end if
 
-    let range_ver_fail_res: Result<Boolean, VerificationFailed> = verify_contract(range_exprs, 5, 9)
+    let range_ver_fail_res: Result<Boolean, VerificationFailed> = verify_subtype_range(range_exprs, 5, 0, "50", "100")
     if range_ver_fail_res.ok then
         call Std.IO.logf("verifier.subtype_range.invalid = ${}", range_ver_fail_res.value)
     else
