@@ -24,6 +24,8 @@ from freehold.core.ast import (
     FieldAccessExpr,
     FieldAssignStmt,
     IfStmt,
+    ExistsExpr,
+    ForAllExpr,
     ImportDecl,
     IndexedFieldAccessExpr,
     IndexExpr,
@@ -1195,6 +1197,24 @@ class GoGenerator:
             base = self.contract_bindings.get(expr.name, go_local_name(expr.name))
             indexed = f"{base}[{self.expr(expr.index)}]"
             return ".".join([indexed] + [go_exported_name(field) for field in expr.fields])
+        if isinstance(expr, ForAllExpr):
+            var_name = go_local_name(expr.var_name)
+            lower = self.expr(expr.lower)
+            upper = self.expr(expr.upper)
+            previous_local_types = dict(self.current_local_types)
+            self.current_local_types[expr.var_name] = TypeName("Integer")
+            body = self.expr(expr.expr)
+            self.current_local_types = previous_local_types
+            return f"func() bool {{ for {var_name} := int64({lower}); {var_name} <= int64({upper}); {var_name}++ {{ if !({body}) {{ return false }} }}; return true }}()"
+        if isinstance(expr, ExistsExpr):
+            var_name = go_local_name(expr.var_name)
+            lower = self.expr(expr.lower)
+            upper = self.expr(expr.upper)
+            previous_local_types = dict(self.current_local_types)
+            self.current_local_types[expr.var_name] = TypeName("Integer")
+            body = self.expr(expr.expr)
+            self.current_local_types = previous_local_types
+            return f"func() bool {{ for {var_name} := int64({lower}); {var_name} <= int64({upper}); {var_name}++ {{ if {body} {{ return true }} }}; return false }}()"
         if isinstance(expr, AwaitExpr):
             return self.await_expr(expr)
         if isinstance(expr, UnaryExpr):

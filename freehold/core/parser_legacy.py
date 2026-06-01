@@ -154,14 +154,22 @@ class AstBuilder:
         specs = []
         for child in tree.children:
             if isinstance(child, Tree) and child.data == "dependency_spec":
-                target = str(child.children[0])
+                target_node = child.children[0]
+                if isinstance(target_node, Tree) and target_node.data == "qualified_name":
+                    target = self.qualified_name(target_node)
+                else:
+                    target = str(target_node)
                 sources_tree = child.children[1]
                 sources = []
                 def collect_sources(node):
                     if isinstance(node, Tree):
                         if node.data == "dependency_source":
                             if node.children:
-                                sources.append(str(node.children[0]))
+                                src_node = node.children[0]
+                                if isinstance(src_node, Tree) and src_node.data == "qualified_name":
+                                    sources.append(self.qualified_name(src_node))
+                                else:
+                                    sources.append(str(src_node))
                             else:
                                 sources.append("+")
                         else:
@@ -320,6 +328,22 @@ class AstBuilder:
         if tree.data == "result_value_index_expr": return IndexExpr("value", self.expr(tree.children[0]), pos(tree))
         if tree.data == "result_value_index_field_access": return IndexedFieldAccessExpr("value", self.expr(tree.children[0]), [str(x) for x in tree.children[1:]], pos(tree))
         if tree.data == "index_expr": return IndexExpr(str(tree.children[0]), self.expr(tree.children[1]), pos(tree))
+        if tree.data == "for_all_expr":
+            return ForAllExpr(str(tree.children[0]), self.expr(tree.children[1]), self.expr(tree.children[2]), self.expr(tree.children[3]), pos(tree))
+        if tree.data == "exists_expr":
+            return ExistsExpr(str(tree.children[0]), self.expr(tree.children[1]), self.expr(tree.children[2]), self.expr(tree.children[3]), pos(tree))
+        if tree.data == "channel_create_with_invariant":
+            fn_name = str(tree.children[0])
+            if fn_name != "channel":
+                raise TypeCheckError(f"{pos(tree).text()}: invariant only allowed on channel creation, got {fn_name}")
+            type_args = None
+            if len(tree.children) > 1 and isinstance(tree.children[1], Tree) and tree.children[1].data == "type_arg_list":
+                type_args = [self.type_ref_name(child) for child in grammar_children(tree.children[1])]
+            args_list = []
+            if len(tree.children) > 2 and tree.children[2] is not None:
+                args_list = self.args(tree.children[2])
+            invariant = self.expr(tree.children[3])
+            return CallExpr("channel", args_list, pos(tree), type_args, invariant)
         if tree.data == "await_expr": return AwaitExpr(self.expr(tree.children[0]), pos(tree))
         if tree.data == "is_expr":
             left_token = tree.children[0]

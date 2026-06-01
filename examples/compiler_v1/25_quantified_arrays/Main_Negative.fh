@@ -1,0 +1,19 @@
+module Main_Negative
+
+-- This function fails verification because the requirement "for some" (existential quantifier)
+-- only guarantees that AT LEAST ONE element is >= 0. This is not sufficient to prove
+-- that the sum of all elements is >= 0, as other elements could be negative.
+function sum_negative_fail(arr: Array<Integer, 3>) returns Integer
+requires for some I in 0..2 => arr[I] >= 0
+ensures result >= 0
+is
+    return arr[0] + arr[1] + arr[2]
+end sum_negative_fail
+
+procedure main()
+is
+    let values: Array<Integer, 3> = [5, 10, 15]
+    let total: Integer = sum_negative_fail(values)
+end main
+
+end Main_Negative

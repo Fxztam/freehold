@@ -155,6 +155,21 @@ def cmd_go_codegen_project(args):
         print("[INFO] Go executable not emitted: entry module has no Main() routine")
     return 0 if all(file.result.supported for file in files) else 1
 
+def cmd_whyml(args):
+    from freehold.core.pipeline import parse_source
+    from freehold.core.whyml_codegen import generate_whyml
+    source = Path(args.file).read_text(encoding="utf-8")
+    program = parse_source(source)
+    result = generate_whyml(program)
+    if args.output:
+        out = Path(args.output)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(result, encoding="utf-8")
+        print(f"[OK] WhyML generated: {out}")
+    else:
+        print(result, end="")
+    return 0
+
 def cmd_build_exe(args):
     entry_file = Path(args.file)
     if not entry_file.exists():
@@ -346,6 +361,10 @@ def build_parser():
     p.add_argument("--output-dir", "-o", default="bin", help="Output directory for the compiled binary")
     p.add_argument("--executable-name", default=None, help="Executable base name")
     p.set_defaults(func=cmd_build_exe)
+    p = sub.add_parser("whyml", help="Generate WhyML code from a Freehold module")
+    p.add_argument("file")
+    p.add_argument("--output", "-o", default=None)
+    p.set_defaults(func=cmd_whyml)
     p = sub.add_parser("test", help="Run regression tests"); p.add_argument("--log", default=None); p.add_argument("--json-summary", default=None); p.add_argument("--no-console", action="store_true"); p.set_defaults(func=cmd_test)
     p = sub.add_parser("ebnf", help="Regenerate generated EBNF")
     p.add_argument("--dialects", action="store_true", help="Also generate Forge, RR/W3C, VS Code plugin, pyebnf, and parse-ebnf EBNF files")
@@ -363,7 +382,7 @@ def main(argv=None):
     parser = build_parser(); args = parser.parse_args(argv)
     if args.version:
         print("Freehold CLI: toolchain frontend")
-        print("Commands: run, verify, test, ebnf, ast, ir/fhir, compare-ir, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project, build-exe")
+        print("Commands: run, verify, test, ebnf, ast, ir/fhir, compare-ir, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project, build-exe, whyml")
         print("FH-IR schemas: fh-ir-v1 (project-wide default), fh-ir-v0 (--module-only)")
         return 0
     if not args.command:

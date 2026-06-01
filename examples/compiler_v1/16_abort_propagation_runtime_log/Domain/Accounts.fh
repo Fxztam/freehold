@@ -12,7 +12,8 @@ is
     if id = 0 then
         abort NotFound
     end if
-    return make_account(id, "Ada", "gold")
+    let account: Account = make_account(id, "Ada", "gold")
+    return account
 end read_account
 
 function read_primary(id: Integer) returns Account
@@ -20,7 +21,8 @@ requires id > 0
 aborts NotFound
 ensures result.id = id
 is
-    return read_account(id)
+    let account: Account = read_account(id)
+    return account
 end read_primary
 
 function account_label(account: Account) returns String

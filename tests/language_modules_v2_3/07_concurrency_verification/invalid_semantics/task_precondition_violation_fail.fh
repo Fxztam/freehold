@@ -1,0 +1,23 @@
+module Concurrency.TaskPreconditionViolationFail
+
+async function process_positive(x: Integer) returns Integer
+  requires x >= 0
+  ensures result > x
+is
+    return x + 1
+end process_positive
+
+async function verify_task_precondition() returns Integer
+is
+    scope sc do
+        spawn
+            -- SMT should fail because -10 violates the precondition x >= 0!
+            let handle: JoinHandle<Integer> = sc.spawn<Integer>(process_positive(-10))
+        join
+            let res: Integer = await sc.join<Integer>(handle)
+        result
+            return res
+    end scope
+end verify_task_precondition
+
+end Concurrency.TaskPreconditionViolationFail

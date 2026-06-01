@@ -13,11 +13,13 @@ end record
 error NotFound
 
 function make_address(city_id: Integer, label: String) returns Address
+ensures result.city_id = city_id
 is
     return Address { city_id: city_id, label: label }
 end make_address
 
 function make_order(id: Integer, address: Address) returns Order
+ensures result.id = id, result.address.city_id = address.city_id
 is
     return Order { id: id, address: address }
 end make_order
@@ -26,7 +28,9 @@ function load_order(seed: Integer) returns Result<Order, NotFound>
 requires seed > 0
 ensures value.address.city_id = 7
 is
-    return ok make_order(seed + 100, make_address(7, "Hamburg"))
+    let depot: Address = make_address(7, "Hamburg")
+    let order: Order = make_order(seed + 100, depot)
+    return ok order
 end load_order
 
 function order_id(seed: Integer) returns Integer

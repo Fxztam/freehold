@@ -1447,9 +1447,9 @@
           "data": {
             "kind": "ensures",
             "location": "line 12:9",
-            "obligation": "(= result (String.concat UNSUPPORTED c_name))",
+            "obligation": "(= (String.concat \"Customer: \" c_name) (String.concat \"Customer: \" c_name))",
             "routine": "label_customer",
-            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const String Int)\n(declare-const UNSUPPORTED Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(declare-const result Int)\n(assert (not (= result (String.concat UNSUPPORTED c_name))))\n(check-sat)\n; unsat means proved"
+            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const Customer Int)\n(declare-const String Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(assert (not (= (String.concat \"Customer: \" c_name) (String.concat \"Customer: \" c_name))))\n(check-sat)\n; unsat means proved"
           }
         },
         {
@@ -1457,9 +1457,19 @@
           "data": {
             "kind": "ensures",
             "location": "line 18:9",
-            "obligation": "(>= result 0)",
+            "obligation": "(>= 0 0)",
             "routine": "shipping_fee",
-            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const amount Int)\n(declare-const result Int)\n(assert (>= amount 0))\n(assert (<= amount 1000000))\n(assert (not (>= result 0)))\n(check-sat)\n; unsat means proved"
+            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const amount Int)\n(assert (>= amount 0))\n(assert (<= amount 1000000))\n(assert (>= amount 100))\n(assert (not (>= 0 0)))\n(check-sat)\n; unsat means proved"
+          }
+        },
+        {
+          "kind": "ProofObligation",
+          "data": {
+            "kind": "ensures",
+            "location": "line 18:9",
+            "obligation": "(>= 7 0)",
+            "routine": "shipping_fee",
+            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const amount Int)\n(assert (>= amount 0))\n(assert (<= amount 1000000))\n(assert (not (>= amount 100)))\n(assert (not (>= 7 0)))\n(check-sat)\n; unsat means proved"
           }
         },
         {
@@ -1489,7 +1499,7 @@
             "location": "line 31:35",
             "obligation": "(and (>= 42 0) (<= 42 1000000))",
             "routine": "main",
-            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (and (>= 42 0) (<= 42 1000000))))\n(check-sat)\n; unsat means proved"
+            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const Customer Int)\n(declare-const String Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(declare-const label Int)\n(assert (= label (String.concat \"Customer: \" c_name)))\n(assert (not (and (>= 42 0) (<= 42 1000000))))\n(check-sat)\n; unsat means proved"
           }
         },
         {
@@ -1499,7 +1509,7 @@
             "location": "line 31:5",
             "obligation": "(and (>= (shipping_fee 42) 0) (<= (shipping_fee 42) 1000000))",
             "routine": "main",
-            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const fee Int)\n(declare-const shipping_fee Int)\n(assert (>= fee 0))\n(assert (<= fee 1000000))\n(assert (not (and (>= (shipping_fee 42) 0) (<= (shipping_fee 42) 1000000))))\n(check-sat)\n; unsat means proved"
+            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const Customer Int)\n(declare-const String Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(declare-const fee Int)\n(declare-const label Int)\n(declare-const shipping_fee Int)\n(assert (>= fee 0))\n(assert (<= fee 1000000))\n(assert (= label (String.concat \"Customer: \" c_name)))\n(assert (>= fee 0))\n(assert (not (and (>= (shipping_fee 42) 0) (<= (shipping_fee 42) 1000000))))\n(check-sat)\n; unsat means proved"
           }
         }
       ],
@@ -1558,9 +1568,9 @@
             "data": {
               "kind": "ensures",
               "location": "line 12:9",
-              "obligation": "(= result (String.concat UNSUPPORTED c_name))",
+              "obligation": "(= (String.concat \"Customer: \" c_name) (String.concat \"Customer: \" c_name))",
               "routine": "label_customer",
-              "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const String Int)\n(declare-const UNSUPPORTED Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(declare-const result Int)\n(assert (not (= result (String.concat UNSUPPORTED c_name))))\n(check-sat)\n; unsat means proved"
+              "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const Customer Int)\n(declare-const String Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(assert (not (= (String.concat \"Customer: \" c_name) (String.concat \"Customer: \" c_name))))\n(check-sat)\n; unsat means proved"
             }
           },
           {
@@ -1568,9 +1578,19 @@
             "data": {
               "kind": "ensures",
               "location": "line 18:9",
-              "obligation": "(>= result 0)",
+              "obligation": "(>= 0 0)",
               "routine": "shipping_fee",
-              "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const amount Int)\n(declare-const result Int)\n(assert (>= amount 0))\n(assert (<= amount 1000000))\n(assert (not (>= result 0)))\n(check-sat)\n; unsat means proved"
+              "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const amount Int)\n(assert (>= amount 0))\n(assert (<= amount 1000000))\n(assert (>= amount 100))\n(assert (not (>= 0 0)))\n(check-sat)\n; unsat means proved"
+            }
+          },
+          {
+            "kind": "ProofObligation",
+            "data": {
+              "kind": "ensures",
+              "location": "line 18:9",
+              "obligation": "(>= 7 0)",
+              "routine": "shipping_fee",
+              "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const amount Int)\n(assert (>= amount 0))\n(assert (<= amount 1000000))\n(assert (not (>= amount 100)))\n(assert (not (>= 7 0)))\n(check-sat)\n; unsat means proved"
             }
           },
           {
@@ -1600,7 +1620,7 @@
               "location": "line 31:35",
               "obligation": "(and (>= 42 0) (<= 42 1000000))",
               "routine": "main",
-              "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (and (>= 42 0) (<= 42 1000000))))\n(check-sat)\n; unsat means proved"
+              "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const Customer Int)\n(declare-const String Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(declare-const label Int)\n(assert (= label (String.concat \"Customer: \" c_name)))\n(assert (not (and (>= 42 0) (<= 42 1000000))))\n(check-sat)\n; unsat means proved"
             }
           },
           {
@@ -1610,7 +1630,7 @@
               "location": "line 31:5",
               "obligation": "(and (>= (shipping_fee 42) 0) (<= (shipping_fee 42) 1000000))",
               "routine": "main",
-              "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const fee Int)\n(declare-const shipping_fee Int)\n(assert (>= fee 0))\n(assert (<= fee 1000000))\n(assert (not (and (>= (shipping_fee 42) 0) (<= (shipping_fee 42) 1000000))))\n(check-sat)\n; unsat means proved"
+              "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const Customer Int)\n(declare-const String Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(declare-const fee Int)\n(declare-const label Int)\n(declare-const shipping_fee Int)\n(assert (>= fee 0))\n(assert (<= fee 1000000))\n(assert (= label (String.concat \"Customer: \" c_name)))\n(assert (>= fee 0))\n(assert (not (and (>= (shipping_fee 42) 0) (<= (shipping_fee 42) 1000000))))\n(check-sat)\n; unsat means proved"
             }
           }
         ],
@@ -3098,9 +3118,9 @@
         "data": {
           "kind": "ensures",
           "location": "line 12:9",
-          "obligation": "(= result (String.concat UNSUPPORTED c_name))",
+          "obligation": "(= (String.concat \"Customer: \" c_name) (String.concat \"Customer: \" c_name))",
           "routine": "label_customer",
-          "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const String Int)\n(declare-const UNSUPPORTED Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(declare-const result Int)\n(assert (not (= result (String.concat UNSUPPORTED c_name))))\n(check-sat)\n; unsat means proved"
+          "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const Customer Int)\n(declare-const String Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(assert (not (= (String.concat \"Customer: \" c_name) (String.concat \"Customer: \" c_name))))\n(check-sat)\n; unsat means proved"
         }
       },
       {
@@ -3108,9 +3128,19 @@
         "data": {
           "kind": "ensures",
           "location": "line 18:9",
-          "obligation": "(>= result 0)",
+          "obligation": "(>= 0 0)",
           "routine": "shipping_fee",
-          "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const amount Int)\n(declare-const result Int)\n(assert (>= amount 0))\n(assert (<= amount 1000000))\n(assert (not (>= result 0)))\n(check-sat)\n; unsat means proved"
+          "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const amount Int)\n(assert (>= amount 0))\n(assert (<= amount 1000000))\n(assert (>= amount 100))\n(assert (not (>= 0 0)))\n(check-sat)\n; unsat means proved"
+        }
+      },
+      {
+        "kind": "ProofObligation",
+        "data": {
+          "kind": "ensures",
+          "location": "line 18:9",
+          "obligation": "(>= 7 0)",
+          "routine": "shipping_fee",
+          "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const amount Int)\n(assert (>= amount 0))\n(assert (<= amount 1000000))\n(assert (not (>= amount 100)))\n(assert (not (>= 7 0)))\n(check-sat)\n; unsat means proved"
         }
       },
       {
@@ -3140,7 +3170,7 @@
           "location": "line 31:35",
           "obligation": "(and (>= 42 0) (<= 42 1000000))",
           "routine": "main",
-          "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (and (>= 42 0) (<= 42 1000000))))\n(check-sat)\n; unsat means proved"
+          "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const Customer Int)\n(declare-const String Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(declare-const label Int)\n(assert (= label (String.concat \"Customer: \" c_name)))\n(assert (not (and (>= 42 0) (<= 42 1000000))))\n(check-sat)\n; unsat means proved"
         }
       },
       {
@@ -3150,7 +3180,7 @@
           "location": "line 31:5",
           "obligation": "(and (>= (shipping_fee 42) 0) (<= (shipping_fee 42) 1000000))",
           "routine": "main",
-          "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const fee Int)\n(declare-const shipping_fee Int)\n(assert (>= fee 0))\n(assert (<= fee 1000000))\n(assert (not (and (>= (shipping_fee 42) 0) (<= (shipping_fee 42) 1000000))))\n(check-sat)\n; unsat means proved"
+          "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const Customer Int)\n(declare-const String Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(declare-const fee Int)\n(declare-const label Int)\n(declare-const shipping_fee Int)\n(assert (>= fee 0))\n(assert (<= fee 1000000))\n(assert (= label (String.concat \"Customer: \" c_name)))\n(assert (>= fee 0))\n(assert (not (and (>= (shipping_fee 42) 0) (<= (shipping_fee 42) 1000000))))\n(check-sat)\n; unsat means proved"
         }
       }
     ],
@@ -3209,9 +3239,9 @@
           "data": {
             "kind": "ensures",
             "location": "line 12:9",
-            "obligation": "(= result (String.concat UNSUPPORTED c_name))",
+            "obligation": "(= (String.concat \"Customer: \" c_name) (String.concat \"Customer: \" c_name))",
             "routine": "label_customer",
-            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const String Int)\n(declare-const UNSUPPORTED Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(declare-const result Int)\n(assert (not (= result (String.concat UNSUPPORTED c_name))))\n(check-sat)\n; unsat means proved"
+            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const Customer Int)\n(declare-const String Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(assert (not (= (String.concat \"Customer: \" c_name) (String.concat \"Customer: \" c_name))))\n(check-sat)\n; unsat means proved"
           }
         },
         {
@@ -3219,9 +3249,19 @@
           "data": {
             "kind": "ensures",
             "location": "line 18:9",
-            "obligation": "(>= result 0)",
+            "obligation": "(>= 0 0)",
             "routine": "shipping_fee",
-            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const amount Int)\n(declare-const result Int)\n(assert (>= amount 0))\n(assert (<= amount 1000000))\n(assert (not (>= result 0)))\n(check-sat)\n; unsat means proved"
+            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const amount Int)\n(assert (>= amount 0))\n(assert (<= amount 1000000))\n(assert (>= amount 100))\n(assert (not (>= 0 0)))\n(check-sat)\n; unsat means proved"
+          }
+        },
+        {
+          "kind": "ProofObligation",
+          "data": {
+            "kind": "ensures",
+            "location": "line 18:9",
+            "obligation": "(>= 7 0)",
+            "routine": "shipping_fee",
+            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const amount Int)\n(assert (>= amount 0))\n(assert (<= amount 1000000))\n(assert (not (>= amount 100)))\n(assert (not (>= 7 0)))\n(check-sat)\n; unsat means proved"
           }
         },
         {
@@ -3251,7 +3291,7 @@
             "location": "line 31:35",
             "obligation": "(and (>= 42 0) (<= 42 1000000))",
             "routine": "main",
-            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (and (>= 42 0) (<= 42 1000000))))\n(check-sat)\n; unsat means proved"
+            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const Customer Int)\n(declare-const String Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(declare-const label Int)\n(assert (= label (String.concat \"Customer: \" c_name)))\n(assert (not (and (>= 42 0) (<= 42 1000000))))\n(check-sat)\n; unsat means proved"
           }
         },
         {
@@ -3261,7 +3301,7 @@
             "location": "line 31:5",
             "obligation": "(and (>= (shipping_fee 42) 0) (<= (shipping_fee 42) 1000000))",
             "routine": "main",
-            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const fee Int)\n(declare-const shipping_fee Int)\n(assert (>= fee 0))\n(assert (<= fee 1000000))\n(assert (not (and (>= (shipping_fee 42) 0) (<= (shipping_fee 42) 1000000))))\n(check-sat)\n; unsat means proved"
+            "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const Customer Int)\n(declare-const String Int)\n(declare-const c_name Int)\n(declare-const concat Int)\n(declare-const fee Int)\n(declare-const label Int)\n(declare-const shipping_fee Int)\n(assert (>= fee 0))\n(assert (<= fee 1000000))\n(assert (= label (String.concat \"Customer: \" c_name)))\n(assert (>= fee 0))\n(assert (not (and (>= (shipping_fee 42) 0) (<= (shipping_fee 42) 1000000))))\n(check-sat)\n; unsat means proved"
           }
         }
       ],

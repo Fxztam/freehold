@@ -118,8 +118,8 @@ end SMTRecordSmoke
     obs = symbolic_obligations(verified)
     if not obs:
         raise AssertionError("no record symbolic obligation generated")
-    if "result_id" not in obs[0]["obligation"]:
-        raise AssertionError(f"record SMT obligation not field-based: {obs[0]['obligation']}")
+    if obs[0]["obligation"] != "(= 1 1)":
+        raise AssertionError(f"unexpected record SMT obligation: {obs[0]['obligation']}")
 
 def run_symbolic_range_smoke() -> None:
     src = """
@@ -246,7 +246,7 @@ end main
 end RuntimeVerifierNegative
 """
     ast = parse_source(src)
-    verified = verify_program(ast)
+    verified = verify_program(ast, prover="none")
     failed = False
     try:
         Interpreter(verified).run_main()

@@ -1,40 +1,41 @@
 # OPEN Status
 
-Stand: 2026-05-26
+Stand: 2026-06-01
 
-Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V2/V3-Themen. Die `OPEN-*.md`-Dateien bleiben als Design- und Roadmap-Dokumente erhalten; `OPEN` bedeutet hier nicht automatisch, dass der aktuelle V1-Slice unvollstaendig ist.
+Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V2/V3-Themen. Die ehemals offenen `OPEN-*.md`-Dateien, die vollständig für V1 gelöst sind, wurden mit `=== CLOSED ===` versehen und in den neuen Ordner `CLOSED-OPENS/` verschoben. 
 
-## V1 abgeschlossen
+## CLOSED-OPENS (V1 abgeschlossen)
+
+Die folgenden Dokumente wurden erfolgreich gelöst, geschlossen und nach `CLOSED-OPENS/` verschoben:
+
+| Bereich | Dokument (in `CLOSED-OPENS/`) | Status |
+| --- | --- | --- |
+| Return Results | `CLOSED-OPENS/OPEN-RETURN_RESULTS.md` | V1 accepted and conformance-checked. |
+| Requires/Ensures | `CLOSED-OPENS/OPEN-REQIRE_ENSURE.md` | V1 notation and diagnostic behavior documented. |
+| String Templates | `CLOSED-OPENS/OPEN-STRING_TEMPLATES.md` | V1 implemented and covered by language-module tests. |
+| JSON Stringify | `CLOSED-OPENS/OPEN-JSON_HANDLINGS.md` | V1 stringify semantics implemented for supported record shapes. |
+| Record Initialisierung | `CLOSED-OPENS/OPEN-RECORD_INITIAL.md` | V1 record literals/field initialization implemented. |
+| Semantic Rules | `CLOSED-OPENS/OPEN-SEAMNTIC_RULES.md` | spec/freehold.diag, spec/freehold.rules, and verify-spec-diagnostics.cmd are active. |
+| Abort Handling | `CLOSED-OPENS/OPEN-ABORT_HANDLING.md` | V1/V2/V3 implemented for declared aborts, propagation, and main rules. |
+| Control Flow Analyzer | `CLOSED-OPENS/OPEN-CONTROL-FLOW-ANALISE.md` | V0 routine summaries plus abort/main formalization implemented; path-aware analysis parked. |
+| Structured Concurrency | `CLOSED-OPENS/OPEN-CONCURRENT.md` | V1 async/await core, runtime types, channels, structured scope, and formal concurrency verification implemented. |
+| gRPC IDL | `CLOSED-OPENS/OPEN-GRPC.md` | V1 parser/AST/semantics, diagnostics, proto3 codegen, and unary Go server binding generation implemented. |
+| Transport Scope Architecture | `CLOSED-OPENS/OPEN-CONRURRENT-GRPC-WEBSOCKET-REST.md` | V1 architecture decision recorded: transport libs reuse common Concurrent.Scope. |
+| Generics | `CLOSED-OPENS/OPEN-GENERICS.md` | V1b record and function generics implemented; codegen/inference/bounds parked. |
+| Stage 3 Compiler Core | `CLOSED-OPENS/OPEN-STAGE3-COMPILER-CORE.md` | Mini-Compilerkern in Freehold implementiert, Go-transpiliert und verifiziert. |
+| Stage 1 Bootstrapping | `CLOSED-OPENS/OPEN-STAGE1-BOOTSTRAPPING.md` | Alle Meilensteine 1-5 (Lexer, Parser, Resolver, Lowering und Selbstübersetzung) erfolgreich abgeschlossen und per bytegleichem IR-Vergleich verifiziert. Post-Self-Hosting Roadmap gestartet. |
+| Before Go Compiler | `CLOSED-OPENS/OPEN-BEFORE-GO-COMPILER.md` | Abgeschlossen fuer Compiler V1 Start: proto mapping getestet, schema minimal rule, generics codegen policy, Result/Abort policy, runtime builtins boundary, syntax freeze. |
+| VS Code Language Support | `CLOSED-OPENS/OPEN-VSCODE-LANGUAGE-SUPPORT.md` | Completion V1 vor Formatter-Ausbau vorgezogen; Extension nach tools/vscode/freehold-vscode ueberfuehrt. |
+| Go Compiler | `CLOSED-OPENS/OPEN-GO-COMPILER.md` | Compiler V1 Start-Slice plus Import-, Cross-Module-Call-, Cross-Module-Record-Type-, Cross-Module-Result-Error-Abort-, Cross-Module-Typkompositions-, Result-, Abort-, Multi-File-, Runtime-Builtin-, BigNumber-, Array-, Go-Projekt-Build- und Feature-Matrix-Slices implementiert. |
+| Compare IR Stage 2 | `CLOSED-OPENS/OPEN-COMPARE-IR-STAGE2.md` | Stage 2 compiler V1 semantic comparison and Go project contracts implemented. |
+
+## OPEN (V2/V3 verbleibend oder Design-Phase)
+
+Die folgenden Dokumente verbleiben im Hauptverzeichnis für zukünftige Phasen:
 
 | Bereich | Dokument | Status |
 | --- | --- | --- |
-| Return Results | `OPEN-RETURN_RESULTS.md` | V1 accepted and conformance-checked. |
-| Requires/Ensures | `OPEN-REQIRE_ENSURE.md` | V1 notation and diagnostic behavior documented. |
-| String Templates | `OPEN-STRING_TEMPLATES.md` | V1 implemented and covered by language-module tests. |
-| JSON Stringify | `OPEN-JSON_HANDLINGS.md` | V1 stringify semantics implemented for supported record shapes. |
-| Record Initialisierung | `OPEN-RECORD_INITIAL.md` | V1 record literals/field initialization implemented. |
-| Semantic Rules | `OPEN-SEAMNTIC_RULES.md` | `spec/freehold.diag`, `spec/freehold.rules`, and `verify-spec-diagnostics.cmd` are active. |
-| Abort Handling | `OPEN-ABORT_HANDLING.md` | V1/V2/V3 implemented for declared aborts, propagation, and main rules. |
-| Control Flow Analyzer | `OPEN-CONTROL-FLOW-ANALISE.md` | V0 routine summaries plus abort/main formalization implemented; path-aware analysis parked. |
-| Structured Concurrency | `OPEN-CONCURRENT.md` | V1 async/await core, runtime types, channels, and structured scope lifetime rules implemented. |
-| gRPC IDL | `OPEN-GRPC.md` | V1 parser/AST/semantics, diagnostics, proto3 codegen, artifacts, and unary Go server binding generation implemented. |
-| Transport Scope Architecture | `OPEN-CONRURRENT-GRPC-WEBSOCKET-REST.md` | V1 architecture decision recorded: transport libs reuse common Concurrent.Scope. |
-| Generics | `OPEN-GENERICS.md` | V1b record and function generics implemented; codegen/inference/bounds parked. |
-
-## Bootstrapping & Compiler Core (Stage 3)
-
-| Bereich | Dokument | Status |
-| --- | --- | --- |
-| Stage 3 Compiler Core | `OPEN-STAGE3-COMPILER-CORE.md` | Mini-Compilerkern in Freehold implementiert, Go-transpiliert und verifiziert. |
-| Stage 1 Bootstrapping | `OPEN-STAGE1-BOOTSTRAPPING.md` | Alle Meilensteine 1-5 (Lexer, Parser, Resolver, Lowering und Selbstübersetzung) erfolgreich abgeschlossen und per bytegleichem IR-Vergleich verifiziert. Post-Self-Hosting Roadmap gestartet. |
-
-## Naechste Phase: Go Compiler Vorbereitung
-
-| Bereich | Dokument | Status |
-| --- | --- | --- |
-| Before Go Compiler | `OPEN-BEFORE-GO-COMPILER.md` | Abgeschlossen fuer Compiler V1 Start: proto mapping getestet, schema minimal rule, generics codegen policy, Result/Abort policy, runtime builtins boundary, syntax freeze. |
-| VS Code Language Support | `OPEN-VSCODE-LANGUAGE-SUPPORT.md` | Completion V1 vor Formatter-Ausbau vorgezogen; Extension nach `tools/vscode/freehold-vscode` ueberfuehrt. |
-| Go Compiler | `OPEN-GO-COMPILER.md` | Compiler V1 Start-Slice plus Import-, Cross-Module-Call-, Cross-Module-Record-Type-, Cross-Module-Result-Error-Abort-, Cross-Module-Typkompositions-, Result-, Abort-, Multi-File-, Runtime-Builtin-, BigNumber-, Array-, Go-Projekt-Build- und Feature-Matrix-Slices implementiert: `go-codegen`, `go-codegen-project`, JSON-Spiegel, Golden-Faelle, Artefakt-Gate, import-aware Package-Calls, importierte Freehold-Routinen via `exposing` und qualifizierte Modulnamen, exposed importierte Record-Typen in Signaturen, importierte Result-/Error-/Abort-Paketgrenzen, `Result<Array<imported Record>, imported Error>` plus importierter Abort-Call, Result-Wertreturns, Abort-Error-Returns, Math/Std.IO/String/Json.stringify/Big Runtime-Imports, fixed-size Array-Go-Goldens, `go.mod`/`build.cmd` fuer generierte Projekte, Zwei-Package- und Drei-Package-Projektgoldens, 24/24 Go-Codegen-Feature-Matrix-Abdeckung sowie Go-native Semantic-V0-Diagnostics fuer Project-Loader, Routine-Calls, Record-Felder/Literals, Array-Index-Ausdruecke, Result-Contract-Bindings, Variablen-/Typnamen, Duplicate Params/Locals und einfache Assignments; `verify-go-semantic-projects.cmd` deckt 18 importierte OK-/Loader-Projekte ab, `verify-go-project-semantic-diagnostics.cmd` deckt 13 negative cross-module Semantikgoldens inklusive Result-/Array-/Abort-/Contract-Kombinationen und mehrfacher Diagnostics ab. `verify-grammar-consistency.cmd` ist in den Parser-Conformance-Gate eingebunden und berichtet Lark-vs.-Spec-Regeldeltas sowie reservierte Keyword-Fixture-Kandidaten report-only; der Compiler-Example-Smoke umfasst nun BigInteger-Loop- und Result/Abort/Array/Builtin-Mehr-Package-Runtime-Logs. |
+| gRPC Streaming V3 | `OPEN-GRPC-STREAM-V3.md` | gRPC streaming integration design & roadmap for Freehold V3. |
 
 ## V2/V3 geparkt
 

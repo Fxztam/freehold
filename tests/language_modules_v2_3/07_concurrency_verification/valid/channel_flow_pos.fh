@@ -1,0 +1,37 @@
+module Concurrency.ChannelFlowPos
+
+async function process_value(x: Integer) returns Integer
+  requires x >= 0
+  ensures result > x
+is
+    return x + 1
+end process_value
+
+async function verify_channels_and_tasks() returns Integer
+  ensures result >= 0
+is
+    -- 1. Create channel with invariant
+    let chan: Channel<Integer> = channel<Integer>(8) with invariant for all X in 0 .. 0 => X >= 0
+    let sender: Sender<Integer> = channel_sender<Integer>(chan)
+    let receiver: Receiver<Integer> = channel_receiver<Integer>(chan)
+
+    -- 2. Send positive value (SMT verifies 42 >= 0 against the invariant)
+    let sent: Boolean = await channel_send<Integer>(sender, 42)
+
+    -- 3. Receive value (SMT assumes the received value val >= 0)
+    let val: Integer = await channel_receive<Integer>(receiver)
+
+    -- 4. Spawn structured task with precondition (SMT verifies val >= 0 precondition)
+    scope sc do
+        spawn
+            let handle: JoinHandle<Integer> = sc.spawn<Integer>(process_value(val))
+        join
+            let res: Integer = await sc.join<Integer>(handle)
+        result
+            -- Since process_value ensures result > input, and input >= 0, then res > 0.
+            -- Thus res >= 0 holds, so we return it to satisfy ensures result >= 0.
+            return res
+    end scope
+end verify_channels_and_tasks
+
+end Concurrency.ChannelFlowPos

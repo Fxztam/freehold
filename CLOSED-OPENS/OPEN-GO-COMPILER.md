@@ -1,0 +1,362 @@
+# Open: Go Compiler in Freehold
+
+Stand: 2026-05-26
+
+Status: Compiler V1 Start-Slice plus Import-, Cross-Module-Call-, Cross-Module-Record-Type-, Cross-Module-Result-Error-Abort-, Cross-Module-Typkompositions-, Result-, Abort-, Multi-File-, Runtime-Builtin-, BigNumber-, Array- und Go-Projekt-Build-Slices implementiert; Go-native Semantic V0 laedt Projektgraphen mit strukturierten Import-/Projektloader-Diagnostics; Modularitaetsvertrag verbindlich; V2/V3-Themen geparkt
+
+Zusaetzlich ist der erste Go-native Semantikanker vorhanden: `go-frontend/internal/semantic` baut Record-, Routine- und Typ-Symboltabellen aus dem Go-AST und validiert Record-FieldAccess-Ausdruecke mit `FH-TYP-2101`/`FH-SEM-1105`, lokale/exposed Routine-Calls mit `FH-SEM-1204`, `FH-SEM-1205` und `FH-TYP-2201`, Array-Index-Ausdruecke mit `FH-TYP-2115`/`FH-TYP-2116`, Record-Literals mit `FH-SEM-1102` bis `FH-SEM-1104`, unbekannte Identifier mit `FH-SEM-1401`, unbekannte Typreferenzen mit `FH-TYP-2003`, Duplicate Params/Locals mit `FH-SEM-1201`/`FH-SEM-1303` sowie einfache Assignment-Fehler mit `FH-SEM-1301`/`FH-TYP-2301`. Function-Postconditions binden inzwischen `result` sowie bei `Result<T,E>` auch `value`/`error`, sodass Contract-Ausdruecke dieselbe Record-/Array-/Routine-Validierung nutzen. Relevante Go-AST-Decl-/Stmt-/Expr-Knoten tragen interne Source-Positionen fuer semantische Diagnostics, bleiben aber aus JSON-Artefakten ausgeblendet. Der Analyzer besitzt neben dem single-module Pfad eine import-aware API fuer exposed importierte Records/Routinen/Typnamen inklusive transitiver Record-Feldtypen. Der Parser-CLI kann den single-module Analyzer mit `--semantic` ausfuehren; `go-semantic-project` laedt ein Entry-Modul samt Imports, diagnostiziert mehrdeutig exposed Symbole mit `FH-SEM-1005`, fehlende Importdateien, Importzyklen, Modul-/Pfad-Mismatches, unbekannte exposing-Symbole und importierte Parse-Fehler strukturiert mit `FH-SEM-1006` bis `FH-SEM-1011`, und validiert den Entry mit projektweiten Symbolen. `verify-go-semantic-projects.cmd` verankert 18 OK-/Loader-Projektfaelle fuer importierte Mini-Projekte, transitive Import-/Record-Kontextfaelle und stabile Loader-Negativfaelle inklusive importierter Syntaxfehler; `verify-go-project-semantic-diagnostics.cmd` verankert 13 negative project-aware Semantikgoldens fuer importierte Routine-Calls, Record-Literals, Result-/Array-/Abort-/Contract-Kombinationen, hidden/non-exposed Routine-Nutzung, falsche qualifizierte Modulnutzung und mehrere Diagnostics in einem Projekt. Der normale Go-Semantic-Gate bleibt bewusst single-module. `verify-grammar-consistency.cmd` prueft Grammatikdateien, doppelte Regeln, Pflichtregeln/-terminals und Go-Keyword-Abdeckung hart, schreibt zusaetzlich aber report-only Warnungen fuer Lark-vs.-Spec-Regeldeltas und reservierte Keyword-Fixture-Kandidaten. Der Compiler-Example-Smoke deckt nun auch einen BigInteger-Loop mit `Std.IO.logf` sowie `15_result_abort_array_runtime_builtins` fuer `Result<Array<imported Record, 3>, imported Error>`, abortende Domain-Routine, komplexere Contracts und Math/String/Json/Big-Builtins als Runtime-Log ab. Die Gates schreiben temporaere `.tmp/go-semantic*`-, `.tmp/go-project-semantic-diagnostics`-, `.tmp/grammar-consistency`- und `.tmp/compiler_examples`-Reports, sodass die normalen Go-AST-Goldens und eingefrorenen Artefakte stabil bleiben. Vollstaendige Typinferenz bleibt ein Folgeslice.
+
+Dieses Dokument legt die Leitplanken fuer die naechste Implementierungsphase fest: einen Go-Compiler fuer Freehold, der auf dem bestehenden Parser/AST/Verifier/Spec-Fundament aufsetzt. Wichtigste Vorgabe: Der Compiler darf das Freehold-Modularitaetskonzept nicht aufweichen. Codegen muss Modulgrenzen, Imports, Exposing-Regeln und qualifizierte Namen respektieren.
+
+Die konkrete Abschlussliste vor dem Compilerstart steht in `OPEN-BEFORE-GO-COMPILER.md`: proto Typ-Mapping, Schema-Evolution-Minimalregel, Generics-Codegen-Policy, Result/Abort-Semantik, Runtime-Builtins-Grenze und Syntax-Freeze.
+
+## Implementierter Start-Slice
+
+Der erste Go-Compiler-Slice ist vorhanden:
+
+- `python -m freehold go-codegen <file>` erzeugt Go-Code aus einem Freehold-Modul.
+- `--verify <expected.go>` vergleicht normalisiert gegen ein Golden-File und liefert Exit-Code 1 bei Mismatch.
+- `--json <file>` schreibt einen JSON-Spiegel mit Modul, Package, Status, Diagnostics und Go-Quelle.
+- `generate-go-codegen-artifacts.cmd` erzeugt reproduzierbare `.go`- und `.json`-Artefakte unter `artifacts/go-codegen`.
+- `python -m freehold go-codegen-project <entry> --output-dir <dir>` loest den Modulgraphen auf, schreibt pro Freehold-Modul eine Go-Datei und erzeugt `go.mod` plus `build.cmd`.
+- `valid_go_codegen`-Manifestfaelle verankern Golden-Vergleiche in den Language-Modulen.
+- `valid_go_project_codegen`-Manifestfaelle verankern Multi-File- und Build-File-Golden-Vergleiche fuer importierte Modulgraphen.
+- `tests/language_modules/go_codegen_feature_matrix.json` pflegt pro Language-Modul den Go-Codegen-Status `supported`, `rejected` oder `deferred`.
+- Runtime-Builtins fuer `Math`, `Std.IO`, `String.*` und `Json.stringify` werden als explizite Go-Stdlib-Imports generiert.
+- `verify-parser-conformance.cmd` fuehrt den Go-Codegen-Artefaktcheck als eigenen Gate-Schritt aus.
+
+Aktuell abgedeckter Codegen-Kern: primitive Typ-Aliase, Records, einfache nicht-generische/nicht-async Routinen, Parameter, `let`, Zuweisung, Feldzuweisung, `return`, `check`, `if`, `while`, `case`, Call-Statements, Basis-Literale, praezedenzbewusste Unary/Binary-Ausdruecke, Feldzugriffe, Indexzugriffe, statisch typisierte Array-Literale in `let`, Record-Literale und einfache Calls. Der Import-Slice nutzt `ModuleResolver` fuer dateibasierte Entry-Module, erzeugt deterministische Go-Importpfade fuer benutzte Freehold-Imports und spiegelt Package-/Import-Metadaten in JSON-Artefakten. Der Cross-Module-Call-Slice verifiziert importierte Freehold-Routinen im Modulgraphen und generiert Go-Aufrufe ueber das importierte Package, sowohl fuer `exposing`-Namen als auch fuer qualifizierte Modulnamen. Der Cross-Module-Typen-Slice qualifiziert exposed importierte Record-Typen in Signaturen, importierte Error-Namen, `Result<T,E>` ueber Paketgrenzen und importierte abortende Routinen mit Go-`err`-Propagation. Der Cross-Module-Typkompositions-Slice deckt `Result<Array<imported Record>, imported Error>` plus importierten Abort-Call ueber einen mehrmoduligen Graphen ab. Der Result-Slice bildet `Result<T,E>` als modul-lokalen oder error-modul-eigenen Go-Struct-Typ ab und generiert `return ok`, `return error` und Result-wertige Weitergaben als normale Wert-Returns. Der Abort-Slice bildet `aborts` als expliziten Go-`error`-Rückgabewert ab und propagiert lokale sowie importierte abortende Calls ueber `err`. Der Multi-File-Slice schreibt aufgeloeste Modulgraphen deterministisch nach `go_package_path/module_file.go`, z.B. `App.Main -> app/main/main.go` und `Banking.Proofs -> banking/proofs/proofs.go`; bekannte Runtime-Module werden nicht als Freehold-Stubs emittiert. Der Go-Projekt-Slice erzeugt fuer Projekt-Codegen deterministisch ein `freehold.local`-`go.mod`, ein `build.cmd` mit `go test ./...` und JSON-Metadaten zu Build-Dateien. Die Feature-Matrix deckt alle 24 Language-Module ab und wird im offiziellen Gate validiert. Der Runtime-Builtin-Slice bildet `Math.*` auf Go `math`, `Std.IO.log`/`logf` auf Go `fmt`, `String.concat` auf `+`, `String.substr` auf Slicing, `String.replace`/`String.instr` auf Go `strings`, `String.template` auf `fmt.Sprintf` und `Json.stringify` auf `encoding/json` ab. Record-Felder erhalten JSON-Tags mit Freehold-Feldnamen. Nicht unterstuetzte AST-Formen werden im Codegen-Result als Diagnostics markiert.
+
+## Aktueller Compiler-TODO
+
+Der Compiler-TODO ist nach den abgeschlossenen Start-, Projekt-, Feature-Matrix-, Cross-Module-Call-, Cross-Module-Typen- und Cross-Module-Typkompositions-Slices deutlich kleiner. Dieser Abschnitt ist der aktuelle operative Blick auf das, was fuer den Compiler noch offen ist.
+
+Bereits erledigt:
+
+- Go-Codegen-Grundpfad: `go-codegen`, `go-codegen-project`, JSON-Spiegel, Goldens und Artefakt-Gate.
+- Multi-File-/Projekt-Codegen mit `go.mod` und `build.cmd`.
+- Importaufloesung, `exposing`, qualifizierte Namen, Cross-Module-Calls auf importierte Freehold-Routinen, exposed importierte Record-Typen in Signaturen sowie importierte Result-/Error-/Abort-Paketgrenzen.
+- Cross-Module-Typen-Basis fuer V1: importierte Record-Typen ueber Paketgrenzen (`e1082ba`), importierte Error-Namen und `Result<T,E>` ueber Paketgrenzen (`3e6b608`), importierte abortende Routinen mit Go-`err`-Propagation, exposing-basierte Sichtbarkeit fuer Types/Records/Errors/Routines, Single-file-Go-Goldens, Project-Go-Goldens und additive Artefakte.
+- Cross-Module-Typkomposition: `Result<Array<imported Record>, imported Error>` plus importierter Abort-Call als additiver Drei-Modul-Fall.
+- Primitive Typen, Records, einfache Routinen, Statements und Expressions.
+- Result-Wertmodell.
+- Abort als Go-`error`-Return fuer abgedeckte V1-Faelle.
+- Runtime-Builtins fuer `Math`, `Std.IO`, `String.*`, `String.template`, `Json.stringify` und `Big.*`.
+- Feature-Matrix-Gate mit `24/24` Language-Modulen.
+- Go-Codegen-Generator-Gate mit aktuell `66/66` matching; eingefrorene Artefakt-Snapshots bleiben separat kontrolliert.
+
+Direkt offen fuer die naechsten Compiler-Slices:
+
+1. Breitere Cross-Module-Typkompositionen
+    - Der natuerliche Cross-Module-Typen-Slice fuer V1 ist erledigt: Records, Errors, Results und Aborts stehen ueber Paketgrenzen.
+    - Der erste Kombinationsfall `Result<Array<imported Record>, imported Error>` plus importierter Abort-Call ist vorhanden; `11_result_array_record_payload` sichert den `Result<Array<Order, 2>, Error>`-Payload als Compiler-Smoke mit Runtime-Log ab.
+    - `15_result_abort_array_runtime_builtins` erweitert die Runtime-Flotte um `Result<Array<StockItem, 3>, StockMissing>`, eine abortende importierte Domain-Routine, mehrteilige Requires/Ensures und Math/String/Json/Big-Builtins in einem Drei-Modul-Projekt.
+    - `12_qualified_name_conflicts` sichert gleichnamige Records, Errors und Routinen in zwei importierten Modulen als qualifizierten Compiler-Smoke ab.
+    - Doppelt exponierte Routinen, Records und Errors werden als negative Import-Konfliktfaelle mit `VF-I006` abgesichert.
+    - `import_transitive_name_conflicts` deckt positiv ab, dass zwei Importgraph-Aeste intern gleichnamige Records/Errors verwenden duerfen, solange die exponierten Top-Level-Namen eindeutig bleiben.
+    - Noch zu haerten sind weitere kombinierte Faelle wie `Array<imported Record>` als direkte Signatur, verschachtelte importierte Typen in Records/Results sowie komplexere Alias-Konflikte.
+    - Spaetere Domain-Bloecke wie JSON/gRPC muessen diese Cross-Module-Typen gezielt wiederverwenden statt eigene Sonderpfade einzufuehren.
+
+2. Result value field access
+    - Erledigt fuer V1: `value.field` in Result-`ensures` wird fuer Record-Ok-Payloads geparst, typisiert und im Go-Codegen ausgegeben.
+    - Importierte verschachtelte Record-Payloads verwenden dieselbe transitive Typkontext-Regel wie normale importierte Record-Feldzugriffe.
+
+3. Abort breiter machen
+    - Breitere abort contract implication bleibt deferred; V1/V2 prueft same-error-name propagation, aber keine Bedingungsimplikation.
+    - Handler-Syntax bleibt offen/geparkt und ist kein Compiler-V1-Kern.
+    - Feature-Matrix: `21_abort_handling` hat entsprechende deferred items.
+
+4. Dynamische `String.template`-Formate
+    - Erledigt fuer V1: Statische Template-Literale nutzen `fmt.Sprintf`; dynamische `String`-Formatargumente nutzen einen generierten Runtime-Helper fuer positionale und benannte Bindings.
+    - Feature-Matrix: `18_string_templates`.
+
+5. Core-/Import-/Whitespace-/Control-Flow-Goldens
+    - Erledigt fuer V1: `01_core` hat einen Minimal-Modul-Go-Golden.
+    - Erledigt fuer V1: `02_import` hat eine Projekt-Codegen-Policy fuer Import-Deklarationen; Single-file-Import-Codegen bleibt bewusst kein eigener Pfad.
+    - Erledigt fuer V1: `14_comments_whitespace` dokumentiert per Go-Goldens, dass Kommentare/Whitespace parser-neutral sind und Go aus dem AST formatiert wird.
+    - Erledigt fuer V1: `16_control_flow_edges` hat Go-Goldens fuer die manifestierten gueltigen Edge-Cases; path-aware proof integration bleibt deferred.
+
+Die verbleibenden Punkte aus diesem Slice sind keine Compiler-V1-Blocker, sondern bewusst festgezurrte spaetere Slices oder reine Policy-Grenzen:
+
+- `02_import`: kein Single-file-Import-Codegen. Imports werden ueber Projekt-Codegen getestet, weil Importaufloesung Modulgraph und Projektlayout braucht.
+- `14_comments_whitespace`: V1 ist fertig. Kommentare und Whitespace sind parser-neutral; Go wird aus dem AST formatiert. Nur ein optionaler comment-preserving formatter bleibt spaeter.
+- `16_control_flow_edges`: V1-Go-Goldens sind fertig. Nur path-aware proof integration bleibt ein spaeterer CFlow-/Proof-Slice.
+
+Bewusst geparkt fuer V2/V3:
+
+- Generics-Codegen, Monomorphisierung, Bounds und Inference.
+- Async Runtime, Channels, Scheduler und Scope/JoinHandle-Ausfuehrung. Ein Unsupported-Smoke `unsupported_async_scope_runtime` dokumentiert die aktuelle Go-Codegen-Grenze.
+- gRPC Service-Deklarationen im allgemeinen Go-Codegen; `unsupported_grpc_binding` dokumentiert diese Go-Codegen-V1-Grenze, waehrend unary Server-Bindings ueber `grpc-go-bindings` laufen.
+- REST/WebSocket/SSE Transport-Libs.
+- Runtime-Contract-Enforcement.
+- path-aware Control-Flow-Proofs.
+- Native/Image Builder.
+
+Empfohlene Reihenfolge aus heutiger Sicht:
+
+1. Project-aware negative Semantikfaelle weiter haerten, ohne den normalen single-module Gate umzubauen.
+    - Erledigt: importierte Syntaxfehler werden als strukturierte Project-Diagnostics reportet, damit `imported_module_syntax_error` manifestfaehig ist.
+    - Erledigt: weitere negative Projekt-Goldens fuer hidden/non-exposed Symbolnutzung, falsche qualifizierte Modulnutzung, transitive Dependency-Fehler und mehrere Diagnostics in einem Projekt.
+2. Erledigt: `verify-go-project-semantic-diagnostics.cmd` trennt negative project-aware Semantikgoldens vom bestehenden `verify-go-semantic-projects.cmd`, der fuer OK-/Loader-Projekte fokussiert bleibt.
+3. Go Codegen V1 Runtime-Breite ausbauen: weitere `Result`/`Abort`/`Array`-Kombinationen, komplexere `requires`/`ensures`, und Runtime-Builtins in echten Mehr-Package-Compiler-Examples.
+4. Danach JSON/gRPC- und weitere Runtime-/Bootstrap-nahe Slices ueber den stabilisierten Cross-Module-Typen aufbauen.
+
+## Ziel
+
+Compiler V1 soll Freehold-Programme aus dem stabilisierten V1-Sprachkern nach Go uebersetzen. Er soll klein beginnen, aber von Anfang an so strukturiert sein, dass spaetere Features wie gRPC-Bindings, Runtime-Ausfuehrung, Generics-Monomorphisierung und Transport-Libs ohne Architekturbruch hinzukommen koennen.
+
+Compiler V1 ist kein Anlass, Sprachsyntax neu zu formen. Die aktuelle Syntax fuer Core, Records, Arrays, Routinen, Contracts, Result, Abort, Generics V1b, Concurrency V1 und gRPC IDL V1 gilt fuer den Compilerstart als eingefroren.
+
+## Modularitaetsvertrag
+
+Der Go-Compiler muss Freeholds Modularitaetsmodell weitestgehend einhalten. Diese Regeln gelten fuer Compiler V1 als verbindlich:
+
+1. Freehold-`module X.Y.Z` bleibt die primaere Compilation Unit.
+2. Freehold-Modulnamen werden deterministisch auf Go-Packages und Ausgabepfade abgebildet.
+3. `import` und `exposing` bleiben die offiziellen Modulgrenzen.
+4. Codegen darf keine impliziten globalen Symbole ueber Modulgrenzen hinweg einfuehren.
+5. Imports werden vor Codegen aufgeloest; der Compiler scannt nicht ungefragt beliebige Nachbarmodule.
+6. Exposing-Listen definieren, welche fremden Symbole unqualifiziert sichtbar sind.
+7. Qualifizierte Referenzen erhalten die Quellmodul-Grenze, statt in globale Namen flachgezogen zu werden.
+8. Generierter Go-Code darf keine versteckten Cross-Module-Abhaengigkeiten erzeugen.
+9. Runtime- und Stdlib-Abhaengigkeiten werden als explizite Imports generierter oder bereitgestellter Go-Packages sichtbar.
+10. Builtins duerfen nicht als magische Sonderfaelle quer durch den Compiler verteilt werden; sie brauchen eine klare Runtime-/Stdlib-Zuordnung.
+11. gRPC `.proto package` leitet sich in V1 aus dem Freehold-Modulnamen ab, solange keine explizite Proto-Package-Syntax existiert.
+12. Jedes Language-Modul bleibt unabhaengig testbar; Go-Codegen-Artefakte sollen pro Modul/Fall vergleichbar werden.
+
+Nicht erlaubt fuer Compiler V1:
+
+```text
+Alle Freehold-Module in ein einziges Go-Package kippen.
+Alle Symbole in einen globalen Namensraum flatten.
+Import-/Exposing-Regeln beim Codegen ignorieren.
+Runtime-Aufrufe als unsichtbare Compiler-Magie einbauen.
+```
+
+## Compilation Units und Go-Packages
+
+Vorlaeufige Abbildung:
+
+```text
+Freehold module Billing.Invoice
+-> Go package billing_invoice oder billing/invoice, noch final festzulegen
+
+Freehold module GrpcIdl.UnaryServiceProtoFields
+-> proto package grpcidl.unaryserviceprotofields
+```
+
+Die konkrete Go-Package-Pfadkonvention muss vor der ersten Codegen-Implementierung final entschieden werden. Wichtig ist weniger die Schreibweise als die Stabilitaet:
+
+- gleicher Freehold-Modulname erzeugt immer denselben Go-Package-Pfad
+- zwei verschiedene Freehold-Module kollidieren nicht
+- qualifizierte Freehold-Aufrufe bleiben eindeutig aufloesbar
+- generierte Dateien koennen pro Modul isoliert gebaut und getestet werden
+
+## Compiler V1 Scope
+
+Compiler V1 sollte mit einem konservativen Feature-Set starten:
+
+| Bereich | Compiler V1 Policy |
+| --- | --- |
+| Module/Imports | Muss Modulgrenzen und `exposing` respektieren. |
+| Primitive Typen | `Integer`, `Boolean`, `Double`, `String` nach Go-Grundtypen. |
+| Records | Go structs, Feldnamen stabil aus Freehold-Feldern. |
+| Arrays | Statische/Freehold-Arrays als einfache Go-Repräsentation, genaue Form noch festzulegen. |
+| Routines | Funktionen/Prozeduren als Go-Funktionen innerhalb des Modulpackages. |
+| Calls | Nur aufgeloeste unqualifizierte und qualifizierte Calls. |
+| Statements | Core Statements zuerst: `let`, assignment, `if`, `while`, `case`, `return`, `check`. |
+| Contracts | V1 verifierseitig; Runtime-Enforcement geparkt. |
+| Result | Wertmodell abbilden, `return error E` bleibt normaler Return. |
+| Abort | Abnormaler Exit; konkrete Go-Abbildung fuer V1 explizit entscheiden. |
+| Generics | V1b im AST/Verifier erlaubt; Go-Codegen zunaechst ablehnen oder nur konkretisierte Builtins behandeln. |
+| Concurrency | Statische Typ-/Lifetime-Regeln sind vorhanden; echte Runtime-Ausfuehrung geparkt. |
+| gRPC IDL | `.proto`-Codegen ist eigener Pfad; Go-gRPC-Bindings geparkt. |
+
+## Typ-Mapping Freehold -> Go
+
+Vorlaeufiges Mapping fuer Compiler V1:
+
+```text
+Integer  -> int64
+Boolean  -> bool
+Double   -> float64
+String   -> string
+Record   -> struct
+Array<T> -> noch festzulegen, vermutlich []T oder fixed-size representation je nach Freehold-Arrayform
+Result<T,E> -> modul-lokaler generierter Result-Struct-Typ
+ErrorName -> modul-lokale string-Konstante
+abort E -> Go `error`-Return, keine Panic-Semantik
+```
+
+Entscheidungen, die vor breitem Codegen finalisiert werden sollten:
+
+- `Array<T, N>` als `[N]T` oder Freehold-eigene Runtime-Struktur?
+- `Result<T,E>` V1-Entscheidung: modul-lokaler Struct-Typ je konkret verwendeter Result-Form.
+- `abort E` V1-Entscheidung: Go `error`-Return, panic-freier Kontrollfluss.
+- Record-Feldnamen: original Freehold names plus Go-exported aliases oder rein package-intern?
+
+## Runtime-/Stdlib-Grenze
+
+Der Compiler braucht eine klare Tabelle, welche Features direkt generiert, ueber Runtime-Packages importiert oder vorerst abgelehnt werden.
+
+Vorlaeufige Einordnung:
+
+| Feature | Compiler V1 |
+| --- | --- |
+| String builtins | Go `strings`, `fmt.Sprintf` und native String-Operatoren fuer V1-Standardfaelle. |
+| Math builtins | Go `math` fuer V1-Standardfaelle. |
+| BigInteger/BigFloat | Go `math/big` fuer V1-Standardfaelle. |
+| Json.stringify | Go `encoding/json` fuer verifierseitig begrenzte V1-Recordformen. |
+| Std.IO | Go `fmt` fuer `log`/`logf` V1-Standardfaelle. |
+| Channel/Scope/JoinHandle | Typen koennen existieren; echte Runtime-Ausfuehrung geparkt. |
+| gRPC IDL | `.proto`-Generator und unary `grpc-go-bindings` vorhanden; client/implements/custom status/streaming spaeter. |
+
+Regel: Runtime-Abhaengigkeiten werden als explizite Go-Imports sichtbar. Der Compiler soll nicht so tun, als waeren sie globale magische Funktionen.
+
+## Result und Abort Policy
+
+Diese Semantik muss fuer den Compilerstart stabil bleiben:
+
+```text
+return ok value
+    normaler Return eines Result<T,E>-Werts
+
+return error E
+    normaler Return eines Result<T,E>-Werts mit Fehlerpayload
+    kein abort, kein panic, kein abnormaler Control Flow
+```
+
+Compiler-V1-Abbildung:
+
+```text
+Result<Integer, NotFound>
+-> type ResultIntegerNotFound struct { Ok bool; Value int64; Error string }
+
+return ok 1
+-> return ResultIntegerNotFound{Ok: true, Value: 1}
+
+return error NotFound
+-> return ResultIntegerNotFound{Ok: false, Error: NotFound}
+```
+
+Abort-V1-Abbildung:
+
+```text
+function read(id: Integer) returns Integer
+aborts NotFound when id = 0
+-> func Read(id int64) (int64, error)
+
+abort E
+-> return <zero-value>, errors.New(E)
+
+propagierender Call
+-> value, err := Read(id); if err != nil { return <zero-value>, err }
+```
+
+Contracts:
+
+- `requires` und `ensures` sind in V1 vor allem verifierseitige Semantik.
+- `aborts` beeinflusst die Go-Signatur; `aborts ... when`-Bedingungen bleiben verifierseitig und werden nicht als Runtime-Checks generiert.
+- Runtime-Contract-Enforcement ist nicht Teil des ersten Go-Compiler-Slice.
+- Der Compiler darf Contracts nicht stillschweigend falsch interpretieren.
+
+## Generics Policy
+
+Generics V1b sind im Sprachmodell vorhanden, aber Go-Codegen soll sie nicht nebenbei improvisieren.
+
+Compiler V1 darf deshalb:
+
+- generische User-Records und generische User-Routines zunaechst mit klarer Diagnostic/Not-Implemented-Policy ablehnen
+- eingebaute generische Typformen wie `Array<T>` und `Result<T,E>` gezielt behandeln
+- konkrete nicht-generische Programme zuerst stabil uebersetzen
+
+Compiler V1 soll nicht:
+
+- halbfertige Monomorphisierung in mehreren Codepfaden verstreuen
+- generische IDL-Typen direkt als Protobuf Messages ausgeben
+- Inference oder Bounds einfuehren
+
+Generics V2/V3:
+
+- Monomorphisierte Codegen-Artefakte
+- Bounds
+- Type Inference
+- qualifizierte generische Calls
+- generische IDL-Monomorphisierung vor `.proto`-Generation
+
+## gRPC und Proto Policy
+
+Der vorhandene gRPC-V1-Pfad bleibt getrennt vom allgemeinen Go-Compiler:
+
+```text
+Freehold gRPC IDL -> proto3 file
+```
+
+Go-gRPC-Bindings bleiben getrennt vom allgemeinen Freehold-Go-Codegen. Der V1a-Pfad `freehold grpc-go-bindings` erzeugt unary Server-Adapter aus Service-IDL und `.proto`-Package-Konventionen; der Compiler-Example-Smoke `unsupported_grpc_binding` haelt weiter fest, dass der allgemeine `go-codegen-project`-Pfad Service-Deklarationen mit `FH-GOCODEGEN-0001` ablehnt.
+
+Compiler V1 muss dennoch die Modulpolitik respektieren:
+
+- Proto package aus Freehold-Modulname ableiten
+- Service/Message-Namen nicht global flatten
+- spaetere generated Go packages fuer gRPC eindeutig neben Freehold-Go-Packages fuehren
+
+Geparkt fuer V2/V3:
+
+- Go client stubs
+- `implements Service.Rpc`
+- Custom gRPC Status-Code Mapping fuer Freehold-Fehler
+- streaming
+- deadlines/cancellation/metadata/auth
+- schema evolution wie `reserved proto`
+
+## Deferred fuer Compiler V1
+
+Diese Themen werden fuer den Compilerstart bewusst nicht geloest:
+
+- Restpunkte aus `tests/language_modules/go_codegen_feature_matrix.json`, die keine vergessenen V1-Luecken sind, sondern spaetere Slices oder Policy-Grenzen:
+    - `08_routines`: async routines, generic routines.
+    - `21_abort_handling`: breitere abort contract implication, Handler-Syntax.
+    - `23_concurrency`: echte async/runtime/channels/scope execution.
+    - `24_grpc_idl`: client bindings, explizite Implementierungsbindung, custom status mapping, streaming.
+    - `12_type_conflicts`: policy-only/rejected fuer V1, also absichtlich keine positiven Go-Codegen-Goldens.
+    - `22_generics`: frontend-gueltige Generics sind fuer Go-Codegen V1 bewusst unsupported (`FH-GOCODEGEN-0001`); ungueltige Generic-Fixtures bleiben als Go-Codegen-Rejection-Cases abgesichert.
+    - `13_contract_blocks`: gueltige V1-Contract-Formen haben Go-Runtime-Checks; ungueltige Contract-Fixtures bleiben als Go-Codegen-Rejection-Cases abgesichert.
+- echte async Runtime-Ausfuehrung
+- Scheduler, Work-Stealing, Blocking-Pool, CancellationToken
+- Channel-Laufzeitverhalten, Close/Backpressure/select
+- gRPC Client-Bindings und vollstaendiger Transportserver
+- REST/WebSocket/SSE Transport-Libs
+- Runtime-Contract-Enforcement
+- path-aware control-flow proofs
+- breitere abort contract implication und Handler-Syntax; abgedeckte V1-Aborts bleiben explizite Go-`error`-Returns
+- Generics Bounds/Inference/volle Monomorphisierung
+- Native/Image Builder
+
+Reihenfolge fuer die Weiterarbeit:
+
+1. Zuerst policy-only/rejected V1-Pfade beweisen: V1 soll diese Pfade bewusst ablehnen und nicht halb uebersetzen. `12_type_conflicts` ist mit Go-Codegen-Rejection-Cases fuer alle negativen Konflikt-Fixtures abgedeckt. `13_contract_blocks` ist fuer gueltige V1-Contracts positiv supported und fuer ungueltige Contract-Fixtures mit Go-Codegen-Rejection-Cases abgesichert. `22_generics` ist mit Unsupported-Cases fuer frontend-gueltige Generics und Rejection-Cases fuer ungueltige Generics abgedeckt.
+2. Danach kleine deferred Codegen-Slices angehen:
+    - Erledigt fuer V1: `11_errors_results` Result-value-field-access ist als Go-Golden abgedeckt.
+    - Erledigt fuer V1: `18_string_templates` dynamische Formatargumente sind als Go-Goldens fuer positional, named und `Std.IO.logf` abgedeckt.
+    - Erledigt fuer V1: `04_types` breitere User-Type-Alias-Kombinationen sind als Go-Goldens fuer Ranges, Arrays, Records und Results abgedeckt.
+3. Grosse deferred Slices spaeter angehen:
+    - `23_concurrency`: echte Runtime/Channels/Scope-Ausfuehrung.
+    - `24_grpc_idl`: client bindings, explizite Implementierungsbindung, custom status mapping, streaming.
+    - `21_abort_handling`: breitere abort implication und Handler-Syntax.
+
+## Empfohlene naechste Schritte
+
+1. Grosse deferred Runtime-/Transport-/Abort-Slices erst danach angehen.
+2. Feature-Matrix bei jedem neuen Go-Codegen-Slice mitpflegen.
+
+## Akzeptanzkriterien fuer Compiler V1 Start
+
+Vor der breiten Implementierung sollte gelten:
+
+- `OPEN-GO-COMPILER.md` ist die Leitplanke fuer Modularitaet und Feature-Grenzen.
+- Go-Codegen-Artefakte sind pro Language-Modul reproduzierbar.
+- Der Compiler kann ein kleines nicht-generisches Modul mit Record, Routine und `main` uebersetzen.
+- Import-/Exposing-Regeln werden nicht umgangen.
+- Nicht unterstuetzte Features scheitern mit klaren Diagnostics oder expliziten Not-Implemented-Reports.
+
+=== CLOSED ===

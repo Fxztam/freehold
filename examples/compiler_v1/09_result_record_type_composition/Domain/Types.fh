@@ -18,16 +18,19 @@ type Order is record
 end record
 
 function make_address(city_id: Integer, label: String) returns Address
+ensures result.city_id = city_id
 is
     return Address { city_id: city_id, label: label }
 end make_address
 
 function make_customer(id: Integer, name: String, address: Address) returns Customer
+ensures result.id = id, result.address.city_id = address.city_id
 is
     return Customer { id: id, name: name, address: address }
 end make_customer
 
 function make_order(id: Integer, customer: Customer, destination: Address) returns Order
+ensures result.id = id, result.customer.address.city_id = customer.address.city_id, result.destination.city_id = destination.city_id
 is
     return Order { id: id, customer: customer, destination: destination }
 end make_order

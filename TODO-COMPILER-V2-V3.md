@@ -10,21 +10,16 @@ Dieses Dokument definiert die priorisierte Roadmap für die Weiterentwicklung de
 
 ---
 
-## Priorität 1: Formale Verifikation & Typsystem-Erweiterungen (Sicherheit)
+## Priorität 1: Formale Verifikation & Typsystem-Erweiterungen (Sicherheit) [ERLEDIGT]
 
-Diese Features erweitern das mathematische Beweissystem von Freehold auf Basis des **SPARK Ada / GNATprove** Vorbilds.
+Diese Features erweitern das mathematische Beweissystem von Freehold auf Basis des **SPARK Ada / GNATprove** Vorbilds und sind in V1/v2.3 vollständig gelöst.
 
-1. **Statische Subtyp-Wertebereiche (Ada-Subtypes)**
-   - *Ziel*: Automatische statische Generierung von SMT-Beweisen für Wertebereichs-Invarianten (z. B. `type My_Range is Integer range 1 .. 10`).
-   - *Details*: 
-     - Generierung von Pfad-Annahmen (Assertions) für Variablen dieses Typs im SMT-Pfad (z. B. `(assert (>= x 1))` und `(assert (<= x 10))`).
-     - Generierung von Verification Conditions (VCs) bei jeder Zuweisung (`:=`) oder Bindung (`let`).
-2. **Generics-Inferenz & Typ-Constraints (Bounds)**
-   - *Ziel*: Automatische Auflösung generischer Argumente bei Funktionsaufrufen (`my_func(5)` statt `my_func<Integer>(5)`).
-   - *Details*: Einschränkung generischer Typen über formale Constraints (z. B. `T is Comparable`).
-3. **Abort-Implikationsprüfung & Pfadsensitive Kontrollfluss-Analyse**
-   - *Ziel*: Formale Verifikation von Abort-Bedingungen.
-   - *Details*: Mathematischer Nachweis im SMT-Solver, dass bestimmte Fehlermeldungen/Aborts unter definierten Vorbedingungen (`requires`) unmöglich ausgelöst werden können (Ausschluss von Laufzeit-Abstürzen).
+1. **Statische Subtyp-Wertebereiche (Ada-Subtypes) [ERLEDIGT]**
+   - *Status*: Implementiert und verifiziert in Phase 1. Subtyp-Bereiche (`Integer range A .. B`) erzeugen automatische SMT-Zuweisungspflichten und Pfadbedingungen.
+2. **Generics-Inferenz & Typ-Constraints (Bounds) [ERLEDIGT]**
+   - *Status*: Typinferenz und Constraints (`T is Comparable`, `T is ComparableRecord`) wurden in Phase 2 umgesetzt und per Konformanztests abgesichert.
+3. **Abort-Implikationsprüfung & Pfadsensitive Kontrollfluss-Analyse [ERLEDIGT]**
+   - *Status*: In Phase 2 gelöst. Abort-Implikationen werden formal über den SMT-Solver verifiziert, um auszuschließen, dass Aborts bei Erfüllung der Vorbedingungen zur Laufzeit eintreten können.
 
 ---
 

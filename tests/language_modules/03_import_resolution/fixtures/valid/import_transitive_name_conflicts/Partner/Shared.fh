@@ -13,11 +13,13 @@ end record
 error NotFound
 
 function make_address(city_id: Integer, label: String) returns Address
+ensures result.city_id = city_id
 is
     return Address { city_id: city_id, label: label }
 end make_address
 
 function make_order(id: Integer, address: Address) returns Order
+ensures result.address.city_id = address.city_id
 is
     return Order { id: id, address: address }
 end make_order

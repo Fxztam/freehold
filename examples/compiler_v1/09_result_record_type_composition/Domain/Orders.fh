@@ -5,17 +5,20 @@ import Domain.Types exposing Address, Customer, Order, make_address, make_custom
 error NotFound
 
 function build_order(id: Integer) returns Order
+ensures result.id = id, result.customer.address.city_id = result.destination.city_id
 is
     let destination: Address = make_address(42, "Berlin")
     let customer: Customer = make_customer(1001, "Ada", destination)
-    return make_order(id, customer, destination)
+    let order: Order = make_order(id, customer, destination)
+    return order
 end build_order
 
 function load_order(id: Integer) returns Result<Order, NotFound>
 requires id > 0
 ensures success, value.id = id, value.customer.address.city_id = value.destination.city_id
 is
-    return ok build_order(id)
+    let order: Order = build_order(id)
+    return ok order
 end load_order
 
 end Domain.Orders

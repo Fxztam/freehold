@@ -2,6 +2,46 @@
 
 ## 2026-06-01
 
+### Transitive Verification Regression Resolution
+
+- **Transitive Routine Resolution**: Refined cross-module routine resolution (`find_routine` helper in `symbolic.py`) during symbolic execution, enabling correct evaluation of preconditions and postconditions when crossing module boundaries.
+- **Recursive Context Propagation**: Passed the `imports` and `imported_modules` contexts recursively down control-flow structures (such as `If`, `While`, `Case`, and `Scope` statements) in `walk_body`, ensuring that nested statements are symbolically executed with complete visibility into transitively imported modules.
+- **Contract & Construction Hardening**: Added explicit `ensures` clauses to constructor helper functions (e.g., `make_address`, `make_customer`, `make_order`, `make_place`, `make_recipient`, and `make_shipment`) in the compiler examples to guarantee that nested record properties (like `city_id` and `zone_id`) are preserved and exposed to the verifier.
+- **Sequential Let-Binding Refactoring**: Refactored direct/nested call return expressions (e.g., `return ok make_order(...)` and `return build_item(...)`) in `load_order`, `load_shipment`, `build_item`, and `read_item` to use flat intermediate variable assignments (`let order = make_order(...)`). This ensures the verifier propagates their postconditions and constraints into the symbolic execution's path conditions correctly, solving Z3 solver satisfiability issues.
+- **Full Verification Suite Green**: Brought all 36 compiler examples (including standard compiler examples and legacy `old_` prefixes) and all 472 language tests to a 100% successful pass status.
+
+### Concurrency Verification (Channel Invariants)
+
+- **Grammar & AST Upgrades:** Integrated optional channel invariant syntax (`with invariant <expr>`) into the expression tree (`freehold.lark`, `grammar_inline.py`, and `ast.py`). Cleaned up LALR parsing conflicts by matching channel creation as a generic `NAME` function call and mapping it to a `CallExpr` with an optional `invariant` field, avoiding reserving `channel` as a keyword.
+- **Verifier & Type Checking:** Added static type checks in `verifier.py` to ensure that channel invariant expressions evaluate to `Boolean`.
+- **Go and WhyML Codegen Parity:** Preserved the standard Go code generation for channels by utilizing the `CallExpr` representation, which enables seamless compilation out-of-the-box, while keeping the invariant information attached for verification phases.
+- **Symbolic Verification Pipeline Stabilization:** Resolved path-condition drift by implementing sequential path condition propagation across `ScopeStmt` sub-bodies (`spawn_body`, `join_body`, and `result_body`), and integrated local `ReturnStmt` ensures checks with full expression substitution (supporting record literal field lookup, variable names, and field paths).
+- **Channel Invariant & Task Precondition Symbolic Verification:** Added symbolic execution checking for channel invariants on `channel_send` (obligation checks) and assumed them on `channel_receive` in both `LetStmt` and `AssignStmt` handlers. Implemented task precondition verification on `spawn` calls.
+- **Conformant Verification Tests:** Created a new language module `07_concurrency_verification` under `tests/language_modules_v2_3/` with positive (`channel_invariant_pos.fh`, `channel_flow_pos.fh`) and negative (`channel_invariant_non_boolean_fail.fh`, `channel_send_violation_fail.fh`, `task_precondition_violation_fail.fh`) test cases. All 42/42 language modules verification tests and 138/138 regression tests are fully passing.
+
+### Quantified Array Conditions (Frame Conditions)
+
+- **Grammar & AST Upgrades:** Integrated universal (`for all`) and existential (`for some`) quantifier syntax (`for all X in A .. B => expr`) into `freehold.lark`, `grammar_inline.py`, and `ast.py` (`ForAllExpr` / `ExistsExpr`), with full serialization support in FH-IR export (`fhir.py`).
+- **Verifier & Type Checking:** Added static type checks in `verifier.py` to ensure lower and upper bounds of quantified loops resolve to `Integer` and the loop body evaluates to `Boolean`.
+- **SMT Generation & Array Literal Support:** Mapped quantified expressions to SMT-LIB v2 `forall` and `exists` assertions in `symbolic.py`. Added explicit SMT mapping for array literal expressions (`ArrayLiteralExpr`) using nested `store` operations on `as const` arrays to allow proof of array elements.
+- **Variable Typing in SMT Queries:** Enhanced the SMT query declaration logic in `symbolic.py` to detect array variables and declare them with their actual SMT types (e.g. `(Array Int Int)`) instead of declaring them as simple `Int` scalars, avoiding type conflicts.
+- **Go and WhyML Codegen:** Supported compilation/translation of quantifiers to Go loops within anonymous closures in `go_codegen.py` and WhyML quantifiers in `whyml_codegen.py`.
+- **Conformant Verification Tests:** Added an array quantifier verification test case (`array_quantifier.fh`) under `06_arrays` checking both universal and existential quantifiers against initialized array literals. Integrated targeted positive and negative quantifier test cases under `tests/language_modules_v2_3/06_array_quantifiers` checking type resolution, AST representation, Go code generation, and bounds checking diagnostics. Updated language conformance runner snapshots with 100% success (472/472 base tests and 37/37 v2.3 tests passing).
+
+
+### Universal-Solver-Translation (Why3-Style)
+
+- **WhyML Code Generation (`whyml_codegen.py`):** Implemented a complete WhyML code generator that maps Freehold Program ASTs to WhyML syntax. Features include casing/naming normalization, reference-cell propagation (`ref`/`!`) for mutated variables, record field updates (`<-`), invariants, variants, and OCaml-style exception-based early returns (`exception Return`).
+- **CLI Subcommand (`main.py`):** Added the `whyml` subcommand to the Freehold CLI (`python -m freehold whyml <file.fh> [-o <output.mlw>]`) allowing developers to translate and export Freehold sources directly to WhyML.
+- **Verification & Validation:** Verified the generated WhyML against positive language conformance tests. All 138 regression tests and Stage 3 bootstrap tests passed successfully.
+
+### Field-Level Dependency Tracking (Record-Field Tracking)
+
+- **Record-Field Grammar & Parsing:** Expanded the grammar (`freehold.lark` and `grammar_inline.py`) to support qualified names in both `depends` target and source positions, enabling fine-grained contracts like `depends Target.Field => Source.Field`.
+- **Field-Aware Information Flow Analysis:** Upgraded the information flow verifier (`verifier.py`) to correctly handle record fields. Dependency verification and propagation now extract base root variables from dotted field paths while preserving context, and check for self-dependencies (`+`).
+- **Inter-procedural Field Mutation Bugfix:** Fixed a bug in `verifier.py`'s `collect_mutated_vars` helper where dotted field paths in a callee's depends contract targets (e.g., `p1.x`) were not properly mapped to the root variable parameter. They are now correctly parsed, allowing caller routines to correctly detect when arguments are modified via sub-calls.
+- **Conformant Verification Tests:** Added positive and negative test cases (`field_depends_pos.fh`, `field_depends_neg.fh`, and the transitive call negative case `field_depends_transitive_neg.fh` with expected errors) to the `04_flow_contracts` test suite. All 33 language conformance tests and project regression tests now pass successfully.
+
 ### Static Anti-Aliasing Verification Hardening
 
 - **Inter-procedural Anti-Aliasing Enforcements:** Integrated comprehensive static anti-aliasing checks inside the `CallStmt` verifier handler (`verifier.py`) to prevent mutable parameter-parameter, parameter-global, and argument-global aliasing. This guarantees memory safety during routine calls.

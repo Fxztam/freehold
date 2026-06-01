@@ -39,11 +39,12 @@ global_spec: GLOBAL_MODE? NAME
 GLOBAL_MODE.2: "Input" | "Output" | "In_Out"
 
 depends_clause: "depends" dependency_spec ("," dependency_spec)*
-dependency_spec: NAME "=>" dependency_sources
+dependency_spec: qualified_name "=>" dependency_sources
 dependency_sources: dependency_source
                   | "(" dependency_source_list ")"
 dependency_source_list: dependency_source ("," dependency_source)*
-dependency_source: NAME | "+"
+dependency_source: qualified_name | "+"
+
 
 requires_clause: "requires" constraint_list
 constraint_list: constraint ("," constraint)*
@@ -87,6 +88,8 @@ named_arg_list: named_arg ("," named_arg)*
 named_arg: NAME ":" expr
 
 ?expr: logic_or
+     | "for" "all" NAME "in" logic_or ".." logic_or "=>" expr -> for_all_expr
+     | "for" "some" NAME "in" logic_or ".." logic_or "=>" expr -> exists_expr
 ?logic_or: logic_and | logic_or "or" logic_and -> or_expr
 ?logic_and: equality | logic_and "and" equality -> and_expr
 ?equality: comparison | equality "=" comparison -> eq_expr | equality "!=" comparison -> neq_expr
@@ -114,6 +117,7 @@ named_arg: NAME ":" expr
      | type_ref "{" named_arg_list "}" -> record_literal
      | field_path -> field_access
      | NAME "[" expr "]" -> index_expr
+     | NAME type_arg_list "(" arg_list? ")" "with" "invariant" expr -> channel_create_with_invariant
      | field_path type_arg_list "(" arg_list? ")" -> function_call
      | NAME type_arg_list "(" arg_list? ")" -> function_call
      | qualified_name "(" arg_list? ")" -> function_call

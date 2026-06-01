@@ -1,0 +1,27 @@
+module App.Main
+
+-- A function that computes the sum of a 3-element array.
+-- It requires that all elements are non-negative, which is specified using a universal quantifier.
+-- It ensures that the computed sum is non-negative.
+function sum_positive(arr: Array<Integer, 3>) returns Integer
+requires for all I in 0..2 => arr[I] >= 0
+ensures result >= 0
+is
+    return arr[0] + arr[1] + arr[2]
+end sum_positive
+
+procedure main()
+is
+    let values: Array<Integer, 3> = [5, 10, 15]
+    
+    -- Verify that the universal quantifier holds for our literal array
+    check for all I in 0..2 => values[I] >= 0
+    
+    -- Verify that the existential quantifier also holds
+    check for some I in 0..2 => values[I] = 10
+    
+    let total: Integer = sum_positive(values)
+    check total = 30
+end main
+
+end App.Main

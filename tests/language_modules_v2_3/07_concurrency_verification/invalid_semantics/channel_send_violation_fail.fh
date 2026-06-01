@@ -1,0 +1,13 @@
+module Concurrency.ChannelSendViolationFail
+
+async function verify_send_violation() returns Integer
+is
+    let chan: Channel<Integer> = channel<Integer>(8) with invariant for all X in 0 .. 0 => X >= 0
+    let sender: Sender<Integer> = channel_sender<Integer>(chan)
+
+    -- SMT should fail because -5 does not satisfy the invariant X >= 0!
+    let sent: Boolean = await channel_send<Integer>(sender, -5)
+    return 0
+end verify_send_violation
+
+end Concurrency.ChannelSendViolationFail

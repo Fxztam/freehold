@@ -215,7 +215,8 @@ class FieldAccessExpr:
 
 @dataclass(frozen=True)
 class CallExpr:
-    name: str; args: list[Any]; pos: SourcePos; type_args: list[str] | None = None
+    name: str; args: list[Any]; pos: SourcePos; type_args: list[str] | None = None; invariant: Any | None = None
+
 
 @dataclass(frozen=True)
 class AwaitExpr:
@@ -302,3 +303,23 @@ class ScopeStmt:
 class StringExpr:
     value: str
     pos: SourcePos
+
+
+@dataclass(frozen=True)
+class ForAllExpr:
+    var_name: str
+    lower: Any
+    upper: Any
+    expr: Any
+    pos: SourcePos
+
+
+@dataclass(frozen=True)
+class ExistsExpr:
+    var_name: str
+    lower: Any
+    upper: Any
+    expr: Any
+    pos: SourcePos
+
+

@@ -9,7 +9,8 @@ requires String.instr(sku, "SKU") >= 0, quantity >= 0, warehouse_id > 0
 ensures result.quantity = quantity, result.warehouse.id = warehouse_id
 is
     let warehouse: Warehouse = make_warehouse(warehouse_id, warehouse_label)
-    return make_stock_item(sku, quantity, warehouse)
+    let item: StockItem = make_stock_item(sku, quantity, warehouse)
+    return item
 end build_item
 
 function load_stock(seed: Integer) returns Result<Array<StockItem, 3>, StockMissing>
@@ -30,7 +31,8 @@ is
     if seed = 0 then
         abort StockMissing
     end if
-    return build_item("SKU-READ", seed + 5, 3, "direct")
+    let item: StockItem = build_item("SKU-READ", seed + 5, 3, "direct")
+    return item
 end read_item
 
 end Domain.Inventory

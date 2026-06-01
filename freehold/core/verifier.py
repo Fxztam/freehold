@@ -94,7 +94,7 @@ class Verifier:
         flow_summaries = ControlFlowAnalyzer(routines, program.module_name).analyze_routines()
         vp = VerifiedProgram(program, types, records, errors, routines, services, obs, flow_summaries)
         from freehold.core.symbolic import symbolic_obligations, solve_smt_query
-        new_obs = symbolic_obligations(vp)
+        new_obs = symbolic_obligations(vp, imported_modules=imported_modules)
         failed_obs = []
         for ob in new_obs:
             res = solve_smt_query(ob["smt_query"], prover=prover, timeout=timeout)
@@ -346,8 +346,9 @@ class Verifier:
                     callee_params = [p.name for p in callee.params]
                     if hasattr(callee, "depends_specs") and callee.depends_specs:
                         for d_callee in callee.depends_specs:
-                            if d_callee.target in callee_params:
-                                idx = callee_params.index(d_callee.target)
+                            target_root = d_callee.target.split('.')[0]
+                            if target_root in callee_params:
+                                idx = callee_params.index(target_root)
                                 if idx < len(stmt.args):
                                     arg = stmt.args[idx]
                                     if isinstance(arg, VarExpr):
@@ -356,7 +357,7 @@ class Verifier:
                                         mutated.add(getattr(arg, "name", None) or getattr(arg, "path", [None])[0])
                             else:
                                 # Global target
-                                mutated.add(d_callee.target)
+                                mutated.add(target_root)
                     elif callee.kind == "procedure":
                         for arg in stmt.args:
                             if isinstance(arg, VarExpr):
@@ -469,23 +470,27 @@ class Verifier:
                     raise TypeCheckError(f"{d.pos.text()}: duplicate dependency target: {d.target}")
                 seen_targets.add(d.target)
 
-                if d.target not in valid_targets:
+                target_root = d.target.split('.')[0]
+                if target_root not in valid_targets:
                     raise TypeCheckError(f"{d.pos.text()}: dependency target '{d.target}' not allowed or not declared as Output/In_Out")
 
                 for src in d.sources:
                     if src == "+":
-                        if d.target not in param_names and d.target not in actual_globals:
+                        if target_root not in param_names and target_root not in actual_globals:
                             raise TypeCheckError(f"{d.pos.text()}: '+' source is only allowed for parameter/global targets")
                     else:
-                        if src not in valid_sources:
+                        src_root = src.split('.')[0]
+                        if src_root not in valid_sources:
                             raise TypeCheckError(f"{d.pos.text()}: dependency source '{src}' not allowed or not declared as Input/In_Out")
 
+            seen_target_roots = {t.split('.')[0] for t in seen_targets}
             for mt in mutated_targets:
-                if mt not in seen_targets:
+                if mt not in seen_target_roots:
                     raise TypeCheckError(f"{r.pos.text()}: target '{mt}' is modified in body but missing from depends clause")
 
             for target in seen_targets:
-                if target != "result" and target not in mutated_targets:
+                target_root = target.split('.')[0]
+                if target_root != "result" and target_root not in mutated_targets:
                     raise TypeCheckError(f"{r.pos.text()}: dependency target '{target}' is not modified in body")
 
             if r.kind == "function" and "result" not in seen_targets:
@@ -610,8 +615,9 @@ class Verifier:
                                 for d_callee in callee.depends_specs:
                                     target_var = None
                                     is_global_target = False
-                                    if d_callee.target in callee_params:
-                                        t_idx = callee_params.index(d_callee.target)
+                                    d_target_root = d_callee.target.split('.')[0]
+                                    if d_target_root in callee_params:
+                                        t_idx = callee_params.index(d_target_root)
                                         if t_idx < len(stmt.args):
                                             arg_target = stmt.args[t_idx]
                                             if isinstance(arg_target, VarExpr):
@@ -619,7 +625,7 @@ class Verifier:
                                             elif isinstance(arg_target, (FieldAccessExpr, IndexExpr, IndexedFieldAccessExpr)):
                                                 target_var = getattr(arg_target, "name", None) or getattr(arg_target, "path", [None])[0]
                                     else:
-                                        target_var = d_callee.target
+                                        target_var = d_target_root
                                         is_global_target = True
                                         
                                     if target_var:
@@ -630,12 +636,14 @@ class Verifier:
                                                     accumulated |= dependencies.get(target_var, set())
                                                 else:
                                                     accumulated |= dependencies_of(arg_target)
-                                            elif src in callee_params:
-                                                s_idx = callee_params.index(src)
-                                                if s_idx < len(stmt.args):
-                                                    accumulated |= dependencies_of(stmt.args[s_idx])
                                             else:
-                                                accumulated |= dependencies.get(src, set())
+                                                src_root = src.split('.')[0]
+                                                if src_root in callee_params:
+                                                    s_idx = callee_params.index(src_root)
+                                                    if s_idx < len(stmt.args):
+                                                        accumulated |= dependencies_of(stmt.args[s_idx])
+                                                else:
+                                                    accumulated |= dependencies.get(src_root, set())
                                         new_arg_deps[target_var] = accumulated | get_active_control_deps()
                                 for t_var, deps in new_arg_deps.items():
                                     dependencies[t_var] = deps
@@ -736,10 +744,11 @@ class Verifier:
             
             for d in r.depends_specs:
                 target = d.target
-                actual_sources = dependencies.get(target, set())
-                declared_sources = {s for s in d.sources if s != "+"}
+                target_root = target.split('.')[0]
+                actual_sources = dependencies.get(target_root, set())
+                declared_sources = {s.split('.')[0] for s in d.sources if s != "+"}
                 if "+" in d.sources:
-                    declared_sources.add(target)
+                    declared_sources.add(target_root)
                 
                 extra_sources = actual_sources - declared_sources
                 extra_sources = {s for s in extra_sources if s in param_names or s in seen_globals}
@@ -1146,6 +1155,10 @@ class Verifier:
             item_type = require_builtin_type_arg()
             expect_count(1)
             expect_type(0, "Integer")
+            if getattr(e, "invariant", None) is not None:
+                inv_t = self.infer(e.invariant, env, ctx, allow_result, result_type)
+                if self.base(inv_t, ctx) != "Boolean":
+                    raise TypeCheckError(f"{e.invariant.pos.text()}: channel invariant must be Boolean, got {type_to_string(inv_t)}")
             return TypeName(f"Channel<{item_type}>")
         if e.name == "channel_sender":
             item_type = require_builtin_type_arg()
@@ -1395,6 +1408,19 @@ class Verifier:
             return ArrayLiteralType(first.name, len(e.items))
         if isinstance(e, IndexExpr):
             return self.infer_index_target(e.name, e.index, e.pos, env, ctx, allow_result, result_type)
+        if isinstance(e, ForAllExpr) or isinstance(e, ExistsExpr):
+            lower_t = self.infer(e.lower, env, ctx, allow_result, result_type)
+            upper_t = self.infer(e.upper, env, ctx, allow_result, result_type)
+            if self.base(lower_t, ctx) != "Integer":
+                raise TypeCheckError(f"{e.lower.pos.text()}: quantifier lower bound must be Integer, got {type_to_string(lower_t)}")
+            if self.base(upper_t, ctx) != "Integer":
+                raise TypeCheckError(f"{e.upper.pos.text()}: quantifier upper bound must be Integer, got {type_to_string(upper_t)}")
+            new_env = dict(env)
+            new_env[e.var_name] = TypeName("Integer")
+            body_t = self.infer(e.expr, new_env, ctx, allow_result, result_type)
+            if self.base(body_t, ctx) != "Boolean":
+                raise TypeCheckError(f"{e.expr.pos.text()}: quantifier body must be Boolean, got {type_to_string(body_t)}")
+            return TypeName("Boolean")
         if isinstance(e, SpecialResultExpr):
             return self.contract_value_type(e.name, e.pos, allow_result, result_type)
         if isinstance(e, VarExpr):

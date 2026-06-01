@@ -18,16 +18,19 @@ type Shipment is record
 end record
 
 function make_place(zone_id: Integer, label: String) returns Place
+ensures result.zone_id = zone_id
 is
     return Place { zone_id: zone_id, label: label }
 end make_place
 
 function make_recipient(id: Integer, name: String, address: Place) returns Recipient
+ensures result.id = id, result.address.zone_id = address.zone_id
 is
     return Recipient { id: id, name: name, address: address }
 end make_recipient
 
 function make_shipment(id: Integer, recipient: Recipient, destination: Place) returns Shipment
+ensures result.id = id, result.recipient.address.zone_id = recipient.address.zone_id, result.destination.zone_id = destination.zone_id
 is
     return Shipment { id: id, recipient: recipient, destination: destination }
 end make_shipment

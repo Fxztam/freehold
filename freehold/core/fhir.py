@@ -23,6 +23,8 @@ from freehold.core.ast import (
     FieldAccessExpr,
     FieldAssignStmt,
     IfStmt,
+    ExistsExpr,
+    ForAllExpr,
     ImportDecl,
     IndexExpr,
     IndexedFieldAccessExpr,
@@ -604,6 +606,22 @@ def export_expr(expr: Any) -> dict[str, Any]:
         return {"kind": "IndexExpr", "name": expr.name, "index": export_expr(expr.index)}
     if isinstance(expr, IndexedFieldAccessExpr):
         return {"kind": "IndexedFieldAccessExpr", "name": expr.name, "index": export_expr(expr.index), "fields": list(expr.fields)}
+    if isinstance(expr, ForAllExpr):
+        return {
+            "kind": "ForAllExpr",
+            "var_name": expr.var_name,
+            "lower": export_expr(expr.lower),
+            "upper": export_expr(expr.upper),
+            "expr": export_expr(expr.expr),
+        }
+    if isinstance(expr, ExistsExpr):
+        return {
+            "kind": "ExistsExpr",
+            "var_name": expr.var_name,
+            "lower": export_expr(expr.lower),
+            "upper": export_expr(expr.upper),
+            "expr": export_expr(expr.expr),
+        }
     if isinstance(expr, UnaryExpr):
         return {"kind": "UnaryExpr", "op": expr.op, "value": export_expr(expr.expr)}
     if isinstance(expr, BinaryExpr):

@@ -1,0 +1,21 @@
+module FieldDependsPos
+
+type Point is record
+    x: Integer
+    y: Integer
+end record
+
+procedure update_points(p1: Point, p2: Point)
+depends p1.x => (p2.y, +), p2.x => (p1.y, +)
+is
+    p1.x := p2.y
+    p2.x := p1.y
+end update_points
+
+function get_x(p: Point) returns Integer
+depends result => p.x
+is
+    return p.x
+end get_x
+
+end FieldDependsPos

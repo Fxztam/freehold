@@ -1,0 +1,15 @@
+module field_depends_neg
+
+type Point is record
+    x: Integer
+    y: Integer
+end record
+
+procedure update_points(p1: Point, p2: Point, z: Integer)
+depends p1.x => p2.y, p2.x => p1.y
+is
+    p1.x := p2.y + z
+    p2.x := p1.y
+end update_points
+
+end field_depends_neg

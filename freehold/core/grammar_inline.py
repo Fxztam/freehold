@@ -34,7 +34,18 @@ result_payload_type: result_type | type_ref
 result_type: "Result" TYPE_ARG_START result_payload_type "," type_ref ">"
 array_type: NAME TYPE_ARG_START type_ref "," INT_NUMBER ">"
 
-contract_block: requires_clause* aborts_clause* ensures_clause*
+contract_block: global_clause* depends_clause* requires_clause* aborts_clause* ensures_clause*
+global_clause: "global" global_spec ("," global_spec)*
+global_spec: GLOBAL_MODE? NAME
+GLOBAL_MODE.2: "Input" | "Output" | "In_Out"
+
+depends_clause: "depends" dependency_spec ("," dependency_spec)*
+dependency_spec: qualified_name "=>" dependency_sources
+dependency_sources: dependency_source
+                  | "(" dependency_source_list ")"
+dependency_source_list: dependency_source ("," dependency_source)*
+dependency_source: qualified_name | "+"
+
 requires_clause: "requires" constraint_list
 constraint_list: constraint ("," constraint)*
 ?constraint: NAME "is" NAME -> is_expr
@@ -77,6 +88,8 @@ named_arg_list: named_arg ("," named_arg)*
 named_arg: NAME ":" expr
 
 ?expr: logic_or
+     | "for" "all" NAME "in" logic_or ".." logic_or "=>" expr -> for_all_expr
+     | "for" "some" NAME "in" logic_or ".." logic_or "=>" expr -> exists_expr
 ?logic_or: logic_and | logic_or "or" logic_and -> or_expr
 ?logic_and: equality | logic_and "and" equality -> and_expr
 ?equality: comparison | equality "=" comparison -> eq_expr | equality "!=" comparison -> neq_expr
@@ -102,6 +115,7 @@ named_arg: NAME ":" expr
      | type_ref "{" named_arg_list "}" -> record_literal
      | field_path -> field_access
      | NAME "[" expr "]" -> index_expr
+     | NAME type_arg_list "(" arg_list? ")" "with" "invariant" expr -> channel_create_with_invariant
      | field_path type_arg_list "(" arg_list? ")" -> function_call
      | NAME type_arg_list "(" arg_list? ")" -> function_call
      | qualified_name "(" arg_list? ")" -> function_call

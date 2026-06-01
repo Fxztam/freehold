@@ -1,0 +1,20 @@
+module field_depends_transitive_neg
+
+type Point is record
+    x: Integer
+    y: Integer
+end record
+
+procedure update_points(p1: Point, p2: Point)
+depends p1.x => (p2.y, +)
+is
+    p1.x := p2.y
+end update_points
+
+procedure caller(a: Point, b: Point)
+depends a.x => (a.y, +)
+is
+    call update_points(a, b)
+end caller
+
+end field_depends_transitive_neg

@@ -1860,44 +1860,68 @@
                 },
                 "body": [
                   {
+                    "kind": "LetStmt",
+                    "name": "depot",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "make_address",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "NumberExpr",
+                            "value": 42
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "Berlin"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "order",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Order"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "make_order",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "seed"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "depot"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
                     "kind": "ReturnStmt",
                     "value": {
                       "kind": "ReturnOk",
                       "value": {
-                        "kind": "CallExpr",
-                        "name": "make_order",
-                        "args": [
-                          {
-                            "kind": "PositionalArg",
-                            "value": {
-                              "kind": "VarExpr",
-                              "name": "seed"
-                            }
-                          },
-                          {
-                            "kind": "PositionalArg",
-                            "value": {
-                              "kind": "CallExpr",
-                              "name": "make_address",
-                              "args": [
-                                {
-                                  "kind": "PositionalArg",
-                                  "value": {
-                                    "kind": "NumberExpr",
-                                    "value": 42
-                                  }
-                                },
-                                {
-                                  "kind": "PositionalArg",
-                                  "value": {
-                                    "kind": "StringExpr",
-                                    "value": "Berlin"
-                                  }
-                                }
-                              ]
-                            }
-                          }
-                        ]
+                        "kind": "VarExpr",
+                        "name": "order"
                       }
                     }
                   }
@@ -1933,10 +1957,47 @@
                 },
                 "requires": [],
                 "aborts": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "result",
+                        "city_id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "city_id"
+                    }
+                  }
+                ],
                 "contracts": {
                   "requires": [],
-                  "ensures": [],
+                  "ensures": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "result",
+                            "city_id"
+                          ]
+                        },
+                        "right": {
+                          "kind": "VarExpr",
+                          "name": "city_id"
+                        }
+                      }
+                    }
+                  ],
                   "aborts": []
                 },
                 "contract_bindings": {
@@ -2090,10 +2151,90 @@
                 },
                 "requires": [],
                 "aborts": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "result",
+                        "id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  },
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "result",
+                        "address",
+                        "city_id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "address",
+                        "city_id"
+                      ]
+                    }
+                  }
+                ],
                 "contracts": {
                   "requires": [],
-                  "ensures": [],
+                  "ensures": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "result",
+                            "id"
+                          ]
+                        },
+                        "right": {
+                          "kind": "VarExpr",
+                          "name": "id"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 1,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "result",
+                            "address",
+                            "city_id"
+                          ]
+                        },
+                        "right": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "address",
+                            "city_id"
+                          ]
+                        }
+                      }
+                    }
+                  ],
                   "aborts": []
                 },
                 "contract_bindings": {
@@ -2901,44 +3042,68 @@
                 },
                 "body": [
                   {
+                    "kind": "LetStmt",
+                    "name": "depot",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "make_address",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "NumberExpr",
+                            "value": 42
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "Berlin"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "order",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Order"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "make_order",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "seed"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "depot"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
                     "kind": "ReturnStmt",
                     "value": {
                       "kind": "ReturnOk",
                       "value": {
-                        "kind": "CallExpr",
-                        "name": "make_order",
-                        "args": [
-                          {
-                            "kind": "PositionalArg",
-                            "value": {
-                              "kind": "VarExpr",
-                              "name": "seed"
-                            }
-                          },
-                          {
-                            "kind": "PositionalArg",
-                            "value": {
-                              "kind": "CallExpr",
-                              "name": "make_address",
-                              "args": [
-                                {
-                                  "kind": "PositionalArg",
-                                  "value": {
-                                    "kind": "NumberExpr",
-                                    "value": 42
-                                  }
-                                },
-                                {
-                                  "kind": "PositionalArg",
-                                  "value": {
-                                    "kind": "StringExpr",
-                                    "value": "Berlin"
-                                  }
-                                }
-                              ]
-                            }
-                          }
-                        ]
+                        "kind": "VarExpr",
+                        "name": "order"
                       }
                     }
                   }
@@ -2974,10 +3139,47 @@
                 },
                 "requires": [],
                 "aborts": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "result",
+                        "city_id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "city_id"
+                    }
+                  }
+                ],
                 "contracts": {
                   "requires": [],
-                  "ensures": [],
+                  "ensures": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "result",
+                            "city_id"
+                          ]
+                        },
+                        "right": {
+                          "kind": "VarExpr",
+                          "name": "city_id"
+                        }
+                      }
+                    }
+                  ],
                   "aborts": []
                 },
                 "contract_bindings": {
@@ -3131,10 +3333,90 @@
                 },
                 "requires": [],
                 "aborts": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "result",
+                        "id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  },
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "result",
+                        "address",
+                        "city_id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "address",
+                        "city_id"
+                      ]
+                    }
+                  }
+                ],
                 "contracts": {
                   "requires": [],
-                  "ensures": [],
+                  "ensures": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "result",
+                            "id"
+                          ]
+                        },
+                        "right": {
+                          "kind": "VarExpr",
+                          "name": "id"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 1,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "result",
+                            "address",
+                            "city_id"
+                          ]
+                        },
+                        "right": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "address",
+                            "city_id"
+                          ]
+                        }
+                      }
+                    }
+                  ],
                   "aborts": []
                 },
                 "contract_bindings": {
@@ -3429,10 +3711,40 @@
                 "kind": "ProofObligation",
                 "data": {
                   "kind": "ensures",
-                  "location": "line 27:9",
-                  "obligation": "(= value_id seed)",
+                  "location": "line 16:9",
+                  "obligation": "(= city_id city_id)",
+                  "routine": "make_address",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 22:25",
+                  "obligation": "(= address_city_id address_city_id)",
+                  "routine": "make_order",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const address_city_id Int)\n(assert (not (= address_city_id address_city_id)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 22:9",
+                  "obligation": "(= id id)",
+                  "routine": "make_order",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const id Int)\n(assert (not (= id id)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 29:9",
+                  "obligation": "(= order_id seed)",
                   "routine": "load_order",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const seed Int)\n(declare-const value_id Int)\n(assert (> seed 0))\n(assert (not (= value_id seed)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const depot_city_id Int)\n(declare-const order_address_city_id Int)\n(declare-const order_id Int)\n(declare-const seed Int)\n(assert (> seed 0))\n(assert (= depot_city_id 42))\n(assert (= order_id seed))\n(assert (= order_address_city_id depot_city_id))\n(assert (not (= order_id seed)))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],
@@ -3522,10 +3834,40 @@
                   "kind": "ProofObligation",
                   "data": {
                     "kind": "ensures",
-                    "location": "line 27:9",
-                    "obligation": "(= value_id seed)",
+                    "location": "line 16:9",
+                    "obligation": "(= city_id city_id)",
+                    "routine": "make_address",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "ensures",
+                    "location": "line 22:25",
+                    "obligation": "(= address_city_id address_city_id)",
+                    "routine": "make_order",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const address_city_id Int)\n(assert (not (= address_city_id address_city_id)))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "ensures",
+                    "location": "line 22:9",
+                    "obligation": "(= id id)",
+                    "routine": "make_order",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const id Int)\n(assert (not (= id id)))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "ensures",
+                    "location": "line 29:9",
+                    "obligation": "(= order_id seed)",
                     "routine": "load_order",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const seed Int)\n(declare-const value_id Int)\n(assert (> seed 0))\n(assert (not (= value_id seed)))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const depot_city_id Int)\n(declare-const order_address_city_id Int)\n(declare-const order_id Int)\n(declare-const seed Int)\n(assert (> seed 0))\n(assert (= depot_city_id 42))\n(assert (= order_id seed))\n(assert (= order_address_city_id depot_city_id))\n(assert (not (= order_id seed)))\n(check-sat)\n; unsat means proved"
                   }
                 }
               ],
@@ -4041,44 +4383,68 @@
               },
               "body": [
                 {
+                  "kind": "LetStmt",
+                  "name": "depot",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "make_address",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "NumberExpr",
+                          "value": 42
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "Berlin"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "order",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Order"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "make_order",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "seed"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "depot"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
                   "kind": "ReturnStmt",
                   "value": {
                     "kind": "ReturnOk",
                     "value": {
-                      "kind": "CallExpr",
-                      "name": "make_order",
-                      "args": [
-                        {
-                          "kind": "PositionalArg",
-                          "value": {
-                            "kind": "VarExpr",
-                            "name": "seed"
-                          }
-                        },
-                        {
-                          "kind": "PositionalArg",
-                          "value": {
-                            "kind": "CallExpr",
-                            "name": "make_address",
-                            "args": [
-                              {
-                                "kind": "PositionalArg",
-                                "value": {
-                                  "kind": "NumberExpr",
-                                  "value": 42
-                                }
-                              },
-                              {
-                                "kind": "PositionalArg",
-                                "value": {
-                                  "kind": "StringExpr",
-                                  "value": "Berlin"
-                                }
-                              }
-                            ]
-                          }
-                        }
-                      ]
+                      "kind": "VarExpr",
+                      "name": "order"
                     }
                   }
                 }
@@ -4114,10 +4480,47 @@
               },
               "requires": [],
               "aborts": [],
-              "ensures": [],
+              "ensures": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "city_id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "city_id"
+                  }
+                }
+              ],
               "contracts": {
                 "requires": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "result",
+                          "city_id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "city_id"
+                      }
+                    }
+                  }
+                ],
                 "aborts": []
               },
               "contract_bindings": {
@@ -4271,10 +4674,90 @@
               },
               "requires": [],
               "aborts": [],
-              "ensures": [],
+              "ensures": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "id"
+                  }
+                },
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "address",
+                      "city_id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "address",
+                      "city_id"
+                    ]
+                  }
+                }
+              ],
               "contracts": {
                 "requires": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "result",
+                          "id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "id"
+                      }
+                    }
+                  },
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 1,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "result",
+                          "address",
+                          "city_id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "address",
+                          "city_id"
+                        ]
+                      }
+                    }
+                  }
+                ],
                 "aborts": []
               },
               "contract_bindings": {
@@ -5079,44 +5562,68 @@
               },
               "body": [
                 {
+                  "kind": "LetStmt",
+                  "name": "depot",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "make_address",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "NumberExpr",
+                          "value": 42
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "Berlin"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "order",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Order"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "make_order",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "seed"
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "depot"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
                   "kind": "ReturnStmt",
                   "value": {
                     "kind": "ReturnOk",
                     "value": {
-                      "kind": "CallExpr",
-                      "name": "make_order",
-                      "args": [
-                        {
-                          "kind": "PositionalArg",
-                          "value": {
-                            "kind": "VarExpr",
-                            "name": "seed"
-                          }
-                        },
-                        {
-                          "kind": "PositionalArg",
-                          "value": {
-                            "kind": "CallExpr",
-                            "name": "make_address",
-                            "args": [
-                              {
-                                "kind": "PositionalArg",
-                                "value": {
-                                  "kind": "NumberExpr",
-                                  "value": 42
-                                }
-                              },
-                              {
-                                "kind": "PositionalArg",
-                                "value": {
-                                  "kind": "StringExpr",
-                                  "value": "Berlin"
-                                }
-                              }
-                            ]
-                          }
-                        }
-                      ]
+                      "kind": "VarExpr",
+                      "name": "order"
                     }
                   }
                 }
@@ -5152,10 +5659,47 @@
               },
               "requires": [],
               "aborts": [],
-              "ensures": [],
+              "ensures": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "city_id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "city_id"
+                  }
+                }
+              ],
               "contracts": {
                 "requires": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "result",
+                          "city_id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "city_id"
+                      }
+                    }
+                  }
+                ],
                 "aborts": []
               },
               "contract_bindings": {
@@ -5309,10 +5853,90 @@
               },
               "requires": [],
               "aborts": [],
-              "ensures": [],
+              "ensures": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "id"
+                  }
+                },
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "address",
+                      "city_id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "address",
+                      "city_id"
+                    ]
+                  }
+                }
+              ],
               "contracts": {
                 "requires": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "result",
+                          "id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "id"
+                      }
+                    }
+                  },
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 1,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "result",
+                          "address",
+                          "city_id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "address",
+                          "city_id"
+                        ]
+                      }
+                    }
+                  }
+                ],
                 "aborts": []
               },
               "contract_bindings": {
@@ -5607,10 +6231,40 @@
               "kind": "ProofObligation",
               "data": {
                 "kind": "ensures",
-                "location": "line 27:9",
-                "obligation": "(= value_id seed)",
+                "location": "line 16:9",
+                "obligation": "(= city_id city_id)",
+                "routine": "make_address",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "ensures",
+                "location": "line 22:25",
+                "obligation": "(= address_city_id address_city_id)",
+                "routine": "make_order",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const address_city_id Int)\n(assert (not (= address_city_id address_city_id)))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "ensures",
+                "location": "line 22:9",
+                "obligation": "(= id id)",
+                "routine": "make_order",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const id Int)\n(assert (not (= id id)))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "ensures",
+                "location": "line 29:9",
+                "obligation": "(= order_id seed)",
                 "routine": "load_order",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const seed Int)\n(declare-const value_id Int)\n(assert (> seed 0))\n(assert (not (= value_id seed)))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const depot_city_id Int)\n(declare-const order_address_city_id Int)\n(declare-const order_id Int)\n(declare-const seed Int)\n(assert (> seed 0))\n(assert (= depot_city_id 42))\n(assert (= order_id seed))\n(assert (= order_address_city_id depot_city_id))\n(assert (not (= order_id seed)))\n(check-sat)\n; unsat means proved"
               }
             }
           ],
@@ -5700,10 +6354,40 @@
                 "kind": "ProofObligation",
                 "data": {
                   "kind": "ensures",
-                  "location": "line 27:9",
-                  "obligation": "(= value_id seed)",
+                  "location": "line 16:9",
+                  "obligation": "(= city_id city_id)",
+                  "routine": "make_address",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 22:25",
+                  "obligation": "(= address_city_id address_city_id)",
+                  "routine": "make_order",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const address_city_id Int)\n(assert (not (= address_city_id address_city_id)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 22:9",
+                  "obligation": "(= id id)",
+                  "routine": "make_order",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const id Int)\n(assert (not (= id id)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 29:9",
+                  "obligation": "(= order_id seed)",
                   "routine": "load_order",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const seed Int)\n(declare-const value_id Int)\n(assert (> seed 0))\n(assert (not (= value_id seed)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const depot_city_id Int)\n(declare-const order_address_city_id Int)\n(declare-const order_id Int)\n(declare-const seed Int)\n(assert (> seed 0))\n(assert (= depot_city_id 42))\n(assert (= order_id seed))\n(assert (= order_address_city_id depot_city_id))\n(assert (not (= order_id seed)))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],
@@ -6226,52 +6910,76 @@
                 },
                 "body": [
                   {
+                    "kind": "LetStmt",
+                    "name": "depot",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "make_address",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "NumberExpr",
+                            "value": 7
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "Hamburg"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "order",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Order"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "make_order",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "BinaryExpr",
+                            "op": "+",
+                            "left": {
+                              "kind": "VarExpr",
+                              "name": "seed"
+                            },
+                            "right": {
+                              "kind": "NumberExpr",
+                              "value": 100
+                            }
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "depot"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
                     "kind": "ReturnStmt",
                     "value": {
                       "kind": "ReturnOk",
                       "value": {
-                        "kind": "CallExpr",
-                        "name": "make_order",
-                        "args": [
-                          {
-                            "kind": "PositionalArg",
-                            "value": {
-                              "kind": "BinaryExpr",
-                              "op": "+",
-                              "left": {
-                                "kind": "VarExpr",
-                                "name": "seed"
-                              },
-                              "right": {
-                                "kind": "NumberExpr",
-                                "value": 100
-                              }
-                            }
-                          },
-                          {
-                            "kind": "PositionalArg",
-                            "value": {
-                              "kind": "CallExpr",
-                              "name": "make_address",
-                              "args": [
-                                {
-                                  "kind": "PositionalArg",
-                                  "value": {
-                                    "kind": "NumberExpr",
-                                    "value": 7
-                                  }
-                                },
-                                {
-                                  "kind": "PositionalArg",
-                                  "value": {
-                                    "kind": "StringExpr",
-                                    "value": "Hamburg"
-                                  }
-                                }
-                              ]
-                            }
-                          }
-                        ]
+                        "kind": "VarExpr",
+                        "name": "order"
                       }
                     }
                   }
@@ -6307,10 +7015,47 @@
                 },
                 "requires": [],
                 "aborts": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "result",
+                        "city_id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "city_id"
+                    }
+                  }
+                ],
                 "contracts": {
                   "requires": [],
-                  "ensures": [],
+                  "ensures": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "result",
+                            "city_id"
+                          ]
+                        },
+                        "right": {
+                          "kind": "VarExpr",
+                          "name": "city_id"
+                        }
+                      }
+                    }
+                  ],
                   "aborts": []
                 },
                 "contract_bindings": {
@@ -6464,10 +7209,90 @@
                 },
                 "requires": [],
                 "aborts": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "result",
+                        "id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  },
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "result",
+                        "address",
+                        "city_id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "address",
+                        "city_id"
+                      ]
+                    }
+                  }
+                ],
                 "contracts": {
                   "requires": [],
-                  "ensures": [],
+                  "ensures": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "result",
+                            "id"
+                          ]
+                        },
+                        "right": {
+                          "kind": "VarExpr",
+                          "name": "id"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 1,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "result",
+                            "address",
+                            "city_id"
+                          ]
+                        },
+                        "right": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "address",
+                            "city_id"
+                          ]
+                        }
+                      }
+                    }
+                  ],
                   "aborts": []
                 },
                 "contract_bindings": {
@@ -7277,52 +8102,76 @@
                 },
                 "body": [
                   {
+                    "kind": "LetStmt",
+                    "name": "depot",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Address"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "make_address",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "NumberExpr",
+                            "value": 7
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "Hamburg"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "order",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Order"
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "make_order",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "BinaryExpr",
+                            "op": "+",
+                            "left": {
+                              "kind": "VarExpr",
+                              "name": "seed"
+                            },
+                            "right": {
+                              "kind": "NumberExpr",
+                              "value": 100
+                            }
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "depot"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
                     "kind": "ReturnStmt",
                     "value": {
                       "kind": "ReturnOk",
                       "value": {
-                        "kind": "CallExpr",
-                        "name": "make_order",
-                        "args": [
-                          {
-                            "kind": "PositionalArg",
-                            "value": {
-                              "kind": "BinaryExpr",
-                              "op": "+",
-                              "left": {
-                                "kind": "VarExpr",
-                                "name": "seed"
-                              },
-                              "right": {
-                                "kind": "NumberExpr",
-                                "value": 100
-                              }
-                            }
-                          },
-                          {
-                            "kind": "PositionalArg",
-                            "value": {
-                              "kind": "CallExpr",
-                              "name": "make_address",
-                              "args": [
-                                {
-                                  "kind": "PositionalArg",
-                                  "value": {
-                                    "kind": "NumberExpr",
-                                    "value": 7
-                                  }
-                                },
-                                {
-                                  "kind": "PositionalArg",
-                                  "value": {
-                                    "kind": "StringExpr",
-                                    "value": "Hamburg"
-                                  }
-                                }
-                              ]
-                            }
-                          }
-                        ]
+                        "kind": "VarExpr",
+                        "name": "order"
                       }
                     }
                   }
@@ -7358,10 +8207,47 @@
                 },
                 "requires": [],
                 "aborts": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "result",
+                        "city_id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "city_id"
+                    }
+                  }
+                ],
                 "contracts": {
                   "requires": [],
-                  "ensures": [],
+                  "ensures": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "result",
+                            "city_id"
+                          ]
+                        },
+                        "right": {
+                          "kind": "VarExpr",
+                          "name": "city_id"
+                        }
+                      }
+                    }
+                  ],
                   "aborts": []
                 },
                 "contract_bindings": {
@@ -7515,10 +8401,90 @@
                 },
                 "requires": [],
                 "aborts": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "result",
+                        "id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "VarExpr",
+                      "name": "id"
+                    }
+                  },
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "result",
+                        "address",
+                        "city_id"
+                      ]
+                    },
+                    "right": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "address",
+                        "city_id"
+                      ]
+                    }
+                  }
+                ],
                 "contracts": {
                   "requires": [],
-                  "ensures": [],
+                  "ensures": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "result",
+                            "id"
+                          ]
+                        },
+                        "right": {
+                          "kind": "VarExpr",
+                          "name": "id"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 1,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "result",
+                            "address",
+                            "city_id"
+                          ]
+                        },
+                        "right": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "address",
+                            "city_id"
+                          ]
+                        }
+                      }
+                    }
+                  ],
                   "aborts": []
                 },
                 "contract_bindings": {
@@ -7813,10 +8779,40 @@
                 "kind": "ProofObligation",
                 "data": {
                   "kind": "ensures",
-                  "location": "line 27:9",
-                  "obligation": "(= value_address_city_id 7)",
+                  "location": "line 16:9",
+                  "obligation": "(= city_id city_id)",
+                  "routine": "make_address",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 22:25",
+                  "obligation": "(= address_city_id address_city_id)",
+                  "routine": "make_order",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const address_city_id Int)\n(assert (not (= address_city_id address_city_id)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 22:9",
+                  "obligation": "(= id id)",
+                  "routine": "make_order",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const id Int)\n(assert (not (= id id)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 29:9",
+                  "obligation": "(= order_address_city_id 7)",
                   "routine": "load_order",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const seed Int)\n(declare-const value_address_city_id Int)\n(assert (> seed 0))\n(assert (not (= value_address_city_id 7)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const depot_city_id Int)\n(declare-const order_address_city_id Int)\n(declare-const order_id Int)\n(declare-const seed Int)\n(assert (> seed 0))\n(assert (= depot_city_id 7))\n(assert (= order_id (+ seed 100)))\n(assert (= order_address_city_id depot_city_id))\n(assert (not (= order_address_city_id 7)))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],
@@ -7906,10 +8902,40 @@
                   "kind": "ProofObligation",
                   "data": {
                     "kind": "ensures",
-                    "location": "line 27:9",
-                    "obligation": "(= value_address_city_id 7)",
+                    "location": "line 16:9",
+                    "obligation": "(= city_id city_id)",
+                    "routine": "make_address",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "ensures",
+                    "location": "line 22:25",
+                    "obligation": "(= address_city_id address_city_id)",
+                    "routine": "make_order",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const address_city_id Int)\n(assert (not (= address_city_id address_city_id)))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "ensures",
+                    "location": "line 22:9",
+                    "obligation": "(= id id)",
+                    "routine": "make_order",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const id Int)\n(assert (not (= id id)))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "ensures",
+                    "location": "line 29:9",
+                    "obligation": "(= order_address_city_id 7)",
                     "routine": "load_order",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const seed Int)\n(declare-const value_address_city_id Int)\n(assert (> seed 0))\n(assert (not (= value_address_city_id 7)))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const depot_city_id Int)\n(declare-const order_address_city_id Int)\n(declare-const order_id Int)\n(declare-const seed Int)\n(assert (> seed 0))\n(assert (= depot_city_id 7))\n(assert (= order_id (+ seed 100)))\n(assert (= order_address_city_id depot_city_id))\n(assert (not (= order_address_city_id 7)))\n(check-sat)\n; unsat means proved"
                   }
                 }
               ],
@@ -8427,52 +9453,76 @@
               },
               "body": [
                 {
+                  "kind": "LetStmt",
+                  "name": "depot",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "make_address",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "NumberExpr",
+                          "value": 7
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "Hamburg"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "order",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Order"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "make_order",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "BinaryExpr",
+                          "op": "+",
+                          "left": {
+                            "kind": "VarExpr",
+                            "name": "seed"
+                          },
+                          "right": {
+                            "kind": "NumberExpr",
+                            "value": 100
+                          }
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "depot"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
                   "kind": "ReturnStmt",
                   "value": {
                     "kind": "ReturnOk",
                     "value": {
-                      "kind": "CallExpr",
-                      "name": "make_order",
-                      "args": [
-                        {
-                          "kind": "PositionalArg",
-                          "value": {
-                            "kind": "BinaryExpr",
-                            "op": "+",
-                            "left": {
-                              "kind": "VarExpr",
-                              "name": "seed"
-                            },
-                            "right": {
-                              "kind": "NumberExpr",
-                              "value": 100
-                            }
-                          }
-                        },
-                        {
-                          "kind": "PositionalArg",
-                          "value": {
-                            "kind": "CallExpr",
-                            "name": "make_address",
-                            "args": [
-                              {
-                                "kind": "PositionalArg",
-                                "value": {
-                                  "kind": "NumberExpr",
-                                  "value": 7
-                                }
-                              },
-                              {
-                                "kind": "PositionalArg",
-                                "value": {
-                                  "kind": "StringExpr",
-                                  "value": "Hamburg"
-                                }
-                              }
-                            ]
-                          }
-                        }
-                      ]
+                      "kind": "VarExpr",
+                      "name": "order"
                     }
                   }
                 }
@@ -8508,10 +9558,47 @@
               },
               "requires": [],
               "aborts": [],
-              "ensures": [],
+              "ensures": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "city_id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "city_id"
+                  }
+                }
+              ],
               "contracts": {
                 "requires": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "result",
+                          "city_id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "city_id"
+                      }
+                    }
+                  }
+                ],
                 "aborts": []
               },
               "contract_bindings": {
@@ -8665,10 +9752,90 @@
               },
               "requires": [],
               "aborts": [],
-              "ensures": [],
+              "ensures": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "id"
+                  }
+                },
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "address",
+                      "city_id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "address",
+                      "city_id"
+                    ]
+                  }
+                }
+              ],
               "contracts": {
                 "requires": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "result",
+                          "id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "id"
+                      }
+                    }
+                  },
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 1,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "result",
+                          "address",
+                          "city_id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "address",
+                          "city_id"
+                        ]
+                      }
+                    }
+                  }
+                ],
                 "aborts": []
               },
               "contract_bindings": {
@@ -9475,52 +10642,76 @@
               },
               "body": [
                 {
+                  "kind": "LetStmt",
+                  "name": "depot",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Address"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "make_address",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "NumberExpr",
+                          "value": 7
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "Hamburg"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "order",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "Order"
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "make_order",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "BinaryExpr",
+                          "op": "+",
+                          "left": {
+                            "kind": "VarExpr",
+                            "name": "seed"
+                          },
+                          "right": {
+                            "kind": "NumberExpr",
+                            "value": 100
+                          }
+                        }
+                      },
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "VarExpr",
+                          "name": "depot"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
                   "kind": "ReturnStmt",
                   "value": {
                     "kind": "ReturnOk",
                     "value": {
-                      "kind": "CallExpr",
-                      "name": "make_order",
-                      "args": [
-                        {
-                          "kind": "PositionalArg",
-                          "value": {
-                            "kind": "BinaryExpr",
-                            "op": "+",
-                            "left": {
-                              "kind": "VarExpr",
-                              "name": "seed"
-                            },
-                            "right": {
-                              "kind": "NumberExpr",
-                              "value": 100
-                            }
-                          }
-                        },
-                        {
-                          "kind": "PositionalArg",
-                          "value": {
-                            "kind": "CallExpr",
-                            "name": "make_address",
-                            "args": [
-                              {
-                                "kind": "PositionalArg",
-                                "value": {
-                                  "kind": "NumberExpr",
-                                  "value": 7
-                                }
-                              },
-                              {
-                                "kind": "PositionalArg",
-                                "value": {
-                                  "kind": "StringExpr",
-                                  "value": "Hamburg"
-                                }
-                              }
-                            ]
-                          }
-                        }
-                      ]
+                      "kind": "VarExpr",
+                      "name": "order"
                     }
                   }
                 }
@@ -9556,10 +10747,47 @@
               },
               "requires": [],
               "aborts": [],
-              "ensures": [],
+              "ensures": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "city_id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "city_id"
+                  }
+                }
+              ],
               "contracts": {
                 "requires": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "result",
+                          "city_id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "city_id"
+                      }
+                    }
+                  }
+                ],
                 "aborts": []
               },
               "contract_bindings": {
@@ -9713,10 +10941,90 @@
               },
               "requires": [],
               "aborts": [],
-              "ensures": [],
+              "ensures": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "VarExpr",
+                    "name": "id"
+                  }
+                },
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "result",
+                      "address",
+                      "city_id"
+                    ]
+                  },
+                  "right": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "address",
+                      "city_id"
+                    ]
+                  }
+                }
+              ],
               "contracts": {
                 "requires": [],
-                "ensures": [],
+                "ensures": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "result",
+                          "id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "VarExpr",
+                        "name": "id"
+                      }
+                    }
+                  },
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 1,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "result",
+                          "address",
+                          "city_id"
+                        ]
+                      },
+                      "right": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "address",
+                          "city_id"
+                        ]
+                      }
+                    }
+                  }
+                ],
                 "aborts": []
               },
               "contract_bindings": {
@@ -10011,10 +11319,40 @@
               "kind": "ProofObligation",
               "data": {
                 "kind": "ensures",
-                "location": "line 27:9",
-                "obligation": "(= value_address_city_id 7)",
+                "location": "line 16:9",
+                "obligation": "(= city_id city_id)",
+                "routine": "make_address",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "ensures",
+                "location": "line 22:25",
+                "obligation": "(= address_city_id address_city_id)",
+                "routine": "make_order",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const address_city_id Int)\n(assert (not (= address_city_id address_city_id)))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "ensures",
+                "location": "line 22:9",
+                "obligation": "(= id id)",
+                "routine": "make_order",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const id Int)\n(assert (not (= id id)))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "ensures",
+                "location": "line 29:9",
+                "obligation": "(= order_address_city_id 7)",
                 "routine": "load_order",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const seed Int)\n(declare-const value_address_city_id Int)\n(assert (> seed 0))\n(assert (not (= value_address_city_id 7)))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const depot_city_id Int)\n(declare-const order_address_city_id Int)\n(declare-const order_id Int)\n(declare-const seed Int)\n(assert (> seed 0))\n(assert (= depot_city_id 7))\n(assert (= order_id (+ seed 100)))\n(assert (= order_address_city_id depot_city_id))\n(assert (not (= order_address_city_id 7)))\n(check-sat)\n; unsat means proved"
               }
             }
           ],
@@ -10104,10 +11442,40 @@
                 "kind": "ProofObligation",
                 "data": {
                   "kind": "ensures",
-                  "location": "line 27:9",
-                  "obligation": "(= value_address_city_id 7)",
+                  "location": "line 16:9",
+                  "obligation": "(= city_id city_id)",
+                  "routine": "make_address",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 22:25",
+                  "obligation": "(= address_city_id address_city_id)",
+                  "routine": "make_order",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const address_city_id Int)\n(assert (not (= address_city_id address_city_id)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 22:9",
+                  "obligation": "(= id id)",
+                  "routine": "make_order",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const id Int)\n(assert (not (= id id)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 29:9",
+                  "obligation": "(= order_address_city_id 7)",
                   "routine": "load_order",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const seed Int)\n(declare-const value_address_city_id Int)\n(assert (> seed 0))\n(assert (not (= value_address_city_id 7)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const depot_city_id Int)\n(declare-const order_address_city_id Int)\n(declare-const order_id Int)\n(declare-const seed Int)\n(assert (> seed 0))\n(assert (= depot_city_id 7))\n(assert (= order_id (+ seed 100)))\n(assert (= order_address_city_id depot_city_id))\n(assert (not (= order_address_city_id 7)))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],

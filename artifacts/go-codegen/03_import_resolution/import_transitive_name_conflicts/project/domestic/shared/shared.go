@@ -14,9 +14,17 @@ type Order struct {
 const NotFound = "NotFound"
 
 func MakeAddress(cityId int64, label string) Address {
-	return Address{CityId: cityId, Label: label}
+	var freeholdResult Address = Address{CityId: cityId, Label: label}
+	if !(freeholdResult.CityId == cityId) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }
 
 func MakeOrder(id int64, address Address) Order {
-	return Order{Id: id, Address: address}
+	var freeholdResult Order = Order{Id: id, Address: address}
+	if !(freeholdResult.Address.CityId == address.CityId) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }
