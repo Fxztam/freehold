@@ -1,0 +1,29 @@
+module AliasParamGlobal
+
+type QueryRequest is record
+    val: Integer proto 1
+end record
+
+type QueryResponse is record
+    res: Integer proto 1
+end record
+
+service MyService is
+    rpc query(request: QueryRequest): QueryResponse
+end MyService
+
+procedure service_accessor(val: MyService, res: Integer)
+global Input MyService, In_Out val
+depends val => MyService, res => val
+is
+    res := 1
+end service_accessor
+
+procedure caller(s: MyService)
+global Input MyService, In_Out s
+depends s => MyService
+is
+    call service_accessor(s, 1)
+end caller
+
+end AliasParamGlobal

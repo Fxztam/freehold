@@ -1,0 +1,115 @@
+schema freehold.depends.v1
+
+# This file describes the modular dependencies between language features and
+# compiler components in Freehold. It defines how compiler profiles can be
+# composed of core features, advanced structures, contracts, and runtime systems.
+
+# =============================================================================
+# Language Feature Modules
+# =============================================================================
+
+module core
+  description "Minimal core module structure, module header declarations, comments, and imports"
+end
+
+module types
+  description "Scalar type declarations, built-in types, ranged integer and double types, and references"
+  depends on core
+end
+
+module expr
+  description "Core expressions, literals, arithmetic/logic operators, and operator precedence"
+  depends on types
+end
+
+module function
+  description "Procedures, functions, parameters, routine calls, returns, and qualified names"
+  depends on expr
+end
+
+module statements
+  description "Core imperative statements: let, assignment, if-else, while loops, case blocks, and checks"
+  depends on function
+end
+
+module records
+  description "Record type declarations, record literals, field assignments, and dot field access"
+  depends on expr
+end
+
+module arrays
+  description "Fixed-size Array<T,N> type declarations, array literals, and index access"
+  depends on expr
+end
+
+module result
+  description "Error declarations, Result<T,E> return types, ok/error returns, and value field access"
+  depends on function
+end
+
+module abort
+  description "Error declarations, abort statements, aborts clauses, and caller abort propagation"
+  depends on function
+end
+
+module contracts
+  description "Routine contract blocks containing requires, ensures, global, and depends clauses"
+  depends on function
+end
+
+module concurrency
+  description "Structured concurrency: async routines, await, channels, scopes, and JoinHandles"
+  depends on statements
+end
+
+module grpc
+  description "gRPC IDL: proto field tags, unary services, and gRPC compiler bindings"
+  depends on records
+end
+
+module string_templates
+  description "String templates with positional and named placeholders"
+  depends on expr
+end
+
+module json
+  description "JSON library: Json.stringify for serializable records"
+  depends on records
+end
+
+# =============================================================================
+# Compiler Variant Profiles
+# =============================================================================
+
+profile core_functional
+  description "Basic functional variant without state mutation, contracts, or concurrency"
+  include core
+  include types
+  include expr
+  include function
+end
+
+profile imperative_base
+  description "Standard imperative language with mutable variables, records, arrays, and control flow"
+  include core_functional
+  include statements
+  include records
+  include arrays
+end
+
+profile verifier_core
+  description "Imperative compiler variant with formal verification features (contracts, results, and aborts)"
+  include imperative_base
+  include result
+  include abort
+  include contracts
+end
+
+profile concurrent_service
+  description "Full concurrent compiler profile including async/await, gRPC IDL, JSON, and string templates"
+  include verifier_core
+  include concurrency
+  include grpc
+  include string_templates
+  include json
+end

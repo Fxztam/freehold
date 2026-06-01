@@ -168,6 +168,41 @@ emit FH-SYN-0999
     expected expected_token
 end
 
+rule parse_ok
+when parser parses module successfully
+emit FH-PARSE-0000
+    found parsed_module
+    expected ""
+end
+
+rule name_mismatch
+when parser finds end keyword name mismatch
+emit FH-PARSE-0001
+    found actual_name
+    expected "matching end identifier"
+end
+
+rule unexpected_token
+when parser expects token kind but finds different kind
+emit FH-PARSE-0002
+    found current_token
+    expected "expected token kind"
+end
+
+rule expected_expression
+when parser expects expression but fails to parse
+emit FH-PARSE-0003
+    found current_token
+    expected "expression"
+end
+
+rule expected_statement
+when parser expects statement but fails to parse
+emit FH-PARSE-0004
+    found current_token
+    expected "statement"
+end
+
 section concurrency
 
 rule await_outside_async_function
@@ -269,6 +304,55 @@ when NamedDecl name is reserved_keyword
 emit FH-SEM-1004
     found name
     expected "non-keyword identifier"
+end
+
+rule unknown_exposed_symbol
+when ImportDecl exposing symbol is not exported by module
+emit FH-REF-1001
+    found symbol
+    expected "declared exposed symbol"
+end
+
+rule imported_module_not_found
+when ImportDecl module does not exist in workspace
+emit FH-SEM-1006
+    found import_module
+    expected "module file path"
+end
+
+rule import_cycle
+when module imports form a cyclic dependency
+emit FH-SEM-1007
+    found cyclic_imports
+    expected "acyclic import graph"
+end
+
+rule module_file_path_mismatch
+when module file path does not match module name
+emit FH-SEM-1008
+    found actual_path
+    expected "module path matching module name"
+end
+
+rule imported_module_name_mismatch
+when imported file module name differs from import statement module name
+emit FH-SEM-1009
+    found actual_module_name
+    expected "matching module name declaration"
+end
+
+rule unknown_exposed_symbol_sem
+when ImportDecl exposing list contains name not declared in imported module
+emit FH-SEM-1010
+    found symbol
+    expected "declaration in module"
+end
+
+rule imported_module_parse_error
+when imported module contains parsing errors
+emit FH-SEM-1011
+    found parse_error
+    expected "parseable module file"
 end
 
 section types
@@ -468,6 +552,13 @@ when AssignStmt target is not declared assignable
 emit FH-SEM-1301
     found target
     expected "declared assignable target"
+end
+
+rule duplicate_local_name
+when local declaration name already declared in scope
+emit FH-SEM-1303
+    found name
+    expected "unique local name"
 end
 
 rule assignment_type_mismatch
@@ -870,3 +961,30 @@ emit FH-GEN-5032
     found routine_name
     expected "generic function declaration"
 end
+
+section build_tooling
+
+rule stable_package_path
+when build verification checks package path stability
+emit FH-BLD-9001
+    found package_path
+    expected "stable package path mapping"
+end
+
+rule stable_diagnostic_text
+when build verification checks diagnostic text stability
+emit FH-BLD-9002
+    found diagnostic_text
+    expected "stable diagnostic text output"
+end
+
+section codegen
+
+rule unsupported_go_codegen_feature
+when codegen encounters unsupported construct for target Go language
+emit FH-GOCODEGEN-0001
+    found unsupported_construct
+    expected "supported language feature"
+end
+
+

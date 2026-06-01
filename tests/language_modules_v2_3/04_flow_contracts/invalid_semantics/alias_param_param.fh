@@ -1,0 +1,18 @@
+module AliasParamParam
+
+procedure mutate_two(x: Integer, y: Integer)
+global In_Out x, In_Out y
+depends x => x, y => y
+is
+    x := 1
+    y := 2
+end mutate_two
+
+procedure caller(a: Integer)
+global In_Out a
+depends a => a
+is
+    call mutate_two(a, a)
+end caller
+
+end AliasParamParam

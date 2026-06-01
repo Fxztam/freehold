@@ -886,6 +886,83 @@ class Verifier:
                     continue
                 cal = ctx.routine(s.name, s.pos)
                 if cal.kind != "procedure": raise TypeCheckError(f"{s.pos.text()}: call requires procedure")
+
+                # Enforce anti-aliasing rules for parameters and globals
+                if len(s.args) == len(cal.params):
+                    def get_root_var(expr):
+                        if isinstance(expr, VarExpr):
+                            return expr.name
+                        elif isinstance(expr, (FieldAccessExpr, IndexExpr, IndexedFieldAccessExpr)):
+                            if isinstance(expr, FieldAccessExpr):
+                                return expr.path[0] if expr.path else None
+                            else:
+                                return expr.name
+                        return None
+
+                    def get_param_mode(param_name):
+                        if hasattr(cal, "global_specs") and cal.global_specs:
+                            for g in cal.global_specs:
+                                if g.name == param_name:
+                                    return g.mode
+                        return "Input"
+
+                    arg_roots = [get_root_var(arg) for arg in s.args]
+                    mutable_param_indices = [
+                        idx for idx, param in enumerate(cal.params)
+                        if get_param_mode(param.name) in ("Output", "In_Out")
+                    ]
+
+                    callee_globals = set()
+                    callee_mut_globals = set()
+                    callee_param_names = {p.name for p in cal.params}
+                    if hasattr(cal, "global_specs") and cal.global_specs:
+                        for cg in cal.global_specs:
+                            if cg.name not in callee_param_names:
+                                callee_globals.add(cg.name)
+                                if cg.mode in ("Output", "In_Out"):
+                                    callee_mut_globals.add(cg.name)
+
+                    # 1. Parameter-Parameter Aliasing:
+                    for i in range(len(s.args)):
+                        root_i = arg_roots[i]
+                        if not root_i:
+                            continue
+                        is_i_mutable = (i in mutable_param_indices)
+                        for j in range(i + 1, len(s.args)):
+                            root_j = arg_roots[j]
+                            if not root_j:
+                                continue
+                            is_j_mutable = (j in mutable_param_indices)
+                            if (is_i_mutable or is_j_mutable) and root_i == root_j:
+                                param_i = cal.params[i].name
+                                param_j = cal.params[j].name
+                                raise TypeCheckError(
+                                    f"{s.pos.text()}: aliasing detected in call to '{s.name}': "
+                                    f"both '{param_i}' and '{param_j}' resolve to the same variable '{root_i}' "
+                                    f"(at least one is mutable)"
+                                )
+
+                    # 2. Parameter-Global Aliasing:
+                    for idx in mutable_param_indices:
+                        root_arg = arg_roots[idx]
+                        if root_arg and root_arg in callee_globals:
+                            param_name = cal.params[idx].name
+                            raise TypeCheckError(
+                                f"{s.pos.text()}: aliasing detected in call to '{s.name}': "
+                                f"mutable parameter '{param_name}' is passed global variable '{root_arg}' "
+                                f"which is also accessed directly/transitively by '{s.name}'"
+                            )
+
+                    # 3. Argument-Global Aliasing:
+                    for idx, root_arg in enumerate(arg_roots):
+                        if root_arg and root_arg in callee_mut_globals:
+                            param_name = cal.params[idx].name
+                            raise TypeCheckError(
+                                f"{s.pos.text()}: aliasing detected in call to '{s.name}': "
+                                f"argument '{param_name}' resolves to global variable '{root_arg}' "
+                                f"which is mutated by '{s.name}'"
+                            )
+
                 substitutions = self.routine_type_substitutions(cal, s.type_args, s.pos, s.args, env, ctx)
                 self.args(cal, s.args, env, ctx, s.pos, substitutions)
                 self.require_abort_propagation(r, cal, s.pos)

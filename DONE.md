@@ -1,5 +1,14 @@
 # DONE
 
+## 2026-06-01
+
+### Static Anti-Aliasing Verification Hardening
+
+- **Inter-procedural Anti-Aliasing Enforcements:** Integrated comprehensive static anti-aliasing checks inside the `CallStmt` verifier handler (`verifier.py`) to prevent mutable parameter-parameter, parameter-global, and argument-global aliasing. This guarantees memory safety during routine calls.
+- **AST Root Variable Resolution:** Implemented recursive base variable name resolution (`get_root_var`) traversing record field access and array indexing paths to detect nested and deep aliased references.
+- **Negative Semantics Verification Tests:** Added two new negative semantics tests (`alias_param_param.fh` and `alias_param_global.fh`) to the `04_flow_contracts` test suite. Updated the corresponding expected diagnostics and manifests to assert correct aliasing rejection.
+- **Conformance & Stage-3 Validation:** Verified parser conformance across all 340 test cases and ran Stage-3 compiler verification (`verify-stage3-compiler-core-v1.cmd` and `verify-stage3-compiler-examples.cmd`) to guarantee compiler stability and exact golden output parity.
+
 ## 2026-05-29
 
 ### Transitive Information Flow Analysis (Taint-Tracking)

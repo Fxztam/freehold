@@ -1,0 +1,3432 @@
+[
+  {
+    "case": "02_import/invalid_semantics/duplicate_exposing.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1003",
+      "number": 1003,
+      "name": "duplicate_exposing_symbol",
+      "message": "duplicate exposing symbol",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "unique symbol in import Banking.Proofs",
+      "found": "balance_never_negative",
+      "hint": "Each exposed symbol may appear only once in an import exposing list.\n\nExample:\n    import Banking.Proofs exposing balance_never_negative, transfer_preserves_total\n",
+      "legacy_code": "VF-I003"
+    },
+    "expected": {
+      "code": "FH-SEM-1003",
+      "name": "duplicate_exposing_symbol",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-I003",
+      "message": "duplicate exposing symbol",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "unique symbol in import Banking.Proofs",
+      "found": "balance_never_negative"
+    }
+  },
+  {
+    "case": "02_import/invalid_semantics/duplicate_import.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1002",
+      "number": 1002,
+      "name": "duplicate_import",
+      "message": "duplicate import declaration",
+      "location": {
+        "line": 4,
+        "column": 1
+      },
+      "expected": "unique imported module",
+      "found": "Banking.Proofs",
+      "hint": "Each imported module may appear only once.\n\nExample:\n    import Banking.Types\n    import Banking.Proofs\n",
+      "legacy_code": "VF-I002"
+    },
+    "expected": {
+      "code": "FH-SEM-1002",
+      "name": "duplicate_import",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-I002",
+      "message": "duplicate import declaration",
+      "location": {
+        "line": 4,
+        "column": 1
+      },
+      "expected": "unique imported module",
+      "found": "Banking.Proofs"
+    }
+  },
+  {
+    "case": "02_import/invalid_semantics/self_import.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1001",
+      "number": 1001,
+      "name": "module_self_import",
+      "message": "module cannot import itself",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "different module name",
+      "found": "App.Main",
+      "hint": "A module cannot import itself.\n\nExample:\n    module App.Main\n    import Banking.Proofs\n    end App.Main\n",
+      "legacy_code": "VF-I001"
+    },
+    "expected": {
+      "code": "FH-SEM-1001",
+      "name": "module_self_import",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-I001",
+      "message": "module cannot import itself",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "different module name",
+      "found": "App.Main"
+    }
+  },
+  {
+    "case": "04_types/invalid_semantics/boolean_range.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2005",
+      "number": 2005,
+      "name": "range_requires_numeric_base",
+      "message": "range requires numeric base type",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "Integer or Double",
+      "found": "Boolean",
+      "hint": "Only Integer and Double based types may declare ranges.\n\nExamples:\n    type Percent is Integer range 0..100\n    type Temperature is Double range -273.15..10000.0\n",
+      "legacy_code": "VF-T005"
+    },
+    "expected": {
+      "code": "FH-TYP-2005",
+      "name": "range_requires_numeric_base",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-T005",
+      "message": "range requires numeric base type",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "Integer or Double",
+      "found": "Boolean"
+    }
+  },
+  {
+    "case": "04_types/invalid_semantics/duplicate_type.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2001",
+      "number": 2001,
+      "name": "duplicate_type_declaration",
+      "message": "duplicate type declaration",
+      "location": {
+        "line": 4,
+        "column": 1
+      },
+      "expected": "unique type name",
+      "found": "Money",
+      "hint": "Each type name may be declared only once in a module.\n\nUse a new name or remove the duplicate declaration.\n",
+      "legacy_code": "VF-T001"
+    },
+    "expected": {
+      "code": "FH-TYP-2001",
+      "name": "duplicate_type_declaration",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-T001",
+      "message": "duplicate type declaration",
+      "location": {
+        "line": 4,
+        "column": 1
+      },
+      "expected": "unique type name",
+      "found": "Money"
+    }
+  },
+  {
+    "case": "04_types/invalid_semantics/integer_fractional_range.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2006",
+      "number": 2006,
+      "name": "integer_range_requires_integer_bounds",
+      "message": "integer range bounds must be integers",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "integer bounds",
+      "found": "fractional bound",
+      "hint": "Integer ranges must use integer bounds.\n\nExample:\n    type Count is Integer range 0..100\n",
+      "legacy_code": "VF-T006"
+    },
+    "expected": {
+      "code": "FH-TYP-2006",
+      "name": "integer_range_requires_integer_bounds",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-T006",
+      "message": "integer range bounds must be integers",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "integer bounds",
+      "found": "fractional bound"
+    }
+  },
+  {
+    "case": "04_types/invalid_semantics/invalid_range_bounds.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2004",
+      "number": 2004,
+      "name": "invalid_range_bounds",
+      "message": "invalid range bounds",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "lower bound <= upper bound",
+      "found": "100..0",
+      "hint": "A range lower bound must be less than or equal to its upper bound.\n\nExample:\n    type Percent is Integer range 0..100\n",
+      "legacy_code": "VF-T004"
+    },
+    "expected": {
+      "code": "FH-TYP-2004",
+      "name": "invalid_range_bounds",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-T004",
+      "message": "invalid range bounds",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "lower bound <= upper bound",
+      "found": "100..0"
+    }
+  },
+  {
+    "case": "04_types/invalid_semantics/redefine_builtin_type.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2002",
+      "number": 2002,
+      "name": "builtin_type_redefinition",
+      "message": "built-in type cannot be redefined",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "new type name",
+      "found": "Integer",
+      "hint": "Built-in Freehold types cannot be redefined.\n\nBuilt-in types:\n    Integer, Boolean, Double, String\n",
+      "legacy_code": "VF-T002"
+    },
+    "expected": {
+      "code": "FH-TYP-2002",
+      "name": "builtin_type_redefinition",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-T002",
+      "message": "built-in type cannot be redefined",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "new type name",
+      "found": "Integer"
+    }
+  },
+  {
+    "case": "04_types/invalid_semantics/unknown_let_type.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1004",
+      "number": 1004,
+      "name": "reserved_keyword_name",
+      "message": "reserved keyword cannot be used as name",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "non-keyword identifier",
+      "found": "value",
+      "hint": "Reserved Freehold words cannot be used as user-defined names.\n\nExamples of reserved words:\n    module, import, type, record, function, procedure, let, return, if, while\n",
+      "legacy_code": "VF-N002"
+    },
+    "expected": {
+      "code": "FH-SEM-1004",
+      "name": "reserved_keyword_name",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-N002",
+      "message": "reserved keyword cannot be used as name",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "non-keyword identifier",
+      "found": "value"
+    }
+  },
+  {
+    "case": "05_records/invalid_semantics/duplicate_record_field.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1101",
+      "number": 1101,
+      "name": "duplicate_record_field",
+      "message": "duplicate record field",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "unique field name",
+      "found": "id",
+      "hint": "A record type may declare each field name only once.\n\nExample:\n    type Account is record\n        id: Integer\n        active: Boolean\n    end record\n",
+      "legacy_code": "VF-R001"
+    },
+    "expected": {
+      "code": "FH-SEM-1101",
+      "name": "duplicate_record_field",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-R001",
+      "message": "duplicate record field",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "unique field name",
+      "found": "id"
+    }
+  },
+  {
+    "case": "05_records/invalid_semantics/duplicate_record_literal_field.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1102",
+      "number": 1102,
+      "name": "duplicate_record_literal_field",
+      "message": "duplicate record literal field",
+      "location": {
+        "line": 10,
+        "column": 45
+      },
+      "expected": "unique literal field",
+      "found": "id",
+      "hint": "A record literal may assign each field only once.\n\nRemove the duplicate field initializer.\n",
+      "legacy_code": "VF-R003"
+    },
+    "expected": {
+      "code": "FH-SEM-1102",
+      "name": "duplicate_record_literal_field",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-R003",
+      "message": "duplicate record literal field",
+      "location": {
+        "line": 10,
+        "column": 45
+      },
+      "expected": "unique literal field",
+      "found": "id"
+    }
+  },
+  {
+    "case": "05_records/invalid_semantics/field_access_on_scalar.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2101",
+      "number": 2101,
+      "name": "field_access_requires_record",
+      "message": "field access requires record",
+      "location": {
+        "line": 6,
+        "column": 11
+      },
+      "expected": "record before .id",
+      "found": "Integer",
+      "hint": "Field access requires the value before the dot to be a record.\n\nExample:\n    account.id\n",
+      "legacy_code": "VF-R006"
+    },
+    "expected": {
+      "code": "FH-TYP-2101",
+      "name": "field_access_requires_record",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-R006",
+      "message": "field access requires record",
+      "location": {
+        "line": 6,
+        "column": 11
+      },
+      "expected": "record before .id",
+      "found": "Integer"
+    }
+  },
+  {
+    "case": "05_records/invalid_semantics/missing_record_literal_field.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1104",
+      "number": 1104,
+      "name": "missing_record_literal_field",
+      "message": "missing record literal field",
+      "location": {
+        "line": 10,
+        "column": 28
+      },
+      "expected": "all fields for Account",
+      "found": "active",
+      "hint": "A record literal must provide every field declared by the record type.\n\nExample:\n    Account { id: 1, active: true }\n",
+      "legacy_code": "VF-R005"
+    },
+    "expected": {
+      "code": "FH-SEM-1104",
+      "name": "missing_record_literal_field",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-R005",
+      "message": "missing record literal field",
+      "location": {
+        "line": 10,
+        "column": 28
+      },
+      "expected": "all fields for Account",
+      "found": "active"
+    }
+  },
+  {
+    "case": "05_records/invalid_semantics/record_literal_string_template_missing_binding.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "template",
+      "code": "FH-TPL-4007",
+      "number": 4007,
+      "name": "template_missing_binding",
+      "message": "missing string template binding",
+      "location": {
+        "line": 13,
+        "column": 32
+      },
+      "expected": "binding for String.template",
+      "found": "user",
+      "hint": "Named string templates require exact bindings.\n\nEvery `${name}` placeholder must have a matching `name: value` binding, every binding must be used, and each binding name may appear only once.\n\nExample:\n    String.template(\"name=${name}\", name: user_name)\n",
+      "legacy_code": "VF-TPL007"
+    },
+    "expected": {
+      "code": "FH-TPL-4007",
+      "name": "template_missing_binding",
+      "phase": "semantic",
+      "category": "template",
+      "legacy_code": "VF-TPL007",
+      "message": "missing string template binding",
+      "location": {
+        "line": 13,
+        "column": 32
+      },
+      "expected": "binding for String.template",
+      "found": "user"
+    }
+  },
+  {
+    "case": "05_records/invalid_semantics/unknown_field_access.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1105",
+      "number": 1105,
+      "name": "unknown_record_field",
+      "message": "unknown record field",
+      "location": {
+        "line": 10,
+        "column": 11
+      },
+      "expected": "declared field in Account",
+      "found": "active",
+      "hint": "A record literal or field access may only use fields declared by the record type.\n\nCheck the record type declaration for the available field names.\n",
+      "legacy_code": "VF-R007"
+    },
+    "expected": {
+      "code": "FH-SEM-1105",
+      "name": "unknown_record_field",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-R007",
+      "message": "unknown record field",
+      "location": {
+        "line": 10,
+        "column": 11
+      },
+      "expected": "declared field in Account",
+      "found": "active"
+    }
+  },
+  {
+    "case": "05_records/invalid_semantics/unknown_record_literal_field.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1103",
+      "number": 1103,
+      "name": "unknown_record_literal_field",
+      "message": "unknown record literal field",
+      "location": {
+        "line": 9,
+        "column": 45
+      },
+      "expected": "declared field in Account",
+      "found": "active",
+      "hint": "A record literal or field access may only use fields declared by the record type.\n\nCheck the record type declaration for the available field names.\n",
+      "legacy_code": "VF-R004"
+    },
+    "expected": {
+      "code": "FH-SEM-1103",
+      "name": "unknown_record_literal_field",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-R004",
+      "message": "unknown record literal field",
+      "location": {
+        "line": 9,
+        "column": 45
+      },
+      "expected": "declared field in Account",
+      "found": "active"
+    }
+  },
+  {
+    "case": "06_arrays/invalid_semantics/array_element_type_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2114",
+      "number": 2114,
+      "name": "array_element_type_mismatch",
+      "message": "array element type mismatch",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "declared array element type",
+      "found": "literal element type",
+      "hint": "Array literal elements must match the declared element type.\n\nExample:\n    let xs: Array<Integer, 3> = [1, 2, 3]\n",
+      "legacy_code": "VF-A004"
+    },
+    "expected": {
+      "code": "FH-TYP-2114",
+      "name": "array_element_type_mismatch",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-A004",
+      "message": "array element type mismatch",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "declared array element type",
+      "found": "literal element type"
+    }
+  },
+  {
+    "case": "06_arrays/invalid_semantics/array_length_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2113",
+      "number": 2113,
+      "name": "array_length_mismatch",
+      "message": "array length mismatch",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "3",
+      "found": "2",
+      "hint": "An array literal must match the fixed size declared by its Array type.\n\nExample:\n    let xs: Array<Integer, 3> = [1, 2, 3]\n",
+      "legacy_code": "VF-A003"
+    },
+    "expected": {
+      "code": "FH-TYP-2113",
+      "name": "array_length_mismatch",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-A003",
+      "message": "array length mismatch",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "3",
+      "found": "2"
+    }
+  },
+  {
+    "case": "06_arrays/invalid_semantics/boolean_index.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2116",
+      "number": 2116,
+      "name": "array_index_requires_integer",
+      "message": "array index must be Integer",
+      "location": {
+        "line": 6,
+        "column": 18
+      },
+      "expected": "Integer",
+      "found": "Boolean",
+      "hint": "Array indexes must be Integer expressions.\n\nExample:\n    xs[0]\n",
+      "legacy_code": "VF-A007"
+    },
+    "expected": {
+      "code": "FH-TYP-2116",
+      "name": "array_index_requires_integer",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-A007",
+      "message": "array index must be Integer",
+      "location": {
+        "line": 6,
+        "column": 18
+      },
+      "expected": "Integer",
+      "found": "Boolean"
+    }
+  },
+  {
+    "case": "06_arrays/invalid_semantics/index_on_scalar.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2115",
+      "number": 2115,
+      "name": "index_access_requires_array",
+      "message": "index access requires Array",
+      "location": {
+        "line": 6,
+        "column": 11
+      },
+      "expected": "Array",
+      "found": "Integer",
+      "hint": "Index access requires an Array value before the brackets.\n\nExample:\n    xs[0]\n",
+      "legacy_code": "VF-A006"
+    },
+    "expected": {
+      "code": "FH-TYP-2115",
+      "name": "index_access_requires_array",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-A006",
+      "message": "index access requires Array",
+      "location": {
+        "line": 6,
+        "column": 11
+      },
+      "expected": "Array",
+      "found": "Integer"
+    }
+  },
+  {
+    "case": "06_arrays/invalid_semantics/mixed_array_literal.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2112",
+      "number": 2112,
+      "name": "array_literal_mixed_element_types",
+      "message": "array literal has mixed element types",
+      "location": {
+        "line": 5,
+        "column": 37
+      },
+      "expected": "same element type",
+      "found": "mixed element types",
+      "hint": "All values in an array literal must have the same base type.\n\nExample:\n    [1, 2, 3]\n",
+      "legacy_code": "VF-A002"
+    },
+    "expected": {
+      "code": "FH-TYP-2112",
+      "name": "array_literal_mixed_element_types",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-A002",
+      "message": "array literal has mixed element types",
+      "location": {
+        "line": 5,
+        "column": 37
+      },
+      "expected": "same element type",
+      "found": "mixed element types"
+    }
+  },
+  {
+    "case": "06_arrays/invalid_semantics/nested_array_literal.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2111",
+      "number": 2111,
+      "name": "array_literal_requires_scalar",
+      "message": "array literal elements must be scalar",
+      "location": {
+        "line": 5,
+        "column": 37
+      },
+      "expected": "scalar element",
+      "found": "nested array literal",
+      "hint": "Array literals may contain scalar values only.\n\nNested array literals are not supported by the current Array type.\n",
+      "legacy_code": "VF-A001"
+    },
+    "expected": {
+      "code": "FH-TYP-2111",
+      "name": "array_literal_requires_scalar",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-A001",
+      "message": "array literal elements must be scalar",
+      "location": {
+        "line": 5,
+        "column": 37
+      },
+      "expected": "scalar element",
+      "found": "nested array literal"
+    }
+  },
+  {
+    "case": "06_arrays/invalid_semantics/static_index_out_of_bounds.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1111",
+      "number": 1111,
+      "name": "array_index_out_of_bounds",
+      "message": "array index out of bounds",
+      "location": {
+        "line": 6,
+        "column": 11
+      },
+      "expected": "0 <= index < 3",
+      "found": "3",
+      "hint": "Static array indexes must be within the fixed array bounds.\n\nFor Array<T, 3>, valid indexes are 0, 1, and 2.\n",
+      "legacy_code": "VF-A008"
+    },
+    "expected": {
+      "code": "FH-SEM-1111",
+      "name": "array_index_out_of_bounds",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-A008",
+      "message": "array index out of bounds",
+      "location": {
+        "line": 6,
+        "column": 11
+      },
+      "expected": "0 <= index < 3",
+      "found": "3"
+    }
+  },
+  {
+    "case": "08_routines/invalid_semantics/duplicate_parameter_name.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1201",
+      "number": 1201,
+      "name": "duplicate_parameter_name",
+      "message": "duplicate parameter name",
+      "location": {
+        "line": 3,
+        "column": 33
+      },
+      "expected": "unique parameter name",
+      "found": "item",
+      "hint": "Each routine parameter name may appear only once in the parameter list.\n\nUse distinct names for every parameter.\n",
+      "legacy_code": "VF-U002"
+    },
+    "expected": {
+      "code": "FH-SEM-1201",
+      "name": "duplicate_parameter_name",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-U002",
+      "message": "duplicate parameter name",
+      "location": {
+        "line": 3,
+        "column": 33
+      },
+      "expected": "unique parameter name",
+      "found": "item"
+    }
+  },
+  {
+    "case": "08_routines/invalid_semantics/function_missing_return.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1202",
+      "number": 1202,
+      "name": "function_missing_guaranteed_return",
+      "message": "function has no guaranteed return",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "return statement on all paths",
+      "found": "read",
+      "hint": "Every function must guarantee a return statement.\n\nAdd a return statement on all paths through the function body.\n",
+      "legacy_code": "VF-U003"
+    },
+    "expected": {
+      "code": "FH-SEM-1202",
+      "name": "function_missing_guaranteed_return",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-U003",
+      "message": "function has no guaranteed return",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "return statement on all paths",
+      "found": "read"
+    }
+  },
+  {
+    "case": "08_routines/invalid_semantics/function_return_type_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2202",
+      "number": 2202,
+      "name": "function_return_type_mismatch",
+      "message": "function return type mismatch",
+      "location": {
+        "line": 5,
+        "column": 12
+      },
+      "expected": "Integer",
+      "found": "Boolean",
+      "hint": "A function return expression must match the declared return type.\n\nCheck the function's `returns` clause and the returned expression.\n",
+      "legacy_code": "VF-U009"
+    },
+    "expected": {
+      "code": "FH-TYP-2202",
+      "name": "function_return_type_mismatch",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-U009",
+      "message": "function return type mismatch",
+      "location": {
+        "line": 5,
+        "column": 12
+      },
+      "expected": "Integer",
+      "found": "Boolean"
+    }
+  },
+  {
+    "case": "08_routines/invalid_semantics/procedure_return_value.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1203",
+      "number": 1203,
+      "name": "procedure_return_value",
+      "message": "procedure cannot return a value",
+      "location": {
+        "line": 5,
+        "column": 12
+      },
+      "expected": "no return value",
+      "found": "return value",
+      "hint": "Procedures do not return values.\n\nUse a function when a routine needs to produce a value.\n",
+      "legacy_code": "VF-U004"
+    },
+    "expected": {
+      "code": "FH-SEM-1203",
+      "name": "procedure_return_value",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-U004",
+      "message": "procedure cannot return a value",
+      "location": {
+        "line": 5,
+        "column": 12
+      },
+      "expected": "no return value",
+      "found": "return value"
+    }
+  },
+  {
+    "case": "08_routines/invalid_semantics/unknown_routine_call.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1204",
+      "number": 1204,
+      "name": "unknown_routine",
+      "message": "unknown routine",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "declared routine",
+      "found": "missing",
+      "hint": "A call must name a declared routine.\n\nDeclare the function or procedure before calling it.\n",
+      "legacy_code": "VF-U005"
+    },
+    "expected": {
+      "code": "FH-SEM-1204",
+      "name": "unknown_routine",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-U005",
+      "message": "unknown routine",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "declared routine",
+      "found": "missing"
+    }
+  },
+  {
+    "case": "08_routines/invalid_semantics/wrong_argument_count.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1205",
+      "number": 1205,
+      "name": "routine_argument_count_mismatch",
+      "message": "wrong routine argument count",
+      "location": {
+        "line": 10,
+        "column": 11
+      },
+      "expected": "2 argument(s) for add",
+      "found": "1",
+      "hint": "A routine call must pass exactly the parameters declared by the routine.\n\nCheck the routine declaration and update the argument list.\n",
+      "legacy_code": "VF-U007"
+    },
+    "expected": {
+      "code": "FH-SEM-1205",
+      "name": "routine_argument_count_mismatch",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-U007",
+      "message": "wrong routine argument count",
+      "location": {
+        "line": 10,
+        "column": 11
+      },
+      "expected": "2 argument(s) for add",
+      "found": "1"
+    }
+  },
+  {
+    "case": "08_routines/invalid_semantics/wrong_argument_type.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2201",
+      "number": 2201,
+      "name": "routine_argument_type_mismatch",
+      "message": "routine argument type mismatch",
+      "location": {
+        "line": 10,
+        "column": 18
+      },
+      "expected": "argument 1 as Boolean for negate",
+      "found": "Integer",
+      "hint": "Routine arguments must match the declared parameter types.\n\nCheck the parameter declaration for the expected type.\n",
+      "legacy_code": "VF-U008"
+    },
+    "expected": {
+      "code": "FH-TYP-2201",
+      "name": "routine_argument_type_mismatch",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-U008",
+      "message": "routine argument type mismatch",
+      "location": {
+        "line": 10,
+        "column": 18
+      },
+      "expected": "argument 1 as Boolean for negate",
+      "found": "Integer"
+    }
+  },
+  {
+    "case": "09_statements/invalid_semantics/assignment_type_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2301",
+      "number": 2301,
+      "name": "assignment_type_mismatch",
+      "message": "assignment type mismatch",
+      "location": {
+        "line": 6,
+        "column": 5
+      },
+      "expected": "Integer",
+      "found": "Boolean",
+      "hint": "The expression on the right side of an assignment must match the target type.\n\nCheck the target declaration and the assigned expression.\n",
+      "legacy_code": "VF-ST002"
+    },
+    "expected": {
+      "code": "FH-TYP-2301",
+      "name": "assignment_type_mismatch",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-ST002",
+      "message": "assignment type mismatch",
+      "location": {
+        "line": 6,
+        "column": 5
+      },
+      "expected": "Integer",
+      "found": "Boolean"
+    }
+  },
+  {
+    "case": "09_statements/invalid_semantics/case_branch_type_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2303",
+      "number": 2303,
+      "name": "case_branch_type_mismatch",
+      "message": "case branch type mismatch",
+      "location": {
+        "line": 7,
+        "column": 9
+      },
+      "expected": "Integer",
+      "found": "Boolean",
+      "hint": "Each case branch value must have the same base type as the case expression.\n\nUse branch values that match the expression after `case`.\n",
+      "legacy_code": "VF-ST005"
+    },
+    "expected": {
+      "code": "FH-TYP-2303",
+      "name": "case_branch_type_mismatch",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-ST005",
+      "message": "case branch type mismatch",
+      "location": {
+        "line": 7,
+        "column": 9
+      },
+      "expected": "Integer",
+      "found": "Boolean"
+    }
+  },
+  {
+    "case": "09_statements/invalid_semantics/check_requires_boolean.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2007",
+      "number": 2007,
+      "name": "statement_requires_boolean",
+      "message": "check requires Boolean",
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "expected": "Boolean",
+      "found": "Integer",
+      "hint": "This statement position requires a Boolean expression.\n\nUse a comparison or Boolean expression such as `amount > 0` or `ready = true`.\n",
+      "legacy_code": "VF-ST003"
+    },
+    "expected": {
+      "code": "FH-TYP-2007",
+      "name": "statement_requires_boolean",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-ST003",
+      "message": "check requires Boolean",
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "expected": "Boolean",
+      "found": "Integer"
+    }
+  },
+  {
+    "case": "09_statements/invalid_semantics/duplicate_case_branch_value.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1302",
+      "number": 1302,
+      "name": "duplicate_case_branch_value",
+      "message": "duplicate case branch value",
+      "location": {
+        "line": 9,
+        "column": 9
+      },
+      "expected": "unique case branch value",
+      "found": "duplicate branch value",
+      "hint": "Each literal case branch value may appear only once.\n\nRemove the duplicate branch or merge its body into the first branch.\n",
+      "legacy_code": "VF-ST006"
+    },
+    "expected": {
+      "code": "FH-SEM-1302",
+      "name": "duplicate_case_branch_value",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-ST006",
+      "message": "duplicate case branch value",
+      "location": {
+        "line": 9,
+        "column": 9
+      },
+      "expected": "unique case branch value",
+      "found": "duplicate branch value"
+    }
+  },
+  {
+    "case": "09_statements/invalid_semantics/unknown_assignment_target.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1301",
+      "number": 1301,
+      "name": "unknown_assignment_target",
+      "message": "unknown assignment target",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "declared local variable",
+      "found": "amount",
+      "hint": "Assignment requires an existing local variable.\n\nDeclare the variable with `let` before assigning to it.\n",
+      "legacy_code": "VF-ST001"
+    },
+    "expected": {
+      "code": "FH-SEM-1301",
+      "name": "unknown_assignment_target",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-ST001",
+      "message": "unknown assignment target",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "declared local variable",
+      "found": "amount"
+    }
+  },
+  {
+    "case": "09_statements/invalid_semantics/while_variant_requires_integer.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2302",
+      "number": 2302,
+      "name": "while_variant_requires_integer",
+      "message": "while variant must be Integer",
+      "location": {
+        "line": 8,
+        "column": 17
+      },
+      "expected": "Integer",
+      "found": "Boolean",
+      "hint": "A while variant must be an Integer expression.\n\nVariants are used as numeric progress measures for loop termination reasoning.\n",
+      "legacy_code": "VF-ST004"
+    },
+    "expected": {
+      "code": "FH-TYP-2302",
+      "name": "while_variant_requires_integer",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-ST004",
+      "message": "while variant must be Integer",
+      "location": {
+        "line": 8,
+        "column": 17
+      },
+      "expected": "Integer",
+      "found": "Boolean"
+    }
+  },
+  {
+    "case": "10_expressions/invalid_semantics/arithmetic_operand_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2404",
+      "number": 2404,
+      "name": "arithmetic_operand_mismatch",
+      "message": "arithmetic requires numeric operands",
+      "location": {
+        "line": 5,
+        "column": 27
+      },
+      "expected": "numeric operands for +",
+      "found": "Integer and Boolean",
+      "hint": "Arithmetic operators require numeric operands.\n\nUse Integer or Double expressions with `+`, `-`, `*`, and `/`.\n",
+      "legacy_code": "VF-E005"
+    },
+    "expected": {
+      "code": "FH-TYP-2404",
+      "name": "arithmetic_operand_mismatch",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-E005",
+      "message": "arithmetic requires numeric operands",
+      "location": {
+        "line": 5,
+        "column": 27
+      },
+      "expected": "numeric operands for +",
+      "found": "Integer and Boolean"
+    }
+  },
+  {
+    "case": "10_expressions/invalid_semantics/boolean_operator_operand_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2402",
+      "number": 2402,
+      "name": "boolean_operator_operand_mismatch",
+      "message": "Boolean operator operand mismatch",
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "expected": "Boolean operands for and",
+      "found": "Boolean and Integer",
+      "hint": "Boolean operators require Boolean operands on both sides.\n\nUse comparisons to produce Boolean values before combining them with `and` or `or`.\n",
+      "legacy_code": "VF-E003"
+    },
+    "expected": {
+      "code": "FH-TYP-2402",
+      "name": "boolean_operator_operand_mismatch",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-E003",
+      "message": "Boolean operator operand mismatch",
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "expected": "Boolean operands for and",
+      "found": "Boolean and Integer"
+    }
+  },
+  {
+    "case": "10_expressions/invalid_semantics/equality_type_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2401",
+      "number": 2401,
+      "name": "comparison_type_mismatch",
+      "message": "comparison type mismatch",
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "expected": "matching operand types",
+      "found": "String with Integer",
+      "hint": "Equality comparisons require both sides to have the same base type.\n\nCompare values of matching types, or convert the value before comparing it.\n",
+      "legacy_code": "VF-E002"
+    },
+    "expected": {
+      "code": "FH-TYP-2401",
+      "name": "comparison_type_mismatch",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-E002",
+      "message": "comparison type mismatch",
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "expected": "matching operand types",
+      "found": "String with Integer"
+    }
+  },
+  {
+    "case": "10_expressions/invalid_semantics/ordering_comparison_operand_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2403",
+      "number": 2403,
+      "name": "ordering_comparison_operand_mismatch",
+      "message": "ordering comparison requires numeric operands",
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "expected": "numeric operands for <",
+      "found": "String and String",
+      "hint": "Ordering comparisons require numeric operands.\n\nUse `<`, `<=`, `>`, and `>=` with Integer or Double expressions.\n",
+      "legacy_code": "VF-E004"
+    },
+    "expected": {
+      "code": "FH-TYP-2403",
+      "name": "ordering_comparison_operand_mismatch",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-E004",
+      "message": "ordering comparison requires numeric operands",
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "expected": "numeric operands for <",
+      "found": "String and String"
+    }
+  },
+  {
+    "case": "10_expressions/invalid_semantics/unary_negative_operand_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2406",
+      "number": 2406,
+      "name": "unary_negative_requires_numeric",
+      "message": "unary negative requires numeric operand",
+      "location": {
+        "line": 5,
+        "column": 27
+      },
+      "expected": "Integer or Double",
+      "found": "Boolean",
+      "hint": "The unary `-` operator requires a numeric operand.\n\nExample:\n    -amount\n",
+      "legacy_code": "VF-E007"
+    },
+    "expected": {
+      "code": "FH-TYP-2406",
+      "name": "unary_negative_requires_numeric",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-E007",
+      "message": "unary negative requires numeric operand",
+      "location": {
+        "line": 5,
+        "column": 27
+      },
+      "expected": "Integer or Double",
+      "found": "Boolean"
+    }
+  },
+  {
+    "case": "10_expressions/invalid_semantics/unary_not_operand_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2405",
+      "number": 2405,
+      "name": "unary_not_requires_boolean",
+      "message": "unary not requires Boolean",
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "expected": "Boolean",
+      "found": "Integer",
+      "hint": "The unary `not` operator requires a Boolean operand.\n\nExample:\n    not ready\n",
+      "legacy_code": "VF-E006"
+    },
+    "expected": {
+      "code": "FH-TYP-2405",
+      "name": "unary_not_requires_boolean",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-E006",
+      "message": "unary not requires Boolean",
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "expected": "Boolean",
+      "found": "Integer"
+    }
+  },
+  {
+    "case": "10_expressions/invalid_semantics/unknown_variable.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1401",
+      "number": 1401,
+      "name": "unknown_variable",
+      "message": "unknown variable",
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "expected": "variable in scope",
+      "found": "missing",
+      "hint": "An expression may only reference variables that are in scope.\n\nDeclare the variable with `let` or as a routine parameter before using it.\n",
+      "legacy_code": "VF-E001"
+    },
+    "expected": {
+      "code": "FH-SEM-1401",
+      "name": "unknown_variable",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-E001",
+      "message": "unknown variable",
+      "location": {
+        "line": 5,
+        "column": 11
+      },
+      "expected": "variable in scope",
+      "found": "missing"
+    }
+  },
+  {
+    "case": "11_errors_results/invalid_semantics/nested_result_ok_payload.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "result",
+      "code": "FH-RES-4107",
+      "number": 4107,
+      "name": "nested_result_payload_not_supported",
+      "message": "nested Result payloads are forbidden in v1",
+      "location": {
+        "line": 5,
+        "column": 1
+      },
+      "expected": "non-Result value type",
+      "found": "Result payload",
+      "hint": "Nested Result payloads are forbidden in V1.\n\nUse a non-Result success value such as Integer, a record, or Array<T, N>, and keep the error side as a declared error.\n",
+      "legacy_code": "VF-ER007"
+    },
+    "expected": {
+      "code": "FH-RES-4107",
+      "name": "nested_result_payload_not_supported",
+      "phase": "semantic",
+      "category": "result",
+      "legacy_code": "VF-ER007",
+      "message": "nested Result payloads are forbidden in v1",
+      "location": {
+        "line": 5,
+        "column": 1
+      },
+      "expected": "non-Result value type",
+      "found": "Result payload"
+    }
+  },
+  {
+    "case": "11_errors_results/invalid_semantics/plain_function_ok_return.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1505",
+      "number": 1505,
+      "name": "plain_function_rejects_ok_or_error_return",
+      "message": "plain function cannot return ok or error",
+      "location": {
+        "line": 5,
+        "column": 12
+      },
+      "expected": "plain expression return",
+      "found": "ok/error return",
+      "hint": "A non-Result function must return a plain expression.\n\nUse `returns Result<T, E>` when the function should return `ok` or `error`.\n",
+      "legacy_code": "VF-ER005"
+    },
+    "expected": {
+      "code": "FH-SEM-1505",
+      "name": "plain_function_rejects_ok_or_error_return",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-ER005",
+      "message": "plain function cannot return ok or error",
+      "location": {
+        "line": 5,
+        "column": 12
+      },
+      "expected": "plain expression return",
+      "found": "ok/error return"
+    }
+  },
+  {
+    "case": "11_errors_results/invalid_semantics/result_ok_type_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2501",
+      "number": 2501,
+      "name": "result_ok_type_mismatch",
+      "message": "Result ok type mismatch",
+      "location": {
+        "line": 7,
+        "column": 12
+      },
+      "expected": "Integer",
+      "found": "Boolean",
+      "hint": "A Result `ok` return value must match the Result's success type.\n\nCheck the first type argument in `Result<T, E>` and the expression after `ok`.\n",
+      "legacy_code": "VF-ER006"
+    },
+    "expected": {
+      "code": "FH-TYP-2501",
+      "name": "result_ok_type_mismatch",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-ER006",
+      "message": "Result ok type mismatch",
+      "location": {
+        "line": 7,
+        "column": 12
+      },
+      "expected": "Integer",
+      "found": "Boolean"
+    }
+  },
+  {
+    "case": "11_errors_results/invalid_semantics/result_plain_return.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1504",
+      "number": 1504,
+      "name": "result_function_requires_ok_or_error_return",
+      "message": "Result function must return ok or error",
+      "location": {
+        "line": 7,
+        "column": 12
+      },
+      "expected": "ok or error return",
+      "found": "plain return",
+      "hint": "A Result function must return either `ok <expr>` or `error <Name>`.\n\nPlain return expressions are only valid for non-Result functions.\n",
+      "legacy_code": "VF-ER004"
+    },
+    "expected": {
+      "code": "FH-SEM-1504",
+      "name": "result_function_requires_ok_or_error_return",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-ER004",
+      "message": "Result function must return ok or error",
+      "location": {
+        "line": 7,
+        "column": 12
+      },
+      "expected": "ok or error return",
+      "found": "plain return"
+    }
+  },
+  {
+    "case": "11_errors_results/invalid_semantics/unknown_result_error_type.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1501",
+      "number": 1501,
+      "name": "unknown_result_error_type",
+      "message": "unknown result error type",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "declared error",
+      "found": "MissingError",
+      "hint": "The error type in `Result<T, E>` must name a declared error.\n\nDeclare the error before using it in a Result type.\n\nExample:\n    error NotFound\n    function load() returns Result<Integer, NotFound>\n",
+      "legacy_code": "VF-ER001"
+    },
+    "expected": {
+      "code": "FH-SEM-1501",
+      "name": "unknown_result_error_type",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-ER001",
+      "message": "unknown result error type",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "declared error",
+      "found": "MissingError"
+    }
+  },
+  {
+    "case": "11_errors_results/invalid_semantics/unknown_returned_error.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1502",
+      "number": 1502,
+      "name": "unknown_returned_error",
+      "message": "unknown returned error",
+      "location": {
+        "line": 7,
+        "column": 12
+      },
+      "expected": "declared error",
+      "found": "MissingError",
+      "hint": "A `return error` statement must return a declared error.\n\nDeclare the error before returning it.\n",
+      "legacy_code": "VF-ER002"
+    },
+    "expected": {
+      "code": "FH-SEM-1502",
+      "name": "unknown_returned_error",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-ER002",
+      "message": "unknown returned error",
+      "location": {
+        "line": 7,
+        "column": 12
+      },
+      "expected": "declared error",
+      "found": "MissingError"
+    }
+  },
+  {
+    "case": "11_errors_results/invalid_semantics/wrong_result_error_return.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1503",
+      "number": 1503,
+      "name": "wrong_result_error_return",
+      "message": "wrong Result error return",
+      "location": {
+        "line": 8,
+        "column": 12
+      },
+      "expected": "Result<Integer,NotFound>",
+      "found": "PermissionDenied",
+      "hint": "A Result function may only return the error declared in its `Result<T, E>` type.\n\nReturn the declared error type or change the function's Result type.\n",
+      "legacy_code": "VF-ER003"
+    },
+    "expected": {
+      "code": "FH-SEM-1503",
+      "name": "wrong_result_error_return",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-ER003",
+      "message": "wrong Result error return",
+      "location": {
+        "line": 8,
+        "column": 12
+      },
+      "expected": "Result<Integer,NotFound>",
+      "found": "PermissionDenied"
+    }
+  },
+  {
+    "case": "13_contract_blocks/invalid_semantics/comma_requires_unknown_second_item.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1401",
+      "number": 1401,
+      "name": "unknown_variable",
+      "message": "unknown variable",
+      "location": {
+        "line": 4,
+        "column": 23
+      },
+      "expected": "variable in scope",
+      "found": "missing",
+      "hint": "An expression may only reference variables that are in scope.\n\nDeclare the variable with `let` or as a routine parameter before using it.\n",
+      "legacy_code": "VF-E001"
+    },
+    "expected": {
+      "code": "FH-SEM-1401",
+      "name": "unknown_variable",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-E001",
+      "message": "unknown variable",
+      "location": {
+        "line": 4,
+        "column": 23
+      },
+      "expected": "variable in scope",
+      "found": "missing"
+    }
+  },
+  {
+    "case": "13_contract_blocks/invalid_semantics/non_result_ensures_cannot_use_success.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1601",
+      "number": 1601,
+      "name": "result_contract_expression_outside_result_ensures",
+      "message": "Result contract expression outside Result ensures",
+      "location": {
+        "line": 4,
+        "column": 9
+      },
+      "expected": "Result ensures context",
+      "found": "success",
+      "hint": "Result contract expressions are only available in `ensures` clauses of Result-returning functions.\n\nUse `success`, `failure`, `value`, or `error` only when the function returns `Result<T, E>`.\n",
+      "legacy_code": "VF-CT002"
+    },
+    "expected": {
+      "code": "FH-SEM-1601",
+      "name": "result_contract_expression_outside_result_ensures",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-CT002",
+      "message": "Result contract expression outside Result ensures",
+      "location": {
+        "line": 4,
+        "column": 9
+      },
+      "expected": "Result ensures context",
+      "found": "success"
+    }
+  },
+  {
+    "case": "13_contract_blocks/invalid_semantics/requires_cannot_use_result.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1401",
+      "number": 1401,
+      "name": "unknown_variable",
+      "message": "unknown variable",
+      "location": {
+        "line": 4,
+        "column": 10
+      },
+      "expected": "variable in scope",
+      "found": "result",
+      "hint": "An expression may only reference variables that are in scope.\n\nDeclare the variable with `let` or as a routine parameter before using it.\n",
+      "legacy_code": "VF-E001"
+    },
+    "expected": {
+      "code": "FH-SEM-1401",
+      "name": "unknown_variable",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-E001",
+      "message": "unknown variable",
+      "location": {
+        "line": 4,
+        "column": 10
+      },
+      "expected": "variable in scope",
+      "found": "result"
+    }
+  },
+  {
+    "case": "13_contract_blocks/invalid_semantics/requires_must_be_boolean.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "type",
+      "code": "FH-TYP-2601",
+      "number": 2601,
+      "name": "contract_clause_requires_boolean",
+      "message": "requires clause requires Boolean",
+      "location": {
+        "line": 4,
+        "column": 10
+      },
+      "expected": "Boolean",
+      "found": "Integer",
+      "hint": "Contract clauses must be Boolean expressions.\n\nUse a comparison or Boolean expression after `requires` or `ensures`.\n",
+      "legacy_code": "VF-CT001"
+    },
+    "expected": {
+      "code": "FH-TYP-2601",
+      "name": "contract_clause_requires_boolean",
+      "phase": "semantic",
+      "category": "type",
+      "legacy_code": "VF-CT001",
+      "message": "requires clause requires Boolean",
+      "location": {
+        "line": 4,
+        "column": 10
+      },
+      "expected": "Boolean",
+      "found": "Integer"
+    }
+  },
+  {
+    "case": "18_string_templates/invalid_semantics/string_template_count_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "template",
+      "code": "FH-TPL-4001",
+      "number": 4001,
+      "name": "template_placeholder_count_mismatch",
+      "message": "string template placeholder count mismatch",
+      "location": {
+        "line": 5,
+        "column": 43
+      },
+      "expected": "2 template value(s) for String.template",
+      "found": "1",
+      "hint": "A string template must provide exactly one value for each placeholder.\n\nExamples:\n    String.template(\"id=${}\", id)\n    String.template(\"id=${id}\", id: id)\n    Std.IO.logf(\"id=${}, active=${}\", id, active)\n",
+      "legacy_code": "VF-TPL001"
+    },
+    "expected": {
+      "code": "FH-TPL-4001",
+      "name": "template_placeholder_count_mismatch",
+      "phase": "semantic",
+      "category": "template",
+      "legacy_code": "VF-TPL001",
+      "message": "string template placeholder count mismatch",
+      "location": {
+        "line": 5,
+        "column": 43
+      },
+      "expected": "2 template value(s) for String.template",
+      "found": "1"
+    }
+  },
+  {
+    "case": "18_string_templates/invalid_semantics/string_template_duplicate_binding.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "template",
+      "code": "FH-TPL-4006",
+      "number": 4006,
+      "name": "template_duplicate_binding",
+      "message": "duplicate string template binding",
+      "location": {
+        "line": 6,
+        "column": 43
+      },
+      "expected": "unique binding name for String.template",
+      "found": "id",
+      "hint": "Named string templates require exact bindings.\n\nEvery `${name}` placeholder must have a matching `name: value` binding, every binding must be used, and each binding name may appear only once.\n\nExample:\n    String.template(\"name=${name}\", name: user_name)\n",
+      "legacy_code": "VF-TPL006"
+    },
+    "expected": {
+      "code": "FH-TPL-4006",
+      "name": "template_duplicate_binding",
+      "phase": "semantic",
+      "category": "template",
+      "legacy_code": "VF-TPL006",
+      "message": "duplicate string template binding",
+      "location": {
+        "line": 6,
+        "column": 43
+      },
+      "expected": "unique binding name for String.template",
+      "found": "id"
+    }
+  },
+  {
+    "case": "18_string_templates/invalid_semantics/string_template_invalid_brace.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "template",
+      "code": "FH-TPL-4004",
+      "number": 4004,
+      "name": "template_invalid_brace",
+      "message": "invalid string template brace",
+      "location": {
+        "line": 5,
+        "column": 43
+      },
+      "expected": "${} placeholder for String.template",
+      "found": "{",
+      "hint": "Freehold string templates use `${}` or `${name}` placeholders.\n\nUse `${}` for positional values or `${name}` with named bindings. The older `{}` form is intentionally not accepted.\n",
+      "legacy_code": "VF-TPL004"
+    },
+    "expected": {
+      "code": "FH-TPL-4004",
+      "name": "template_invalid_brace",
+      "phase": "semantic",
+      "category": "template",
+      "legacy_code": "VF-TPL004",
+      "message": "invalid string template brace",
+      "location": {
+        "line": 5,
+        "column": 43
+      },
+      "expected": "${} placeholder for String.template",
+      "found": "{"
+    }
+  },
+  {
+    "case": "18_string_templates/invalid_semantics/string_template_missing_binding.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "template",
+      "code": "FH-TPL-4007",
+      "number": 4007,
+      "name": "template_missing_binding",
+      "message": "missing string template binding",
+      "location": {
+        "line": 6,
+        "column": 43
+      },
+      "expected": "binding for String.template",
+      "found": "id",
+      "hint": "Named string templates require exact bindings.\n\nEvery `${name}` placeholder must have a matching `name: value` binding, every binding must be used, and each binding name may appear only once.\n\nExample:\n    String.template(\"name=${name}\", name: user_name)\n",
+      "legacy_code": "VF-TPL007"
+    },
+    "expected": {
+      "code": "FH-TPL-4007",
+      "name": "template_missing_binding",
+      "phase": "semantic",
+      "category": "template",
+      "legacy_code": "VF-TPL007",
+      "message": "missing string template binding",
+      "location": {
+        "line": 6,
+        "column": 43
+      },
+      "expected": "binding for String.template",
+      "found": "id"
+    }
+  },
+  {
+    "case": "18_string_templates/invalid_semantics/string_template_old_braces.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "template",
+      "code": "FH-TPL-4002",
+      "number": 4002,
+      "name": "template_old_placeholder_rejected",
+      "message": "old template placeholder rejected",
+      "location": {
+        "line": 5,
+        "column": 43
+      },
+      "expected": "${} placeholder for String.template",
+      "found": "{}",
+      "hint": "Freehold string templates use `${}` or `${name}` placeholders.\n\nUse `${}` for positional values or `${name}` with named bindings. The older `{}` form is intentionally not accepted.\n",
+      "legacy_code": "VF-TPL002"
+    },
+    "expected": {
+      "code": "FH-TPL-4002",
+      "name": "template_old_placeholder_rejected",
+      "phase": "semantic",
+      "category": "template",
+      "legacy_code": "VF-TPL002",
+      "message": "old template placeholder rejected",
+      "location": {
+        "line": 5,
+        "column": 43
+      },
+      "expected": "${} placeholder for String.template",
+      "found": "{}"
+    }
+  },
+  {
+    "case": "18_string_templates/invalid_semantics/string_template_unused_binding.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "template",
+      "code": "FH-TPL-4008",
+      "number": 4008,
+      "name": "template_unused_binding",
+      "message": "unused string template binding",
+      "location": {
+        "line": 6,
+        "column": 43
+      },
+      "expected": "placeholder in String.template",
+      "found": "active",
+      "hint": "Named string templates require exact bindings.\n\nEvery `${name}` placeholder must have a matching `name: value` binding, every binding must be used, and each binding name may appear only once.\n\nExample:\n    String.template(\"name=${name}\", name: user_name)\n",
+      "legacy_code": "VF-TPL008"
+    },
+    "expected": {
+      "code": "FH-TPL-4008",
+      "name": "template_unused_binding",
+      "phase": "semantic",
+      "category": "template",
+      "legacy_code": "VF-TPL008",
+      "message": "unused string template binding",
+      "location": {
+        "line": 6,
+        "column": 43
+      },
+      "expected": "placeholder in String.template",
+      "found": "active"
+    }
+  },
+  {
+    "case": "20_json/invalid_semantics/json_stringify_argument_count.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "json",
+      "code": "FH-JSON-4201",
+      "number": 4201,
+      "name": "json_stringify_argument_count",
+      "message": "wrong Json argument count",
+      "location": {
+        "line": 10,
+        "column": 24
+      },
+      "expected": "1 argument(s) for Json.stringify",
+      "found": "argument list",
+      "hint": "Json.stringify accepts exactly one value.\n\nExample:\n    let text: String = Json.stringify(person)\n",
+      "legacy_code": "VF-J001"
+    },
+    "expected": {
+      "code": "FH-JSON-4201",
+      "name": "json_stringify_argument_count",
+      "phase": "semantic",
+      "category": "json",
+      "legacy_code": "VF-J001",
+      "message": "wrong Json argument count",
+      "location": {
+        "line": 10,
+        "column": 24
+      },
+      "expected": "1 argument(s) for Json.stringify",
+      "found": "argument list"
+    }
+  },
+  {
+    "case": "20_json/invalid_semantics/json_stringify_big_integer_field.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "json",
+      "code": "FH-JSON-4203",
+      "number": 4203,
+      "name": "json_stringify_unsupported_type",
+      "message": "Json value type not serializable",
+      "location": {
+        "line": 11,
+        "column": 39
+      },
+      "expected": "JSON-serializable value for Json.stringify",
+      "found": "value.hash: BigInteger",
+      "hint": "Json.stringify V1 serializes record fields whose values are JSON-compatible Freehold values.\n\nSupported field value types:\n    String, Integer, Boolean, Double, records, and arrays of supported values\n\nConvert BigInteger, BigFloat, Result, and other unsupported values explicitly before serializing.\n",
+      "legacy_code": "VF-J003"
+    },
+    "expected": {
+      "code": "FH-JSON-4203",
+      "name": "json_stringify_unsupported_type",
+      "phase": "semantic",
+      "category": "json",
+      "legacy_code": "VF-J003",
+      "message": "Json value type not serializable",
+      "location": {
+        "line": 11,
+        "column": 39
+      },
+      "expected": "JSON-serializable value for Json.stringify",
+      "found": "value.hash: BigInteger"
+    }
+  },
+  {
+    "case": "20_json/invalid_semantics/json_stringify_scalar.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "json",
+      "code": "FH-JSON-4202",
+      "number": 4202,
+      "name": "json_stringify_requires_record",
+      "message": "Json argument type mismatch",
+      "location": {
+        "line": 5,
+        "column": 39
+      },
+      "expected": "record argument 1 for Json.stringify",
+      "found": "String",
+      "hint": "Json.stringify V1 accepts a record value as its top-level argument.\n\nConstruct a record with TypeName { field: value } and pass that record value.\n",
+      "legacy_code": "VF-J002"
+    },
+    "expected": {
+      "code": "FH-JSON-4202",
+      "name": "json_stringify_requires_record",
+      "phase": "semantic",
+      "category": "json",
+      "legacy_code": "VF-J002",
+      "message": "Json argument type mismatch",
+      "location": {
+        "line": 5,
+        "column": 39
+      },
+      "expected": "record argument 1 for Json.stringify",
+      "found": "String"
+    }
+  },
+  {
+    "case": "21_abort_handling/invalid_semantics/abort_condition_uncovered_guard.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "abort",
+      "code": "FH-ABT-3006",
+      "number": 3006,
+      "name": "abort_condition_not_covered_by_contract",
+      "message": "abort condition not covered by abort contract",
+      "location": {
+        "line": 9,
+        "column": 9
+      },
+      "expected": "path implies aborts NotFound condition",
+      "found": "abort NotFound",
+      "hint": "A conditional abort contract only covers abort sites reached under the same condition.\n\nMove the `abort ErrorName` under a matching `if` guard, change the `aborts ErrorName when ...` condition, or remove the condition if every path may abort with that error.\n",
+      "legacy_code": "VF-ABT006"
+    },
+    "expected": {
+      "code": "FH-ABT-3006",
+      "name": "abort_condition_not_covered_by_contract",
+      "phase": "semantic",
+      "category": "abort",
+      "legacy_code": "VF-ABT006",
+      "message": "abort condition not covered by abort contract",
+      "location": {
+        "line": 9,
+        "column": 9
+      },
+      "expected": "path implies aborts NotFound condition",
+      "found": "abort NotFound"
+    }
+  },
+  {
+    "case": "21_abort_handling/invalid_semantics/abort_condition_uncovered_unconditional.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "abort",
+      "code": "FH-ABT-3006",
+      "number": 3006,
+      "name": "abort_condition_not_covered_by_contract",
+      "message": "abort condition not covered by abort contract",
+      "location": {
+        "line": 8,
+        "column": 5
+      },
+      "expected": "path implies aborts NotFound condition",
+      "found": "abort NotFound",
+      "hint": "A conditional abort contract only covers abort sites reached under the same condition.\n\nMove the `abort ErrorName` under a matching `if` guard, change the `aborts ErrorName when ...` condition, or remove the condition if every path may abort with that error.\n",
+      "legacy_code": "VF-ABT006"
+    },
+    "expected": {
+      "code": "FH-ABT-3006",
+      "name": "abort_condition_not_covered_by_contract",
+      "phase": "semantic",
+      "category": "abort",
+      "legacy_code": "VF-ABT006",
+      "message": "abort condition not covered by abort contract",
+      "location": {
+        "line": 8,
+        "column": 5
+      },
+      "expected": "path implies aborts NotFound condition",
+      "found": "abort NotFound"
+    }
+  },
+  {
+    "case": "21_abort_handling/invalid_semantics/abort_not_declared_by_routine.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "abort",
+      "code": "FH-ABT-3002",
+      "number": 3002,
+      "name": "abort_not_declared_by_routine",
+      "message": "abort not declared by routine",
+      "location": {
+        "line": 8,
+        "column": 9
+      },
+      "expected": "aborts NotFound",
+      "found": "abort NotFound",
+      "hint": "An `abort ErrorName` statement must be declared by the enclosing routine.\n\nAdd a matching `aborts ErrorName` clause to the routine contract.\n",
+      "legacy_code": "VF-ABT002"
+    },
+    "expected": {
+      "code": "FH-ABT-3002",
+      "name": "abort_not_declared_by_routine",
+      "phase": "semantic",
+      "category": "abort",
+      "legacy_code": "VF-ABT002",
+      "message": "abort not declared by routine",
+      "location": {
+        "line": 8,
+        "column": 9
+      },
+      "expected": "aborts NotFound",
+      "found": "abort NotFound"
+    }
+  },
+  {
+    "case": "21_abort_handling/invalid_semantics/caller_missing_abort_propagation.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "abort",
+      "code": "FH-ABT-3005",
+      "number": 3005,
+      "name": "caller_does_not_handle_or_propagate_abort",
+      "message": "caller does not handle or propagate abort",
+      "location": {
+        "line": 17,
+        "column": 12
+      },
+      "expected": "caller declares aborts NotFound or handles NotFound",
+      "found": "call read may abort NotFound",
+      "hint": "A call to an aborting routine must keep the abort visible.\n\nAdd a matching `aborts ErrorName` clause to the caller, or handle the abort once handler syntax exists.\n",
+      "legacy_code": "VF-ABT005"
+    },
+    "expected": {
+      "code": "FH-ABT-3005",
+      "name": "caller_does_not_handle_or_propagate_abort",
+      "phase": "semantic",
+      "category": "abort",
+      "legacy_code": "VF-ABT005",
+      "message": "caller does not handle or propagate abort",
+      "location": {
+        "line": 17,
+        "column": 12
+      },
+      "expected": "caller declares aborts NotFound or handles NotFound",
+      "found": "call read may abort NotFound"
+    }
+  },
+  {
+    "case": "21_abort_handling/invalid_semantics/duplicate_abort_declaration.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "abort",
+      "code": "FH-ABT-3003",
+      "number": 3003,
+      "name": "duplicate_abort_declaration",
+      "message": "duplicate abort declaration",
+      "location": {
+        "line": 7,
+        "column": 1
+      },
+      "expected": "unique abort declaration",
+      "found": "NotFound",
+      "hint": "Each routine may declare a given abort error at most once.\n\nUse one `aborts ErrorName` clause per controlled abort path.\n",
+      "legacy_code": "VF-ABT003"
+    },
+    "expected": {
+      "code": "FH-ABT-3003",
+      "name": "duplicate_abort_declaration",
+      "phase": "semantic",
+      "category": "abort",
+      "legacy_code": "VF-ABT003",
+      "message": "duplicate abort declaration",
+      "location": {
+        "line": 7,
+        "column": 1
+      },
+      "expected": "unique abort declaration",
+      "found": "NotFound"
+    }
+  },
+  {
+    "case": "21_abort_handling/invalid_semantics/main_requires_clause.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "abort",
+      "code": "FH-ABT-3009",
+      "number": 3009,
+      "name": "main_requires_clause_not_allowed",
+      "message": "main requires clause is not allowed",
+      "location": {
+        "line": 4,
+        "column": 10
+      },
+      "expected": "explicit top-level aborts clause or environment assumption",
+      "found": "requires",
+      "hint": "`main` has no ordinary Freehold caller, so `requires` cannot express a call-site obligation there.\n\nUse an explicit top-level `aborts ErrorName when condition` path, or introduce a future environment-assumption construct instead of `requires`.\n",
+      "legacy_code": "VF-ABT009"
+    },
+    "expected": {
+      "code": "FH-ABT-3009",
+      "name": "main_requires_clause_not_allowed",
+      "phase": "semantic",
+      "category": "abort",
+      "legacy_code": "VF-ABT009",
+      "message": "main requires clause is not allowed",
+      "location": {
+        "line": 4,
+        "column": 10
+      },
+      "expected": "explicit top-level aborts clause or environment assumption",
+      "found": "requires"
+    }
+  },
+  {
+    "case": "21_abort_handling/invalid_semantics/middle_layer_missing_abort_propagation.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "abort",
+      "code": "FH-ABT-3005",
+      "number": 3005,
+      "name": "caller_does_not_handle_or_propagate_abort",
+      "message": "caller does not handle or propagate abort",
+      "location": {
+        "line": 15,
+        "column": 5
+      },
+      "expected": "caller declares aborts NotFound or handles NotFound",
+      "found": "call read may abort NotFound",
+      "hint": "A call to an aborting routine must keep the abort visible.\n\nAdd a matching `aborts ErrorName` clause to the caller, or handle the abort once handler syntax exists.\n",
+      "legacy_code": "VF-ABT005"
+    },
+    "expected": {
+      "code": "FH-ABT-3005",
+      "name": "caller_does_not_handle_or_propagate_abort",
+      "phase": "semantic",
+      "category": "abort",
+      "legacy_code": "VF-ABT005",
+      "message": "caller does not handle or propagate abort",
+      "location": {
+        "line": 15,
+        "column": 5
+      },
+      "expected": "caller declares aborts NotFound or handles NotFound",
+      "found": "call read may abort NotFound"
+    }
+  },
+  {
+    "case": "21_abort_handling/invalid_semantics/unknown_abort_error.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "abort",
+      "code": "FH-ABT-3001",
+      "number": 3001,
+      "name": "unknown_abort_error",
+      "message": "unknown abort error",
+      "location": {
+        "line": 4,
+        "column": 1
+      },
+      "expected": "declared error",
+      "found": "MissingError",
+      "hint": "An abort path must name an error declared in the module.\n\nDeclare the error before using it in an `aborts` clause or `abort` statement.\n",
+      "legacy_code": "VF-ABT001"
+    },
+    "expected": {
+      "code": "FH-ABT-3001",
+      "name": "unknown_abort_error",
+      "phase": "semantic",
+      "category": "abort",
+      "legacy_code": "VF-ABT001",
+      "message": "unknown abort error",
+      "location": {
+        "line": 4,
+        "column": 1
+      },
+      "expected": "declared error",
+      "found": "MissingError"
+    }
+  },
+  {
+    "case": "21_abort_handling/invalid_semantics/unreachable_after_abort.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "abort",
+      "code": "FH-ABT-3010",
+      "number": 3010,
+      "name": "unreachable_statement_after_guaranteed_exit",
+      "message": "unreachable statement after guaranteed exit",
+      "location": {
+        "line": 9,
+        "column": 5
+      },
+      "expected": "reachable statement",
+      "found": "statement after guaranteed exit",
+      "hint": "Statements after a guaranteed exit cannot execute.\n\nRemove the unreachable statement or move it before the `return`/`abort` path. This check is intentionally simple: a previous `return`, `abort`, or branch shape that exits on all paths ends the current block.\n",
+      "legacy_code": "VF-ABT010"
+    },
+    "expected": {
+      "code": "FH-ABT-3010",
+      "name": "unreachable_statement_after_guaranteed_exit",
+      "phase": "semantic",
+      "category": "abort",
+      "legacy_code": "VF-ABT010",
+      "message": "unreachable statement after guaranteed exit",
+      "location": {
+        "line": 9,
+        "column": 5
+      },
+      "expected": "reachable statement",
+      "found": "statement after guaranteed exit"
+    }
+  },
+  {
+    "case": "21_abort_handling/invalid_semantics/unreachable_after_exhaustive_abort.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "abort",
+      "code": "FH-ABT-3010",
+      "number": 3010,
+      "name": "unreachable_statement_after_guaranteed_exit",
+      "message": "unreachable statement after guaranteed exit",
+      "location": {
+        "line": 14,
+        "column": 5
+      },
+      "expected": "reachable statement",
+      "found": "statement after guaranteed exit",
+      "hint": "Statements after a guaranteed exit cannot execute.\n\nRemove the unreachable statement or move it before the `return`/`abort` path. This check is intentionally simple: a previous `return`, `abort`, or branch shape that exits on all paths ends the current block.\n",
+      "legacy_code": "VF-ABT010"
+    },
+    "expected": {
+      "code": "FH-ABT-3010",
+      "name": "unreachable_statement_after_guaranteed_exit",
+      "phase": "semantic",
+      "category": "abort",
+      "legacy_code": "VF-ABT010",
+      "message": "unreachable statement after guaranteed exit",
+      "location": {
+        "line": 14,
+        "column": 5
+      },
+      "expected": "reachable statement",
+      "found": "statement after guaranteed exit"
+    }
+  },
+  {
+    "case": "22_generics/invalid_semantics/duplicate_type_parameter.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5002",
+      "number": 5002,
+      "name": "duplicate_type_parameter",
+      "message": "duplicate type parameter",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "unique type parameter",
+      "found": "T",
+      "hint": "A generic declaration may list each type parameter only once.\n\nExample:\n    type Box<T> is record\n        value: T\n    end record\n",
+      "legacy_code": "VF-GEN002"
+    },
+    "expected": {
+      "code": "FH-GEN-5002",
+      "name": "duplicate_type_parameter",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN002",
+      "message": "duplicate type parameter",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "unique type parameter",
+      "found": "T"
+    }
+  },
+  {
+    "case": "22_generics/invalid_semantics/missing_type_argument.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5010",
+      "number": 5010,
+      "name": "missing_type_argument",
+      "message": "missing type argument",
+      "location": {
+        "line": 9,
+        "column": 5
+      },
+      "expected": "1 type argument(s)",
+      "found": "Box",
+      "hint": "A generic type must be used with the number of type arguments declared by its template.\n\nExample:\n    type Box<T> is record\n        value: T\n    end record\n\n    let value: Box<Integer> = Box<Integer> { value: 1 }\n",
+      "legacy_code": "VF-GEN010"
+    },
+    "expected": {
+      "code": "FH-GEN-5010",
+      "name": "missing_type_argument",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN010",
+      "message": "missing type argument",
+      "location": {
+        "line": 9,
+        "column": 5
+      },
+      "expected": "1 type argument(s)",
+      "found": "Box"
+    }
+  },
+  {
+    "case": "22_generics/invalid_semantics/non_generic_function_type_arguments.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5032",
+      "number": 5032,
+      "name": "non_generic_routine_used_with_type_arguments",
+      "message": "non-generic routine used with type arguments",
+      "location": {
+        "line": 10,
+        "column": 22
+      },
+      "expected": "generic function declaration",
+      "found": "one",
+      "hint": "Only generic functions may be called with type arguments.\n\nRemove the type argument list or add type parameters to the function declaration.\n",
+      "legacy_code": "VF-GEN032"
+    },
+    "expected": {
+      "code": "FH-GEN-5032",
+      "name": "non_generic_routine_used_with_type_arguments",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN032",
+      "message": "non-generic routine used with type arguments",
+      "location": {
+        "line": 10,
+        "column": 22
+      },
+      "expected": "generic function declaration",
+      "found": "one"
+    }
+  },
+  {
+    "case": "22_generics/invalid_semantics/non_generic_type_arguments.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5012",
+      "number": 5012,
+      "name": "non_generic_type_used_with_type_arguments",
+      "message": "non-generic type used with type arguments",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "generic type declaration",
+      "found": "String",
+      "hint": "Only generic type declarations may be used with type arguments.\n\nExample:\n    Box<Integer> is valid only if Box was declared with a type parameter such as Box<T>.\n",
+      "legacy_code": "VF-GEN012"
+    },
+    "expected": {
+      "code": "FH-GEN-5012",
+      "name": "non_generic_type_used_with_type_arguments",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN012",
+      "message": "non-generic type used with type arguments",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "generic type declaration",
+      "found": "String"
+    }
+  },
+  {
+    "case": "22_generics/invalid_semantics/too_many_type_arguments.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5011",
+      "number": 5011,
+      "name": "too_many_type_arguments",
+      "message": "too many type arguments",
+      "location": {
+        "line": 9,
+        "column": 5
+      },
+      "expected": "1 type argument(s)",
+      "found": "Box<2>",
+      "hint": "A generic type instantiation must provide exactly the declared number of type arguments.\n\nCheck the generic declaration and remove or add type arguments as needed.\n",
+      "legacy_code": "VF-GEN011"
+    },
+    "expected": {
+      "code": "FH-GEN-5011",
+      "name": "too_many_type_arguments",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN011",
+      "message": "too many type arguments",
+      "location": {
+        "line": 9,
+        "column": 5
+      },
+      "expected": "1 type argument(s)",
+      "found": "Box<2>"
+    }
+  },
+  {
+    "case": "22_generics/invalid_semantics/wrong_function_type_argument_count.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5031",
+      "number": 5031,
+      "name": "wrong_routine_type_argument_count",
+      "message": "wrong routine type argument count",
+      "location": {
+        "line": 10,
+        "column": 22
+      },
+      "expected": "1 type argument(s)",
+      "found": "identity<2>",
+      "hint": "A generic function call must provide exactly the declared number of type arguments.\n\nCheck the function declaration and add or remove type arguments as needed.\n",
+      "legacy_code": "VF-GEN031"
+    },
+    "expected": {
+      "code": "FH-GEN-5031",
+      "name": "wrong_routine_type_argument_count",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN031",
+      "message": "wrong routine type argument count",
+      "location": {
+        "line": 10,
+        "column": 22
+      },
+      "expected": "1 type argument(s)",
+      "found": "identity<2>"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/await_executor.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3102",
+      "number": 3102,
+      "name": "await_requires_awaitable_expression",
+      "message": "await requires awaitable expression",
+      "location": {
+        "line": 5,
+        "column": 25
+      },
+      "expected": "awaitable expression",
+      "found": "Executor",
+      "hint": "`await` requires an awaitable expression.\n\nIn V1a, async function calls are awaitable:\n    let item: Integer = await fetch()\n\nDo not use `await` on plain scalar values or synchronous function calls.\n",
+      "legacy_code": "VF-ASY002"
+    },
+    "expected": {
+      "code": "FH-CON-3102",
+      "name": "await_requires_awaitable_expression",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-ASY002",
+      "message": "await requires awaitable expression",
+      "location": {
+        "line": 5,
+        "column": 25
+      },
+      "expected": "awaitable expression",
+      "found": "Executor"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/await_outside_async.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3101",
+      "number": 3101,
+      "name": "await_outside_async_function",
+      "message": "await outside async routine",
+      "location": {
+        "line": 10,
+        "column": 25
+      },
+      "expected": "async routine context",
+      "found": "await",
+      "hint": "`await` may only be used inside an async routine.\n\nExample:\n    async function load() returns Integer\n    is\n        return await fetch()\n    end load\n",
+      "legacy_code": "VF-ASY001"
+    },
+    "expected": {
+      "code": "FH-CON-3101",
+      "name": "await_outside_async_function",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-ASY001",
+      "message": "await outside async routine",
+      "location": {
+        "line": 10,
+        "column": 25
+      },
+      "expected": "async routine context",
+      "found": "await"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/await_sync_value.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3102",
+      "number": 3102,
+      "name": "await_requires_awaitable_expression",
+      "message": "await requires awaitable expression",
+      "location": {
+        "line": 10,
+        "column": 25
+      },
+      "expected": "awaitable expression",
+      "found": "Integer",
+      "hint": "`await` requires an awaitable expression.\n\nIn V1a, async function calls are awaitable:\n    let item: Integer = await fetch()\n\nDo not use `await` on plain scalar values or synchronous function calls.\n",
+      "legacy_code": "VF-ASY002"
+    },
+    "expected": {
+      "code": "FH-CON-3102",
+      "name": "await_requires_awaitable_expression",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-ASY002",
+      "message": "await requires awaitable expression",
+      "location": {
+        "line": 10,
+        "column": 25
+      },
+      "expected": "awaitable expression",
+      "found": "Integer"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/channel_missing_type_argument.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5030",
+      "number": 5030,
+      "name": "missing_routine_type_argument",
+      "message": "missing routine type argument",
+      "location": {
+        "line": 5,
+        "column": 12
+      },
+      "expected": "1 type argument(s)",
+      "found": "channel",
+      "hint": "A generic function call must provide the number of type arguments declared by the function.\n\nExample:\n    function identity<T>(x: T) returns T\n    is\n        return x\n    end identity\n\n    let item: Integer = identity<Integer>(1)\n",
+      "legacy_code": "VF-GEN030"
+    },
+    "expected": {
+      "code": "FH-GEN-5030",
+      "name": "missing_routine_type_argument",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN030",
+      "message": "missing routine type argument",
+      "location": {
+        "line": 5,
+        "column": 12
+      },
+      "expected": "1 type argument(s)",
+      "found": "channel"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/channel_send_payload_mismatch.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3112",
+      "number": 3112,
+      "name": "channel_argument_type_mismatch",
+      "message": "Channel argument type mismatch",
+      "location": {
+        "line": 5,
+        "column": 48
+      },
+      "expected": "argument 2 as Integer for channel_send",
+      "found": "String",
+      "hint": "Channel built-in arguments must match the channel element type.\n\nUse Sender<T> with values of T, Receiver<T> for receive, and Channel<T> when splitting endpoints.\n",
+      "legacy_code": "VF-CH002"
+    },
+    "expected": {
+      "code": "FH-CON-3112",
+      "name": "channel_argument_type_mismatch",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-CH002",
+      "message": "Channel argument type mismatch",
+      "location": {
+        "line": 5,
+        "column": 48
+      },
+      "expected": "argument 2 as Integer for channel_send",
+      "found": "String"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/reserved_async_name.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "semantic",
+      "code": "FH-SEM-1004",
+      "number": 1004,
+      "name": "reserved_keyword_name",
+      "message": "reserved keyword cannot be used as name",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "non-keyword identifier",
+      "found": "async",
+      "hint": "Reserved Freehold words cannot be used as user-defined names.\n\nExamples of reserved words:\n    module, import, type, record, function, procedure, let, return, if, while\n",
+      "legacy_code": "VF-N002"
+    },
+    "expected": {
+      "code": "FH-SEM-1004",
+      "name": "reserved_keyword_name",
+      "phase": "semantic",
+      "category": "semantic",
+      "legacy_code": "VF-N002",
+      "message": "reserved keyword cannot be used as name",
+      "location": {
+        "line": 3,
+        "column": 1
+      },
+      "expected": "non-keyword identifier",
+      "found": "async"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/runtime_generic_missing_argument.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5010",
+      "number": 5010,
+      "name": "missing_type_argument",
+      "message": "missing type argument",
+      "location": {
+        "line": 3,
+        "column": 14
+      },
+      "expected": "1 type argument(s)",
+      "found": "JoinHandle",
+      "hint": "A generic type must be used with the number of type arguments declared by its template.\n\nExample:\n    type Box<T> is record\n        value: T\n    end record\n\n    let value: Box<Integer> = Box<Integer> { value: 1 }\n",
+      "legacy_code": "VF-GEN010"
+    },
+    "expected": {
+      "code": "FH-GEN-5010",
+      "name": "missing_type_argument",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN010",
+      "message": "missing type argument",
+      "location": {
+        "line": 3,
+        "column": 14
+      },
+      "expected": "1 type argument(s)",
+      "found": "JoinHandle"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/runtime_generic_wrong_arity.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5011",
+      "number": 5011,
+      "name": "too_many_type_arguments",
+      "message": "too many type arguments",
+      "location": {
+        "line": 3,
+        "column": 14
+      },
+      "expected": "1 type argument(s)",
+      "found": "JoinHandle<2>",
+      "hint": "A generic type instantiation must provide exactly the declared number of type arguments.\n\nCheck the generic declaration and remove or add type arguments as needed.\n",
+      "legacy_code": "VF-GEN011"
+    },
+    "expected": {
+      "code": "FH-GEN-5011",
+      "name": "too_many_type_arguments",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN011",
+      "message": "too many type arguments",
+      "location": {
+        "line": 3,
+        "column": 14
+      },
+      "expected": "1 type argument(s)",
+      "found": "JoinHandle<2>"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/runtime_non_generic_type_arguments.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "generic",
+      "code": "FH-GEN-5012",
+      "number": 5012,
+      "name": "non_generic_type_used_with_type_arguments",
+      "message": "non-generic type used with type arguments",
+      "location": {
+        "line": 3,
+        "column": 14
+      },
+      "expected": "generic type declaration",
+      "found": "Executor",
+      "hint": "Only generic type declarations may be used with type arguments.\n\nExample:\n    Box<Integer> is valid only if Box was declared with a type parameter such as Box<T>.\n",
+      "legacy_code": "VF-GEN012"
+    },
+    "expected": {
+      "code": "FH-GEN-5012",
+      "name": "non_generic_type_used_with_type_arguments",
+      "phase": "semantic",
+      "category": "generic",
+      "legacy_code": "VF-GEN012",
+      "message": "non-generic type used with type arguments",
+      "location": {
+        "line": 3,
+        "column": 14
+      },
+      "expected": "generic type declaration",
+      "found": "Executor"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/scope_handle_escape.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3121",
+      "number": 3121,
+      "name": "scope_join_handle_escape",
+      "message": "scope JoinHandle cannot escape",
+      "location": {
+        "line": 7,
+        "column": 12
+      },
+      "expected": "scope-local JoinHandle joined inside active",
+      "found": "handle",
+      "hint": "A JoinHandle spawned inside a Scope is local to that Scope.\n\nJoin the handle inside the Scope before returning, storing it somewhere longer-lived, or passing it outside the scope boundary.\n",
+      "legacy_code": "VF-SC001"
+    },
+    "expected": {
+      "code": "FH-CON-3121",
+      "name": "scope_join_handle_escape",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-SC001",
+      "message": "scope JoinHandle cannot escape",
+      "location": {
+        "line": 7,
+        "column": 12
+      },
+      "expected": "scope-local JoinHandle joined inside active",
+      "found": "handle"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/scope_handle_not_joined.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3122",
+      "number": 3122,
+      "name": "scope_join_handle_not_joined",
+      "message": "scope JoinHandle must be joined",
+      "location": {
+        "line": 6,
+        "column": 5
+      },
+      "expected": "scope_join before leaving active",
+      "found": "handle",
+      "hint": "Every JoinHandle spawned inside a Scope must be joined before leaving that Scope.\n\nUse scope_join<T>(scope, handle) and await the result before returning from the routine or ending the scope block.\n",
+      "legacy_code": "VF-SC002"
+    },
+    "expected": {
+      "code": "FH-CON-3122",
+      "name": "scope_join_handle_not_joined",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-SC002",
+      "message": "scope JoinHandle must be joined",
+      "location": {
+        "line": 6,
+        "column": 5
+      },
+      "expected": "scope_join before leaving active",
+      "found": "handle"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/structured_scope_handle_escape.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3121",
+      "number": 3121,
+      "name": "scope_join_handle_escape",
+      "message": "scope JoinHandle cannot escape",
+      "location": {
+        "line": 19,
+        "column": 20
+      },
+      "expected": "scope-local JoinHandle joined inside request_scope",
+      "found": "invoice_handle",
+      "hint": "A JoinHandle spawned inside a Scope is local to that Scope.\n\nJoin the handle inside the Scope before returning, storing it somewhere longer-lived, or passing it outside the scope boundary.\n",
+      "legacy_code": "VF-SC001"
+    },
+    "expected": {
+      "code": "FH-CON-3121",
+      "name": "scope_join_handle_escape",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-SC001",
+      "message": "scope JoinHandle cannot escape",
+      "location": {
+        "line": 19,
+        "column": 20
+      },
+      "expected": "scope-local JoinHandle joined inside request_scope",
+      "found": "invoice_handle"
+    }
+  },
+  {
+    "case": "23_concurrency/invalid_semantics/structured_scope_handle_not_joined.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "concurrency",
+      "code": "FH-CON-3122",
+      "number": 3122,
+      "name": "scope_join_handle_not_joined",
+      "message": "scope JoinHandle must be joined",
+      "location": {
+        "line": 16,
+        "column": 13
+      },
+      "expected": "scope_join before leaving request_scope",
+      "found": "invoice_handle",
+      "hint": "Every JoinHandle spawned inside a Scope must be joined before leaving that Scope.\n\nUse scope_join<T>(scope, handle) and await the result before returning from the routine or ending the scope block.\n",
+      "legacy_code": "VF-SC002"
+    },
+    "expected": {
+      "code": "FH-CON-3122",
+      "name": "scope_join_handle_not_joined",
+      "phase": "semantic",
+      "category": "concurrency",
+      "legacy_code": "VF-SC002",
+      "message": "scope JoinHandle must be joined",
+      "location": {
+        "line": 16,
+        "column": 13
+      },
+      "expected": "scope_join before leaving request_scope",
+      "found": "invoice_handle"
+    }
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/duplicate_proto_field_id.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "grpc",
+      "code": "FH-GRPC-4401",
+      "number": 4401,
+      "name": "duplicate_proto_field_id",
+      "message": "duplicate proto field id",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "unique proto field id in record",
+      "found": "1",
+      "hint": "Each gRPC/protobuf field id must be unique inside one record.\n\nUse stable positive numbers and never reuse a number for a different field.\n",
+      "legacy_code": "VF-GRPC001"
+    },
+    "expected": {
+      "code": "FH-GRPC-4401",
+      "name": "duplicate_proto_field_id",
+      "phase": "semantic",
+      "category": "grpc",
+      "legacy_code": "VF-GRPC001",
+      "message": "duplicate proto field id",
+      "location": {
+        "line": 5,
+        "column": 5
+      },
+      "expected": "unique proto field id in record",
+      "found": "1"
+    }
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/duplicate_rpc_name.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "grpc",
+      "code": "FH-GRPC-4405",
+      "number": 4405,
+      "name": "duplicate_rpc_name",
+      "message": "duplicate rpc name",
+      "location": {
+        "line": 13,
+        "column": 5
+      },
+      "expected": "unique rpc name in service",
+      "found": "GetUser",
+      "hint": "Each rpc name may appear only once inside a service.\n\nRename the duplicate rpc or merge the declarations.\n",
+      "legacy_code": "VF-GRPC005"
+    },
+    "expected": {
+      "code": "FH-GRPC-4405",
+      "name": "duplicate_rpc_name",
+      "phase": "semantic",
+      "category": "grpc",
+      "legacy_code": "VF-GRPC005",
+      "message": "duplicate rpc name",
+      "location": {
+        "line": 13,
+        "column": 5
+      },
+      "expected": "unique rpc name in service",
+      "found": "GetUser"
+    }
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/invalid_proto_field_id.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "grpc",
+      "code": "FH-GRPC-4402",
+      "number": 4402,
+      "name": "invalid_proto_field_id",
+      "message": "invalid proto field id",
+      "location": {
+        "line": 4,
+        "column": 5
+      },
+      "expected": "positive proto field id",
+      "found": "0",
+      "hint": "A protobuf field id must be a positive integer.\n\nUse `proto 1`, `proto 2`, and so on for fields that are used in gRPC messages.\n",
+      "legacy_code": "VF-GRPC002"
+    },
+    "expected": {
+      "code": "FH-GRPC-4402",
+      "name": "invalid_proto_field_id",
+      "phase": "semantic",
+      "category": "grpc",
+      "legacy_code": "VF-GRPC002",
+      "message": "invalid proto field id",
+      "location": {
+        "line": 4,
+        "column": 5
+      },
+      "expected": "positive proto field id",
+      "found": "0"
+    }
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/missing_proto_field_id.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "grpc",
+      "code": "FH-GRPC-4403",
+      "number": 4403,
+      "name": "missing_proto_field_id",
+      "message": "missing proto field id in grpc message",
+      "location": {
+        "line": 12,
+        "column": 5
+      },
+      "expected": "field: Type proto N",
+      "found": "UserRequest.id",
+      "hint": "Records used as gRPC request or response messages must assign stable proto ids to every field.\n\nExample:\n    id: String proto 1\n",
+      "legacy_code": "VF-GRPC003"
+    },
+    "expected": {
+      "code": "FH-GRPC-4403",
+      "name": "missing_proto_field_id",
+      "phase": "semantic",
+      "category": "grpc",
+      "legacy_code": "VF-GRPC003",
+      "message": "missing proto field id in grpc message",
+      "location": {
+        "line": 12,
+        "column": 5
+      },
+      "expected": "field: Type proto N",
+      "found": "UserRequest.id"
+    }
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/unknown_rpc_type.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "grpc",
+      "code": "FH-GRPC-4404",
+      "number": 4404,
+      "name": "unknown_rpc_type",
+      "message": "unknown rpc type",
+      "location": {
+        "line": 8,
+        "column": 5
+      },
+      "expected": "declared record message type",
+      "found": "request MissingRequest",
+      "hint": "Unary gRPC V1 rpc request and response types must name declared record messages.\n\nDeclare the record before the service and use that record type in the rpc signature.\n",
+      "legacy_code": "VF-GRPC004"
+    },
+    "expected": {
+      "code": "FH-GRPC-4404",
+      "name": "unknown_rpc_type",
+      "phase": "semantic",
+      "category": "grpc",
+      "legacy_code": "VF-GRPC004",
+      "message": "unknown rpc type",
+      "location": {
+        "line": 8,
+        "column": 5
+      },
+      "expected": "declared record message type",
+      "found": "request MissingRequest"
+    }
+  },
+  {
+    "case": "24_grpc_idl/invalid_semantics/unsupported_proto_field_type.json",
+    "status": "match",
+    "actual": {
+      "severity": "error",
+      "phase": "semantic",
+      "category": "grpc",
+      "code": "FH-GRPC-4406",
+      "number": 4406,
+      "name": "unsupported_grpc_proto_field_type",
+      "message": "unsupported grpc proto field type",
+      "location": {
+        "line": 12,
+        "column": 5
+      },
+      "expected": "String, Integer, Boolean, Double, record, or Array of supported values",
+      "found": "BigInteger",
+      "hint": "gRPC/protobuf message fields must use protobuf-compatible Freehold types.\n\nSupported V1 field value types:\n    String, Integer, Boolean, Double, records, and arrays of supported values\n\nConvert or wrap BigInteger, BigFloat, Result, and other unsupported values before exposing them through gRPC.\n",
+      "legacy_code": "VF-GRPC006"
+    },
+    "expected": {
+      "code": "FH-GRPC-4406",
+      "name": "unsupported_grpc_proto_field_type",
+      "phase": "semantic",
+      "category": "grpc",
+      "legacy_code": "VF-GRPC006",
+      "message": "unsupported grpc proto field type",
+      "location": {
+        "line": 12,
+        "column": 5
+      },
+      "expected": "String, Integer, Boolean, Double, record, or Array of supported values",
+      "found": "BigInteger"
+    }
+  }
+]

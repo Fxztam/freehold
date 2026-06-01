@@ -1,0 +1,112 @@
+{
+  "source_file": "..\\tests\\language_modules\\22_generics\\invalid_semantics\\generic_inference_conflict.fh",
+  "source_snippet": "module GenericInferenceConflict\n\nfunction max\u003cT\u003e(a: T, b: T) returns T\nrequires T is Comparable\nis\n    if a \u003e b then\n        return a\n    else\n        return b\n    end if\nend max\n\nprocedure main()\nis\n    let x: Double = max(3, 4.0)\nend main\n\nend GenericInferenceConflict\n",
+  "module_name": "22_generics",
+  "case_kind": "invalid_semantics",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "GenericInferenceConflict",
+    "declarations": [
+      {
+        "kind": "FunctionDecl",
+        "name": "max",
+        "type_params": [
+          "T"
+        ],
+        "params": [
+          {
+            "name": "a",
+            "type": "T"
+          },
+          {
+            "name": "b",
+            "type": "T"
+          }
+        ],
+        "return_type": "T",
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": "is",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "T"
+            },
+            "right": {
+              "kind": "IdentifierExpr",
+              "name": "Comparable"
+            }
+          }
+        ],
+        "body": [
+          {
+            "kind": "IfStmt",
+            "condition": {
+              "kind": "BinaryExpr",
+              "op": "\u003e",
+              "left": {
+                "kind": "IdentifierExpr",
+                "name": "a"
+              },
+              "right": {
+                "kind": "IdentifierExpr",
+                "name": "b"
+              }
+            },
+            "then_body": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "IdentifierExpr",
+                  "name": "a"
+                }
+              }
+            ],
+            "else_body": [
+              {
+                "kind": "ReturnStmt",
+                "value": {
+                  "kind": "IdentifierExpr",
+                  "name": "b"
+                }
+              }
+            ]
+          }
+        ],
+        "end_name": "max"
+      },
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "x",
+            "type": "Double",
+            "value": {
+              "kind": "CallExpr",
+              "callee": {
+                "kind": "IdentifierExpr",
+                "name": "max"
+              },
+              "arguments": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "3"
+                },
+                {
+                  "kind": "NumberExpr",
+                  "value": "4.0"
+                }
+              ]
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "GenericInferenceConflict"
+  }
+}

@@ -1,7 +1,9 @@
 schema freehold.diag.v1
 
 range FH-SYN-0001..0999 parse syntax
+range FH-PARSE-0000..0999 parse syntax
 range FH-SEM-1000..1999 semantic semantic
+range FH-REF-1000..1999 semantic reference
 range FH-TYP-2000..2999 semantic type
 range FH-CON-3000..3999 semantic contract
 range FH-ABT-3000..3999 semantic abort open
@@ -12,6 +14,7 @@ range FH-JSON-4200..4299 semantic json open
 range FH-REC-4300..4399 semantic record open
 range FH-GRPC-4400..4499 semantic grpc open
 range FH-GEN-5000..5099 semantic generic open
+range FH-GOCODEGEN-0001..0999 codegen code
 range FH-BLD-9000..9999 build tooling
 
 # Current parser diagnostics from go-frontend/internal/diagnostic/catalog.go.
@@ -223,6 +226,46 @@ expected "expected token"
 hint "Check the syntax around this token."
 end
 
+diag FH-PARSE-0000 no_parse_error
+severity ok
+phase parse
+category syntax
+message "No parse error."
+expected ""
+end
+
+diag FH-PARSE-0001 name_mismatch
+severity error
+phase parse
+category syntax
+message "End name mismatch."
+expected "matching end identifier"
+end
+
+diag FH-PARSE-0002 unexpected_token
+severity error
+phase parse
+category syntax
+message "Unexpected token."
+expected "expected token kind"
+end
+
+diag FH-PARSE-0003 expected_expression
+severity error
+phase parse
+category syntax
+message "Expected expression."
+expected "expression"
+end
+
+diag FH-PARSE-0004 expected_statement
+severity error
+phase parse
+category syntax
+message "Expected statement."
+expected "statement"
+end
+
 diag FH-CON-3101 await_outside_async_function
 severity error
 phase semantic
@@ -313,6 +356,68 @@ category semantic
 legacy VF-I006
 message "ambiguous exposed symbol"
 expected "unique symbol from either imported module"
+end
+
+diag FH-REF-1001 unknown_exposed_symbol
+severity error
+phase semantic
+category semantic
+message "Unknown exposed symbol in imported module."
+expected "declared exposed symbol"
+end
+
+diag FH-SEM-1006 imported_module_not_found
+severity error
+phase semantic
+category semantic
+message "imported module not found"
+expected "module file path"
+hint "Imported project modules must exist at the path implied by their module name."
+end
+
+diag FH-SEM-1007 import_cycle
+severity error
+phase semantic
+category semantic
+message "import cycle"
+expected "acyclic import graph"
+hint "Project imports must form an acyclic module graph."
+end
+
+diag FH-SEM-1008 module_file_path_mismatch
+severity error
+phase semantic
+category semantic
+message "module file path mismatch"
+expected "module path matching module name"
+hint "A module file path must match its module name, for example App.Main -> App/Main.fh."
+end
+
+diag FH-SEM-1009 imported_module_name_mismatch
+severity error
+phase semantic
+category semantic
+message "imported module name mismatch"
+expected "matching module name declaration"
+hint "An imported file must declare the module named by the import."
+end
+
+diag FH-SEM-1010 unknown_exposed_symbol_sem
+severity error
+phase semantic
+category semantic
+message "unknown exposed symbol"
+expected "declaration in module"
+hint "An import exposing list may only name declarations from the imported module."
+end
+
+diag FH-SEM-1011 imported_module_parse_error
+severity error
+phase semantic
+category semantic
+message "imported module parse error"
+expected "parseable module file"
+hint "Imported project modules must parse before project semantics can run."
 end
 
 diag FH-SEM-1004 reserved_keyword_name
@@ -574,6 +679,15 @@ category semantic
 legacy VF-ST001
 message "unknown assignment target"
 expected "declared assignable target"
+end
+
+diag FH-SEM-1303 duplicate_local_name
+severity error
+phase semantic
+category semantic
+message "duplicate local name"
+expected "unique local name"
+hint "Each local variable name must be unique in its visible scope."
 end
 
 diag FH-TYP-2301 assignment_type_mismatch
@@ -1045,4 +1159,28 @@ legacy VF-ER007
 message "nested Result payloads are forbidden in v1"
 expected "non-Result value type"
 hint "Nested Result is forbidden in v1 so success, failure, value, and error remain unambiguous."
+end
+
+diag FH-BLD-9001 stable_package_path
+severity info
+phase build
+category tooling
+message "Package path is stable."
+expected "stable package path mapping"
+end
+
+diag FH-BLD-9002 stable_diagnostic_text
+severity info
+phase build
+category tooling
+message "Diagnostic text is stable."
+expected "stable diagnostic text output"
+end
+
+diag FH-GOCODEGEN-0001 unsupported_go_codegen_feature
+severity error
+phase codegen
+category semantic
+message "Unsupported feature in Go code generation."
+expected "supported language feature"
 end
