@@ -228,10 +228,21 @@ is
                     end if
                 else
                     if expr.kind = "CALL" then
-                        if expr.routine_name = "answer" then
-                            return "Integer"
+                        if expr.routine_name = "channel" then
+                            if expr.invariant_idx >= 0 and expr.invariant_idx < 64 then
+                                let inv_expr: ExprNode = exprs[expr.invariant_idx]
+                                let t_inv: String = resolve_expr(inv_expr, exprs, locals, local_count)
+                                if t_inv != "Boolean" then
+                                    return "TypeError"
+                                end if
+                            end if
+                            return expr.literal_kind
                         else
-                            return "UnknownType"
+                            if expr.routine_name = "answer" then
+                                return "Integer"
+                            else
+                                return "UnknownType"
+                            end if
                         end if
                     else
                         return "UnknownType"

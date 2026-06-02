@@ -1,0 +1,168 @@
+module Compiler.Core.WhyMLCodeGen
+
+import Compiler.Core.Ast exposing ExprNode, StmtNode
+
+function to_lower(s: String) returns String
+is
+    let res: String = ""
+    let len: Integer = String.length(s)
+    let i: Integer = 0
+    let upper: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    let lower: String = "abcdefghijklmnopqrstuvwxyz"
+    while i < len invariant i >= 0 do
+        let c: String = String.substr(s, i, 1)
+        let idx: Integer = String.instr(upper, c)
+        if idx >= 0 then
+            let lc: String = String.substr(lower, idx, 1)
+            res := String.template("${prev}${c}", prev: res, c: lc)
+        else
+            res := String.template("${prev}${c}", prev: res, c: c)
+        end if
+        i := i + 1
+    end while
+    return res
+end to_lower
+
+function expr_to_whyml(exprs: Array<ExprNode, 64>, idx: Integer) returns String
+is
+    if idx < 0 or idx >= 64 then
+        return ""
+    end if
+    let expr: ExprNode = exprs[idx]
+    if expr.kind = "LITERAL" then
+        if expr.literal_kind = "String" then
+            return String.template("\"${text}\"", text: expr.text)
+        else
+            return expr.text
+        end if
+    else
+        if expr.kind = "IDENTIFIER" or expr.kind = "VAR" then
+            return expr.text
+        else
+            if expr.kind = "INDEX_EXPR" then
+                if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
+                    let idx_str: String = expr_to_whyml(exprs, expr.left_node_idx)
+                    return String.template("(${arr})[${idx}]", arr: expr.text, idx: idx_str)
+                else
+                    return expr.text
+                end if
+            else
+                if expr.kind = "UNARY_OP" then
+                    if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
+                        let inner: String = expr_to_whyml(exprs, expr.left_node_idx)
+                        if expr.op = "not" then
+                            return String.template("(not ${inner})", inner: inner)
+                        else
+                            return String.template("(- ${inner})", inner: inner)
+                        end if
+                    else
+                        return ""
+                    end if
+                else
+                    if expr.kind = "BINARY_OP" then
+                        if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 then
+                            let left: String = expr_to_whyml(exprs, expr.left_node_idx)
+                            let right: String = expr_to_whyml(exprs, expr.right_node_idx)
+                            if expr.op = "=" then
+                                return String.template("(${left} = ${right})", left: left, right: right)
+                            else
+                                if expr.op = "!=" then
+                                    return String.template("(${left} <> ${right})", left: left, right: right)
+                                else
+                                    if expr.op = "and" then
+                                        return String.template("(${left} && ${right})", left: left, right: right)
+                                    else
+                                        if expr.op = "or" then
+                                            return String.template("(${left} || ${right})", left: left, right: right)
+                                        else
+                                            if expr.op = "/" then
+                                                return String.template("(${left} / ${right})", left: left, right: right)
+                                            else
+                                                return String.template("(${left} ${op} ${right})", left: left, op: expr.op, right: right)
+                                            end if
+                                        end if
+                                    end if
+                                end if
+                            end if
+                        else
+                            return ""
+                        end if
+                    else
+                        if expr.kind = "FOR_ALL" then
+                            if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 and expr.arg0_idx >= 0 and expr.arg0_idx < 64 then
+                                let lower: String = expr_to_whyml(exprs, expr.left_node_idx)
+                                let upper: String = expr_to_whyml(exprs, expr.right_node_idx)
+                                let body: String = expr_to_whyml(exprs, expr.arg0_idx)
+                                return String.template("(forall ${var}: int. ${lower} <= ${var} <= ${upper} -> ${body})",
+                                    var: expr.text, lower: lower, upper: upper, body: body)
+                            else
+                                return ""
+                            end if
+                        else
+                            if expr.kind = "EXISTS" then
+                                if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 and expr.arg0_idx >= 0 and expr.arg0_idx < 64 then
+                                    let lower: String = expr_to_whyml(exprs, expr.left_node_idx)
+                                    let upper: String = expr_to_whyml(exprs, expr.right_node_idx)
+                                    let body: String = expr_to_whyml(exprs, expr.arg0_idx)
+                                    return String.template("(exists ${var}: int. ${lower} <= ${var} <= ${upper} && ${body})",
+                                        var: expr.text, lower: lower, upper: upper, body: body)
+                                else
+                                    return ""
+                                end if
+                            else
+                                if expr.kind = "CALL" then
+                                    let name: String = expr.routine_name
+                                    let args_str: String = ""
+                                    if expr.arg0_idx >= 0 and expr.arg0_idx < 64 then
+                                        args_str := expr_to_whyml(exprs, expr.arg0_idx)
+                                    end if
+                                    if expr.arg1_idx >= 0 and expr.arg1_idx < 64 then
+                                        let arg1_str: String = expr_to_whyml(exprs, expr.arg1_idx)
+                                        args_str := String.template("${prev} ${next}", prev: args_str, next: arg1_str)
+                                    end if
+                                    if args_str = "" then
+                                        return String.template("(${name})", name: name)
+                                    else
+                                        return String.template("(${name} ${args})", name: name, args: args_str)
+                                    end if
+                                else
+                                    return expr.text
+                                end if
+                            end if
+                        end if
+                    end if
+                end if
+            end if
+        end if
+    end if
+end expr_to_whyml
+
+function stmt_to_whyml(stmt: StmtNode, exprs: Array<ExprNode, 64>) returns String
+is
+    if stmt.kind = "LET" then
+        let val_str: String = expr_to_whyml(exprs, stmt.expr_idx)
+        return String.template("let ${name} = ref (${val}) in", name: stmt.var_name, val: val_str)
+    end if
+    if stmt.kind = "ASSIGN" then
+        let val_str: String = expr_to_whyml(exprs, stmt.expr_idx)
+        return String.template("${name} := ${val}", name: stmt.var_name, val: val_str)
+    end if
+    if stmt.kind = "RETURN" then
+        if stmt.expr_idx >= 0 then
+            let val_str: String = expr_to_whyml(exprs, stmt.expr_idx)
+            return String.template("raise (Return (${val}))", val: val_str)
+        else
+            return "raise (Return ())"
+        end if
+    end if
+    if stmt.kind = "CHECK" then
+        let cond_str: String = expr_to_whyml(exprs, stmt.expr_idx)
+        return String.template("assert { ${cond} }", cond: cond_str)
+    end if
+    if stmt.kind = "CALL" then
+        return String.template("(${name})", name: stmt.routine_name)
+    end if
+    return "(* UNSUPPORTED STATEMENT *)"
+end stmt_to_whyml
+
+end Compiler.Core.WhyMLCodeGen

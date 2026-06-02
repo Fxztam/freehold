@@ -511,6 +511,40 @@ is
     end if
 end parse_identifier
 
+function parse_type_ref(p: GeneralParser) returns ParserIdentifierResult
+requires String.instr(p.source_name, "") = 0
+ensures result.parser.source_name = p.source_name
+is
+    let res: ParserIdentifierResult = parse_identifier(p)
+    if res.parser.has_error then
+        return res
+    end if
+    
+    let p_curr: GeneralParser = res.parser
+    let full_name: String = res.node.name
+    let last_span: SourceSpan = res.node.span
+    
+    if p_curr.curr_tok.kind.name = "LessThan" then
+        let p_lt: GeneralParser = advance_parser(p_curr)
+        let res_inner: ParserIdentifierResult = parse_type_ref(p_lt)
+        if res_inner.parser.has_error then
+            return res_inner
+        end if
+        let p_gt: GeneralParser = expect_kind(res_inner.parser, "GreaterThan", "FH-PARSE-0002", "Expected '>'")
+        if p_gt.has_error then
+            let empty_id_err: IdentifierNode = make_identifier_node(p.curr_tok.span, "")
+            return ParserIdentifierResult { parser: p_gt, node: empty_id_err }
+        end if
+        full_name := String.template("${base}<${inner}>", base: full_name, inner: res_inner.node.name)
+        last_span := p_gt.curr_tok.span
+        p_curr := p_gt
+    end if
+    
+    let combined_span: SourceSpan = make_source_span(p.source_name, res.node.span.start_line, res.node.span.start_column, last_span.end_line, last_span.end_column)
+    let combined_node: IdentifierNode = make_identifier_node(combined_span, full_name)
+    return ParserIdentifierResult { parser: p_curr, node: combined_node }
+end parse_type_ref
+
 function parse_dotted_identifier(p: GeneralParser) returns ParserIdentifierResult
 requires String.instr(p.source_name, "") = 0
 ensures result.parser.source_name = p.source_name
@@ -815,7 +849,7 @@ end parse_general_module_result
 function parse_primary(p: GeneralParser) returns ParserExprResult
 is
     let empty_span: SourceSpan = SourceSpan { source_name: p.source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
-    let empty_expr: ExprNode = make_expr_node(empty_span, "ERROR", "", "", "", -1, -1, "", -1, -1, 0)
+    let empty_expr: ExprNode = make_expr_node(empty_span, "ERROR", "", "", "", -1, -1, "", -1, -1, 0, -1)
     let lit_kind: String = "Integer"
     let node_lit: ExprNode = empty_expr
     let p_next: GeneralParser = p
@@ -843,14 +877,98 @@ is
                 end if
             end if
         end if
-        node_lit := make_expr_node(p.curr_tok.span, "LITERAL", lit_kind, p.curr_tok.lexeme, "", -1, -1, "", -1, -1, 0)
+        node_lit := make_expr_node(p.curr_tok.span, "LITERAL", lit_kind, p.curr_tok.lexeme, "", -1, -1, "", -1, -1, 0, -1)
         p_next := advance_parser(p)
         return ParserExprResult { parser: p_next, node: node_lit }
     else
         if p.curr_tok.kind.name = "Identifier" then
-            node_id := make_expr_node(p.curr_tok.span, "IDENTIFIER", "", p.curr_tok.lexeme, "", -1, -1, "", -1, -1, 0)
-            p_next := advance_parser(p)
-            return ParserExprResult { parser: p_next, node: node_id }
+            if p.peek_tok.kind.name = "LessThan" then
+                -- Parse generic call: name<T>(args)
+                let start_tok: Token = p.curr_tok
+                let routine_name: String = p.curr_tok.lexeme
+                let p1_gen: GeneralParser = advance_parser(p) -- past identifier
+                let p2_gen: GeneralParser = expect_kind(p1_gen, "LessThan", "FH-PARSE-0002", "Expected '<'")
+                if p2_gen.has_error then
+                    return ParserExprResult { parser: p2_gen, node: empty_expr }
+                end if
+                
+                let p_type: GeneralParser = p2_gen
+                let done_type: Boolean = false
+                while not done_type
+                    invariant done_type = true or done_type = false
+                do
+                    let res_type: ParserIdentifierResult = parse_identifier(p_type)
+                    if res_type.parser.has_error then
+                        return ParserExprResult { parser: res_type.parser, node: empty_expr }
+                    end if
+                    p_type := res_type.parser
+                    if p_type.curr_tok.kind.name = "Comma" then
+                        p_type := advance_parser(p_type)
+                    else
+                        done_type := true
+                    end if
+                end while
+                
+                let p3_gen: GeneralParser = expect_kind(p_type, "GreaterThan", "FH-PARSE-0002", "Expected '>'")
+                if p3_gen.has_error then
+                    return ParserExprResult { parser: p3_gen, node: empty_expr }
+                end if
+                let p4_gen: GeneralParser = expect_kind(p3_gen, "OpenParen", "FH-PARSE-0002", "Expected '('")
+                if p4_gen.has_error then
+                    return ParserExprResult { parser: p4_gen, node: empty_expr }
+                end if
+                
+                let p_arg: GeneralParser = p4_gen
+                let arg_count: Integer = 0
+                if p_arg.curr_tok.kind.name != "CloseParen" then
+                    let done_arg: Boolean = false
+                    while not done_arg
+                        invariant done_arg = true or done_arg = false
+                    do
+                        let res_a: ParserExprResult = parse_expr(p_arg)
+                        if res_a.parser.has_error then
+                            return res_a
+                        end if
+                        p_arg := res_a.parser
+                        arg_count := arg_count + 1
+                        if p_arg.curr_tok.kind.name = "Comma" then
+                            p_arg := advance_parser(p_arg)
+                        else
+                            done_arg := true
+                        end if
+                    end while
+                end if
+                
+                let close_tok: Token = p_arg.curr_tok
+                let p5_gen: GeneralParser = expect_kind(p_arg, "CloseParen", "FH-PARSE-0002", "Expected ')'")
+                if p5_gen.has_error then
+                    return ParserExprResult { parser: p5_gen, node: empty_expr }
+                end if
+                
+                let inv_node_idx: Integer = -1
+                let p_final: GeneralParser = p5_gen
+                if p5_gen.curr_tok.kind.name = "KeywordWith" then
+                    let p6_gen: GeneralParser = advance_parser(p5_gen)
+                    let p7_gen: GeneralParser = expect_kind(p6_gen, "KeywordInvariant", "FH-PARSE-0002", "Expected 'invariant'")
+                    if p7_gen.has_error then
+                        return ParserExprResult { parser: p7_gen, node: empty_expr }
+                    end if
+                    let res_inv: ParserExprResult = parse_expr(p7_gen)
+                    if res_inv.parser.has_error then
+                        return res_inv
+                    end if
+                    inv_node_idx := 0 -- Placeholder value; to be set correctly or checked
+                    p_final := res_inv.parser
+                end if
+                
+                let node_span: SourceSpan = make_source_span(p.source_name, start_tok.span.start_line, start_tok.span.start_column, close_tok.span.end_line, close_tok.span.end_column)
+                let call_node: ExprNode = make_expr_node(node_span, "CALL", "", "", "", 0, -1, routine_name, 0, -1, arg_count, inv_node_idx)
+                return ParserExprResult { parser: p_final, node: call_node }
+            else
+                node_id := make_expr_node(p.curr_tok.span, "IDENTIFIER", "", p.curr_tok.lexeme, "", -1, -1, "", -1, -1, 0, -1)
+                p_next := advance_parser(p)
+                return ParserExprResult { parser: p_next, node: node_id }
+            end if
         else
             if p.curr_tok.kind.name = "OpenParen" then
                 p1 := advance_parser(p)
@@ -877,7 +995,7 @@ end parse_primary
 function parse_unary(p: GeneralParser) returns ParserExprResult
 is
     let empty_span: SourceSpan = SourceSpan { source_name: p.source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
-    let empty_expr: ExprNode = make_expr_node(empty_span, "ERROR", "", "", "", -1, -1, "", -1, -1, 0)
+    let empty_expr: ExprNode = make_expr_node(empty_span, "ERROR", "", "", "", -1, -1, "", -1, -1, 0, -1)
     let op_tok: Token = p.curr_tok
     let p1: GeneralParser = p
     let res: ParserExprResult = ParserExprResult { parser: p, node: empty_expr }
@@ -893,7 +1011,7 @@ is
         p1 := advance_parser(p)
         res := parse_unary(p1)
         op := op_tok.lexeme
-        node_un := make_expr_node(op_tok.span, "UNARY_OP", "", "", op, 0, -1, "", -1, -1, 0)
+        node_un := make_expr_node(op_tok.span, "UNARY_OP", "", "", op, 0, -1, "", -1, -1, 0, -1)
         return ParserExprResult { parser: res.parser, node: node_un }
     else
         return parse_primary(p)
@@ -916,7 +1034,7 @@ is
         p1 := advance_parser(p_curr)
         res_right := parse_unary(p1)
         p_curr := res_right.parser
-        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", op_tok.lexeme, 0, 0, "", -1, -1, 0)
+        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", op_tok.lexeme, 0, 0, "", -1, -1, 0, -1)
     end while
     return ParserExprResult { parser: p_curr, node: left_node }
 end parse_product
@@ -937,7 +1055,7 @@ is
         p1 := advance_parser(p_curr)
         res_right := parse_product(p1)
         p_curr := res_right.parser
-        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", op_tok.lexeme, 0, 0, "", -1, -1, 0)
+        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", op_tok.lexeme, 0, 0, "", -1, -1, 0, -1)
     end while
     return ParserExprResult { parser: p_curr, node: left_node }
 end parse_sum
@@ -958,7 +1076,7 @@ is
         p1 := advance_parser(p_curr)
         res_right := parse_sum(p1)
         p_curr := res_right.parser
-        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", op_tok.lexeme, 0, 0, "", -1, -1, 0)
+        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", op_tok.lexeme, 0, 0, "", -1, -1, 0, -1)
     end while
     return ParserExprResult { parser: p_curr, node: left_node }
 end parse_comparison
@@ -979,7 +1097,7 @@ is
         p1 := advance_parser(p_curr)
         res_right := parse_comparison(p1)
         p_curr := res_right.parser
-        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", op_tok.lexeme, 0, 0, "", -1, -1, 0)
+        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", op_tok.lexeme, 0, 0, "", -1, -1, 0, -1)
     end while
     return ParserExprResult { parser: p_curr, node: left_node }
 end parse_equality
@@ -1000,7 +1118,7 @@ is
         p1 := advance_parser(p_curr)
         res_right := parse_equality(p1)
         p_curr := res_right.parser
-        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", "and", 0, 0, "", -1, -1, 0)
+        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", "and", 0, 0, "", -1, -1, 0, -1)
     end while
     return ParserExprResult { parser: p_curr, node: left_node }
 end parse_and
@@ -1021,7 +1139,7 @@ is
         p1 := advance_parser(p_curr)
         res_right := parse_and(p1)
         p_curr := res_right.parser
-        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", "or", 0, 0, "", -1, -1, 0)
+        left_node := make_expr_node(op_tok.span, "BINARY_OP", "", "", "or", 0, 0, "", -1, -1, 0, -1)
     end while
     return ParserExprResult { parser: p_curr, node: left_node }
 end parse_or
@@ -1044,7 +1162,7 @@ is
     let p_let2: GeneralParser = p
     let res_type: ParserIdentifierResult = res_var
     let p_let3: GeneralParser = p
-    let res_expr: ParserExprResult = ParserExprResult { parser: p, node: ExprNode { span: empty_span, kind: "", literal_kind: "", text: "", op: "", left_node_idx: 0, right_node_idx: 0, routine_name: "", arg0_idx: 0, arg1_idx: 0, arg_count: 0 } }
+    let res_expr: ParserExprResult = ParserExprResult { parser: p, node: ExprNode { span: empty_span, kind: "", literal_kind: "", text: "", op: "", left_node_idx: 0, right_node_idx: 0, routine_name: "", arg0_idx: 0, arg1_idx: 0, arg_count: 0, invariant_idx: -1 } }
     let node_let: StmtNode = empty_stmt
     let p_if1: GeneralParser = p
     let res_cond: ParserExprResult = res_expr
@@ -1103,7 +1221,7 @@ is
         p_let1 := advance_parser(p)
         res_var := parse_identifier(p_let1)
         p_let2 := expect_kind(res_var.parser, "Colon", "FH-PARSE-0002", "Expected ':'")
-        res_type := parse_identifier(p_let2)
+        res_type := parse_type_ref(p_let2)
         p_let3 := expect_kind(res_type.parser, "Equal", "FH-PARSE-0002", "Expected '='")
         res_expr := parse_expr(p_let3)
         if res_expr.parser.has_error then

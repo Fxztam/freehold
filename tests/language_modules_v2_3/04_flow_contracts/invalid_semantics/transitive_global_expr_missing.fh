@@ -1,0 +1,27 @@
+module TransitiveGlobalExprMissing
+
+type QueryRequest is record
+    val: Integer proto 1
+end record
+
+type QueryResponse is record
+    res: Integer proto 1
+end record
+
+service MyService is
+    rpc query(request: QueryRequest): QueryResponse
+end MyService
+
+function service_accessor(val: Integer) returns Integer
+global Input MyService
+is
+    return val
+end service_accessor
+
+function transitive_accessor(a: Integer) returns Integer
+is
+    let x: Integer = service_accessor(a)
+    return x
+end transitive_accessor
+
+end TransitiveGlobalExprMissing

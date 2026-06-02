@@ -176,6 +176,7 @@ type ExprNode is record
     arg0_idx: Integer
     arg1_idx: Integer
     arg_count: Integer
+    invariant_idx: Integer
 end record
 
 type StmtNode is record
@@ -603,7 +604,7 @@ is
     )
 end module_with_lowered_calls_text
 
-function make_expr_node(span: SourceSpan, kind: String, literal_kind: String, text: String, op: String, left_node_idx: Integer, right_node_idx: Integer, routine_name: String, arg0_idx: Integer, arg1_idx: Integer, arg_count: Integer) returns ExprNode
+function make_expr_node(span: SourceSpan, kind: String, literal_kind: String, text: String, op: String, left_node_idx: Integer, right_node_idx: Integer, routine_name: String, arg0_idx: Integer, arg1_idx: Integer, arg_count: Integer, invariant_idx: Integer) returns ExprNode
 requires String.instr(kind, "") = 0
 ensures result.kind = kind
 is
@@ -618,7 +619,8 @@ is
         routine_name: routine_name,
         arg0_idx: arg0_idx,
         arg1_idx: arg1_idx,
-        arg_count: arg_count
+        arg_count: arg_count,
+        invariant_idx: invariant_idx
     }
 end make_expr_node
 

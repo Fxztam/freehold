@@ -402,45 +402,43 @@ class Verifier:
         actual_globals = seen_globals - param_names
 
         # Always check transitive global variable accesses from calls
-        def check_transitive_globals(stmts):
-            for stmt in stmts:
-                if isinstance(stmt, CallStmt):
-                    callee = None
-                    try:
-                        callee = ctx.routine(stmt.name, stmt.pos)
-                    except TypeCheckError:
-                        pass
-                    if callee:
-                        callee_param_names = {p.name for p in callee.params}
-                        if hasattr(callee, "global_specs") and callee.global_specs:
-                            r_globals = {g.name: g.mode for g in r.global_specs} if r.global_specs else {}
-                            for cg in callee.global_specs:
-                                if cg.name not in callee_param_names:
-                                    # It's an actual global accessed by callee
-                                    if cg.name not in r_globals:
-                                        raise TypeCheckError(f"{stmt.pos.text()}: transitive global variable '{cg.name}' accessed by '{stmt.name}' must be declared in global contract of '{r.name}'")
-                                    # Verify mode compatibility
-                                    r_mode = r_globals[cg.name]
-                                    if cg.mode == "In_Out" and r_mode != "In_Out":
-                                        raise TypeCheckError(f"{stmt.pos.text()}: transitive global variable '{cg.name}' with In_Out mode requires In_Out mode in '{r.name}' (got {r_mode})")
-                                    elif cg.mode == "Output" and r_mode not in ("Output", "In_Out"):
-                                        raise TypeCheckError(f"{stmt.pos.text()}: transitive global variable '{cg.name}' with Output mode requires Output or In_Out mode in '{r.name}' (got {r_mode})")
-                                    elif cg.mode == "Input" and r_mode not in ("Input", "In_Out"):
-                                        raise TypeCheckError(f"{stmt.pos.text()}: transitive global variable '{cg.name}' with Input mode requires Input or In_Out mode in '{r.name}' (got {r_mode})")
-                elif isinstance(stmt, IfStmt):
-                    check_transitive_globals(stmt.then_body)
-                    check_transitive_globals(stmt.else_body)
-                elif isinstance(stmt, WhileStmt):
-                    check_transitive_globals(stmt.body)
-                elif isinstance(stmt, CaseStmt):
-                    for branch in stmt.branches:
-                        check_transitive_globals(branch.body)
-                    if stmt.default_body:
-                        check_transitive_globals(stmt.default_body)
-                elif isinstance(stmt, ScopeStmt):
-                    check_transitive_globals(stmt.spawn_body)
-                    check_transitive_globals(stmt.join_body)
-                    check_transitive_globals(stmt.result_body)
+        def check_transitive_globals(node):
+            if node is None:
+                return
+            if isinstance(node, list):
+                for child in node:
+                    check_transitive_globals(child)
+                return
+
+            if isinstance(node, (CallStmt, CallExpr)):
+                callee = None
+                try:
+                    callee = ctx.routine(node.name, node.pos)
+                except TypeCheckError:
+                    pass
+                if callee:
+                    callee_param_names = {p.name for p in callee.params}
+                    if hasattr(callee, "global_specs") and callee.global_specs:
+                        r_globals = {g.name: g.mode for g in r.global_specs} if r.global_specs else {}
+                        for cg in callee.global_specs:
+                            if cg.name not in callee_param_names:
+                                # It's an actual global accessed by callee
+                                if cg.name not in r_globals:
+                                    raise TypeCheckError(f"{node.pos.text()}: transitive global variable '{cg.name}' accessed by '{node.name}' must be declared in global contract of '{r.name}'")
+                                # Verify mode compatibility
+                                r_mode = r_globals[cg.name]
+                                if cg.mode == "In_Out" and r_mode != "In_Out":
+                                    raise TypeCheckError(f"{node.pos.text()}: transitive global variable '{cg.name}' with In_Out mode requires In_Out mode in '{r.name}' (got {r_mode})")
+                                elif cg.mode == "Output" and r_mode not in ("Output", "In_Out"):
+                                    raise TypeCheckError(f"{node.pos.text()}: transitive global variable '{cg.name}' with Output mode requires Output or In_Out mode in '{r.name}' (got {r_mode})")
+                                elif cg.mode == "Input" and r_mode not in ("Input", "In_Out"):
+                                    raise TypeCheckError(f"{node.pos.text()}: transitive global variable '{cg.name}' with Input mode requires Input or In_Out mode in '{r.name}' (got {r_mode})")
+
+            if hasattr(node, "__dict__"):
+                for k, v in node.__dict__.items():
+                    if k == "pos":
+                        continue
+                    check_transitive_globals(v)
 
         check_transitive_globals(r.body)
 

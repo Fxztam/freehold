@@ -1,0 +1,112 @@
+{
+  "source_file": "..\\tests\\language_modules\\06_arrays\\valid\\array_quantifier.fh",
+  "source_snippet": "module ArrayQuantifier\n\nprocedure main()\nis\n    let values: Array\u003cInteger, 3\u003e = [5, 5, 5]\n    check for all I in 0..2 =\u003e values[I] = 5\n    check for some I in 0..2 =\u003e values[I] = 5\nend main\n\nend ArrayQuantifier\n",
+  "module_name": "06_arrays",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "ast": {
+    "kind": "Module",
+    "name": "ArrayQuantifier",
+    "declarations": [
+      {
+        "kind": "ProcedureDecl",
+        "name": "main",
+        "params": null,
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "values",
+            "type": "Array\u003cInteger, 3\u003e",
+            "value": {
+              "kind": "ArrayLiteralExpr",
+              "elements": [
+                {
+                  "kind": "NumberExpr",
+                  "value": "5"
+                },
+                {
+                  "kind": "NumberExpr",
+                  "value": "5"
+                },
+                {
+                  "kind": "NumberExpr",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "ForAllExpr",
+              "var_name": "I",
+              "lower": {
+                "kind": "NumberExpr",
+                "value": "0"
+              },
+              "upper": {
+                "kind": "NumberExpr",
+                "value": "2"
+              },
+              "expr": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "IndexExpr",
+                  "array": {
+                    "kind": "IdentifierExpr",
+                    "name": "values"
+                  },
+                  "index": {
+                    "kind": "IdentifierExpr",
+                    "name": "I"
+                  }
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": "5"
+                }
+              }
+            }
+          },
+          {
+            "kind": "CheckStmt",
+            "condition": {
+              "kind": "ExistsExpr",
+              "var_name": "I",
+              "lower": {
+                "kind": "NumberExpr",
+                "value": "0"
+              },
+              "upper": {
+                "kind": "NumberExpr",
+                "value": "2"
+              },
+              "expr": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "IndexExpr",
+                  "array": {
+                    "kind": "IdentifierExpr",
+                    "name": "values"
+                  },
+                  "index": {
+                    "kind": "IdentifierExpr",
+                    "name": "I"
+                  }
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": "5"
+                }
+              }
+            }
+          }
+        ],
+        "end_name": "main"
+      }
+    ],
+    "end_name": "ArrayQuantifier"
+  }
+}
