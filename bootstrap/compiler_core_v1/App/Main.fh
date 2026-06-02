@@ -13,6 +13,7 @@ import Compiler.Core.Transform exposing canonicalize_import_references, normaliz
 import Compiler.Core.Codegen exposing emit_module_header
 import Compiler.Core.Verifier exposing verify_contract, verify_subtype_range, VerificationFailed
 import Compiler.Core.Flow exposing FlowSummary, analyze_stmt_flow
+import Compiler.Core.WhyMLCodeGen exposing to_lower
 
 import Std.IO
 import System
@@ -708,6 +709,8 @@ is
     let flow_sum: FlowSummary = analyze_stmt_flow(mock_stmt, stmts_array, 0, 1)
     call Std.IO.logf("flow.return_possible = ${}", flow_sum.normal_return_possible)
     call Std.IO.logf("flow.exit_guaranteed = ${}", flow_sum.guaranteed_exit)
+    let whyml_test: String = to_lower("TEST")
+    call Std.IO.logf("whyml.to_lower = ${}", whyml_test)
 
     let args: Array<String, 10> = System.args()
     if args[0] = "--build-exe" or args[0] = "build-exe" then

@@ -42,30 +42,32 @@ type ErrorDecl struct {
 }
 
 type FunctionDecl struct {
-	Kind       string         `json:"kind"`
-	Pos        token.Position `json:"-"`
-	Name       string         `json:"name"`
-	IsAsync    bool           `json:"is_async,omitempty"`
-	TypeParams []string       `json:"type_params,omitempty"`
-	Params     []Param        `json:"params"`
-	ReturnType string         `json:"return_type"`
-	Requires   []Expr         `json:"requires,omitempty"`
-	Aborts     []AbortClause  `json:"aborts,omitempty"`
-	Ensures    []Expr         `json:"ensures,omitempty"`
-	Body       []Stmt         `json:"body"`
-	EndName    string         `json:"end_name"`
+	Kind        string         `json:"kind"`
+	Pos         token.Position `json:"-"`
+	Name        string         `json:"name"`
+	IsAsync     bool           `json:"is_async,omitempty"`
+	TypeParams  []string       `json:"type_params,omitempty"`
+	Params      []Param        `json:"params"`
+	ReturnType  string         `json:"return_type"`
+	GlobalSpecs []GlobalSpec   `json:"global_specs,omitempty"`
+	Requires    []Expr         `json:"requires,omitempty"`
+	Aborts      []AbortClause  `json:"aborts,omitempty"`
+	Ensures     []Expr         `json:"ensures,omitempty"`
+	Body        []Stmt         `json:"body"`
+	EndName     string         `json:"end_name"`
 }
 
 type ProcedureDecl struct {
-	Kind     string         `json:"kind"`
-	Pos      token.Position `json:"-"`
-	Name     string         `json:"name"`
-	Params   []Param        `json:"params"`
-	Requires []Expr         `json:"requires,omitempty"`
-	Aborts   []AbortClause  `json:"aborts,omitempty"`
-	Ensures  []Expr         `json:"ensures,omitempty"`
-	Body     []Stmt         `json:"body"`
-	EndName  string         `json:"end_name"`
+	Kind        string         `json:"kind"`
+	Pos         token.Position `json:"-"`
+	Name        string         `json:"name"`
+	Params      []Param        `json:"params"`
+	GlobalSpecs []GlobalSpec   `json:"global_specs,omitempty"`
+	Requires    []Expr         `json:"requires,omitempty"`
+	Aborts      []AbortClause  `json:"aborts,omitempty"`
+	Ensures     []Expr         `json:"ensures,omitempty"`
+	Body        []Stmt         `json:"body"`
+	EndName     string         `json:"end_name"`
 }
 
 type AbortClause struct {
@@ -289,4 +291,28 @@ type RoutineFlowSummary struct {
 	EmittedAborts        map[string]bool `json:"emitted_aborts,omitempty"`
 	CalledRoutines       map[string]bool `json:"called_routines,omitempty"`
 	PropagatedAborts     map[string]bool `json:"propagated_aborts,omitempty"`
+}
+
+type GlobalSpec struct {
+	Pos  token.Position `json:"-"`
+	Mode *string        `json:"mode,omitempty"`
+	Name string         `json:"name"`
+}
+
+type ForAllExpr struct {
+	Kind    string         `json:"kind"`
+	Pos     token.Position `json:"-"`
+	VarName string         `json:"var_name"`
+	Lower   Expr           `json:"lower"`
+	Upper   Expr           `json:"upper"`
+	Expr    Expr           `json:"expr"`
+}
+
+type ExistsExpr struct {
+	Kind    string         `json:"kind"`
+	Pos     token.Position `json:"-"`
+	VarName string         `json:"var_name"`
+	Lower   Expr           `json:"lower"`
+	Upper   Expr           `json:"upper"`
+	Expr    Expr           `json:"expr"`
 }

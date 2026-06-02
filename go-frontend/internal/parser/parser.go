@@ -318,7 +318,7 @@ func (p *Parser) parseFunction() ast.FunctionDecl {
 	}
 	returnType := p.parseTypeName()
 
-	requires, aborts, ensures := p.parseContracts()
+	globalSpecs, requires, aborts, ensures := p.parseContracts()
 
 	p.expect(token.Is)
 
@@ -331,18 +331,19 @@ func (p *Parser) parseFunction() ast.FunctionDecl {
 	endName := p.parseName()
 
 	return ast.FunctionDecl{
-		Kind:       "FunctionDecl",
-		Pos:        start.Pos,
-		Name:       name,
-		IsAsync:    isAsync,
-		TypeParams: typeParams,
-		Params:     params,
-		ReturnType: returnType,
-		Requires:   requires,
-		Aborts:     aborts,
-		Ensures:    ensures,
-		Body:       body,
-		EndName:    endName,
+		Kind:        "FunctionDecl",
+		Pos:         start.Pos,
+		Name:        name,
+		IsAsync:     isAsync,
+		TypeParams:  typeParams,
+		Params:      params,
+		ReturnType:  returnType,
+		GlobalSpecs: globalSpecs,
+		Requires:    requires,
+		Aborts:      aborts,
+		Ensures:     ensures,
+		Body:        body,
+		EndName:     endName,
 	}
 }
 
@@ -355,7 +356,7 @@ func (p *Parser) parseProcedure() ast.ProcedureDecl {
 	params := p.parseParams()
 	p.expect(token.RParen)
 
-	requires, aborts, ensures := p.parseContracts()
+	globalSpecs, requires, aborts, ensures := p.parseContracts()
 
 	p.expect(token.Is)
 
@@ -368,19 +369,97 @@ func (p *Parser) parseProcedure() ast.ProcedureDecl {
 	endName := p.parseName()
 
 	return ast.ProcedureDecl{
-		Kind:     "ProcedureDecl",
-		Pos:      start.Pos,
-		Name:     name,
-		Params:   params,
-		Requires: requires,
-		Aborts:   aborts,
-		Ensures:  ensures,
-		Body:     body,
-		EndName:  endName,
+		Kind:        "ProcedureDecl",
+		Pos:         start.Pos,
+		Name:        name,
+		Params:      params,
+		GlobalSpecs: globalSpecs,
+		Requires:    requires,
+		Aborts:      aborts,
+		Ensures:     ensures,
+		Body:        body,
+		EndName:     endName,
 	}
 }
 
-func (p *Parser) parseContracts() ([]ast.Expr, []ast.AbortClause, []ast.Expr) {
+func (p *Parser) parseContracts() ([]ast.GlobalSpec, []ast.Expr, []ast.AbortClause, []ast.Expr) {
+	var globalSpecs []ast.GlobalSpec
+
+	// Parse global specs
+	for p.at(token.Ident) && p.peek().Lexeme == "global" {
+		p.pos++ // consume "global"
+
+		for {
+			var mode *string
+			var name string
+			tok := p.peek()
+
+			if tok.Kind == token.Ident && (tok.Lexeme == "Input" || tok.Lexeme == "Output" || tok.Lexeme == "In_Out") {
+				m := tok.Lexeme
+				mode = &m
+				p.pos++
+				tok = p.peek()
+			}
+
+			if tok.Kind != token.Ident {
+				panic(diagnostic.ExpectedIdentifier(tok))
+			}
+			name = tok.Lexeme
+			p.pos++
+
+			globalSpecs = append(globalSpecs, ast.GlobalSpec{
+				Pos:  tok.Pos,
+				Mode: mode,
+				Name: name,
+			})
+
+			if p.at(token.Comma) {
+				p.expect(token.Comma)
+			} else {
+				break
+			}
+		}
+	}
+
+	// Skip depends specs
+	for p.at(token.Ident) && p.peek().Lexeme == "depends" {
+		p.pos++ // consume "depends"
+
+		for {
+			p.parseQualifiedName()
+			p.expect(token.Arrow)
+
+			if p.at(token.LParen) {
+				p.expect(token.LParen)
+				for {
+					if p.at(token.Plus) {
+						p.pos++
+					} else {
+						p.parseQualifiedName()
+					}
+					if p.at(token.Comma) {
+						p.expect(token.Comma)
+					} else {
+						break
+					}
+				}
+				p.expect(token.RParen)
+			} else {
+				if p.at(token.Plus) {
+					p.pos++
+				} else {
+					p.parseQualifiedName()
+				}
+			}
+
+			if p.at(token.Comma) {
+				p.expect(token.Comma)
+			} else {
+				break
+			}
+		}
+	}
+
 	var requires []ast.Expr
 	var aborts []ast.AbortClause
 	var ensures []ast.Expr
@@ -400,7 +479,7 @@ func (p *Parser) parseContracts() ([]ast.Expr, []ast.AbortClause, []ast.Expr) {
 		ensures = append(ensures, p.parseContractExprList()...)
 	}
 
-	return requires, aborts, ensures
+	return globalSpecs, requires, aborts, ensures
 }
 
 func (p *Parser) parseAbortClause() ast.AbortClause {
@@ -903,6 +982,55 @@ func (p *Parser) parseUnary() ast.Expr {
 }
 
 func (p *Parser) parseAtom() ast.Expr {
+	if p.at(token.Ident) && p.peek().Lexeme == "for" {
+		start := p.peek()
+		p.pos++ // consume "for"
+
+		tokType := p.peek()
+		if tokType.Kind != token.Ident || (tokType.Lexeme != "all" && tokType.Lexeme != "some" && tokType.Lexeme != "each") {
+			panic(diagnostic.ExpectedExpression(tokType))
+		}
+		isForAll := tokType.Lexeme == "all" || tokType.Lexeme == "each"
+		p.pos++ // consume "all"/"some"
+
+		varNameTok := p.expect(token.Ident)
+		varName := varNameTok.Lexeme
+
+		inTok := p.peek()
+		if inTok.Kind != token.Ident || inTok.Lexeme != "in" {
+			panic(diagnostic.ExpectedExpression(inTok))
+		}
+		p.pos++ // consume "in"
+
+		lower := p.parseExpr()
+		p.expect(token.DotDot)
+		upper := p.parseExpr()
+
+		p.expect(token.Arrow)
+
+		expr := p.parseExpr()
+
+		if isForAll {
+			return ast.ForAllExpr{
+				Kind:    "ForAllExpr",
+				Pos:     start.Pos,
+				VarName: varName,
+				Lower:   lower,
+				Upper:   upper,
+				Expr:    expr,
+			}
+		} else {
+			return ast.ExistsExpr{
+				Kind:    "ExistsExpr",
+				Pos:     start.Pos,
+				VarName: varName,
+				Lower:   lower,
+				Upper:   upper,
+				Expr:    expr,
+			}
+		}
+	}
+
 	if p.at(token.Int) || p.at(token.Float) {
 		tok := p.peek()
 		p.pos++

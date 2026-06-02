@@ -157,7 +157,7 @@ is
     end if
     if stmt.kind = "CHECK" then
         let cond_str: String = expr_to_whyml(exprs, stmt.expr_idx)
-        return String.template("assert { ${cond} }", cond: cond_str)
+        return String.template("assert ${lbrace} ${cond} ${rbrace}", cond: cond_str, lbrace: "{", rbrace: "}")
     end if
     if stmt.kind = "CALL" then
         return String.template("(${name})", name: stmt.routine_name)
