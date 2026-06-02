@@ -1037,9 +1037,17 @@ class GoGenerator:
         return self.expr_at(expr, 0)
 
     def expr_with_type(self, expr: Any, type_ref: Any) -> str:
-        if isinstance(expr, ArrayLiteralExpr) and isinstance(type_ref, ArrayTypeName):
-            values = ", ".join(self.expr(item) for item in expr.items)
-            return f"[{type_ref.size}]{self.go_type_string(type_ref.element_type)}{{{values}}}"
+        if isinstance(expr, ArrayLiteralExpr):
+            go_t = None
+            if isinstance(type_ref, ArrayTypeName):
+                go_t = f"[{type_ref.size}]{self.go_type_string(type_ref.element_type)}"
+            elif isinstance(type_ref, str):
+                go_t = self.go_type_string(type_ref)
+                if not go_t.startswith("["):
+                    go_t = None
+            if go_t is not None:
+                values = ", ".join(self.expr(item) for item in expr.items)
+                return f"{go_t}{{{values}}}"
         if isinstance(expr, CallExpr):
             rendered = self.runtime_call_expr(expr, type_ref)
             if rendered is not None:
@@ -1050,11 +1058,14 @@ class GoGenerator:
         return rendered_expr
 
     def record_field_type(self, record_name: str, field_name: str) -> Any | None:
+        short_rec = record_name.split(".")[-1]
         for decl in self.program.declarations:
-            if isinstance(decl, RecordTypeDecl) and decl.name == record_name:
-                for field in decl.fields:
-                    if field.name == field_name:
-                        return field.type_name
+            if isinstance(decl, RecordTypeDecl):
+                decl_short = decl.name.split(".")[-1]
+                if decl.name == record_name or decl_short == short_rec:
+                    for field in decl.fields:
+                        if field.name == field_name:
+                            return field.type_name
         for module_name, resolved in self.resolved_modules.items():
             if resolved.verified is not None:
                 short_name = record_name.split(".")[-1]
@@ -1098,6 +1109,18 @@ class GoGenerator:
             if base == "Receiver" and len(args) == 1:
                 self.needs_async_helpers = True
                 return f"FreeholdReceiver[{self.go_type_string(args[0])}]"
+        
+        current_prefix = f"{self.program.module_name}."
+        if type_name.startswith(current_prefix):
+            return go_exported_name(type_name[len(current_prefix):])
+            
+        for module_name in sorted(self.imports_by_module, key=len, reverse=True):
+            prefix = f"{module_name}."
+            if type_name.startswith(prefix):
+                symbol_name = type_name[len(prefix):]
+                self.used_import_modules.add(module_name)
+                return f"{go_import_alias(module_name)}.{go_exported_name(symbol_name)}"
+                
         imported = self.imported_type_module(type_name)
         if imported is not None:
             self.used_import_modules.add(imported)
@@ -1119,6 +1142,17 @@ class GoGenerator:
         return "nil"
 
     def go_zero_value_for_type_name(self, type_name: str) -> str:
+        current_prefix = f"{self.program.module_name}."
+        if type_name.startswith(current_prefix):
+            return f"{go_exported_name(type_name[len(current_prefix):])}{{}}"
+            
+        for module_name in sorted(self.imports_by_module, key=len, reverse=True):
+            prefix = f"{module_name}."
+            if type_name.startswith(prefix):
+                symbol_name = type_name[len(prefix):]
+                self.used_import_modules.add(module_name)
+                return f"{go_import_alias(module_name)}.{go_exported_name(symbol_name)}{{}}"
+                
         imported = self.imported_type_module(type_name)
         if imported is not None:
             self.used_import_modules.add(imported)
@@ -1131,6 +1165,17 @@ class GoGenerator:
         return go_zero_value_for_type_name(type_name)
 
     def go_error_name(self, error_name: str) -> str:
+        current_prefix = f"{self.program.module_name}."
+        if error_name.startswith(current_prefix):
+            return go_exported_name(error_name[len(current_prefix):])
+            
+        for module_name in sorted(self.imports_by_module, key=len, reverse=True):
+            prefix = f"{module_name}."
+            if error_name.startswith(prefix):
+                symbol_name = error_name[len(prefix):]
+                self.used_import_modules.add(module_name)
+                return f"{go_import_alias(module_name)}.{go_exported_name(symbol_name)}"
+                
         imported = self.imported_type_module(error_name)
         if imported is not None:
             self.used_import_modules.add(imported)

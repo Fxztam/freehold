@@ -1,6 +1,6 @@
 module App.Main
 
-import Compiler.Core.Ast exposing IdentifierNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, TypeDeclNode, ModuleWithTypeDeclNode, ModuleWithRecordLiteralNode, ModuleWithReturnNode, ModuleWithCallNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, identifier_key, literal_text, make_identifier_node, make_literal_node, make_module_node, module_key, module_text, module_with_import_reference_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text, ExprNode, make_expr_node, StmtNode
+import Compiler.Core.Ast exposing IdentifierNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, TypeDeclNode, ModuleWithTypeDeclNode, ModuleWithRecordLiteralNode, ModuleWithReturnNode, ModuleWithCallNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, identifier_key, literal_text, make_identifier_node, make_literal_node, make_module_node, module_key, module_text, module_with_import_reference_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text, ExprNode, make_expr_node, StmtNode, make_stmt_node
 import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_key, diagnostic_text, make_diagnostic, make_unknown_exposed_symbol_diagnostic
 import Compiler.Core.Fixtures exposing CompilerFixtureResult, evaluate_fixture
 import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, MiniSubtypeRangeModuleTokens, MiniRecordLiteralModuleTokens, MiniReturnStmtModuleTokens, MiniCallModuleTokens, MiniNestedCallModuleTokens, lex_mini_function_module, lex_mini_import_module, lex_mini_import_reference_module, lex_mini_import_reference_module_pair, lex_mini_module, lex_mini_module_pair, lex_mini_procedure_module, lex_mini_record_module, lex_mini_subtype_range_module, lex_mini_record_literal_module, lex_mini_return_stmt_module, lex_mini_call_module, lex_mini_nested_call_module, mini_function_module_lexer_summary, mini_function_module_token_count, mini_import_module_lexer_summary, mini_import_module_token_count, mini_import_reference_module_lexer_summary, mini_import_reference_module_token_count, mini_module_lexer_summary, mini_module_token_count, mini_procedure_module_lexer_summary, mini_procedure_module_token_count, mini_record_module_lexer_summary, mini_record_module_token_count, mini_subtype_range_module_lexer_summary, mini_subtype_range_module_token_count, mini_record_literal_module_lexer_summary, mini_record_literal_module_token_count, mini_return_stmt_module_lexer_summary, mini_return_stmt_module_token_count, mini_call_module_lexer_summary, mini_call_module_token_count, mini_nested_call_module_lexer_summary, mini_nested_call_module_token_count
@@ -14,6 +14,10 @@ import Compiler.Core.Codegen exposing emit_module_header
 import Compiler.Core.Verifier exposing verify_contract, verify_subtype_range, VerificationFailed
 import Compiler.Core.Flow exposing FlowSummary, analyze_stmt_flow
 import Compiler.Core.WhyMLCodeGen exposing to_lower
+import Compiler.Core.Ir exposing IrType, IrInstruction, IrBasicBlock, IrRoutine
+
+import Compiler.Core.Lowering exposing lower_routine
+import Compiler.Core.Vm exposing VmState, VmHeap, VmHeapObject, ActivationFrame, VmRegister, VmValue, execute_instruction, get_register, execute_routine, execute_scheduler
 
 import Std.IO
 import System
@@ -458,9 +462,901 @@ is
     return make_diagnostic("FH-BLD-9001", "package path is stable", module_name, symbol_name)
 end build_sample_diagnostic
 
+procedure test_vm_builtins()
+is
+    let span: SourceSpan = make_source_span("test", 1, 1, 1, 1)
+    
+    -- Test Math.sqrt
+    let inst_assign1: IrInstruction = IrInstruction {
+        span: span,
+        kind: "ASSIGN",
+        dest_reg: "r1",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "9.0",
+        type_idx: -1,
+        field_name: "",
+        index_reg: ""
+    }
+    let inst_sqrt: IrInstruction = IrInstruction {
+        span: span,
+        kind: "CALL_HOST",
+        dest_reg: "r2",
+        src_reg_left: "r1",
+        src_reg_right: "",
+        op: "Math.sqrt",
+        literal_value: "",
+        type_idx: -1,
+        field_name: "",
+        index_reg: ""
+    }
+    
+    -- Test Big.addInt
+    let inst_assign2: IrInstruction = IrInstruction {
+        span: span,
+        kind: "ASSIGN",
+        dest_reg: "r3",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "\"1000000000000000000000000000000\"",
+        type_idx: -1,
+        field_name: "",
+        index_reg: ""
+    }
+    let inst_big_int: IrInstruction = IrInstruction {
+        span: span,
+        kind: "CALL_HOST",
+        dest_reg: "r4",
+        src_reg_left: "r3",
+        src_reg_right: "",
+        op: "Big.int",
+        literal_value: "",
+        type_idx: -1,
+        field_name: "",
+        index_reg: ""
+    }
+    let inst_big_add: IrInstruction = IrInstruction {
+        span: span,
+        kind: "CALL_HOST",
+        dest_reg: "r5",
+        src_reg_left: "r4",
+        src_reg_right: "r4",
+        op: "Big.addInt",
+        literal_value: "",
+        type_idx: -1,
+        field_name: "",
+        index_reg: ""
+    }
+    
+    let empty_obj: VmHeapObject = VmHeapObject {
+        kind: "FREE",
+        field_names: [ "", "", "", "", "", "", "", "", "", "" ],
+        field_values: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        field_count: 0,
+        elements: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        element_count: 0
+    }
+    let heap: VmHeap = VmHeap {
+        objects: [
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj
+        ],
+        object_count: 0
+    }
+    let empty_reg: VmRegister = VmRegister { name: "", reg_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 } }
+    let initial_frame: ActivationFrame = ActivationFrame {
+        registers: [
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg
+        ],
+        register_count: 0,
+        current_block_label: "entry",
+        ip: 0,
+        return_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+        has_returned: false
+    }
+    
+    let state: VmState = VmState { heap: heap, frame: initial_frame }
+    state := execute_instruction(inst_assign1, state)
+    state := execute_instruction(inst_sqrt, state)
+    state := execute_instruction(inst_assign2, state)
+    state := execute_instruction(inst_big_int, state)
+    state := execute_instruction(inst_big_add, state)
+    
+    let r2_val: VmValue = get_register(state.frame, "r2")
+    let r5_val: VmValue = get_register(state.frame, "r5")
+    
+    if r2_val.str_val != "3" and r2_val.str_val != "3.0" and r2_val.str_val != "3.000000" and r2_val.str_val != "3.000000000000000000000000000000" then
+        call Std.IO.logf("ERROR: VM unit test Math.sqrt failed, got ${}", r2_val.str_val)
+    end if
+    if r5_val.str_val != "2000000000000000000000000000000" then
+        call Std.IO.logf("ERROR: VM unit test Big.addInt failed, got ${}", r5_val.str_val)
+    end if
+end test_vm_builtins
+
+procedure test_vm_e2e()
+is
+    let empty_span: SourceSpan = SourceSpan { source_name: "test", start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_stmt: StmtNode = make_stmt_node(empty_span, "", "", "", -1, -1, -1, 0, -1, 0, "", "")
+    let empty_expr: ExprNode = make_expr_node(empty_span, "", "", "", "", -1, -1, "", -1, -1, 0, -1)
+    
+    let exprs: Array<ExprNode, 64> = [
+        make_expr_node(empty_span, "RECORD_NEW", "", "", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "LITERAL", "Integer", "10", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "ARRAY_NEW", "", "", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "LITERAL", "Integer", "0", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "LITERAL", "Integer", "5", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "LITERAL", "Integer", "0", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "LITERAL", "Integer", "0", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "IDENTIFIER", "", "i", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "LITERAL", "Integer", "3", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "BINARY", "", "", "<", 7, 8, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "IDENTIFIER", "", "sum", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "IDENTIFIER", "", "rec", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "FIELD_READ", "", "x", "", 11, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "BINARY", "", "", "+", 10, 12, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "IDENTIFIER", "", "arr", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "LITERAL", "Integer", "0", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "ARRAY_READ", "", "", "", 14, 15, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "BINARY", "", "", "+", 13, 16, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "IDENTIFIER", "", "i", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "LITERAL", "Integer", "1", "", -1, -1, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "BINARY", "", "", "+", 18, 19, "", -1, -1, 0, -1),
+        make_expr_node(empty_span, "IDENTIFIER", "", "sum", "", -1, -1, "", -1, -1, 0, -1),
+        empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr,
+        empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr,
+        empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr,
+        empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr,
+        empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr,
+        empty_expr, empty_expr
+    ]
+    
+    let stmts: Array<StmtNode, 64> = [
+        make_stmt_node(empty_span, "LET", "rec", "Record", 0, -1, -1, 0, -1, 0, "", ""),
+        make_stmt_node(empty_span, "FIELD_WRITE", "rec", "", 1, -1, -1, 0, -1, 0, "x", ""),
+        make_stmt_node(empty_span, "LET", "arr", "Array", 2, -1, -1, 0, -1, 0, "", ""),
+        make_stmt_node(empty_span, "ARRAY_WRITE", "arr", "", 4, 3, -1, 0, -1, 0, "", ""),
+        make_stmt_node(empty_span, "LET", "i", "Integer", 5, -1, -1, 0, -1, 0, "", ""),
+        make_stmt_node(empty_span, "LET", "sum", "Integer", 6, -1, -1, 0, -1, 0, "", ""),
+        make_stmt_node(empty_span, "WHILE", "", "", -1, 9, 8, 2, -1, 0, "", ""),
+        make_stmt_node(empty_span, "RETURN", "", "", 21, -1, -1, 0, -1, 0, "", ""),
+        make_stmt_node(empty_span, "ASSIGN", "sum", "", 17, -1, -1, 0, -1, 0, "", ""),
+        make_stmt_node(empty_span, "ASSIGN", "i", "", 20, -1, -1, 0, -1, 0, "", ""),
+        empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt,
+        empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt,
+        empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt,
+        empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt,
+        empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt,
+        empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt,
+        empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt
+    ]
+    
+    -- Lower the program to IR
+    let routine: IrRoutine = lower_routine("test_loop", stmts, exprs, 0, 8)
+    
+    -- Initialize VM Heap
+    let empty_obj: VmHeapObject = VmHeapObject {
+        kind: "FREE",
+        field_names: [ "", "", "", "", "", "", "", "", "", "" ],
+        field_values: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        field_count: 0,
+        elements: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        element_count: 0
+    }
+    
+    let heap: VmHeap = VmHeap {
+        objects: [
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj
+        ],
+        object_count: 0
+    }
+    
+    let empty_reg: VmRegister = VmRegister { name: "", reg_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 } }
+    let initial_frame: ActivationFrame = ActivationFrame {
+        registers: [
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg
+        ],
+        register_count: 0,
+        current_block_label: "entry",
+        ip: 0,
+        return_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+        has_returned: false
+    }
+    
+    let state: VmState = VmState { heap: heap, frame: initial_frame }
+    
+    let final_state: VmState = execute_routine(routine, state)
+    
+    if final_state.frame.return_value.int_val != 45 then
+        call Std.IO.logf("ERROR: VM E2E test failed. Expected sum=45, got sum=${}", final_state.frame.return_value.int_val)
+    end if
+end test_vm_e2e
+
+procedure test_vm_concurrency()
+is
+    let dummy_span: SourceSpan = SourceSpan { source_name: "", start_line: 0, start_column: 0, end_line: 0, end_column: 0 }
+    
+    -- Let's construct worker routine
+    let w_inst0: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "val",
+        src_reg_left: "_arg0",
+        src_reg_right: "",
+        op: "channel_receive",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let w_inst1: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "BINARY_OP",
+        dest_reg: "res",
+        src_reg_left: "val",
+        src_reg_right: "",
+        op: "+",
+        literal_value: "10",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let w_inst2: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "send_res",
+        src_reg_left: "_arg1",
+        src_reg_right: "res",
+        op: "channel_send",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    
+    let w_block: IrBasicBlock = IrBasicBlock {
+        label: "entry",
+        instructions: [
+            w_inst0, w_inst1, w_inst2, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0
+        ],
+        instruction_count: 3,
+        terminator_kind: "RETURN",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "res",
+        abort_error: ""
+    }
+    
+    let dummy_block: IrBasicBlock = w_block -- safe fallback
+    
+    let worker_routine: IrRoutine = IrRoutine {
+        name: "worker",
+        entry_block: "entry",
+        blocks: [
+            w_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block
+        ],
+        block_count: 1
+    }
+    
+    -- Let's construct main routine
+    let m_inst0: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "ch1_cap",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "1",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst1: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "ch1",
+        src_reg_left: "ch1_cap",
+        src_reg_right: "",
+        op: "channel",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst2: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "ch2",
+        src_reg_left: "ch1_cap",
+        src_reg_right: "",
+        op: "channel",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst3: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "snd1",
+        src_reg_left: "ch1",
+        src_reg_right: "",
+        op: "channel_sender",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst4: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "rcv1",
+        src_reg_left: "ch1",
+        src_reg_right: "",
+        op: "channel_receiver",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst5: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "snd2",
+        src_reg_left: "ch2",
+        src_reg_right: "",
+        op: "channel_sender",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst6: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "rcv2",
+        src_reg_left: "ch2",
+        src_reg_right: "",
+        op: "channel_receiver",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst7: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "h",
+        src_reg_left: "rcv1",
+        src_reg_right: "snd2",
+        op: "spawn",
+        literal_value: "worker",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst8: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "five",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "5",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst9: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "send_ok",
+        src_reg_left: "snd1",
+        src_reg_right: "five",
+        op: "channel_send",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst10: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "final_val",
+        src_reg_left: "rcv2",
+        src_reg_right: "",
+        op: "channel_receive",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst11: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "join_res",
+        src_reg_left: "h",
+        src_reg_right: "",
+        op: "join",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    
+    let m_block: IrBasicBlock = IrBasicBlock {
+        label: "entry",
+        instructions: [
+            m_inst0, m_inst1, m_inst2, m_inst3, m_inst4, m_inst5, m_inst6, m_inst7,
+            m_inst8, m_inst9, m_inst10, m_inst11, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0
+        ],
+        instruction_count: 12,
+        terminator_kind: "RETURN",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "final_val",
+        abort_error: ""
+    }
+    
+    let main_routine: IrRoutine = IrRoutine {
+        name: "main",
+        entry_block: "entry",
+        blocks: [
+            m_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block
+        ],
+        block_count: 1
+    }
+    
+    let dummy_routine: IrRoutine = main_routine
+    let routines: Array<IrRoutine, 10> = [
+        main_routine, worker_routine, dummy_routine, dummy_routine,
+        dummy_routine, dummy_routine, dummy_routine, dummy_routine,
+        dummy_routine, dummy_routine
+    ]
+    
+    -- Initialize VM Heap
+    let empty_obj: VmHeapObject = VmHeapObject {
+        kind: "FREE",
+        field_names: [ "", "", "", "", "", "", "", "", "", "" ],
+        field_values: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        field_count: 0,
+        elements: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        element_count: 0
+    }
+    
+    let heap: VmHeap = VmHeap {
+        objects: [
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj
+        ],
+        object_count: 0
+    }
+    
+    let final_state: VmState = execute_scheduler(routines, 2, main_routine, heap)
+    
+    call Std.IO.logf("VM Concurrency E2E: Final Return Value Kind = ${}, IntVal = ${}", final_state.frame.return_value.kind, final_state.frame.return_value.int_val)
+    if final_state.frame.return_value.int_val != 15 then
+        call Std.IO.logf("ERROR: VM Concurrency E2E test failed! Expected 15, got ${}", final_state.frame.return_value.int_val)
+    else
+        call Std.IO.logf("SUCCESS: VM Concurrency E2E test passed!")
+    end if
+end test_vm_concurrency
+
+procedure test_vm_concurrency_deadlock()
+is
+    let dummy_span: SourceSpan = SourceSpan { source_name: "", start_line: 0, start_column: 0, end_line: 0, end_column: 0 }
+    
+    -- Construct worker routine (blocks on receive)
+    let w_inst0: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "val",
+        src_reg_left: "_arg0",
+        src_reg_right: "",
+        op: "channel_receive",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    
+    let w_block: IrBasicBlock = IrBasicBlock {
+        label: "entry",
+        instructions: [
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0,
+            w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0, w_inst0
+        ],
+        instruction_count: 1,
+        terminator_kind: "RETURN",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "val",
+        abort_error: ""
+    }
+    
+    let dummy_block: IrBasicBlock = w_block
+    
+    let worker_routine: IrRoutine = IrRoutine {
+        name: "worker",
+        entry_block: "entry",
+        blocks: [
+            w_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block
+        ],
+        block_count: 1
+    }
+    
+    -- Construct main routine
+    let m_inst0: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "ch1_cap",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "0",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst1: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "ch1",
+        src_reg_left: "ch1_cap",
+        src_reg_right: "",
+        op: "channel",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst2: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "rcv1",
+        src_reg_left: "ch1",
+        src_reg_right: "",
+        op: "channel_receiver",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst3: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "h",
+        src_reg_left: "rcv1",
+        src_reg_right: "",
+        op: "spawn",
+        literal_value: "worker",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst4: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "join_res",
+        src_reg_left: "h",
+        src_reg_right: "",
+        op: "join",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    
+    let m_block: IrBasicBlock = IrBasicBlock {
+        label: "entry",
+        instructions: [
+            m_inst0, m_inst1, m_inst2, m_inst3, m_inst4, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0
+        ],
+        instruction_count: 5,
+        terminator_kind: "RETURN",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "join_res",
+        abort_error: ""
+    }
+    
+    let main_routine: IrRoutine = IrRoutine {
+        name: "main",
+        entry_block: "entry",
+        blocks: [
+            m_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block
+        ],
+        block_count: 1
+    }
+    
+    let dummy_routine: IrRoutine = main_routine
+    let routines: Array<IrRoutine, 10> = [
+        main_routine, worker_routine, dummy_routine, dummy_routine,
+        dummy_routine, dummy_routine, dummy_routine, dummy_routine,
+        dummy_routine, dummy_routine
+    ]
+    
+    -- Initialize VM Heap
+    let empty_obj: VmHeapObject = VmHeapObject {
+        kind: "FREE",
+        field_names: [ "", "", "", "", "", "", "", "", "", "" ],
+        field_values: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        field_count: 0,
+        elements: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        element_count: 0
+    }
+    
+    let heap: VmHeap = VmHeap {
+        objects: [
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj
+        ],
+        object_count: 0
+    }
+    
+    call Std.IO.logf("VM Deadlock Check: Starting Scheduler...")
+    let final_state: VmState = execute_scheduler(routines, 2, main_routine, heap)
+    call Std.IO.logf("VM Deadlock Check: Scheduler Finished.")
+end test_vm_concurrency_deadlock
+
 procedure main()
 is
+    call test_vm_builtins()
+    call test_vm_e2e()
+    call test_vm_concurrency()
+    call test_vm_concurrency_deadlock()
     let diagnostic: Diagnostic = build_sample_diagnostic()
+
     let module_name: ModuleName = make_module_name("Compiler.Core.Names")
     let symbol_name: SymbolName = make_symbol_name("module_to_go_package")
     let package_path: GoPackagePath = module_to_go_package(module_name)
@@ -711,6 +1607,66 @@ is
     call Std.IO.logf("flow.exit_guaranteed = ${}", flow_sum.guaranteed_exit)
     let whyml_test: String = to_lower("TEST")
     call Std.IO.logf("whyml.to_lower = ${}", whyml_test)
+    let dummy_type: IrType = IrType {
+        kind: "PRIMITIVE",
+        name: "Integer",
+        element_type_idx: -1,
+        array_size: 0
+    }
+    call Std.IO.logf("ir.type.name = ${}", dummy_type.name)
+
+    let mock_expr: ExprNode = ExprNode {
+        span: mock_span,
+        kind: "LITERAL",
+        literal_kind: "Integer",
+        text: "42",
+        op: "",
+        left_node_idx: -1,
+        right_node_idx: -1,
+        routine_name: "",
+        arg0_idx: -1,
+        arg1_idx: -1,
+        arg_count: 0,
+        invariant_idx: -1
+    }
+    let exprs_array: Array<ExprNode, 64> = [
+        mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr,
+        mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr,
+        mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr,
+        mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr,
+        mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr,
+        mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr,
+        mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr,
+        mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr, mock_expr
+    ]
+    let mock_stmt_let: StmtNode = StmtNode {
+        span: mock_span,
+        kind: "LET",
+        var_name: "x",
+        var_type: "Integer",
+        expr_idx: 0,
+        cond_expr_idx: -1,
+        then_block_start_idx: -1,
+        then_block_len: 0,
+        else_block_start_idx: -1,
+        else_block_len: 0,
+        routine_name: "",
+        aborts_type: ""
+    }
+    let stmts_array_let: Array<StmtNode, 64> = [
+        mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let,
+        mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let,
+        mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let,
+        mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let,
+        mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let,
+        mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let,
+        mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let,
+        mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let
+    ]
+    -- let mock_routine: IrRoutine = Compiler.Core.Lowering.lower_routine("test_routine", stmts_array_let, exprs_array, 0, 1)
+    -- let blocks_arr: Array<IrBasicBlock, 32> = mock_routine.blocks
+    -- let block: IrBasicBlock = blocks_arr[0]
+    -- call Std.IO.logf("lowering.routine.instruction_count = ${}", block.instruction_count)
 
     let args: Array<String, 10> = System.args()
     if args[0] = "--build-exe" or args[0] = "build-exe" then

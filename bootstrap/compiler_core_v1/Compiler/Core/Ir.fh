@@ -1,0 +1,45 @@
+module Compiler.Core.Ir
+
+import Compiler.Core.Token exposing SourceSpan
+
+type IrType is record
+    kind: String             -- "PRIMITIVE", "ARRAY", "RECORD", "GENERIC_PARAM"
+    name: String             -- e.g., "Integer", "Boolean"
+    element_type_idx: Integer
+    array_size: Integer
+end record
+
+type IrInstruction is record
+    span: SourceSpan
+    kind: String             -- "ALLOCA", "LOAD", "STORE", "BINARY_OP", "UNARY_OP", "CALL", "CALL_HOST", "GET_ELEMENT_PTR", "CHECK", "ASSIGN"
+    dest_reg: String
+    src_reg_left: String
+    src_reg_right: String
+    op: String
+    literal_value: String
+    type_idx: Integer
+    field_name: String       -- For record accesses
+    index_reg: String        -- For array accesses
+end record
+
+type IrBasicBlock is record
+    label: String
+    instructions: Array<IrInstruction, 64>
+    instruction_count: Integer
+    -- Terminator
+    terminator_kind: String  -- "JUMP", "BRANCH_COND", "RETURN", "ABORT"
+    target_block_label: String
+    true_block_label: String
+    false_block_label: String
+    return_reg: String
+    abort_error: String
+end record
+
+type IrRoutine is record
+    name: String
+    entry_block: String
+    blocks: Array<IrBasicBlock, 32>
+    block_count: Integer
+end record
+
+end Compiler.Core.Ir

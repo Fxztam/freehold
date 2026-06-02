@@ -1,6 +1,6 @@
 # OPEN Status
 
-Stand: 2026-06-01
+Stand: 2026-06-02
 
 Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V2/V3-Themen. Die ehemals offenen `OPEN-*.md`-Dateien, die vollständig für V1 gelöst sind, wurden mit `=== CLOSED ===` versehen und in den neuen Ordner `CLOSED-OPENS/` verschoben. 
 
@@ -90,6 +90,14 @@ Compiler example smoke passed; includes compiler_v1_result_abort_array_runtime_b
 verify-additive-test-line.cmd
 Allowed additions:       0
 Frozen-line violations: 0
+
+verify-stage3-compiler-core-v1.cmd
+Total contracts:    1
+Matching contracts: 1
+Failing contracts:  0
+
+verify-language-modules-v2_3.cmd
+Passed language module tests: 45/45
 
 git diff --check
 No whitespace errors.

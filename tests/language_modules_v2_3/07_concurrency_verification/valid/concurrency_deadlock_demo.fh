@@ -1,0 +1,27 @@
+module Concurrency.ConcurrencyDeadlockDemo
+
+async function deadlocking_worker(receiver: Receiver<Integer>) returns Integer
+is
+    -- This worker will block forever trying to receive, as no one will send to it.
+    let val: Integer = await channel_receive<Integer>(receiver)
+    return val
+end deadlocking_worker
+
+async function run_deadlock_demo() returns Integer
+is
+    let chan: Channel<Integer> = channel<Integer>(0)
+    let receiver: Receiver<Integer> = channel_receiver<Integer>(chan)
+
+    scope sc do
+        spawn
+            let handle: JoinHandle<Integer> = sc.spawn<Integer>(deadlocking_worker(receiver))
+        join
+            -- The main task waits for the worker to finish, but the worker is blocked receiving.
+            -- This results in a scheduler deadlock because all active tasks are blocked.
+            let val: Integer = await sc.join<Integer>(handle)
+        result
+            return val
+    end scope
+end run_deadlock_demo
+
+end Concurrency.ConcurrencyDeadlockDemo

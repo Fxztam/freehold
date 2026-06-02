@@ -1,0 +1,26 @@
+module Concurrency.ConcurrencyPosDemo
+
+async function worker(sender: Sender<Integer>, val: Integer) returns Boolean
+is
+    let sent: Boolean = await channel_send<Integer>(sender, val + 10)
+    return sent
+end worker
+
+async function run_demo() returns Integer
+is
+    let chan: Channel<Integer> = channel<Integer>(0)
+    let sender: Sender<Integer> = channel_sender<Integer>(chan)
+    let receiver: Receiver<Integer> = channel_receiver<Integer>(chan)
+
+    scope sc do
+        spawn
+            let handle: JoinHandle<Boolean> = sc.spawn<Boolean>(worker(sender, 5))
+        join
+            let val: Integer = await channel_receive<Integer>(receiver)
+            let worker_ok: Boolean = await sc.join<Boolean>(handle)
+        result
+            return val
+    end scope
+end run_demo
+
+end Concurrency.ConcurrencyPosDemo

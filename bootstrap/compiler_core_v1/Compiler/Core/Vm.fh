@@ -1,0 +1,2114 @@
+module Compiler.Core.Vm
+
+import Compiler.Core.Token exposing SourceSpan
+import Compiler.Core.Ir exposing IrType, IrInstruction, IrBasicBlock, IrRoutine
+import System
+import Std.IO
+import Math
+import Big
+
+type VmValue is record
+    kind: String             -- "INTEGER", "BOOLEAN", "STRING", "REF", "PTR", "NONE"
+    int_val: Integer
+    bool_val: Boolean
+    str_val: String
+    ref_val: Integer         -- Address index in Heap or object ref
+end record
+
+type VmRegister is record
+    name: String
+    reg_value: VmValue
+end record
+
+type VmHeapObject is record
+    kind: String             -- "RECORD", "ARRAY", "FREE"
+    
+    -- For records: field names and values
+    field_names: Array<String, 10>
+    field_values: Array<VmValue, 10>
+    field_count: Integer
+    
+    -- For arrays: elements
+    elements: Array<VmValue, 32>
+    element_count: Integer
+end record
+
+type VmHeap is record
+    objects: Array<VmHeapObject, 32>
+    object_count: Integer
+end record
+
+type ActivationFrame is record
+    registers: Array<VmRegister, 32>
+    register_count: Integer
+    
+    current_block_label: String
+    ip: Integer
+    
+    return_value: VmValue
+    has_returned: Boolean
+end record
+
+type VmState is record
+    heap: VmHeap
+    frame: ActivationFrame
+end record
+
+type AllocResult is record
+    heap: VmHeap
+    ref_idx: Integer
+end record
+
+function char_to_int(c: String) returns Integer
+is
+    if c = "0" then return 0 end if
+    if c = "1" then return 1 end if
+    if c = "2" then return 2 end if
+    if c = "3" then return 3 end if
+    if c = "4" then return 4 end if
+    if c = "5" then return 5 end if
+    if c = "6" then return 6 end if
+    if c = "7" then return 7 end if
+    if c = "8" then return 8 end if
+    if c = "9" then return 9 end if
+    return -1
+end char_to_int
+
+function parse_int(s: String) returns Integer
+is
+    let len: Integer = String.length(s)
+    if len = 0 then return 0 end if
+    
+    let is_neg: Boolean = false
+    let start_idx: Integer = len - len
+    let first: String = String.substr(s, 0, 1)
+    if first = "-" then
+        is_neg := true
+        start_idx := len - len + 1
+    end if
+    
+    let val: Integer = len - len
+    let i: Integer = start_idx
+    while i < len invariant i >= 0 and i <= len do
+        let c: String = String.substr(s, i, 1)
+        let d: Integer = char_to_int(c)
+        if d >= 0 then
+            val := val * 10 + d
+        end if
+        i := i + 1
+    end while
+    
+    if is_neg then
+        return -val
+    end if
+    return val
+end parse_int
+
+function parse_bool(s: String) returns Boolean
+is
+    if s = "true" then return true end if
+    return false
+end parse_bool
+
+function parse_string_lit(s: String) returns String
+is
+    let len: Integer = String.length(s)
+    if len >= 2 then
+        let first: String = String.substr(s, 0, 1)
+        let last: String = String.substr(s, len - 1, 1)
+        if first = "\"" and last = "\"" then
+            return String.substr(s, 1, len - 2)
+        end if
+    end if
+    return s
+end parse_string_lit
+
+function to_double(n: Integer) returns Double
+is
+    if n >= 0 then
+        return Math.max(n, 0.0)
+    end if
+    return Math.min(n, 0.0)
+end to_double
+
+function parse_double(s: String) returns Double
+is
+    let len: Integer = String.length(s)
+    if len = 0 then return 0.0 end if
+    
+    let is_neg: Boolean = false
+    let start_idx: Integer = len - len
+    let first: String = String.substr(s, 0, 1)
+    if first = "-" then
+        is_neg := true
+        start_idx := len - len + 1
+    end if
+    
+    let dot_idx: Integer = String.instr(s, ".")
+    let int_part_len: Integer = len
+    if dot_idx >= 0 then
+        int_part_len := dot_idx
+    end if
+    
+    let val: Double = 0.0
+    let i: Integer = start_idx
+    while i < int_part_len invariant i >= 0 and i <= len do
+        let c: String = String.substr(s, i, 1)
+        let d: Integer = char_to_int(c)
+        if d >= 0 then
+            val := val * 10.0 + to_double(d)
+        end if
+        i := i + 1
+    end while
+    
+    if dot_idx >= 0 then
+        let frac_val: Double = 0.0
+        let frac_div: Double = 1.0
+        let j: Integer = dot_idx + 1
+        while j < len invariant j >= 0 and j <= len do
+            let c: String = String.substr(s, j, 1)
+            let d: Integer = char_to_int(c)
+            if d >= 0 then
+                frac_div := frac_div * 10.0
+                frac_val := frac_val + (to_double(d) / frac_div)
+            end if
+            j := j + 1
+        end while
+        val := val + frac_val
+    end if
+    
+    if is_neg then
+        return -val
+    end if
+    return val
+end parse_double
+
+function parse_literal(s: String) returns VmValue
+is
+    let len: Integer = String.length(s)
+    if len = 0 then
+        return VmValue { kind: "STRING", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+    end if
+    
+    let first: String = String.substr(s, 0, 1)
+    if first = "\"" then
+        return VmValue { kind: "STRING", int_val: 0, bool_val: false, str_val: parse_string_lit(s), ref_val: -1 }
+    end if
+    
+    if s = "true" or s = "false" then
+        return VmValue { kind: "BOOLEAN", int_val: 0, bool_val: parse_bool(s), str_val: "", ref_val: -1 }
+    end if
+    
+    if String.instr(s, ".") >= 0 then
+        return VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: s, ref_val: -1 }
+    end if
+    
+    return VmValue { kind: "INTEGER", int_val: parse_int(s), bool_val: false, str_val: "", ref_val: -1 }
+end parse_literal
+
+function set_register(arr: Array<VmRegister, 32>, idx: Integer, val: VmRegister) returns Array<VmRegister, 32>
+is
+    let i0: VmRegister = arr[0]
+    let i1: VmRegister = arr[1]
+    let i2: VmRegister = arr[2]
+    let i3: VmRegister = arr[3]
+    let i4: VmRegister = arr[4]
+    let i5: VmRegister = arr[5]
+    let i6: VmRegister = arr[6]
+    let i7: VmRegister = arr[7]
+    let i8: VmRegister = arr[8]
+    let i9: VmRegister = arr[9]
+    let i10: VmRegister = arr[10]
+    let i11: VmRegister = arr[11]
+    let i12: VmRegister = arr[12]
+    let i13: VmRegister = arr[13]
+    let i14: VmRegister = arr[14]
+    let i15: VmRegister = arr[15]
+    let i16: VmRegister = arr[16]
+    let i17: VmRegister = arr[17]
+    let i18: VmRegister = arr[18]
+    let i19: VmRegister = arr[19]
+    let i20: VmRegister = arr[20]
+    let i21: VmRegister = arr[21]
+    let i22: VmRegister = arr[22]
+    let i23: VmRegister = arr[23]
+    let i24: VmRegister = arr[24]
+    let i25: VmRegister = arr[25]
+    let i26: VmRegister = arr[26]
+    let i27: VmRegister = arr[27]
+    let i28: VmRegister = arr[28]
+    let i29: VmRegister = arr[29]
+    let i30: VmRegister = arr[30]
+    let i31: VmRegister = arr[31]
+
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    if idx = 16 then i16 := val end if
+    if idx = 17 then i17 := val end if
+    if idx = 18 then i18 := val end if
+    if idx = 19 then i19 := val end if
+    if idx = 20 then i20 := val end if
+    if idx = 21 then i21 := val end if
+    if idx = 22 then i22 := val end if
+    if idx = 23 then i23 := val end if
+    if idx = 24 then i24 := val end if
+    if idx = 25 then i25 := val end if
+    if idx = 26 then i26 := val end if
+    if idx = 27 then i27 := val end if
+    if idx = 28 then i28 := val end if
+    if idx = 29 then i29 := val end if
+    if idx = 30 then i30 := val end if
+    if idx = 31 then i31 := val end if
+
+    return [
+        i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15,
+        i16, i17, i18, i19, i20, i21, i22, i23, i24, i25, i26, i27, i28, i29, i30, i31
+    ]
+end set_register
+
+function set_heap_obj(arr: Array<VmHeapObject, 32>, idx: Integer, val: VmHeapObject) returns Array<VmHeapObject, 32>
+is
+    let i0: VmHeapObject = arr[0]
+    let i1: VmHeapObject = arr[1]
+    let i2: VmHeapObject = arr[2]
+    let i3: VmHeapObject = arr[3]
+    let i4: VmHeapObject = arr[4]
+    let i5: VmHeapObject = arr[5]
+    let i6: VmHeapObject = arr[6]
+    let i7: VmHeapObject = arr[7]
+    let i8: VmHeapObject = arr[8]
+    let i9: VmHeapObject = arr[9]
+    let i10: VmHeapObject = arr[10]
+    let i11: VmHeapObject = arr[11]
+    let i12: VmHeapObject = arr[12]
+    let i13: VmHeapObject = arr[13]
+    let i14: VmHeapObject = arr[14]
+    let i15: VmHeapObject = arr[15]
+    let i16: VmHeapObject = arr[16]
+    let i17: VmHeapObject = arr[17]
+    let i18: VmHeapObject = arr[18]
+    let i19: VmHeapObject = arr[19]
+    let i20: VmHeapObject = arr[20]
+    let i21: VmHeapObject = arr[21]
+    let i22: VmHeapObject = arr[22]
+    let i23: VmHeapObject = arr[23]
+    let i24: VmHeapObject = arr[24]
+    let i25: VmHeapObject = arr[25]
+    let i26: VmHeapObject = arr[26]
+    let i27: VmHeapObject = arr[27]
+    let i28: VmHeapObject = arr[28]
+    let i29: VmHeapObject = arr[29]
+    let i30: VmHeapObject = arr[30]
+    let i31: VmHeapObject = arr[31]
+
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    if idx = 16 then i16 := val end if
+    if idx = 17 then i17 := val end if
+    if idx = 18 then i18 := val end if
+    if idx = 19 then i19 := val end if
+    if idx = 20 then i20 := val end if
+    if idx = 21 then i21 := val end if
+    if idx = 22 then i22 := val end if
+    if idx = 23 then i23 := val end if
+    if idx = 24 then i24 := val end if
+    if idx = 25 then i25 := val end if
+    if idx = 26 then i26 := val end if
+    if idx = 27 then i27 := val end if
+    if idx = 28 then i28 := val end if
+    if idx = 29 then i29 := val end if
+    if idx = 30 then i30 := val end if
+    if idx = 31 then i31 := val end if
+
+    return [
+        i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15,
+        i16, i17, i18, i19, i20, i21, i22, i23, i24, i25, i26, i27, i28, i29, i30, i31
+    ]
+end set_heap_obj
+
+function allocate_object(heap: VmHeap, obj: VmHeapObject) returns AllocResult
+is
+    if heap.object_count < 32 then
+        let new_objects: Array<VmHeapObject, 32> = set_heap_obj(heap.objects, heap.object_count, obj)
+        return AllocResult {
+            heap: VmHeap {
+                objects: new_objects,
+                object_count: heap.object_count + 1
+            },
+            ref_idx: heap.object_count
+        }
+    end if
+    return AllocResult { heap: heap, ref_idx: -1 }
+end allocate_object
+
+function set_value_10(arr: Array<VmValue, 10>, idx: Integer, val: VmValue) returns Array<VmValue, 10>
+is
+    let i0: VmValue = arr[0]
+    let i1: VmValue = arr[1]
+    let i2: VmValue = arr[2]
+    let i3: VmValue = arr[3]
+    let i4: VmValue = arr[4]
+    let i5: VmValue = arr[5]
+    let i6: VmValue = arr[6]
+    let i7: VmValue = arr[7]
+    let i8: VmValue = arr[8]
+    let i9: VmValue = arr[9]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7, i8, i9]
+end set_value_10
+
+function set_string_10(arr: Array<String, 10>, idx: Integer, val: String) returns Array<String, 10>
+is
+    let i0: String = arr[0]
+    let i1: String = arr[1]
+    let i2: String = arr[2]
+    let i3: String = arr[3]
+    let i4: String = arr[4]
+    let i5: String = arr[5]
+    let i6: String = arr[6]
+    let i7: String = arr[7]
+    let i8: String = arr[8]
+    let i9: String = arr[9]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7, i8, i9]
+end set_string_10
+
+function set_value_32(arr: Array<VmValue, 32>, idx: Integer, val: VmValue) returns Array<VmValue, 32>
+is
+    let i0: VmValue = arr[0]
+    let i1: VmValue = arr[1]
+    let i2: VmValue = arr[2]
+    let i3: VmValue = arr[3]
+    let i4: VmValue = arr[4]
+    let i5: VmValue = arr[5]
+    let i6: VmValue = arr[6]
+    let i7: VmValue = arr[7]
+    let i8: VmValue = arr[8]
+    let i9: VmValue = arr[9]
+    let i10: VmValue = arr[10]
+    let i11: VmValue = arr[11]
+    let i12: VmValue = arr[12]
+    let i13: VmValue = arr[13]
+    let i14: VmValue = arr[14]
+    let i15: VmValue = arr[15]
+    let i16: VmValue = arr[16]
+    let i17: VmValue = arr[17]
+    let i18: VmValue = arr[18]
+    let i19: VmValue = arr[19]
+    let i20: VmValue = arr[20]
+    let i21: VmValue = arr[21]
+    let i22: VmValue = arr[22]
+    let i23: VmValue = arr[23]
+    let i24: VmValue = arr[24]
+    let i25: VmValue = arr[25]
+    let i26: VmValue = arr[26]
+    let i27: VmValue = arr[27]
+    let i28: VmValue = arr[28]
+    let i29: VmValue = arr[29]
+    let i30: VmValue = arr[30]
+    let i31: VmValue = arr[31]
+
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    if idx = 16 then i16 := val end if
+    if idx = 17 then i17 := val end if
+    if idx = 18 then i18 := val end if
+    if idx = 19 then i19 := val end if
+    if idx = 20 then i20 := val end if
+    if idx = 21 then i21 := val end if
+    if idx = 22 then i22 := val end if
+    if idx = 23 then i23 := val end if
+    if idx = 24 then i24 := val end if
+    if idx = 25 then i25 := val end if
+    if idx = 26 then i26 := val end if
+    if idx = 27 then i27 := val end if
+    if idx = 28 then i28 := val end if
+    if idx = 29 then i29 := val end if
+    if idx = 30 then i30 := val end if
+    if idx = 31 then i31 := val end if
+
+    return [
+        i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15,
+        i16, i17, i18, i19, i20, i21, i22, i23, i24, i25, i26, i27, i28, i29, i30, i31
+    ]
+end set_value_32
+
+function get_heap_field(obj: VmHeapObject, name: String) returns VmValue
+is
+    let i: Integer = obj.field_count - obj.field_count
+    let names: Array<String, 10> = obj.field_names
+    let vals: Array<VmValue, 10> = obj.field_values
+    while i < obj.field_count invariant i >= 0 and i <= obj.field_count do
+        let fname: String = names[i]
+        if fname = name then
+            return vals[i]
+        end if
+        i := i + 1
+    end while
+    return VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+end get_heap_field
+
+function set_heap_field(obj: VmHeapObject, name: String, val: VmValue) returns VmHeapObject
+is
+    let i: Integer = obj.field_count - obj.field_count
+    let found: Boolean = false
+    let updated_names: Array<String, 10> = obj.field_names
+    let updated_vals: Array<VmValue, 10> = obj.field_values
+    
+    while i < obj.field_count invariant i >= 0 and i <= obj.field_count do
+        let fname: String = updated_names[i]
+        if fname = name then
+            updated_vals := set_value_10(updated_vals, i, val)
+            found := true
+        end if
+        i := i + 1
+    end while
+    
+    if not found then
+        if obj.field_count < 10 then
+            updated_names := set_string_10(updated_names, obj.field_count, name)
+            updated_vals := set_value_10(updated_vals, obj.field_count, val)
+            return VmHeapObject {
+                kind: obj.kind,
+                field_names: updated_names,
+                field_values: updated_vals,
+                field_count: obj.field_count + 1,
+                elements: obj.elements,
+                element_count: obj.element_count
+            }
+        end if
+    end if
+    
+    return VmHeapObject {
+        kind: obj.kind,
+        field_names: updated_names,
+        field_values: updated_vals,
+        field_count: obj.field_count,
+        elements: obj.elements,
+        element_count: obj.element_count
+    }
+end set_heap_field
+
+function get_heap_element(obj: VmHeapObject, idx: Integer) returns VmValue
+is
+    let elems: Array<VmValue, 32> = obj.elements
+    if idx >= 0 and idx < 32 then
+        return elems[idx]
+    end if
+    return VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+end get_heap_element
+
+function set_heap_element(obj: VmHeapObject, idx: Integer, val: VmValue) returns VmHeapObject
+is
+    if idx >= 0 and idx < 32 then
+        let updated_elems: Array<VmValue, 32> = set_value_32(obj.elements, idx, val)
+        let new_count: Integer = obj.element_count
+        if idx >= obj.element_count then
+            new_count := idx + 1
+        end if
+        return VmHeapObject {
+            kind: obj.kind,
+            field_names: obj.field_names,
+            field_values: obj.field_values,
+            field_count: obj.field_count,
+            elements: updated_elems,
+            element_count: new_count
+        }
+    end if
+    return obj
+end set_heap_element
+
+function get_heap_obj(heap: VmHeap, idx: Integer) returns VmHeapObject
+is
+    let objs: Array<VmHeapObject, 32> = heap.objects
+    if idx >= 0 and idx < 32 then
+        return objs[idx]
+    end if
+    return VmHeapObject {
+        kind: "FREE",
+        field_names: ["","","","","","","","","",""],
+        field_values: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        field_count: 0,
+        elements: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        element_count: 0
+    }
+end get_heap_obj
+
+function update_heap_obj(heap: VmHeap, idx: Integer, val: VmHeapObject) returns VmHeap
+is
+    if idx >= 0 and idx < 32 then
+        let updated_objs: Array<VmHeapObject, 32> = set_heap_obj(heap.objects, idx, val)
+        return VmHeap {
+            objects: updated_objs,
+            object_count: heap.object_count
+        }
+    end if
+    return heap
+end update_heap_obj
+
+function get_register(frame: ActivationFrame, name: String) returns VmValue
+is
+    let i: Integer = frame.register_count - frame.register_count
+    let regs: Array<VmRegister, 32> = frame.registers
+    while i < frame.register_count invariant i >= 0 and i <= frame.register_count do
+        let reg: VmRegister = regs[i]
+        if reg.name = name then
+            return reg.reg_value
+        end if
+        i := i + 1
+    end while
+    return VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+end get_register
+
+function update_register(frame: ActivationFrame, name: String, val: VmValue) returns ActivationFrame
+is
+    let i: Integer = frame.register_count - frame.register_count
+    let found: Boolean = false
+    let updated_regs: Array<VmRegister, 32> = frame.registers
+    
+    let regs: Array<VmRegister, 32> = frame.registers
+    while i < frame.register_count invariant i >= 0 and i <= frame.register_count do
+        let reg: VmRegister = regs[i]
+        if reg.name = name then
+            updated_regs := set_register(updated_regs, i, VmRegister { name: name, reg_value: val })
+            found := true
+        end if
+        i := i + 1
+    end while
+    
+    if not found then
+        if frame.register_count < 32 then
+            updated_regs := set_register(updated_regs, frame.register_count, VmRegister { name: name, reg_value: val })
+            return ActivationFrame {
+                registers: updated_regs,
+                register_count: frame.register_count + 1,
+                current_block_label: frame.current_block_label,
+                ip: frame.ip,
+                return_value: frame.return_value,
+                has_returned: frame.has_returned
+            }
+        end if
+    end if
+    
+    return ActivationFrame {
+        registers: updated_regs,
+        register_count: frame.register_count,
+        current_block_label: frame.current_block_label,
+        ip: frame.ip,
+        return_value: frame.return_value,
+        has_returned: frame.has_returned
+    }
+end update_register
+
+function execute_instruction(inst: IrInstruction, state: VmState) returns VmState
+is
+    if inst.kind = "ALLOCA" then
+        if inst.op = "RECORD" then
+            let obj: VmHeapObject = VmHeapObject {
+                kind: "RECORD",
+                field_names: ["","","","","","","","","",""],
+                field_values: [
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+                ],
+                field_count: 0,
+                elements: [
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+                ],
+                element_count: 0
+            }
+            let res: AllocResult = allocate_object(state.heap, obj)
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "REF", int_val: 0, bool_val: false, str_val: "", ref_val: res.ref_idx })
+            return VmState { heap: res.heap, frame: new_frame }
+        else
+            if inst.op = "ARRAY" then
+                let obj: VmHeapObject = VmHeapObject {
+                    kind: "ARRAY",
+                    field_names: ["","","","","","","","","",""],
+                    field_values: [
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+                    ],
+                    field_count: 0,
+                    elements: [
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+                    ],
+                    element_count: 32
+                }
+                let res: AllocResult = allocate_object(state.heap, obj)
+                let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "REF", int_val: 0, bool_val: false, str_val: "", ref_val: res.ref_idx })
+                return VmState { heap: res.heap, frame: new_frame }
+            else
+                let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 })
+                return VmState { heap: state.heap, frame: new_frame }
+            end if
+        end if
+    end if
+    
+    if inst.kind = "GET_ELEMENT_PTR" then
+        let base: VmValue = get_register(state.frame, inst.src_reg_left)
+        if base.kind = "REF" then
+            if inst.field_name != "" then
+                let ptr: VmValue = VmValue { kind: "PTR", int_val: -1, bool_val: false, str_val: inst.field_name, ref_val: base.ref_val }
+                let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, ptr)
+                return VmState { heap: state.heap, frame: new_frame }
+            else
+                if inst.index_reg != "" then
+                    let idx_val: VmValue = get_register(state.frame, inst.index_reg)
+                    let ptr: VmValue = VmValue { kind: "PTR", int_val: idx_val.int_val, bool_val: false, str_val: "", ref_val: base.ref_val }
+                    let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, ptr)
+                    return VmState { heap: state.heap, frame: new_frame }
+                end if
+            end if
+        end if
+        return state
+    end if
+    
+    if inst.kind = "LOAD" then
+        let src_val: VmValue = get_register(state.frame, inst.src_reg_left)
+        if src_val.kind = "PTR" then
+            let obj: VmHeapObject = get_heap_obj(state.heap, src_val.ref_val)
+            let loaded: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+            if src_val.str_val != "" then
+                loaded := get_heap_field(obj, src_val.str_val)
+            else
+                if src_val.int_val >= 0 then
+                    loaded := get_heap_element(obj, src_val.int_val)
+                end if
+            end if
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, loaded)
+            return VmState { heap: state.heap, frame: new_frame }
+        else
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, src_val)
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+    end if
+    
+    if inst.kind = "STORE" then
+        let val: VmValue = get_register(state.frame, inst.src_reg_left)
+        let dest_val: VmValue = get_register(state.frame, inst.dest_reg)
+        if dest_val.kind = "PTR" then
+            let obj: VmHeapObject = get_heap_obj(state.heap, dest_val.ref_val)
+            let updated_obj: VmHeapObject = obj
+            if dest_val.str_val != "" then
+                updated_obj := set_heap_field(obj, dest_val.str_val, val)
+            else
+                if dest_val.int_val >= 0 then
+                    updated_obj := set_heap_element(obj, dest_val.int_val, val)
+                end if
+            end if
+            let new_heap: VmHeap = update_heap_obj(state.heap, dest_val.ref_val, updated_obj)
+            return VmState { heap: new_heap, frame: state.frame }
+        else
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, val)
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+    end if
+    
+    if inst.kind = "ASSIGN" then
+        let val: VmValue = parse_literal(inst.literal_value)
+        let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, val)
+        return VmState { heap: state.heap, frame: new_frame }
+    end if
+    
+    if inst.kind = "BINARY_OP" then
+        let left: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        if inst.src_reg_left != "" then
+            left := get_register(state.frame, inst.src_reg_left)
+        else
+            if inst.literal_value != "" then
+                left := parse_literal(inst.literal_value)
+            end if
+        end if
+        
+        let right: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        if inst.src_reg_right != "" then
+            right := get_register(state.frame, inst.src_reg_right)
+        else
+            if inst.literal_value != "" then
+                right := parse_literal(inst.literal_value)
+            end if
+        end if
+        
+        let val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        
+        if left.kind = "DOUBLE" or right.kind = "DOUBLE" then
+            let l_dbl: Double = 0.0
+            if left.kind = "DOUBLE" then
+                l_dbl := parse_double(left.str_val)
+            else
+                l_dbl := to_double(left.int_val)
+            end if
+            
+            let r_dbl: Double = 0.0
+            if right.kind = "DOUBLE" then
+                r_dbl := parse_double(right.str_val)
+            else
+                r_dbl := to_double(right.int_val)
+            end if
+            
+            if inst.op = "+" then
+                val := VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: String.template("${v}", v: l_dbl + r_dbl), ref_val: -1 }
+            end if
+            if inst.op = "-" then
+                val := VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: String.template("${v}", v: l_dbl - r_dbl), ref_val: -1 }
+            end if
+            if inst.op = "*" then
+                val := VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: String.template("${v}", v: l_dbl * r_dbl), ref_val: -1 }
+            end if
+            if inst.op = "/" then
+                val := VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: String.template("${v}", v: l_dbl / r_dbl), ref_val: -1 }
+            end if
+            if inst.op = "<" then
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: l_dbl < r_dbl, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = "<=" then
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: l_dbl <= r_dbl, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = ">" then
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: l_dbl > r_dbl, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = ">=" then
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: l_dbl >= r_dbl, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = "=" then
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: l_dbl = r_dbl, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = "<>" then
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: l_dbl != r_dbl, str_val: "", ref_val: -1 }
+            end if
+        else
+            if inst.op = "+" then
+                val := VmValue { kind: "INTEGER", int_val: left.int_val + right.int_val, bool_val: false, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = "-" then
+                val := VmValue { kind: "INTEGER", int_val: left.int_val - right.int_val, bool_val: false, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = "*" then
+                val := VmValue { kind: "INTEGER", int_val: left.int_val * right.int_val, bool_val: false, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = "/" then
+                val := VmValue { kind: "INTEGER", int_val: left.int_val / right.int_val, bool_val: false, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = "<" then
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: left.int_val < right.int_val, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = "<=" then
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: left.int_val <= right.int_val, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = ">" then
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: left.int_val > right.int_val, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = ">=" then
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: left.int_val >= right.int_val, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = "=" then
+                let is_eq: Boolean = false
+                if left.kind = "INTEGER" then is_eq := left.int_val = right.int_val end if
+                if left.kind = "BOOLEAN" then is_eq := left.bool_val = right.bool_val end if
+                if left.kind = "STRING" or left.kind = "BIG_INT" or left.kind = "BIG_FLOAT" then
+                    is_eq := left.str_val = right.str_val
+                end if
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: is_eq, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = "<>" then
+                let is_neq: Boolean = false
+                if left.kind = "INTEGER" then is_neq := left.int_val != right.int_val end if
+                if left.kind = "BOOLEAN" then is_neq := left.bool_val != right.bool_val end if
+                if left.kind = "STRING" or left.kind = "BIG_INT" or left.kind = "BIG_FLOAT" then
+                    is_neq := left.str_val != right.str_val
+                end if
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: is_neq, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = "and" then
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: left.bool_val and right.bool_val, str_val: "", ref_val: -1 }
+            end if
+            if inst.op = "or" then
+                val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: left.bool_val or right.bool_val, str_val: "", ref_val: -1 }
+            end if
+        end if
+        
+        let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, val)
+        return VmState { heap: state.heap, frame: new_frame }
+    end if
+    
+    if inst.kind = "CALL_HOST" then
+        if inst.op = "" then
+            let val: VmValue = parse_literal(inst.literal_value)
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, val)
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Std.IO.log" or inst.op = "Std.IO.println" or inst.op = "Std.IO.print" then
+            let arg_val: VmValue = get_register(state.frame, inst.src_reg_left)
+            let msg: String = ""
+            if arg_val.kind = "STRING" then msg := arg_val.str_val end if
+            if arg_val.kind = "INTEGER" then msg := String.template("${v}", v: arg_val.int_val) end if
+            if arg_val.kind = "DOUBLE" or arg_val.kind = "BIG_INT" or arg_val.kind = "BIG_FLOAT" then msg := arg_val.str_val end if
+            if arg_val.kind = "BOOLEAN" then
+                if arg_val.bool_val then msg := "true" else msg := "false" end if
+            end if
+            call Std.IO.log(msg)
+            return state
+        end if
+        
+        -- Math functions
+        if inst.op = "Math.sin" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: Double = Math.sin(parse_double(arg.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: String.template("${v}", v: val), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Math.cos" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: Double = Math.cos(parse_double(arg.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: String.template("${v}", v: val), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Math.tan" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: Double = Math.tan(parse_double(arg.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: String.template("${v}", v: val), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Math.sqrt" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: Double = Math.sqrt(parse_double(arg.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: String.template("${v}", v: val), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Math.pow" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let val: Double = Math.pow(parse_double(left.str_val), parse_double(right.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: String.template("${v}", v: val), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Math.floor" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: Integer = Math.floor(parse_double(arg.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "INTEGER", int_val: val, bool_val: false, str_val: "", ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Math.ceil" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: Integer = Math.ceil(parse_double(arg.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "INTEGER", int_val: val, bool_val: false, str_val: "", ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Math.abs" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            if arg.kind = "INTEGER" then
+                let val: Integer = arg.int_val
+                if val < 0 then val := -val end if
+                let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "INTEGER", int_val: val, bool_val: false, str_val: "", ref_val: -1 })
+                return VmState { heap: state.heap, frame: new_frame }
+            else
+                let val: Double = Math.abs(parse_double(arg.str_val))
+                let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: String.template("${v}", v: val), ref_val: -1 })
+                return VmState { heap: state.heap, frame: new_frame }
+            end if
+        end if
+        if inst.op = "Math.min" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            if left.kind = "INTEGER" and right.kind = "INTEGER" then
+                let val: Integer = left.int_val
+                if right.int_val < val then val := right.int_val end if
+                let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "INTEGER", int_val: val, bool_val: false, str_val: "", ref_val: -1 })
+                return VmState { heap: state.heap, frame: new_frame }
+            else
+                let val: Double = Math.min(parse_double(left.str_val), parse_double(right.str_val))
+                let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: String.template("${v}", v: val), ref_val: -1 })
+                return VmState { heap: state.heap, frame: new_frame }
+            end if
+        end if
+        if inst.op = "Math.max" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            if left.kind = "INTEGER" and right.kind = "INTEGER" then
+                let val: Integer = left.int_val
+                if right.int_val > val then val := right.int_val end if
+                let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "INTEGER", int_val: val, bool_val: false, str_val: "", ref_val: -1 })
+                return VmState { heap: state.heap, frame: new_frame }
+            else
+                let val: Double = Math.max(parse_double(left.str_val), parse_double(right.str_val))
+                let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: String.template("${v}", v: val), ref_val: -1 })
+                return VmState { heap: state.heap, frame: new_frame }
+            end if
+        end if
+        
+        -- Big library functions
+        if inst.op = "Big.int" or inst.op = "Big.integer" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: BigInteger = Big.int(arg.str_val)
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_INT", int_val: 0, bool_val: false, str_val: Big.toString(val), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.fromInteger" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: BigInteger = Big.fromInteger(arg.int_val)
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_INT", int_val: 0, bool_val: false, str_val: Big.toString(val), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.float" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let val: BigFloat = Big.float(left.str_val, right.int_val)
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_FLOAT", int_val: right.int_val, bool_val: false, str_val: Big.format(val, 50), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.floatFromInteger" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let val: BigFloat = Big.floatFromInteger(Big.int(left.str_val), right.int_val)
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_FLOAT", int_val: right.int_val, bool_val: false, str_val: Big.format(val, 50), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.addInt" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let val: BigInteger = Big.addInt(Big.int(left.str_val), Big.int(right.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_INT", int_val: 0, bool_val: false, str_val: Big.toString(val), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.subInt" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let val: BigInteger = Big.subInt(Big.int(left.str_val), Big.int(right.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_INT", int_val: 0, bool_val: false, str_val: Big.toString(val), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.mulInt" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let val: BigInteger = Big.mulInt(Big.int(left.str_val), Big.int(right.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_INT", int_val: 0, bool_val: false, str_val: Big.toString(val), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.divInt" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let val: BigInteger = Big.divInt(Big.int(left.str_val), Big.int(right.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_INT", int_val: 0, bool_val: false, str_val: Big.toString(val), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.negInt" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: BigInteger = Big.negInt(Big.int(arg.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_INT", int_val: 0, bool_val: false, str_val: Big.toString(val), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.absInt" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: BigInteger = Big.absInt(Big.int(arg.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_INT", int_val: 0, bool_val: false, str_val: Big.toString(val), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.signInt" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: Integer = Big.signInt(Big.int(arg.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "INTEGER", int_val: val, bool_val: false, str_val: "", ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.toString" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: String = Big.toString(Big.int(arg.str_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "STRING", int_val: 0, bool_val: false, str_val: val, ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.addFloat" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let prec: Integer = left.int_val
+            if right.int_val > prec then prec := right.int_val end if
+            let val: BigFloat = Big.addFloat(Big.float(left.str_val, left.int_val), Big.float(right.str_val, right.int_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_FLOAT", int_val: prec, bool_val: false, str_val: Big.format(val, 50), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.subFloat" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let prec: Integer = left.int_val
+            if right.int_val > prec then prec := right.int_val end if
+            let val: BigFloat = Big.subFloat(Big.float(left.str_val, left.int_val), Big.float(right.str_val, right.int_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_FLOAT", int_val: prec, bool_val: false, str_val: Big.format(val, 50), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.mulFloat" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let prec: Integer = left.int_val
+            if right.int_val > prec then prec := right.int_val end if
+            let val: BigFloat = Big.mulFloat(Big.float(left.str_val, left.int_val), Big.float(right.str_val, right.int_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_FLOAT", int_val: prec, bool_val: false, str_val: Big.format(val, 50), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.divFloat" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let prec: Integer = left.int_val
+            if right.int_val > prec then prec := right.int_val end if
+            let val: BigFloat = Big.divFloat(Big.float(left.str_val, left.int_val), Big.float(right.str_val, right.int_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_FLOAT", int_val: prec, bool_val: false, str_val: Big.format(val, 50), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.sqrt" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: BigFloat = Big.sqrt(Big.float(arg.str_val, arg.int_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_FLOAT", int_val: arg.int_val, bool_val: false, str_val: Big.format(val, 50), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.absFloat" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: BigFloat = Big.absFloat(Big.float(arg.str_val, arg.int_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "BIG_FLOAT", int_val: arg.int_val, bool_val: false, str_val: Big.format(val, 50), ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.signFloat" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: Integer = Big.signFloat(Big.float(arg.str_val, arg.int_val))
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "INTEGER", int_val: val, bool_val: false, str_val: "", ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "Big.format" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let val: String = Big.format(Big.float(left.str_val, left.int_val), right.int_val)
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "STRING", int_val: 0, bool_val: false, str_val: val, ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        
+        -- String functions
+        if inst.op = "String.length" then
+            let arg: VmValue = get_register(state.frame, inst.src_reg_left)
+            let val: Integer = String.length(arg.str_val)
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "INTEGER", int_val: val, bool_val: false, str_val: "", ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "String.concat" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let val: String = String.concat(left.str_val, right.str_val)
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "STRING", int_val: 0, bool_val: false, str_val: val, ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+        if inst.op = "String.instr" then
+            let left: VmValue = get_register(state.frame, inst.src_reg_left)
+            let right: VmValue = get_register(state.frame, inst.src_reg_right)
+            let val: Integer = String.instr(left.str_val, right.str_val)
+            let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "INTEGER", int_val: val, bool_val: false, str_val: "", ref_val: -1 })
+            return VmState { heap: state.heap, frame: new_frame }
+        end if
+    end if
+    
+    return state
+end execute_instruction
+
+function execute_routine(
+    routine: IrRoutine,
+    initial_state: VmState
+) returns VmState
+is
+    let state: VmState = initial_state
+    
+    let current_label: String = "entry"
+    let has_jumped: Boolean = true
+    
+    while has_jumped invariant has_jumped or not has_jumped do
+        has_jumped := false
+        
+        let block_idx: Integer = routine.block_count - routine.block_count - 1
+        let k: Integer = routine.block_count - routine.block_count
+        let rblocks: Array<IrBasicBlock, 32> = routine.blocks
+        while k < routine.block_count invariant k >= 0 and k <= routine.block_count do
+            let blk: IrBasicBlock = rblocks[k]
+            if blk.label = current_label then
+                block_idx := k
+            end if
+            k := k + 1
+        end while
+        
+        if block_idx >= 0 then
+            let blk: IrBasicBlock = rblocks[block_idx]
+            
+            let i: Integer = blk.instruction_count - blk.instruction_count
+            let binsts: Array<IrInstruction, 64> = blk.instructions
+            while i < blk.instruction_count invariant i >= 0 and i <= blk.instruction_count do
+                let inst: IrInstruction = binsts[i]
+                state := execute_instruction(inst, state)
+                i := i + 1
+            end while
+            
+            if blk.terminator_kind = "RETURN" then
+                let ret_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+                if blk.return_reg != "" then
+                    ret_val := get_register(state.frame, blk.return_reg)
+                end if
+                state := VmState {
+                    heap: state.heap,
+                    frame: ActivationFrame {
+                        registers: state.frame.registers,
+                        register_count: state.frame.register_count,
+                        current_block_label: "",
+                        ip: 0,
+                        return_value: ret_val,
+                        has_returned: true
+                    }
+                }
+            else
+                if blk.terminator_kind = "JUMP" then
+                    current_label := blk.target_block_label
+                    has_jumped := true
+                else
+                    if blk.terminator_kind = "BRANCH_COND" then
+                        let cond_val: VmValue = get_register(state.frame, blk.return_reg)
+                        if cond_val.bool_val then
+                            current_label := blk.true_block_label
+                        else
+                            current_label := blk.false_block_label
+                        end if
+                        has_jumped := true
+                    end if
+                end if
+            end if
+        end if
+    end while
+    
+    return state
+end execute_routine
+
+type VmTask is record
+    id: Integer
+    routine: IrRoutine
+    frame: ActivationFrame
+    status: String           -- "READY", "BLOCKED", "DONE", "FREE"
+    blocked_on_channel: Integer
+    blocked_on_join: Integer
+    blocked_reg: String
+    blocked_val: VmValue
+end record
+
+type MultiTaskResult is record
+    heap: VmHeap
+    tasks: Array<VmTask, 16>
+    task_count: Integer
+    yielded: Boolean
+end record
+
+
+function set_task(arr: Array<VmTask, 16>, idx: Integer, val: VmTask) returns Array<VmTask, 16>
+is
+    let i0: VmTask = arr[0]
+    let i1: VmTask = arr[1]
+    let i2: VmTask = arr[2]
+    let i3: VmTask = arr[3]
+    let i4: VmTask = arr[4]
+    let i5: VmTask = arr[5]
+    let i6: VmTask = arr[6]
+    let i7: VmTask = arr[7]
+    let i8: VmTask = arr[8]
+    let i9: VmTask = arr[9]
+    let i10: VmTask = arr[10]
+    let i11: VmTask = arr[11]
+    let i12: VmTask = arr[12]
+    let i13: VmTask = arr[13]
+    let i14: VmTask = arr[14]
+    let i15: VmTask = arr[15]
+
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+
+    return [
+        i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15
+    ]
+end set_task
+
+function execute_instruction_multitask(
+    inst: IrInstruction,
+    task_idx: Integer,
+    heap: VmHeap,
+    tasks: Array<VmTask, 16>,
+    task_count: Integer,
+    routines: Array<IrRoutine, 10>,
+    routine_count: Integer
+) returns MultiTaskResult
+is
+    let task: VmTask = tasks[task_idx]
+    
+    if inst.kind = "CALL" or inst.kind = "CALL_HOST" then
+        if inst.op = "channel" then
+            let capacity_val: VmValue = get_register(task.frame, inst.src_reg_left)
+            let capacity: Integer = capacity_val.int_val
+            let empty_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+            let ch_obj: VmHeapObject = VmHeapObject {
+                kind: "CHANNEL",
+                field_names: [
+                    "capacity", "count", "", "", "", "", "", "", "", ""
+                ],
+                field_values: [
+                    VmValue { kind: "INTEGER", int_val: capacity, bool_val: false, str_val: "", ref_val: -1 },
+                    VmValue { kind: "INTEGER", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    empty_val, empty_val, empty_val, empty_val, empty_val, empty_val, empty_val, empty_val
+                ],
+                field_count: 2,
+                elements: [
+                    empty_val, empty_val, empty_val, empty_val, empty_val, empty_val, empty_val, empty_val,
+                    empty_val, empty_val, empty_val, empty_val, empty_val, empty_val, empty_val, empty_val,
+                    empty_val, empty_val, empty_val, empty_val, empty_val, empty_val, empty_val, empty_val,
+                    empty_val, empty_val, empty_val, empty_val, empty_val, empty_val, empty_val, empty_val
+                ],
+                element_count: 0
+            }
+            let alloc_res: AllocResult = allocate_object(heap, ch_obj)
+            let new_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, VmValue { kind: "REF", int_val: alloc_res.ref_idx, bool_val: false, str_val: "", ref_val: alloc_res.ref_idx })
+            let new_task: VmTask = VmTask {
+                id: task.id,
+                routine: task.routine,
+                frame: new_frame,
+                status: task.status,
+                blocked_on_channel: task.blocked_on_channel,
+                blocked_on_join: task.blocked_on_join,
+                blocked_reg: task.blocked_reg,
+                blocked_val: task.blocked_val
+            }
+            let new_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_task)
+            return MultiTaskResult { heap: alloc_res.heap, tasks: new_tasks, task_count: task_count, yielded: false }
+        end if
+        
+        if inst.op = "channel_sender" or inst.op = "channel_receiver" then
+            let ch_ref: VmValue = get_register(task.frame, inst.src_reg_left)
+            let new_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, ch_ref)
+            let new_task: VmTask = VmTask {
+                id: task.id,
+                routine: task.routine,
+                frame: new_frame,
+                status: task.status,
+                blocked_on_channel: task.blocked_on_channel,
+                blocked_on_join: task.blocked_on_join,
+                blocked_reg: task.blocked_reg,
+                blocked_val: task.blocked_val
+            }
+            let new_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_task)
+            return MultiTaskResult { heap: heap, tasks: new_tasks, task_count: task_count, yielded: false }
+        end if
+        
+        if inst.op = "channel_send" then
+            let chan_ref_val: VmValue = get_register(task.frame, inst.src_reg_left)
+            let chan_ref: Integer = chan_ref_val.ref_val
+            let val_to_send: VmValue = get_register(task.frame, inst.src_reg_right)
+            
+            let found_reader_idx: Integer = -1
+            let j: Integer = 0
+            while j < task_count invariant j >= 0 and j <= task_count do
+                let t_other: VmTask = tasks[j]
+                if t_other.status = "BLOCKED" and t_other.blocked_on_channel = chan_ref and t_other.blocked_reg != "" then
+                    found_reader_idx := j
+                end if
+                j := j + 1
+            end while
+            
+            if found_reader_idx >= 0 then
+                let t_reader: VmTask = tasks[found_reader_idx]
+                let r_frame: ActivationFrame = update_register(t_reader.frame, t_reader.blocked_reg, val_to_send)
+                let empty_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+                let new_reader: VmTask = VmTask {
+                    id: t_reader.id,
+                    routine: t_reader.routine,
+                    frame: r_frame,
+                    status: "READY",
+                    blocked_on_channel: -1,
+                    blocked_on_join: t_reader.blocked_on_join,
+                    blocked_reg: "",
+                    blocked_val: empty_val
+                }
+                let next_tasks: Array<VmTask, 16> = set_task(tasks, found_reader_idx, new_reader)
+                
+                let s_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, VmValue { kind: "BOOLEAN", int_val: 0, bool_val: true, str_val: "", ref_val: -1 })
+                let new_sender: VmTask = VmTask {
+                    id: task.id,
+                    routine: task.routine,
+                    frame: s_frame,
+                    status: task.status,
+                    blocked_on_channel: task.blocked_on_channel,
+                    blocked_on_join: task.blocked_on_join,
+                    blocked_reg: task.blocked_reg,
+                    blocked_val: task.blocked_val
+                }
+                next_tasks := set_task(next_tasks, task_idx, new_sender)
+                return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count, yielded: false }
+            else
+                let heap_objs: Array<VmHeapObject, 32> = heap.objects
+                let ch_obj: VmHeapObject = heap_objs[chan_ref]
+                let fvals: Array<VmValue, 10> = ch_obj.field_values
+                let cap_val: VmValue = fvals[0]
+                let capacity: Integer = cap_val.int_val
+                let cnt_val: VmValue = fvals[1]
+                let count: Integer = cnt_val.int_val
+                
+                if count < capacity then
+                    let new_elements: Array<VmValue, 32> = set_value_32(ch_obj.elements, count, val_to_send)
+                    let count_val: VmValue = VmValue { kind: "INTEGER", int_val: count + 1, bool_val: false, str_val: "", ref_val: -1 }
+                    let new_field_values: Array<VmValue, 10> = set_value_10(ch_obj.field_values, 1, count_val)
+                    let new_ch_obj: VmHeapObject = VmHeapObject {
+                        kind: "CHANNEL",
+                        field_names: ch_obj.field_names,
+                        field_values: new_field_values,
+                        field_count: ch_obj.field_count,
+                        elements: new_elements,
+                        element_count: count + 1
+                    }
+                    let next_heap_objs: Array<VmHeapObject, 32> = set_heap_obj(heap.objects, chan_ref, new_ch_obj)
+                    let next_heap: VmHeap = VmHeap { objects: next_heap_objs, object_count: heap.object_count }
+                    
+                    let s_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, VmValue { kind: "BOOLEAN", int_val: 0, bool_val: true, str_val: "", ref_val: -1 })
+                    let new_sender: VmTask = VmTask {
+                        id: task.id,
+                        routine: task.routine,
+                        frame: s_frame,
+                        status: task.status,
+                        blocked_on_channel: task.blocked_on_channel,
+                        blocked_on_join: task.blocked_on_join,
+                        blocked_reg: task.blocked_reg,
+                        blocked_val: task.blocked_val
+                    }
+                    let next_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_sender)
+                    return MultiTaskResult { heap: next_heap, tasks: next_tasks, task_count: task_count, yielded: false }
+                else
+                    let new_sender: VmTask = VmTask {
+                        id: task.id,
+                        routine: task.routine,
+                        frame: task.frame,
+                        status: "BLOCKED",
+                        blocked_on_channel: chan_ref,
+                        blocked_on_join: task.blocked_on_join,
+                        blocked_reg: inst.dest_reg,
+                        blocked_val: val_to_send
+                    }
+                    let next_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_sender)
+                    return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count, yielded: true }
+                end if
+            end if
+        end if
+        
+        if inst.op = "channel_receive" then
+            let chan_ref_val: VmValue = get_register(task.frame, inst.src_reg_left)
+            let chan_ref: Integer = chan_ref_val.ref_val
+            let heap_objs: Array<VmHeapObject, 32> = heap.objects
+            let ch_obj: VmHeapObject = heap_objs[chan_ref]
+            let fvals: Array<VmValue, 10> = ch_obj.field_values
+            let cnt_val: VmValue = fvals[1]
+            let count: Integer = cnt_val.int_val
+            
+            if count > 0 then
+                let ch_elements: Array<VmValue, 32> = ch_obj.elements
+                let val_received: VmValue = ch_elements[0]
+                
+                -- Shift remaining elements
+                let next_elements: Array<VmValue, 32> = ch_obj.elements
+                let k: Integer = 0
+                while k < count - 1 invariant k >= 0 and k <= count do
+                    next_elements := set_value_32(next_elements, k, ch_elements[k + 1])
+                    k := k + 1
+                end while
+                
+                let count_val: VmValue = VmValue { kind: "INTEGER", int_val: count - 1, bool_val: false, str_val: "", ref_val: -1 }
+                let new_field_values: Array<VmValue, 10> = set_value_10(ch_obj.field_values, 1, count_val)
+                let new_ch_obj: VmHeapObject = VmHeapObject {
+                    kind: "CHANNEL",
+                    field_names: ch_obj.field_names,
+                    field_values: new_field_values,
+                    field_count: ch_obj.field_count,
+                    elements: next_elements,
+                    element_count: count - 1
+                }
+                let next_heap_objs: Array<VmHeapObject, 32> = set_heap_obj(heap.objects, chan_ref, new_ch_obj)
+                let next_heap: VmHeap = VmHeap { objects: next_heap_objs, object_count: heap.object_count }
+                
+                -- Check for blocked writers
+                let found_writer_idx: Integer = -1
+                let j: Integer = 0
+                while j < task_count invariant j >= 0 and j <= task_count do
+                    let t_other: VmTask = tasks[j]
+                    if t_other.status = "BLOCKED" and t_other.blocked_on_channel = chan_ref and t_other.blocked_val.kind != "NONE" then
+                        found_writer_idx := j
+                    end if
+                    j := j + 1
+                end while
+                
+                let next_tasks: Array<VmTask, 16> = tasks
+                if found_writer_idx >= 0 then
+                    let t_writer: VmTask = tasks[found_writer_idx]
+                    -- Append writer's value to channel
+                    next_elements := set_value_32(next_elements, count - 1, t_writer.blocked_val)
+                    count_val := VmValue { kind: "INTEGER", int_val: count, bool_val: false, str_val: "", ref_val: -1 }
+                    new_field_values := set_value_10(ch_obj.field_values, 1, count_val)
+                    new_ch_obj := VmHeapObject {
+                        kind: "CHANNEL",
+                        field_names: ch_obj.field_names,
+                        field_values: new_field_values,
+                        field_count: ch_obj.field_count,
+                        elements: next_elements,
+                        element_count: count
+                    }
+                    next_heap_objs := set_heap_obj(next_heap.objects, chan_ref, new_ch_obj)
+                    next_heap := VmHeap { objects: next_heap_objs, object_count: heap.object_count }
+                    
+                    -- Wake up writer
+                    let w_frame: ActivationFrame = update_register(t_writer.frame, t_writer.blocked_reg, VmValue { kind: "BOOLEAN", int_val: 0, bool_val: true, str_val: "", ref_val: -1 })
+                    let empty_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+                    let new_writer: VmTask = VmTask {
+                        id: t_writer.id,
+                        routine: t_writer.routine,
+                        frame: w_frame,
+                        status: "READY",
+                        blocked_on_channel: -1,
+                        blocked_on_join: t_writer.blocked_on_join,
+                        blocked_reg: "",
+                        blocked_val: empty_val
+                    }
+                    next_tasks := set_task(next_tasks, found_writer_idx, new_writer)
+                end if
+                
+                let r_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, val_received)
+                let new_reader: VmTask = VmTask {
+                    id: task.id,
+                    routine: task.routine,
+                    frame: r_frame,
+                    status: task.status,
+                    blocked_on_channel: task.blocked_on_channel,
+                    blocked_on_join: task.blocked_on_join,
+                    blocked_reg: task.blocked_reg,
+                    blocked_val: task.blocked_val
+                }
+                next_tasks := set_task(next_tasks, task_idx, new_reader)
+                return MultiTaskResult { heap: next_heap, tasks: next_tasks, task_count: task_count, yielded: false }
+            else
+                -- Check for blocked writer directly (e.g. unbuffered channel transfer)
+                let found_writer_idx: Integer = -1
+                let j: Integer = 0
+                while j < task_count invariant j >= 0 and j <= task_count do
+                    let t_other: VmTask = tasks[j]
+                    if t_other.status = "BLOCKED" and t_other.blocked_on_channel = chan_ref and t_other.blocked_val.kind != "NONE" then
+                        found_writer_idx := j
+                    end if
+                    j := j + 1
+                end while
+                
+                if found_writer_idx >= 0 then
+                    let t_writer: VmTask = tasks[found_writer_idx]
+                    
+                    -- Wake up writer
+                    let w_frame: ActivationFrame = update_register(t_writer.frame, t_writer.blocked_reg, VmValue { kind: "BOOLEAN", int_val: 0, bool_val: true, str_val: "", ref_val: -1 })
+                    let empty_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+                    let new_writer: VmTask = VmTask {
+                        id: t_writer.id,
+                        routine: t_writer.routine,
+                        frame: w_frame,
+                        status: "READY",
+                        blocked_on_channel: -1,
+                        blocked_on_join: t_writer.blocked_on_join,
+                        blocked_reg: "",
+                        blocked_val: empty_val
+                    }
+                    let next_tasks: Array<VmTask, 16> = set_task(tasks, found_writer_idx, new_writer)
+                    
+                    -- Set reader's received value
+                    let r_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, t_writer.blocked_val)
+                    let new_reader: VmTask = VmTask {
+                        id: task.id,
+                        routine: task.routine,
+                        frame: r_frame,
+                        status: task.status,
+                        blocked_on_channel: task.blocked_on_channel,
+                        blocked_on_join: task.blocked_on_join,
+                        blocked_reg: task.blocked_reg,
+                        blocked_val: task.blocked_val
+                    }
+                    next_tasks := set_task(next_tasks, task_idx, new_reader)
+                    return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count, yielded: false }
+                else
+                    -- No writer, block!
+                    let empty_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+                    let new_reader: VmTask = VmTask {
+                        id: task.id,
+                        routine: task.routine,
+                        frame: task.frame,
+                        status: "BLOCKED",
+                        blocked_on_channel: chan_ref,
+                        blocked_on_join: task.blocked_on_join,
+                        blocked_reg: inst.dest_reg,
+                        blocked_val: empty_val
+                    }
+                    let next_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_reader)
+                    return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count, yielded: true }
+                end if
+            end if
+        end if
+        
+        if inst.op = "spawn" then
+            let routine_idx: Integer = -1
+            let k: Integer = 0
+            while k < routine_count invariant k >= 0 and k <= routine_count do
+                let r: IrRoutine = routines[k]
+                if r.name = inst.literal_value then
+                    routine_idx := k
+                end if
+                k := k + 1
+            end while
+            
+            let spawned_routine: IrRoutine = routines[routine_idx]
+            let empty_reg: VmRegister = VmRegister { name: "", reg_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 } }
+            let spawned_frame: ActivationFrame = ActivationFrame {
+                registers: [
+                    empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+                    empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+                    empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+                    empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg
+                ],
+                register_count: 0,
+                current_block_label: "entry",
+                ip: 0,
+                return_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                has_returned: false
+            }
+            
+            if inst.src_reg_left != "" then
+                let arg0_val: VmValue = get_register(task.frame, inst.src_reg_left)
+                spawned_frame := update_register(spawned_frame, "_arg0", arg0_val)
+            end if
+            
+            if inst.src_reg_right != "" then
+                let arg1_val: VmValue = get_register(task.frame, inst.src_reg_right)
+                spawned_frame := update_register(spawned_frame, "_arg1", arg1_val)
+            end if
+            
+            let empty_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+            let spawned_task: VmTask = VmTask {
+                id: task_count,
+                routine: spawned_routine,
+                frame: spawned_frame,
+                status: "READY",
+                blocked_on_channel: -1,
+                blocked_on_join: -1,
+                blocked_reg: "",
+                blocked_val: empty_val
+            }
+            let next_tasks: Array<VmTask, 16> = set_task(tasks, task_count, spawned_task)
+            
+            let new_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, VmValue { kind: "REF", int_val: task_count, bool_val: false, str_val: "", ref_val: task_count })
+            let new_sender: VmTask = VmTask {
+                id: task.id,
+                routine: task.routine,
+                frame: new_frame,
+                status: task.status,
+                blocked_on_channel: task.blocked_on_channel,
+                blocked_on_join: task.blocked_on_join,
+                blocked_reg: task.blocked_reg,
+                blocked_val: task.blocked_val
+            }
+            next_tasks := set_task(next_tasks, task_idx, new_sender)
+            return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count + 1, yielded: false }
+        end if
+        
+        if inst.op = "join" then
+            let target_id_val: VmValue = get_register(task.frame, inst.src_reg_left)
+            let target_id: Integer = target_id_val.ref_val
+            let t_target: VmTask = tasks[target_id]
+            
+            if t_target.status = "DONE" then
+                let new_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, t_target.frame.return_value)
+                let new_task: VmTask = VmTask {
+                    id: task.id,
+                    routine: task.routine,
+                    frame: new_frame,
+                    status: task.status,
+                    blocked_on_channel: task.blocked_on_channel,
+                    blocked_on_join: task.blocked_on_join,
+                    blocked_reg: task.blocked_reg,
+                    blocked_val: task.blocked_val
+                }
+                let next_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_task)
+                return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count, yielded: false }
+            else
+                let new_task: VmTask = VmTask {
+                    id: task.id,
+                    routine: task.routine,
+                    frame: task.frame,
+                    status: "BLOCKED",
+                    blocked_on_channel: task.blocked_on_channel,
+                    blocked_on_join: target_id,
+                    blocked_reg: inst.dest_reg,
+                    blocked_val: task.blocked_val
+                }
+                let next_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_task)
+                return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count, yielded: true }
+            end if
+        end if
+    end if
+    
+    let old_state: VmState = VmState { heap: heap, frame: task.frame }
+    let new_state: VmState = execute_instruction(inst, old_state)
+    let new_task: VmTask = VmTask {
+        id: task.id,
+        routine: task.routine,
+        frame: new_state.frame,
+        status: task.status,
+        blocked_on_channel: task.blocked_on_channel,
+        blocked_on_join: task.blocked_on_join,
+        blocked_reg: task.blocked_reg,
+        blocked_val: task.blocked_val
+    }
+    let next_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_task)
+    return MultiTaskResult { heap: new_state.heap, tasks: next_tasks, task_count: task_count, yielded: false }
+end execute_instruction_multitask
+
+function execute_task_slice(
+    task_idx: Integer,
+    heap: VmHeap,
+    tasks: Array<VmTask, 16>,
+    task_count: Integer,
+    routines: Array<IrRoutine, 10>,
+    routine_count: Integer
+) returns MultiTaskResult
+is
+    let task: VmTask = tasks[task_idx]
+    let routine: IrRoutine = task.routine
+    let current_label: String = task.frame.current_block_label
+    let has_jumped: Boolean = true
+    let ip: Integer = task.frame.ip
+    let current_heap: VmHeap = heap
+    let current_tasks: Array<VmTask, 16> = tasks
+    let current_task_count: Integer = task_count
+    
+    while has_jumped invariant has_jumped or not has_jumped do
+        has_jumped := false
+        
+        let block_idx: Integer = routine.block_count - routine.block_count - 1
+        let k: Integer = routine.block_count - routine.block_count
+        let rblocks: Array<IrBasicBlock, 32> = routine.blocks
+        while k < routine.block_count invariant k >= 0 and k <= routine.block_count do
+            let blk: IrBasicBlock = rblocks[k]
+            if blk.label = current_label then
+                block_idx := k
+            end if
+            k := k + 1
+        end while
+        
+        if block_idx >= 0 then
+            let blk: IrBasicBlock = rblocks[block_idx]
+            
+            let i: Integer = ip
+            let binsts: Array<IrInstruction, 64> = blk.instructions
+            let yielded: Boolean = false
+            
+            while i < blk.instruction_count and not yielded invariant i >= 0 and i <= blk.instruction_count do
+                let inst: IrInstruction = binsts[i]
+                
+                -- Save current state inside current task for execution
+                let temp_task: VmTask = current_tasks[task_idx]
+                temp_task.frame.current_block_label := current_label
+                temp_task.frame.ip := i
+                current_tasks := set_task(current_tasks, task_idx, temp_task)
+                
+                let res: MultiTaskResult = execute_instruction_multitask(inst, task_idx, current_heap, current_tasks, current_task_count, routines, routine_count)
+                current_heap := res.heap
+                current_tasks := res.tasks
+                current_task_count := res.task_count
+                yielded := res.yielded
+                
+                if yielded then
+                    let t_yielded: VmTask = current_tasks[task_idx]
+                    t_yielded.frame.ip := i + 1
+                    current_tasks := set_task(current_tasks, task_idx, t_yielded)
+                end if
+                
+                i := i + 1
+            end while
+            
+            if yielded then
+                return MultiTaskResult { heap: current_heap, tasks: current_tasks, task_count: current_task_count, yielded: true }
+            end if
+            
+            -- Reset IP for subsequent blocks
+            ip := 0
+            
+            if blk.terminator_kind = "RETURN" then
+                let cur_t: VmTask = current_tasks[task_idx]
+                let ret_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+                if blk.return_reg != "" then
+                    ret_val := get_register(cur_t.frame, blk.return_reg)
+                end if
+                
+                cur_t.status := "DONE"
+                cur_t.frame.return_value := ret_val
+                cur_t.frame.has_returned := true
+                cur_t.frame.current_block_label := ""
+                cur_t.frame.ip := 0
+                current_tasks := set_task(current_tasks, task_idx, cur_t)
+                
+                -- When a task is DONE, unblock any tasks waiting to JOIN this task
+                let j: Integer = 0
+                while j < current_task_count invariant j >= 0 and j <= current_task_count do
+                    let t_other: VmTask = current_tasks[j]
+                    if t_other.status = "BLOCKED" and t_other.blocked_on_join = cur_t.id then
+                        let other_frame: ActivationFrame = update_register(t_other.frame, t_other.blocked_reg, ret_val)
+                        let new_other: VmTask = VmTask {
+                            id: t_other.id,
+                            routine: t_other.routine,
+                            frame: other_frame,
+                            status: "READY",
+                            blocked_on_channel: t_other.blocked_on_channel,
+                            blocked_on_join: -1,
+                            blocked_reg: "",
+                            blocked_val: t_other.blocked_val
+                        }
+                        current_tasks := set_task(current_tasks, j, new_other)
+                    end if
+                    j := j + 1
+                end while
+                
+                return MultiTaskResult { heap: current_heap, tasks: current_tasks, task_count: current_task_count, yielded: false }
+            else
+                if blk.terminator_kind = "JUMP" then
+                    current_label := blk.target_block_label
+                    has_jumped := true
+                else
+                    if blk.terminator_kind = "BRANCH_COND" then
+                        let cur_t_cond: VmTask = current_tasks[task_idx]
+                        let cond_val: VmValue = get_register(cur_t_cond.frame, blk.return_reg)
+                        if cond_val.bool_val then
+                            current_label := blk.true_block_label
+                        else
+                            current_label := blk.false_block_label
+                        end if
+                        has_jumped := true
+                    end if
+                end if
+            end if
+        end if
+    end while
+    
+    return MultiTaskResult { heap: current_heap, tasks: current_tasks, task_count: current_task_count, yielded: false }
+end execute_task_slice
+
+function as_integer(val: Integer) returns Integer
+is
+    return val
+end as_integer
+
+function execute_scheduler(
+    routines: Array<IrRoutine, 10>,
+    routine_count: Integer,
+    main_routine: IrRoutine,
+    initial_heap: VmHeap
+) returns VmState
+is
+    let heap: VmHeap = initial_heap
+    let empty_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+    let empty_reg: VmRegister = VmRegister { name: "", reg_value: empty_val }
+    let empty_frame: ActivationFrame = ActivationFrame {
+        registers: [
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg
+        ],
+        register_count: 0,
+        current_block_label: "",
+        ip: 0,
+        return_value: empty_val,
+        has_returned: false
+    }
+    
+    let empty_task: VmTask = VmTask {
+        id: -1,
+        routine: main_routine,
+        frame: empty_frame,
+        status: "FREE",
+        blocked_on_channel: -1,
+        blocked_on_join: -1,
+        blocked_reg: "",
+        blocked_val: empty_val
+    }
+    
+    let tasks: Array<VmTask, 16> = [
+        empty_task, empty_task, empty_task, empty_task,
+        empty_task, empty_task, empty_task, empty_task,
+        empty_task, empty_task, empty_task, empty_task,
+        empty_task, empty_task, empty_task, empty_task
+    ]
+    
+    let main_frame: ActivationFrame = ActivationFrame {
+        registers: [
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg
+        ],
+        register_count: 0,
+        current_block_label: "entry",
+        ip: 0,
+        return_value: empty_val,
+        has_returned: false
+    }
+    
+    let main_task: VmTask = VmTask {
+        id: 0,
+        routine: main_routine,
+        frame: main_frame,
+        status: "READY",
+        blocked_on_channel: -1,
+        blocked_on_join: -1,
+        blocked_reg: "",
+        blocked_val: empty_val
+    }
+    tasks := set_task(tasks, 0, main_task)
+
+    
+    let task_count: Integer = as_integer(1)
+    let has_active: Boolean = true
+    let loop_count: Integer = 0
+    
+    while has_active and loop_count < 200 invariant has_active or not has_active do
+        has_active := false
+        
+        let j: Integer = 0
+        let executed_any: Boolean = false
+        
+        while j < task_count invariant j >= 0 and j <= task_count do
+            let t: VmTask = tasks[j]
+            if t.status = "READY" then
+                let res: MultiTaskResult = execute_task_slice(j, heap, tasks, task_count, routines, routine_count)
+                heap := res.heap
+                tasks := res.tasks
+                task_count := res.task_count
+                executed_any := true
+            end if
+            j := j + 1
+        end while
+        
+        -- Check if there are active tasks
+        let k: Integer = 0
+        while k < task_count invariant k >= 0 and k <= task_count do
+            let t: VmTask = tasks[k]
+            if t.status != "DONE" then
+                has_active := true
+            end if
+            k := k + 1
+        end while
+        
+        -- Check deadlock: if has_active but we couldn't execute any task in this round
+        if has_active and not executed_any then
+            call Std.IO.logf("DEADLOCK DETECTED! Active tasks are blocked.")
+            has_active := false
+        end if
+        
+        loop_count := loop_count + 1
+    end while
+    
+    let final_t: VmTask = tasks[0]
+    return VmState {
+        heap: heap,
+        frame: final_t.frame
+    }
+end execute_scheduler
+
+end Compiler.Core.Vm
+
+

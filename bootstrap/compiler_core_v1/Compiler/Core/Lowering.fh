@@ -1,0 +1,1352 @@
+module Compiler.Core.Lowering
+
+import Compiler.Core.Token exposing SourceSpan
+import Compiler.Core.Ast exposing ExprNode, StmtNode
+import Compiler.Core.Ir exposing IrType, IrInstruction, IrBasicBlock, IrRoutine
+
+type IrBuilder is record
+    blocks: Array<IrBasicBlock, 32>
+    block_count: Integer
+    
+    current_block_label: String
+    current_instructions: Array<IrInstruction, 64>
+    current_instruction_count: Integer
+    
+    current_terminator_kind: String
+    current_target_block_label: String
+    current_true_block_label: String
+    current_false_block_label: String
+    current_return_reg: String
+    current_abort_error: String
+
+    temp_counter: Integer
+    block_counter: Integer
+    types: Array<IrType, 10>
+    type_count: Integer
+end record
+
+type LowerExprResult is record
+    builder: IrBuilder
+    dest_reg: String
+end record
+
+function set_type(arr: Array<IrType, 10>, idx: Integer, val: IrType) returns Array<IrType, 10>
+is
+    let i0: IrType = arr[0]
+    let i1: IrType = arr[1]
+    let i2: IrType = arr[2]
+    let i3: IrType = arr[3]
+    let i4: IrType = arr[4]
+    let i5: IrType = arr[5]
+    let i6: IrType = arr[6]
+    let i7: IrType = arr[7]
+    let i8: IrType = arr[8]
+    let i9: IrType = arr[9]
+
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+
+    return [i0, i1, i2, i3, i4, i5, i6, i7, i8, i9]
+end set_type
+
+function set_block(arr: Array<IrBasicBlock, 32>, idx: Integer, val: IrBasicBlock) returns Array<IrBasicBlock, 32>
+is
+    let i0: IrBasicBlock = arr[0]
+    let i1: IrBasicBlock = arr[1]
+    let i2: IrBasicBlock = arr[2]
+    let i3: IrBasicBlock = arr[3]
+    let i4: IrBasicBlock = arr[4]
+    let i5: IrBasicBlock = arr[5]
+    let i6: IrBasicBlock = arr[6]
+    let i7: IrBasicBlock = arr[7]
+    let i8: IrBasicBlock = arr[8]
+    let i9: IrBasicBlock = arr[9]
+    let i10: IrBasicBlock = arr[10]
+    let i11: IrBasicBlock = arr[11]
+    let i12: IrBasicBlock = arr[12]
+    let i13: IrBasicBlock = arr[13]
+    let i14: IrBasicBlock = arr[14]
+    let i15: IrBasicBlock = arr[15]
+    let i16: IrBasicBlock = arr[16]
+    let i17: IrBasicBlock = arr[17]
+    let i18: IrBasicBlock = arr[18]
+    let i19: IrBasicBlock = arr[19]
+    let i20: IrBasicBlock = arr[20]
+    let i21: IrBasicBlock = arr[21]
+    let i22: IrBasicBlock = arr[22]
+    let i23: IrBasicBlock = arr[23]
+    let i24: IrBasicBlock = arr[24]
+    let i25: IrBasicBlock = arr[25]
+    let i26: IrBasicBlock = arr[26]
+    let i27: IrBasicBlock = arr[27]
+    let i28: IrBasicBlock = arr[28]
+    let i29: IrBasicBlock = arr[29]
+    let i30: IrBasicBlock = arr[30]
+    let i31: IrBasicBlock = arr[31]
+
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    if idx = 16 then i16 := val end if
+    if idx = 17 then i17 := val end if
+    if idx = 18 then i18 := val end if
+    if idx = 19 then i19 := val end if
+    if idx = 20 then i20 := val end if
+    if idx = 21 then i21 := val end if
+    if idx = 22 then i22 := val end if
+    if idx = 23 then i23 := val end if
+    if idx = 24 then i24 := val end if
+    if idx = 25 then i25 := val end if
+    if idx = 26 then i26 := val end if
+    if idx = 27 then i27 := val end if
+    if idx = 28 then i28 := val end if
+    if idx = 29 then i29 := val end if
+    if idx = 30 then i30 := val end if
+    if idx = 31 then i31 := val end if
+
+    return [
+        i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15,
+        i16, i17, i18, i19, i20, i21, i22, i23, i24, i25, i26, i27, i28, i29, i30, i31
+    ]
+end set_block
+
+function set_instruction(arr: Array<IrInstruction, 64>, idx: Integer, val: IrInstruction) returns Array<IrInstruction, 64>
+is
+    let i0: IrInstruction = arr[0]
+    let i1: IrInstruction = arr[1]
+    let i2: IrInstruction = arr[2]
+    let i3: IrInstruction = arr[3]
+    let i4: IrInstruction = arr[4]
+    let i5: IrInstruction = arr[5]
+    let i6: IrInstruction = arr[6]
+    let i7: IrInstruction = arr[7]
+    let i8: IrInstruction = arr[8]
+    let i9: IrInstruction = arr[9]
+    let i10: IrInstruction = arr[10]
+    let i11: IrInstruction = arr[11]
+    let i12: IrInstruction = arr[12]
+    let i13: IrInstruction = arr[13]
+    let i14: IrInstruction = arr[14]
+    let i15: IrInstruction = arr[15]
+    let i16: IrInstruction = arr[16]
+    let i17: IrInstruction = arr[17]
+    let i18: IrInstruction = arr[18]
+    let i19: IrInstruction = arr[19]
+    let i20: IrInstruction = arr[20]
+    let i21: IrInstruction = arr[21]
+    let i22: IrInstruction = arr[22]
+    let i23: IrInstruction = arr[23]
+    let i24: IrInstruction = arr[24]
+    let i25: IrInstruction = arr[25]
+    let i26: IrInstruction = arr[26]
+    let i27: IrInstruction = arr[27]
+    let i28: IrInstruction = arr[28]
+    let i29: IrInstruction = arr[29]
+    let i30: IrInstruction = arr[30]
+    let i31: IrInstruction = arr[31]
+    let i32: IrInstruction = arr[32]
+    let i33: IrInstruction = arr[33]
+    let i34: IrInstruction = arr[34]
+    let i35: IrInstruction = arr[35]
+    let i36: IrInstruction = arr[36]
+    let i37: IrInstruction = arr[37]
+    let i38: IrInstruction = arr[38]
+    let i39: IrInstruction = arr[39]
+    let i40: IrInstruction = arr[40]
+    let i41: IrInstruction = arr[41]
+    let i42: IrInstruction = arr[42]
+    let i43: IrInstruction = arr[43]
+    let i44: IrInstruction = arr[44]
+    let i45: IrInstruction = arr[45]
+    let i46: IrInstruction = arr[46]
+    let i47: IrInstruction = arr[47]
+    let i48: IrInstruction = arr[48]
+    let i49: IrInstruction = arr[49]
+    let i50: IrInstruction = arr[50]
+    let i51: IrInstruction = arr[51]
+    let i52: IrInstruction = arr[52]
+    let i53: IrInstruction = arr[53]
+    let i54: IrInstruction = arr[54]
+    let i55: IrInstruction = arr[55]
+    let i56: IrInstruction = arr[56]
+    let i57: IrInstruction = arr[57]
+    let i58: IrInstruction = arr[58]
+    let i59: IrInstruction = arr[59]
+    let i60: IrInstruction = arr[60]
+    let i61: IrInstruction = arr[61]
+    let i62: IrInstruction = arr[62]
+    let i63: IrInstruction = arr[63]
+
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    if idx = 16 then i16 := val end if
+    if idx = 17 then i17 := val end if
+    if idx = 18 then i18 := val end if
+    if idx = 19 then i19 := val end if
+    if idx = 20 then i20 := val end if
+    if idx = 21 then i21 := val end if
+    if idx = 22 then i22 := val end if
+    if idx = 23 then i23 := val end if
+    if idx = 24 then i24 := val end if
+    if idx = 25 then i25 := val end if
+    if idx = 26 then i26 := val end if
+    if idx = 27 then i27 := val end if
+    if idx = 28 then i28 := val end if
+    if idx = 29 then i29 := val end if
+    if idx = 30 then i30 := val end if
+    if idx = 31 then i31 := val end if
+    if idx = 32 then i32 := val end if
+    if idx = 33 then i33 := val end if
+    if idx = 34 then i34 := val end if
+    if idx = 35 then i35 := val end if
+    if idx = 36 then i36 := val end if
+    if idx = 37 then i37 := val end if
+    if idx = 38 then i38 := val end if
+    if idx = 39 then i39 := val end if
+    if idx = 40 then i40 := val end if
+    if idx = 41 then i41 := val end if
+    if idx = 42 then i42 := val end if
+    if idx = 43 then i43 := val end if
+    if idx = 44 then i44 := val end if
+    if idx = 45 then i45 := val end if
+    if idx = 46 then i46 := val end if
+    if idx = 47 then i47 := val end if
+    if idx = 48 then i48 := val end if
+    if idx = 49 then i49 := val end if
+    if idx = 50 then i50 := val end if
+    if idx = 51 then i51 := val end if
+    if idx = 52 then i52 := val end if
+    if idx = 53 then i53 := val end if
+    if idx = 54 then i54 := val end if
+    if idx = 55 then i55 := val end if
+    if idx = 56 then i56 := val end if
+    if idx = 57 then i57 := val end if
+    if idx = 58 then i58 := val end if
+    if idx = 59 then i59 := val end if
+    if idx = 60 then i60 := val end if
+    if idx = 61 then i61 := val end if
+    if idx = 62 then i62 := val end if
+    if idx = 63 then i63 := val end if
+
+    return [
+        i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15,
+        i16, i17, i18, i19, i20, i21, i22, i23, i24, i25, i26, i27, i28, i29, i30, i31,
+        i32, i33, i34, i35, i36, i37, i38, i39, i40, i41, i42, i43, i44, i45, i46, i47,
+        i48, i49, i50, i51, i52, i53, i54, i55, i56, i57, i58, i59, i60, i61, i62, i63
+    ]
+end set_instruction
+
+function start_block(b: IrBuilder, label: String) returns IrBuilder
+is
+    let empty_inst: IrInstruction = IrInstruction {
+        span: SourceSpan { source_name: "", start_line: 0, start_column: 0, end_line: 0, end_column: 0 },
+        kind: "",
+        dest_reg: "",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    
+    let empty_insts: Array<IrInstruction, 64> = [
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst
+    ]
+    
+    return IrBuilder {
+        blocks: b.blocks,
+        block_count: b.block_count,
+        current_block_label: label,
+        current_instructions: empty_insts,
+        current_instruction_count: 0,
+        current_terminator_kind: "",
+        current_target_block_label: "",
+        current_true_block_label: "",
+        current_false_block_label: "",
+        current_return_reg: "",
+        current_abort_error: "",
+        temp_counter: b.temp_counter,
+        block_counter: b.block_counter,
+        types: b.types,
+        type_count: b.type_count
+    }
+end start_block
+
+function seal_block(
+    b: IrBuilder,
+    term_kind: String,
+    target: String,
+    true_lbl: String,
+    false_lbl: String,
+    ret_reg: String,
+    abort_err: String
+) returns IrBuilder
+is
+    let block: IrBasicBlock = IrBasicBlock {
+        label: b.current_block_label,
+        instructions: b.current_instructions,
+        instruction_count: b.current_instruction_count,
+        terminator_kind: term_kind,
+        target_block_label: target,
+        true_block_label: true_lbl,
+        false_block_label: false_lbl,
+        return_reg: ret_reg,
+        abort_error: abort_err
+    }
+    
+    let new_blocks: Array<IrBasicBlock, 32> = set_block(b.blocks, b.block_count, block)
+    
+    return IrBuilder {
+        blocks: new_blocks,
+        block_count: b.block_count + 1,
+        current_block_label: "",
+        current_instructions: b.current_instructions,
+        current_instruction_count: 0,
+        current_terminator_kind: "",
+        current_target_block_label: "",
+        current_true_block_label: "",
+        current_false_block_label: "",
+        current_return_reg: "",
+        current_abort_error: "",
+        temp_counter: b.temp_counter,
+        block_counter: b.block_counter,
+        types: b.types,
+        type_count: b.type_count
+    }
+end seal_block
+
+function add_instruction(b: IrBuilder, inst: IrInstruction) returns IrBuilder
+is
+    let new_builder: IrBuilder = b
+    if new_builder.current_instruction_count < 64 then
+        let new_insts: Array<IrInstruction, 64> = set_instruction(
+            new_builder.current_instructions,
+            new_builder.current_instruction_count,
+            inst
+        )
+        new_builder := IrBuilder {
+            blocks: new_builder.blocks,
+            block_count: new_builder.block_count,
+            current_block_label: new_builder.current_block_label,
+            current_instructions: new_insts,
+            current_instruction_count: new_builder.current_instruction_count + 1,
+            current_terminator_kind: new_builder.current_terminator_kind,
+            current_target_block_label: new_builder.current_target_block_label,
+            current_true_block_label: new_builder.current_true_block_label,
+            current_false_block_label: new_builder.current_false_block_label,
+            current_return_reg: new_builder.current_return_reg,
+            current_abort_error: new_builder.current_abort_error,
+            temp_counter: new_builder.temp_counter,
+            block_counter: new_builder.block_counter,
+            types: new_builder.types,
+            type_count: new_builder.type_count
+        }
+    end if
+    return new_builder
+end add_instruction
+
+function lower_expr(
+    expr_idx: Integer,
+    exprs: Array<ExprNode, 64>,
+    builder: IrBuilder
+) returns LowerExprResult
+requires expr_idx >= 0 and expr_idx < 64
+is
+    let expr: ExprNode = exprs[expr_idx]
+    if expr.kind = "LITERAL" then
+        let idx_str: String = String.template("${v}", v: builder.temp_counter)
+        let reg_name: String = String.template("_tmp_${idx}", idx: idx_str)
+        
+        let inst: IrInstruction = IrInstruction {
+            span: expr.span,
+            kind: "ASSIGN",
+            dest_reg: reg_name,
+            src_reg_left: "",
+            src_reg_right: "",
+            op: "",
+            literal_value: expr.text,
+            type_idx: 0,
+            field_name: "",
+            index_reg: ""
+        }
+        
+        let new_builder: IrBuilder = add_instruction(builder, inst)
+        new_builder := IrBuilder {
+            blocks: new_builder.blocks,
+            block_count: new_builder.block_count,
+            current_block_label: new_builder.current_block_label,
+            current_instructions: new_builder.current_instructions,
+            current_instruction_count: new_builder.current_instruction_count,
+            current_terminator_kind: new_builder.current_terminator_kind,
+            current_target_block_label: new_builder.current_target_block_label,
+            current_true_block_label: new_builder.current_true_block_label,
+            current_false_block_label: new_builder.current_false_block_label,
+            current_return_reg: new_builder.current_return_reg,
+            current_abort_error: new_builder.current_abort_error,
+            temp_counter: new_builder.temp_counter + 1,
+            block_counter: new_builder.block_counter,
+            types: new_builder.types,
+            type_count: new_builder.type_count
+        }
+        
+        return LowerExprResult {
+            builder: new_builder,
+            dest_reg: reg_name
+        }
+    else
+        if expr.kind = "IDENTIFIER" then
+            let idx_str: String = String.template("${v}", v: builder.temp_counter)
+            let reg_name: String = String.template("_tmp_${idx}", idx: idx_str)
+            
+            let inst: IrInstruction = IrInstruction {
+                span: expr.span,
+                kind: "LOAD",
+                dest_reg: reg_name,
+                src_reg_left: expr.text,
+                src_reg_right: "",
+                op: "",
+                literal_value: "",
+                type_idx: 0,
+                field_name: "",
+                index_reg: ""
+            }
+            
+            let new_builder: IrBuilder = add_instruction(builder, inst)
+            new_builder := IrBuilder {
+                blocks: new_builder.blocks,
+                block_count: new_builder.block_count,
+                current_block_label: new_builder.current_block_label,
+                current_instructions: new_builder.current_instructions,
+                current_instruction_count: new_builder.current_instruction_count,
+                current_terminator_kind: new_builder.current_terminator_kind,
+                current_target_block_label: new_builder.current_target_block_label,
+                current_true_block_label: new_builder.current_true_block_label,
+                current_false_block_label: new_builder.current_false_block_label,
+                current_return_reg: new_builder.current_return_reg,
+                current_abort_error: new_builder.current_abort_error,
+                temp_counter: new_builder.temp_counter + 1,
+                block_counter: new_builder.block_counter,
+                types: new_builder.types,
+                type_count: new_builder.type_count
+            }
+            
+            return LowerExprResult {
+                builder: new_builder,
+                dest_reg: reg_name
+            }
+        else
+            if expr.kind = "BINARY" then
+                let left_res: LowerExprResult = lower_expr(expr.left_node_idx, exprs, builder)
+                let right_res: LowerExprResult = lower_expr(expr.right_node_idx, exprs, left_res.builder)
+                
+                let idx_str: String = String.template("${v}", v: right_res.builder.temp_counter)
+                let reg_name: String = String.template("_tmp_${idx}", idx: idx_str)
+                
+                let inst: IrInstruction = IrInstruction {
+                    span: expr.span,
+                    kind: "BINARY_OP",
+                    dest_reg: reg_name,
+                    src_reg_left: left_res.dest_reg,
+                    src_reg_right: right_res.dest_reg,
+                    op: expr.op,
+                    literal_value: "",
+                    type_idx: 0,
+                    field_name: "",
+                    index_reg: ""
+                }
+                
+                let new_builder: IrBuilder = add_instruction(right_res.builder, inst)
+                new_builder := IrBuilder {
+                    blocks: new_builder.blocks,
+                    block_count: new_builder.block_count,
+                    current_block_label: new_builder.current_block_label,
+                    current_instructions: new_builder.current_instructions,
+                    current_instruction_count: new_builder.current_instruction_count,
+                    current_terminator_kind: new_builder.current_terminator_kind,
+                    current_target_block_label: new_builder.current_target_block_label,
+                    current_true_block_label: new_builder.current_true_block_label,
+                    current_false_block_label: new_builder.current_false_block_label,
+                    current_return_reg: new_builder.current_return_reg,
+                    current_abort_error: new_builder.current_abort_error,
+                    temp_counter: new_builder.temp_counter + 1,
+                    block_counter: new_builder.block_counter,
+                    types: new_builder.types,
+                    type_count: new_builder.type_count
+                }
+                
+                return LowerExprResult {
+                    builder: new_builder,
+                    dest_reg: reg_name
+                }
+            else
+                if expr.kind = "CALL" then
+                    let arg0_reg: String = ""
+                    let b1: IrBuilder = builder
+                    
+                    if expr.arg_count > 0 and expr.arg0_idx >= 0 then
+                        let arg0_res: LowerExprResult = lower_expr(expr.arg0_idx, exprs, b1)
+                        arg0_reg := arg0_res.dest_reg
+                        b1 := arg0_res.builder
+                    end if
+                    
+                    let arg1_reg: String = ""
+                    let b2: IrBuilder = b1
+                    
+                    if expr.arg_count > 1 and expr.arg1_idx >= 0 then
+                        let arg1_res: LowerExprResult = lower_expr(expr.arg1_idx, exprs, b2)
+                        arg1_reg := arg1_res.dest_reg
+                        b2 := arg1_res.builder
+                    end if
+                    
+                    let idx_str: String = String.template("${v}", v: b2.temp_counter)
+                    let reg_name: String = String.template("_tmp_${idx}", idx: idx_str)
+                    
+                    let is_host: Boolean = String.instr(expr.routine_name, ".") >= 0
+                    let call_kind: String = "CALL"
+                    if is_host then
+                        call_kind := "CALL_HOST"
+                    end if
+                    
+                    let inst: IrInstruction = IrInstruction {
+                        span: expr.span,
+                        kind: call_kind,
+                        dest_reg: reg_name,
+                        src_reg_left: arg0_reg,
+                        src_reg_right: arg1_reg,
+                        op: expr.routine_name,
+                        literal_value: "",
+                        type_idx: 0,
+                        field_name: "",
+                        index_reg: ""
+                    }
+                    
+                    let b3: IrBuilder = add_instruction(b2, inst)
+                    b3 := IrBuilder {
+                        blocks: b3.blocks,
+                        block_count: b3.block_count,
+                        current_block_label: b3.current_block_label,
+                        current_instructions: b3.current_instructions,
+                        current_instruction_count: b3.current_instruction_count,
+                        current_terminator_kind: b3.current_terminator_kind,
+                        current_target_block_label: b3.current_target_block_label,
+                        current_true_block_label: b3.current_true_block_label,
+                        current_false_block_label: b3.current_false_block_label,
+                        current_return_reg: b3.current_return_reg,
+                        current_abort_error: b3.current_abort_error,
+                        temp_counter: b3.temp_counter + 1,
+                        block_counter: b3.block_counter,
+                        types: b3.types,
+                        type_count: b3.type_count
+                    }
+                    
+                    return LowerExprResult {
+                        builder: b3,
+                        dest_reg: reg_name
+                    }
+                else
+                    if expr.kind = "RECORD_NEW" then
+                        let idx_str: String = String.template("${v}", v: builder.temp_counter)
+                        let reg_name: String = String.template("_tmp_${idx}", idx: idx_str)
+                        let inst: IrInstruction = IrInstruction {
+                            span: expr.span,
+                            kind: "ALLOCA",
+                            dest_reg: reg_name,
+                            src_reg_left: "",
+                            src_reg_right: "",
+                            op: "RECORD",
+                            literal_value: "",
+                            type_idx: 0,
+                            field_name: "",
+                            index_reg: ""
+                        }
+                        let b2: IrBuilder = add_instruction(builder, inst)
+                        b2 := IrBuilder {
+                            blocks: b2.blocks,
+                            block_count: b2.block_count,
+                            current_block_label: b2.current_block_label,
+                            current_instructions: b2.current_instructions,
+                            current_instruction_count: b2.current_instruction_count,
+                            current_terminator_kind: b2.current_terminator_kind,
+                            current_target_block_label: b2.current_target_block_label,
+                            current_true_block_label: b2.current_true_block_label,
+                            current_false_block_label: b2.current_false_block_label,
+                            current_return_reg: b2.current_return_reg,
+                            current_abort_error: b2.current_abort_error,
+                            temp_counter: b2.temp_counter + 1,
+                            block_counter: b2.block_counter,
+                            types: b2.types,
+                            type_count: b2.type_count
+                        }
+                        return LowerExprResult { builder: b2, dest_reg: reg_name }
+                    else
+                        if expr.kind = "ARRAY_NEW" then
+                            let idx_str: String = String.template("${v}", v: builder.temp_counter)
+                            let reg_name: String = String.template("_tmp_${idx}", idx: idx_str)
+                            let inst: IrInstruction = IrInstruction {
+                                span: expr.span,
+                                kind: "ALLOCA",
+                                dest_reg: reg_name,
+                                src_reg_left: "",
+                                src_reg_right: "",
+                                op: "ARRAY",
+                                literal_value: "",
+                                type_idx: 0,
+                                field_name: "",
+                                index_reg: ""
+                            }
+                            let b2: IrBuilder = add_instruction(builder, inst)
+                            b2 := IrBuilder {
+                                blocks: b2.blocks,
+                                block_count: b2.block_count,
+                                current_block_label: b2.current_block_label,
+                                current_instructions: b2.current_instructions,
+                                current_instruction_count: b2.current_instruction_count,
+                                current_terminator_kind: b2.current_terminator_kind,
+                                current_target_block_label: b2.current_target_block_label,
+                                current_true_block_label: b2.current_true_block_label,
+                                current_false_block_label: b2.current_false_block_label,
+                                current_return_reg: b2.current_return_reg,
+                                current_abort_error: b2.current_abort_error,
+                                temp_counter: b2.temp_counter + 1,
+                                block_counter: b2.block_counter,
+                                types: b2.types,
+                                type_count: b2.type_count
+                            }
+                            return LowerExprResult { builder: b2, dest_reg: reg_name }
+                        else
+                            if expr.kind = "FIELD_READ" then
+                                let left_res: LowerExprResult = lower_expr(expr.left_node_idx, exprs, builder)
+                                let b1: IrBuilder = left_res.builder
+                                
+                                let idx_str1: String = String.template("${v}", v: b1.temp_counter)
+                                let ptr_reg: String = String.template("_tmp_${idx}", idx: idx_str1)
+                                
+                                let idx_str2: String = String.template("${v}", v: b1.temp_counter + 1)
+                                let dest_reg: String = String.template("_tmp_${idx}", idx: idx_str2)
+                                
+                                let gep_inst: IrInstruction = IrInstruction {
+                                    span: expr.span,
+                                    kind: "GET_ELEMENT_PTR",
+                                    dest_reg: ptr_reg,
+                                    src_reg_left: left_res.dest_reg,
+                                    src_reg_right: "",
+                                    op: "",
+                                    literal_value: "",
+                                    type_idx: 0,
+                                    field_name: expr.text,
+                                    index_reg: ""
+                                }
+                                let load_inst: IrInstruction = IrInstruction {
+                                    span: expr.span,
+                                    kind: "LOAD",
+                                    dest_reg: dest_reg,
+                                    src_reg_left: ptr_reg,
+                                    src_reg_right: "",
+                                    op: "",
+                                    literal_value: "",
+                                    type_idx: 0,
+                                    field_name: "",
+                                    index_reg: ""
+                                }
+                                
+                                let b2: IrBuilder = add_instruction(b1, gep_inst)
+                                b2 := add_instruction(b2, load_inst)
+                                b2 := IrBuilder {
+                                    blocks: b2.blocks,
+                                    block_count: b2.block_count,
+                                    current_block_label: b2.current_block_label,
+                                    current_instructions: b2.current_instructions,
+                                    current_instruction_count: b2.current_instruction_count,
+                                    current_terminator_kind: b2.current_terminator_kind,
+                                    current_target_block_label: b2.current_target_block_label,
+                                    current_true_block_label: b2.current_true_block_label,
+                                    current_false_block_label: b2.current_false_block_label,
+                                    current_return_reg: b2.current_return_reg,
+                                    current_abort_error: b2.current_abort_error,
+                                    temp_counter: b2.temp_counter + 2,
+                                    block_counter: b2.block_counter,
+                                    types: b2.types,
+                                    type_count: b2.type_count
+                                }
+                                return LowerExprResult { builder: b2, dest_reg: dest_reg }
+                            else
+                                if expr.kind = "ARRAY_READ" then
+                                    let left_res: LowerExprResult = lower_expr(expr.left_node_idx, exprs, builder)
+                                    let right_res: LowerExprResult = lower_expr(expr.right_node_idx, exprs, left_res.builder)
+                                    let b1: IrBuilder = right_res.builder
+                                    
+                                    let idx_str1: String = String.template("${v}", v: b1.temp_counter)
+                                    let ptr_reg: String = String.template("_tmp_${idx}", idx: idx_str1)
+                                    
+                                    let idx_str2: String = String.template("${v}", v: b1.temp_counter + 1)
+                                    let dest_reg: String = String.template("_tmp_${idx}", idx: idx_str2)
+                                    
+                                    let gep_inst: IrInstruction = IrInstruction {
+                                        span: expr.span,
+                                        kind: "GET_ELEMENT_PTR",
+                                        dest_reg: ptr_reg,
+                                        src_reg_left: left_res.dest_reg,
+                                        src_reg_right: "",
+                                        op: "",
+                                        literal_value: "",
+                                        type_idx: 0,
+                                        field_name: "",
+                                        index_reg: right_res.dest_reg
+                                    }
+                                    let load_inst: IrInstruction = IrInstruction {
+                                        span: expr.span,
+                                        kind: "LOAD",
+                                        dest_reg: dest_reg,
+                                        src_reg_left: ptr_reg,
+                                        src_reg_right: "",
+                                        op: "",
+                                        literal_value: "",
+                                        type_idx: 0,
+                                        field_name: "",
+                                        index_reg: ""
+                                    }
+                                    
+                                    let b2: IrBuilder = add_instruction(b1, gep_inst)
+                                    b2 := add_instruction(b2, load_inst)
+                                    b2 := IrBuilder {
+                                        blocks: b2.blocks,
+                                        block_count: b2.block_count,
+                                        current_block_label: b2.current_block_label,
+                                        current_instructions: b2.current_instructions,
+                                        current_instruction_count: b2.current_instruction_count,
+                                        current_terminator_kind: b2.current_terminator_kind,
+                                        current_target_block_label: b2.current_target_block_label,
+                                        current_true_block_label: b2.current_true_block_label,
+                                        current_false_block_label: b2.current_false_block_label,
+                                        current_return_reg: b2.current_return_reg,
+                                        current_abort_error: b2.current_abort_error,
+                                        temp_counter: b2.temp_counter + 2,
+                                        block_counter: b2.block_counter,
+                                        types: b2.types,
+                                        type_count: b2.type_count
+                                    }
+                                    return LowerExprResult { builder: b2, dest_reg: dest_reg }
+                                end if
+                            end if
+                        end if
+                    end if
+                end if
+            end if
+        end if
+    end if
+    
+    return LowerExprResult {
+        builder: builder,
+        dest_reg: ""
+    }
+end lower_expr
+
+function lower_stmt(
+    stmt_idx: Integer,
+    stmts: Array<StmtNode, 64>,
+    exprs: Array<ExprNode, 64>,
+    builder: IrBuilder
+) returns IrBuilder
+requires stmt_idx >= 0 and stmt_idx < 64
+is
+    let stmt: StmtNode = stmts[stmt_idx]
+    if stmt.kind = "LET" then
+        let alloca_inst: IrInstruction = IrInstruction {
+            span: stmt.span,
+            kind: "ALLOCA",
+            dest_reg: stmt.var_name,
+            src_reg_left: "",
+            src_reg_right: "",
+            op: "",
+            literal_value: "",
+            type_idx: 0,
+            field_name: "",
+            index_reg: ""
+        }
+        
+        let b1: IrBuilder = add_instruction(builder, alloca_inst)
+        let expr_res: LowerExprResult = lower_expr(stmt.expr_idx, exprs, b1)
+        let b2: IrBuilder = expr_res.builder
+        
+        let store_inst: IrInstruction = IrInstruction {
+            span: stmt.span,
+            kind: "STORE",
+            dest_reg: stmt.var_name,
+            src_reg_left: expr_res.dest_reg,
+            src_reg_right: "",
+            op: "",
+            literal_value: "",
+            type_idx: 0,
+            field_name: "",
+            index_reg: ""
+        }
+        
+        let b3: IrBuilder = add_instruction(b2, store_inst)
+        return b3
+    else
+        if stmt.kind = "ASSIGN" then
+            let expr_res: LowerExprResult = lower_expr(stmt.expr_idx, exprs, builder)
+            let b2: IrBuilder = expr_res.builder
+            
+            let store_inst: IrInstruction = IrInstruction {
+                span: stmt.span,
+                kind: "STORE",
+                dest_reg: stmt.var_name,
+                src_reg_left: expr_res.dest_reg,
+                src_reg_right: "",
+                op: "",
+                literal_value: "",
+                type_idx: 0,
+                field_name: "",
+                index_reg: ""
+            }
+            
+            let b3: IrBuilder = add_instruction(b2, store_inst)
+            return b3
+        else
+            if stmt.kind = "RETURN" then
+                if stmt.expr_idx >= 0 then
+                    let expr_res: LowerExprResult = lower_expr(stmt.expr_idx, exprs, builder)
+                    let b2: IrBuilder = seal_block(expr_res.builder, "RETURN", "", "", "", expr_res.dest_reg, "")
+                    let dead_lbl: String = String.template("dead_${id}", id: b2.block_counter)
+                    let b3: IrBuilder = start_block(b2, dead_lbl)
+                    b3 := IrBuilder {
+                        blocks: b3.blocks,
+                        block_count: b3.block_count,
+                        current_block_label: b3.current_block_label,
+                        current_instructions: b3.current_instructions,
+                        current_instruction_count: b3.current_instruction_count,
+                        current_terminator_kind: b3.current_terminator_kind,
+                        current_target_block_label: b3.current_target_block_label,
+                        current_true_block_label: b3.current_true_block_label,
+                        current_false_block_label: b3.current_false_block_label,
+                        current_return_reg: b3.current_return_reg,
+                        current_abort_error: b3.current_abort_error,
+                        temp_counter: b3.temp_counter,
+                        block_counter: b3.block_counter + 1,
+                        types: b3.types,
+                        type_count: b3.type_count
+                    }
+                    return b3
+                else
+                    let b2: IrBuilder = seal_block(builder, "RETURN", "", "", "", "", "")
+                    let dead_lbl: String = String.template("dead_${id}", id: b2.block_counter)
+                    let b3: IrBuilder = start_block(b2, dead_lbl)
+                    b3 := IrBuilder {
+                        blocks: b3.blocks,
+                        block_count: b3.block_count,
+                        current_block_label: b3.current_block_label,
+                        current_instructions: b3.current_instructions,
+                        current_instruction_count: b3.current_instruction_count,
+                        current_terminator_kind: b3.current_terminator_kind,
+                        current_target_block_label: b3.current_target_block_label,
+                        current_true_block_label: b3.current_true_block_label,
+                        current_false_block_label: b3.current_false_block_label,
+                        current_return_reg: b3.current_return_reg,
+                        current_abort_error: b3.current_abort_error,
+                        temp_counter: b3.temp_counter,
+                        block_counter: b3.block_counter + 1,
+                        types: b3.types,
+                        type_count: b3.type_count
+                    }
+                    return b3
+                end if
+            else
+                if stmt.kind = "CALL" then
+                    let idx_str: String = String.template("${v}", v: builder.temp_counter)
+                    let reg_name: String = String.template("_tmp_${idx}", idx: idx_str)
+                    
+                    let is_host: Boolean = String.instr(stmt.routine_name, ".") >= 0
+                    let call_kind: String = "CALL"
+                    if is_host then
+                        call_kind := "CALL_HOST"
+                    end if
+                    
+                    let inst: IrInstruction = IrInstruction {
+                        span: stmt.span,
+                        kind: call_kind,
+                        dest_reg: reg_name,
+                        src_reg_left: "",
+                        src_reg_right: "",
+                        op: stmt.routine_name,
+                        literal_value: "",
+                        type_idx: 0,
+                        field_name: "",
+                        index_reg: ""
+                    }
+                    
+                    let b2: IrBuilder = add_instruction(builder, inst)
+                    b2 := IrBuilder {
+                        blocks: b2.blocks,
+                        block_count: b2.block_count,
+                        current_block_label: b2.current_block_label,
+                        current_instructions: b2.current_instructions,
+                        current_instruction_count: b2.current_instruction_count,
+                        current_terminator_kind: b2.current_terminator_kind,
+                        current_target_block_label: b2.current_target_block_label,
+                        current_true_block_label: b2.current_true_block_label,
+                        current_false_block_label: b2.current_false_block_label,
+                        current_return_reg: b2.current_return_reg,
+                        current_abort_error: b2.current_abort_error,
+                        temp_counter: b2.temp_counter + 1,
+                        block_counter: b2.block_counter,
+                        types: b2.types,
+                        type_count: b2.type_count
+                    }
+                    return b2
+                else
+                    if stmt.kind = "IF" then
+                        let then_lbl: String = String.template("block_then_${id}", id: builder.block_counter)
+                        let else_lbl: String = String.template("block_else_${id}", id: builder.block_counter)
+                        let merge_lbl: String = String.template("block_merge_${id}", id: builder.block_counter)
+                        
+                        let cond_res: LowerExprResult = lower_expr(stmt.cond_expr_idx, exprs, builder)
+                        let cond_reg: String = cond_res.dest_reg
+                        
+                        let b1: IrBuilder = seal_block(cond_res.builder, "BRANCH_COND", "", then_lbl, else_lbl, cond_reg, "")
+                        
+                        let b_then: IrBuilder = start_block(b1, then_lbl)
+                        b_then := IrBuilder {
+                            blocks: b_then.blocks,
+                            block_count: b_then.block_count,
+                            current_block_label: b_then.current_block_label,
+                            current_instructions: b_then.current_instructions,
+                            current_instruction_count: b_then.current_instruction_count,
+                            current_terminator_kind: b_then.current_terminator_kind,
+                            current_target_block_label: b_then.current_target_block_label,
+                            current_true_block_label: b_then.current_true_block_label,
+                            current_false_block_label: b_then.current_false_block_label,
+                            current_return_reg: b_then.current_return_reg,
+                            current_abort_error: b_then.current_abort_error,
+                            temp_counter: b_then.temp_counter,
+                            block_counter: b_then.block_counter + 1,
+                            types: b_then.types,
+                            type_count: b_then.type_count
+                        }
+                        
+                        let j: Integer = stmt_idx - stmt_idx
+                        while j < stmt.then_block_len invariant j >= 0 and j <= stmt.then_block_len do
+                            let t_idx: Integer = stmt.then_block_start_idx + j
+                            if t_idx >= 0 and t_idx < 64 then
+                                b_then := lower_stmt(t_idx, stmts, exprs, b_then)
+                            end if
+                            j := j + 1
+                        end while
+                        
+                        let b_then_sealed: IrBuilder = seal_block(b_then, "JUMP", merge_lbl, "", "", "", "")
+                        
+                        let b_else: IrBuilder = start_block(b_then_sealed, else_lbl)
+                        if stmt.else_block_len > 0 then
+                            let k: Integer = stmt_idx - stmt_idx
+                            while k < stmt.else_block_len invariant k >= 0 and k <= stmt.else_block_len do
+                                let e_idx: Integer = stmt.else_block_start_idx + k
+                                if e_idx >= 0 and e_idx < 64 then
+                                    b_else := lower_stmt(e_idx, stmts, exprs, b_else)
+                                end if
+                                k := k + 1
+                            end while
+                        end if
+                        
+                        let b_else_sealed: IrBuilder = seal_block(b_else, "JUMP", merge_lbl, "", "", "", "")
+                        
+                        let b_merge: IrBuilder = start_block(b_else_sealed, merge_lbl)
+                        return b_merge
+                    else
+                        if stmt.kind = "WHILE" then
+                            let cond_lbl: String = String.template("loop_cond_${id}", id: builder.block_counter)
+                            let body_lbl: String = String.template("loop_body_${id}", id: builder.block_counter)
+                            let merge_lbl: String = String.template("loop_merge_${id}", id: builder.block_counter)
+                            
+                            let b1: IrBuilder = seal_block(builder, "JUMP", cond_lbl, "", "", "", "")
+                            
+                            let b_cond: IrBuilder = start_block(b1, cond_lbl)
+                            b_cond := IrBuilder {
+                                blocks: b_cond.blocks,
+                                block_count: b_cond.block_count,
+                                current_block_label: b_cond.current_block_label,
+                                current_instructions: b_cond.current_instructions,
+                                current_instruction_count: b_cond.current_instruction_count,
+                                current_terminator_kind: b_cond.current_terminator_kind,
+                                current_target_block_label: b_cond.current_target_block_label,
+                                current_true_block_label: b_cond.current_true_block_label,
+                                current_false_block_label: b_cond.current_false_block_label,
+                                current_return_reg: b_cond.current_return_reg,
+                                current_abort_error: b_cond.current_abort_error,
+                                temp_counter: b_cond.temp_counter,
+                                block_counter: b_cond.block_counter + 1,
+                                types: b_cond.types,
+                                type_count: b_cond.type_count
+                            }
+                            
+                            let cond_res: LowerExprResult = lower_expr(stmt.cond_expr_idx, exprs, b_cond)
+                            let cond_reg: String = cond_res.dest_reg
+                            
+                            let b_cond_sealed: IrBuilder = seal_block(cond_res.builder, "BRANCH_COND", "", body_lbl, merge_lbl, cond_reg, "")
+                            
+                            let b_body: IrBuilder = start_block(b_cond_sealed, body_lbl)
+                            
+                            let j: Integer = stmt_idx - stmt_idx
+                            while j < stmt.then_block_len invariant j >= 0 and j <= stmt.then_block_len do
+                                let t_idx: Integer = stmt.then_block_start_idx + j
+                                if t_idx >= 0 and t_idx < 64 then
+                                    b_body := lower_stmt(t_idx, stmts, exprs, b_body)
+                                end if
+                                j := j + 1
+                            end while
+                            
+                            let b_body_sealed: IrBuilder = seal_block(b_body, "JUMP", cond_lbl, "", "", "", "")
+                            
+                            let b_merge: IrBuilder = start_block(b_body_sealed, merge_lbl)
+                            return b_merge
+                        else
+                            if stmt.kind = "FIELD_WRITE" then
+                                -- Load the base record from variable stmt.var_name
+                                let idx_str1: String = String.template("${v}", v: builder.temp_counter)
+                                let base_reg: String = String.template("_tmp_${idx}", idx: idx_str1)
+                                let load_base: IrInstruction = IrInstruction {
+                                    span: stmt.span,
+                                    kind: "LOAD",
+                                    dest_reg: base_reg,
+                                    src_reg_left: stmt.var_name,
+                                    src_reg_right: "",
+                                    op: "",
+                                    literal_value: "",
+                                    type_idx: 0,
+                                    field_name: "",
+                                    index_reg: ""
+                                }
+                                
+                                let b1: IrBuilder = add_instruction(builder, load_base)
+                                b1 := IrBuilder {
+                                    blocks: b1.blocks,
+                                    block_count: b1.block_count,
+                                    current_block_label: b1.current_block_label,
+                                    current_instructions: b1.current_instructions,
+                                    current_instruction_count: b1.current_instruction_count,
+                                    current_terminator_kind: b1.current_terminator_kind,
+                                    current_target_block_label: b1.current_target_block_label,
+                                    current_true_block_label: b1.current_true_block_label,
+                                    current_false_block_label: b1.current_false_block_label,
+                                    current_return_reg: b1.current_return_reg,
+                                    current_abort_error: b1.current_abort_error,
+                                    temp_counter: b1.temp_counter + 1,
+                                    block_counter: b1.block_counter,
+                                    types: b1.types,
+                                    type_count: b1.type_count
+                                }
+                                
+                                -- GEP to get pointer to field stmt.routine_name
+                                let idx_str2: String = String.template("${v}", v: b1.temp_counter)
+                                let ptr_reg: String = String.template("_tmp_${idx}", idx: idx_str2)
+                                let gep_inst: IrInstruction = IrInstruction {
+                                    span: stmt.span,
+                                    kind: "GET_ELEMENT_PTR",
+                                    dest_reg: ptr_reg,
+                                    src_reg_left: base_reg,
+                                    src_reg_right: "",
+                                    op: "",
+                                    literal_value: "",
+                                    type_idx: 0,
+                                    field_name: stmt.routine_name,
+                                    index_reg: ""
+                                }
+                                
+                                let b2: IrBuilder = add_instruction(b1, gep_inst)
+                                b2 := IrBuilder {
+                                    blocks: b2.blocks,
+                                    block_count: b2.block_count,
+                                    current_block_label: b2.current_block_label,
+                                    current_instructions: b2.current_instructions,
+                                    current_instruction_count: b2.current_instruction_count,
+                                    current_terminator_kind: b2.current_terminator_kind,
+                                    current_target_block_label: b2.current_target_block_label,
+                                    current_true_block_label: b2.current_true_block_label,
+                                    current_false_block_label: b2.current_false_block_label,
+                                    current_return_reg: b2.current_return_reg,
+                                    current_abort_error: b2.current_abort_error,
+                                    temp_counter: b2.temp_counter + 1,
+                                    block_counter: b2.block_counter,
+                                    types: b2.types,
+                                    type_count: b2.type_count
+                                }
+                                
+                                -- Lower the expression to write
+                                let val_res: LowerExprResult = lower_expr(stmt.expr_idx, exprs, b2)
+                                let b3: IrBuilder = val_res.builder
+                                
+                                -- Store the value into the field pointer
+                                let store_inst: IrInstruction = IrInstruction {
+                                    span: stmt.span,
+                                    kind: "STORE",
+                                    dest_reg: ptr_reg,
+                                    src_reg_left: val_res.dest_reg,
+                                    src_reg_right: "",
+                                    op: "",
+                                    literal_value: "",
+                                    type_idx: 0,
+                                    field_name: "",
+                                    index_reg: ""
+                                }
+                                let b4: IrBuilder = add_instruction(b3, store_inst)
+                                return b4
+                            else
+                                if stmt.kind = "ARRAY_WRITE" then
+                                    -- Load the base array from variable stmt.var_name
+                                    let idx_str1: String = String.template("${v}", v: builder.temp_counter)
+                                    let base_reg: String = String.template("_tmp_${idx}", idx: idx_str1)
+                                    let load_base: IrInstruction = IrInstruction {
+                                        span: stmt.span,
+                                        kind: "LOAD",
+                                        dest_reg: base_reg,
+                                        src_reg_left: stmt.var_name,
+                                        src_reg_right: "",
+                                        op: "",
+                                        literal_value: "",
+                                        type_idx: 0,
+                                        field_name: "",
+                                        index_reg: ""
+                                    }
+                                    
+                                    let b1: IrBuilder = add_instruction(builder, load_base)
+                                    b1 := IrBuilder {
+                                        blocks: b1.blocks,
+                                        block_count: b1.block_count,
+                                        current_block_label: b1.current_block_label,
+                                        current_instructions: b1.current_instructions,
+                                        current_instruction_count: b1.current_instruction_count,
+                                        current_terminator_kind: b1.current_terminator_kind,
+                                        current_target_block_label: b1.current_target_block_label,
+                                        current_true_block_label: b1.current_true_block_label,
+                                        current_false_block_label: b1.current_false_block_label,
+                                        current_return_reg: b1.current_return_reg,
+                                        current_abort_error: b1.current_abort_error,
+                                        temp_counter: b1.temp_counter + 1,
+                                        block_counter: b1.block_counter,
+                                        types: b1.types,
+                                        type_count: b1.type_count
+                                    }
+                                    
+                                    -- Lower the index expression
+                                    let idx_res: LowerExprResult = lower_expr(stmt.cond_expr_idx, exprs, b1)
+                                    let b2: IrBuilder = idx_res.builder
+                                    
+                                    -- GEP to get pointer to array element
+                                    let idx_str2: String = String.template("${v}", v: b2.temp_counter)
+                                    let ptr_reg: String = String.template("_tmp_${idx}", idx: idx_str2)
+                                    let gep_inst: IrInstruction = IrInstruction {
+                                        span: stmt.span,
+                                        kind: "GET_ELEMENT_PTR",
+                                        dest_reg: ptr_reg,
+                                        src_reg_left: base_reg,
+                                        src_reg_right: "",
+                                        op: "",
+                                        literal_value: "",
+                                        type_idx: 0,
+                                        field_name: "",
+                                        index_reg: idx_res.dest_reg
+                                    }
+                                    
+                                    let b3: IrBuilder = add_instruction(b2, gep_inst)
+                                    b3 := IrBuilder {
+                                        blocks: b3.blocks,
+                                        block_count: b3.block_count,
+                                        current_block_label: b3.current_block_label,
+                                        current_instructions: b3.current_instructions,
+                                        current_instruction_count: b3.current_instruction_count,
+                                        current_terminator_kind: b3.current_terminator_kind,
+                                        current_target_block_label: b3.current_target_block_label,
+                                        current_true_block_label: b3.current_true_block_label,
+                                        current_false_block_label: b3.current_false_block_label,
+                                        current_return_reg: b3.current_return_reg,
+                                        current_abort_error: b3.current_abort_error,
+                                        temp_counter: b3.temp_counter + 1,
+                                        block_counter: b3.block_counter,
+                                        types: b3.types,
+                                        type_count: b3.type_count
+                                    }
+                                    
+                                    -- Lower the expression to write
+                                    let val_res: LowerExprResult = lower_expr(stmt.expr_idx, exprs, b3)
+                                    let b4: IrBuilder = val_res.builder
+                                    
+                                    -- Store the value into the array element pointer
+                                    let store_inst: IrInstruction = IrInstruction {
+                                        span: stmt.span,
+                                        kind: "STORE",
+                                        dest_reg: ptr_reg,
+                                        src_reg_left: val_res.dest_reg,
+                                        src_reg_right: "",
+                                        op: "",
+                                        literal_value: "",
+                                        type_idx: 0,
+                                        field_name: "",
+                                        index_reg: ""
+                                    }
+                                    let b5: IrBuilder = add_instruction(b4, store_inst)
+                                    return b5
+                                end if
+                            end if
+                        end if
+                    end if
+                end if
+            end if
+        end if
+    end if
+    
+    return builder
+end lower_stmt
+
+function lower_routine(
+    name: String,
+    stmts: Array<StmtNode, 64>,
+    exprs: Array<ExprNode, 64>,
+    start_idx: Integer,
+    len: Integer
+) returns IrRoutine
+requires start_idx >= 0, len >= 0
+is
+    let empty_type: IrType = IrType {
+        kind: "",
+        name: "",
+        element_type_idx: -1,
+        array_size: 0
+    }
+    
+    let empty_inst: IrInstruction = IrInstruction {
+        span: SourceSpan { source_name: "", start_line: 0, start_column: 0, end_line: 0, end_column: 0 },
+        kind: "",
+        dest_reg: "",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    
+    let insts_val: Array<IrInstruction, 64> = [
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst,
+        empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst, empty_inst
+    ]
+    
+    let types_val: Array<IrType, 10> = [
+        empty_type, empty_type, empty_type, empty_type, empty_type,
+        empty_type, empty_type, empty_type, empty_type, empty_type
+    ]
+    
+    let empty_block: IrBasicBlock = IrBasicBlock {
+        label: "",
+        instructions: insts_val,
+        instruction_count: 0,
+        terminator_kind: "",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "",
+        abort_error: ""
+    }
+    
+    let blocks_val: Array<IrBasicBlock, 32> = [
+        empty_block, empty_block, empty_block, empty_block, empty_block, empty_block, empty_block, empty_block,
+        empty_block, empty_block, empty_block, empty_block, empty_block, empty_block, empty_block, empty_block,
+        empty_block, empty_block, empty_block, empty_block, empty_block, empty_block, empty_block, empty_block,
+        empty_block, empty_block, empty_block, empty_block, empty_block, empty_block, empty_block, empty_block
+    ]
+    
+    let builder: IrBuilder = IrBuilder {
+        blocks: blocks_val,
+        block_count: 0,
+        current_block_label: "entry",
+        current_instructions: insts_val,
+        current_instruction_count: 0,
+        current_terminator_kind: "",
+        current_target_block_label: "",
+        current_true_block_label: "",
+        current_false_block_label: "",
+        current_return_reg: "",
+        current_abort_error: "",
+        temp_counter: 0,
+        block_counter: 0,
+        types: types_val,
+        type_count: 0
+    }
+    
+    let i: Integer = start_idx - start_idx
+    let b: IrBuilder = builder
+    while i < len invariant i >= 0 and i <= len do
+        let s_idx: Integer = start_idx + i
+        if s_idx >= 0 and s_idx < 64 then
+            b := lower_stmt(s_idx, stmts, exprs, b)
+        end if
+        i := i + 1
+    end while
+    
+    let final_b: IrBuilder = b
+    if final_b.current_block_label != "" then
+        if final_b.current_instruction_count > 0 or final_b.block_count = 0 then
+            final_b := seal_block(final_b, "RETURN", "", "", "", "", "")
+        end if
+    end if
+    
+    let routine: IrRoutine = IrRoutine {
+        name: name,
+        entry_block: "entry",
+        blocks: final_b.blocks,
+        block_count: final_b.block_count
+    }
+    
+    return routine
+end lower_routine
+
+end Compiler.Core.Lowering
