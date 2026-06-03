@@ -1,0 +1,71 @@
+module App.Main
+
+import Std.IO
+import WebSocket exposing Connection, Server, WebSocketError, connect, listen, accept, close
+
+async function server_worker(server: Server) returns Integer
+is
+    let accept_res: Result<Connection, WebSocketError> = await accept(server)
+    if accept_res.ok then
+        let conn: Connection = accept_res.value
+        let msg: String = await channel_receive<String>(conn.incoming)
+        call Std.IO.log(String.concat("Server received: ", msg))
+        let sent: Boolean = await channel_send<String>(conn.outgoing, String.concat("Echo: ", msg))
+        check sent = true
+        call close(conn)
+        return 0
+    else
+        call Std.IO.log("Server accept failed: WebSocketError")
+        return 1
+    end if
+end server_worker
+
+async function client_worker(url: String) returns Integer
+is
+    let client_res: Result<Connection, WebSocketError> = await connect(url)
+    if client_res.ok then
+        let client_conn: Connection = client_res.value
+        let sent: Boolean = await channel_send<String>(client_conn.outgoing, "Hello WebSocket")
+        check sent = true
+        let reply: String = await channel_receive<String>(client_conn.incoming)
+        call Std.IO.log(String.concat("Client received: ", reply))
+        call close(client_conn)
+        return 0
+    else
+        call Std.IO.log("Client connect failed: WebSocketError")
+        return 1
+    end if
+end client_worker
+
+async function run_demo() returns Integer
+is
+    let server_res: Result<Server, WebSocketError> = listen("127.0.0.1:8099")
+    if server_res.ok then
+        let server: Server = server_res.value
+        scope demo_scope do
+            spawn
+                let server_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(server_worker(server))
+                let client_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_worker("ws://127.0.0.1:8099"))
+            join
+                let server_status: Integer = await demo_scope.join<Integer>(server_handle)
+                let client_status: Integer = await demo_scope.join<Integer>(client_handle)
+            result
+                return server_status + client_status
+        end scope
+    else
+        call Std.IO.log("Server listen failed: WebSocketError")
+        return 1
+    end if
+end run_demo
+
+async procedure main()
+is
+    let status: Integer = await run_demo()
+    if status = 0 then
+        call Std.IO.log("Demo finished successfully")
+    else
+        call Std.IO.log("Demo finished with failure")
+    end if
+end main
+
+end App.Main

@@ -244,7 +244,7 @@ def project_has_entry_main(files, entry_module_name: str | None) -> bool:
     entry = next((file for file in files if file.module_name == entry_module_name), None)
     if entry is None:
         return False
-    return re.search(r"(?m)^func Main\(\)(?: error)? \{", entry.result.go_source) is not None
+    return re.search(r"(?m)^func Main\((?:ctx context\.Context)?\)(?: error)? \{", entry.result.go_source) is not None
 
 def normalize_text(text: str) -> str:
     return text.strip().replace("\r\n", "\n")

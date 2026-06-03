@@ -1,0 +1,55 @@
+module WebSocket
+
+/**
+@std
+Runtime WebSocket module. Trusted runtime binding; not syntax.
+*/
+
+error WebSocketError
+
+type Connection is record
+    id: String
+    incoming: Receiver<String>
+    outgoing: Sender<String>
+end record
+
+type Server is record
+    id: String
+end record
+
+async function connect(url: String) returns Result<Connection, WebSocketError>
+is
+    let in_ch: Channel<String> = channel<String>(1)
+    let out_ch: Channel<String> = channel<String>(1)
+    let rx: Receiver<String> = channel_receiver<String>(in_ch)
+    let tx: Sender<String> = channel_sender<String>(out_ch)
+    return ok(Connection {
+        id: "",
+        incoming: rx,
+        outgoing: tx
+    })
+end connect
+
+function listen(addr: String) returns Result<Server, WebSocketError>
+is
+    return ok(Server { id: "" })
+end listen
+
+async function accept(server: Server) returns Result<Connection, WebSocketError>
+is
+    let in_ch: Channel<String> = channel<String>(1)
+    let out_ch: Channel<String> = channel<String>(1)
+    let rx: Receiver<String> = channel_receiver<String>(in_ch)
+    let tx: Sender<String> = channel_sender<String>(out_ch)
+    return ok(Connection {
+        id: "",
+        incoming: rx,
+        outgoing: tx
+    })
+end accept
+
+procedure close(conn: Connection)
+is
+end close
+
+end WebSocket

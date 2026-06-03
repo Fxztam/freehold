@@ -2,9 +2,9 @@
 
 Stand: 2026-05-24
 
-Status: V1 Architekturentscheidung abgeschlossen; konkrete Transport-Libs und Bindings fuer V2/V3 geparkt
+Status: V1 Architekturentscheidung & WebSocket-Runtime-Implementierung abgeschlossen und verifiziert
 
-Dieses Dokument haelt die Entscheidung fest, wie Freehold Scopes fuer gRPC, WebSocket, REST, SSE und aehnliche Schnittstellen modellieren soll. V1 ist als Architekturentscheidung abgeschlossen: Transport-Libs verwenden das gemeinsame Concurrent-Scope-Modell. Konkrete REST/WebSocket/SSE-Libs und gRPC-Bindings bleiben V2/V3.
+Dieses Dokument haelt die Entscheidung fest, wie Freehold Scopes fuer gRPC, WebSocket, REST, SSE und aehnliche Schnittstellen modellieren soll. V1 ist vollstaendig abgeschlossen: Die Go-native WebSocket-Runtime-Implementierung ist integriert und ueber das Test-Szenario `27_websocket_demo` verifiziert. Konkrete REST/SSE-Libs und vollstaendige gRPC-Bidirectional-Streaming-Bindings bleiben fuer V2/V3 geparkt.
 
 ## Kurzentscheidung
 
@@ -354,6 +354,20 @@ Schnittstellen-Libs liefern benannte Scope-Kontexte.
 Der Verifier prueft nur das gemeinsame Scope-Modell.
 ```
 
-Damit bleibt Freehold klein, konsistent und gut pruefbar. Schnittstellen koennen trotzdem reichhaltige fachliche APIs anbieten.
+## V1 WebSocket Runtime-Implementierung (Erledigt 2026-06-03)
+
+Die Go-native WebSocket-Laufzeitumgebung wurde erfolgreich implementiert und in den Compiler integriert. 
+
+### Details der Umsetzung:
+1. **Typ-Mapping & Codegen**:
+   * Die Freehold-Kanaltypen (`Channel<T>`, `Sender<T>`, `Receiver<T>`) werden nun direkt in native Go-Kanäle (`chan T`, `chan<- T`, `<-chan T`) transpiliert.
+   * `WebSocketError` wurde als dedizierter Fehler-Typ im AST und Go-Code registriert.
+2. **WebSocket-Client & Server**:
+   * Der Client-Handshake (`Connect`) wurde um eine automatische Fallback-Pfadkorrektur erweitert (leere URL-Pfade werden auf `"/"` gesetzt), um RFC-Konformität zu gewährleisten.
+   * Der Server-Handshake (`Accept`) führt das Sec-WebSocket-Accept Hashing korrekt durch und startet asynchrone Read/Write-Loops zur bidirektionalen Kommunikation.
+3. **Integrationstest**:
+   * Der Integrationstest `27_websocket_demo` wurde erfolgreich verifiziert. Server- und Client-Routinen kommunizieren asynchron über den kooperativen Scheduler.
+
+Damit ist die WebSocket-Kopplung für V1 voll funktionsfähig und vollständig durch das Test-Harness abgedeckt.
 
 === CLOSED ===

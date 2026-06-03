@@ -55,6 +55,7 @@ SUPPORTED_EXAMPLES = [
 
     SupportedExample("23_generic_type_inference_and_constraints", "examples/compiler_v1/23_generic_type_inference_and_constraints/App/Main.fh"),
     SupportedExample("26_generic_function", "examples/compiler_v1/26_generic_function/App/Main.fh"),
+    SupportedExample("27_websocket_demo", "examples/compiler_v1/27_websocket_demo/App/Main.fh", "examples/expected_logs/compiler_v1_websocket_demo.expected.log"),
 
     SupportedExample("old_BigNumbers", "examples/BigNumbers.fh", "examples/expected_logs/BigNumbers.expected.log"),
     SupportedExample("old_ChudnovskyFeynmanPoint", "examples/ChudnovskyFeynmanPoint.fh", "examples/expected_logs/ChudnovskyFeynmanPoint.expected.log"),
@@ -181,7 +182,9 @@ def run_runtime_log_check(example: SupportedExample, project_out: Path, json_pat
     log_path = package_dir / log_name
     expected_path = ROOT / example.expected_log
     test_path = package_dir / "freehold_runtime_log_test.go"
-    test_path.write_text(runtime_log_test_source(package_name, log_name), encoding="utf-8")
+    main_content = go_file.read_text(encoding="utf-8")
+    is_async = "func Main(ctx context.Context)" in main_content
+    test_path.write_text(runtime_log_test_source(package_name, log_name, is_async), encoding="utf-8")
 
     if run(["go", "test", "./...", "-run", "TestFreeholdMainRuntimeLog", "-count=1"], project_out).returncode != 0:
         print(f"[FAIL] runtime log test failed: {example.name}")
@@ -222,13 +225,15 @@ def run_executable_log_check(example: SupportedExample, project_out: Path, expec
     return False
 
 
-def runtime_log_test_source(package_name: str, log_name: str) -> str:
+def runtime_log_test_source(package_name: str, log_name: str, is_async: bool = False) -> str:
+    ctx_import = '\n\t"context"' if is_async else ''
+    main_call = 'Main(context.Background())' if is_async else 'Main()'
     return f'''package {package_name}
 
 import (
     "bytes"
     "os"
-    "testing"
+    "testing"{ctx_import}
 )
 
 func TestFreeholdMainRuntimeLog(t *testing.T) {{
@@ -238,7 +243,7 @@ func TestFreeholdMainRuntimeLog(t *testing.T) {{
         t.Fatal(err)
     }}
     os.Stdout = writer
-    Main()
+    {main_call}
     if err := writer.Close(); err != nil {{
         t.Fatal(err)
     }}
