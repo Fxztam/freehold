@@ -158,7 +158,7 @@ class FreeholdGrammar(Grammar):
     stmt = Forward()
     type_ref = Forward()
     unary = Forward()
-    source_hash__ = "65dc7333c1d1a76259849e8cb9acd846"
+    source_hash__ = "cde2fbcf978da62a9376ac4cd268b95d"
     disposable__ = re.compile('$.')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
@@ -174,13 +174,14 @@ class FreeholdGrammar(Grammar):
        's\\b|let\\b|return\\b|abort\\b|ok\\b|if\\b|then\\b|else\\b|end\\b|while\\b|invar'
        'iant\\b|variant\\b|do\\b|case\\b|when\\b|default\\b|call\\b|check\\b|and\\b|or'
        '\\b|not\\b|async\\b|await\\b|scope\\b|spawn\\b|join\\b|true\\b|false\\b|success\\b'
-       '|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)+'), wsp__)
+       '|failure\\b|value\\b|for\\b|all\\b|some\\b|each\\b|in\\b)[A-Za-z_][A-Za-z0-9_]*('
+       '?:\\.[A-Za-z_][A-Za-z0-9_]*)+'), wsp__)
     IDENT = Series(RegExp('(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|error\\b|function\\b'
        '|procedure\\b|service\\b|rpc\\b|proto\\b|returns\\b|requires\\b|aborts\\b|ensure'
        's\\b|let\\b|return\\b|abort\\b|ok\\b|if\\b|then\\b|else\\b|end\\b|while\\b|invar'
        'iant\\b|variant\\b|do\\b|case\\b|when\\b|default\\b|call\\b|check\\b|and\\b|or'
        '\\b|not\\b|async\\b|await\\b|scope\\b|spawn\\b|join\\b|true\\b|false\\b|success\\b'
-       '|failure\\b|value\\b)[A-Za-z_][A-Za-z0-9_]*'), wsp__)
+       '|failure\\b|value\\b|for\\b|all\\b|some\\b|each\\b|in\\b)[A-Za-z_][A-Za-z0-9_]*'), wsp__)
     INTEGER_LITERAL = Series(RegExp('-?[0-9]+'), wsp__)
     DOUBLE_LITERAL = Series(RegExp('-?(?:[0-9]+\\.[0-9]+)'), wsp__)
     NUMBER_LITERAL = Alternative(DOUBLE_LITERAL, INTEGER_LITERAL)
@@ -199,6 +200,7 @@ class FreeholdGrammar(Grammar):
     equality = Series(comparison, ZeroOrMore(Series(Alternative(Series(Text("!="), wsp__), Series(Text("="), wsp__)), comparison)))
     logic_and = Series(equality, ZeroOrMore(Series(Series(Text("and"), wsp__), equality)))
     logic_or = Series(logic_and, ZeroOrMore(Series(Series(Text("or"), wsp__), logic_and)))
+    quantifier_expr = Series(Series(Text("for"), wsp__), Alternative(Series(Text("all"), wsp__), Series(Text("some"), wsp__), Series(Text("each"), wsp__)), IDENT, Series(Text("in"), wsp__), logic_or, Series(Text(".."), wsp__), logic_or, Series(Text("=>"), wsp__), expr)
     exposing_list = Series(IDENT, ZeroOrMore(Series(Series(Text(","), wsp__), IDENT)))
     named_arg = Series(IDENT, Series(Text(":"), wsp__), expr)
     exposing_clause = Series(Series(Text("exposing"), wsp__), exposing_list)
@@ -257,7 +259,7 @@ class FreeholdGrammar(Grammar):
     declaration = Alternative(record_type_decl, type_decl, error_decl, service_decl, function_decl, procedure_decl)
     postfix_expr.set(Series(primary, ZeroOrMore(postfix)))
     unary.set(Alternative(Series(Series(Text("await"), wsp__), unary), Series(Series(Text("-"), wsp__), unary), Series(Series(Text("not"), wsp__), unary), postfix_expr))
-    expr.set(Series(wsp__, logic_or))
+    expr.set(Series(wsp__, Alternative(quantifier_expr, logic_or)))
     named_arg_list.set(Series(named_arg, ZeroOrMore(Series(Series(Text(","), wsp__), named_arg))))
     arg_list.set(Series(call_arg, ZeroOrMore(Series(Series(Text(","), wsp__), call_arg))))
     stmt.set(Alternative(let_stmt, return_stmt, abort_stmt, if_stmt, while_stmt, case_stmt, scope_stmt, check_stmt, call_stmt, field_assign_stmt, assign_stmt))
@@ -369,6 +371,7 @@ Freehold_AST_transformation_table = {
     "named_arg_list": [],
     "named_arg": [],
     "expr": [],
+    "quantifier_expr": [],
     "logic_or": [],
     "logic_and": [],
     "equality": [],
@@ -632,6 +635,9 @@ class FreeholdCompiler(Compiler):
     #     return node
 
     # def on_expr(self, node):
+    #     return node
+
+    # def on_quantifier_expr(self, node):
     #     return node
 
     # def on_logic_or(self, node):

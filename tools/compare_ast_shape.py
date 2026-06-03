@@ -260,6 +260,10 @@ def go_expr_text(expr: dict[str, Any], parent_prec: int = 0, side: str = "") -> 
         return "ok" + go_expr_text(expr.get("value", {}))
     if kind == "ErrorExpr":
         return "error" + expr.get("name", "")
+    if kind == "ForAllExpr":
+        return "forall" + expr.get("var_name", "") + "in" + go_expr_text(expr.get("lower", {})) + ".." + go_expr_text(expr.get("upper", {})) + "=>" + go_expr_text(expr.get("expr", {}))
+    if kind == "ExistsExpr":
+        return "forsome" + expr.get("var_name", "") + "in" + go_expr_text(expr.get("lower", {})) + ".." + go_expr_text(expr.get("upper", {})) + "=>" + go_expr_text(expr.get("expr", {}))
     return kind or ""
 
 

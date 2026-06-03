@@ -84,7 +84,8 @@ expr_list = expr { "," expr }
 named_arg_list = named_arg { "," named_arg }
 named_arg = IDENT ":" expr
 
-expr = ~ logic_or
+expr = ~ ( quantifier_expr | logic_or )
+quantifier_expr = "for" ( "all" | "some" | "each" ) IDENT "in" logic_or ".." logic_or "=>" expr
 logic_or = logic_and { "or" logic_and }
 logic_and = equality { "and" equality }
 equality = comparison { ( "!=" | "=" ) comparison }
@@ -118,6 +119,6 @@ BASE_TYPE = "Integer" | "Boolean" | "Double" | "String" | "BigInteger" | "BigFlo
 DOUBLE_LITERAL = /-?(?:[0-9]+\.[0-9]+)/~
 NUMBER_LITERAL = DOUBLE_LITERAL | INTEGER_LITERAL
 INTEGER_LITERAL = /-?[0-9]+/~
-IDENT = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|service\b|rpc\b|proto\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|async\b|await\b|scope\b|spawn\b|join\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*/~
-FIELD_PATH = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|service\b|rpc\b|proto\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|async\b|await\b|scope\b|spawn\b|join\b|true\b|false\b|success\b|failure\b|value\b)[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+/~
+IDENT = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|service\b|rpc\b|proto\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|async\b|await\b|scope\b|spawn\b|join\b|true\b|false\b|success\b|failure\b|value\b|for\b|all\b|some\b|each\b|in\b)[A-Za-z_][A-Za-z0-9_]*/~
+FIELD_PATH = /(?!module\b|import\b|exposing\b|type\b|is\b|record\b|error\b|function\b|procedure\b|service\b|rpc\b|proto\b|returns\b|requires\b|aborts\b|ensures\b|let\b|return\b|abort\b|ok\b|if\b|then\b|else\b|end\b|while\b|invariant\b|variant\b|do\b|case\b|when\b|default\b|call\b|check\b|and\b|or\b|not\b|async\b|await\b|scope\b|spawn\b|join\b|true\b|false\b|success\b|failure\b|value\b|for\b|all\b|some\b|each\b|in\b)[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+/~
 STRING_LITERAL = /"[^"\\]*(?:\\.[^"\\]*)*"/~

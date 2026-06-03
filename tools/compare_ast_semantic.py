@@ -237,6 +237,14 @@ def normalize_go_expr(expr: Any) -> dict[str, Any]:
         return {"kind": kind, "value": normalize_go_expr(expr.get("value"))}
     if kind == "ErrorExpr":
         return {"kind": kind, "name": expr.get("name", "")}
+    if kind in {"ForAllExpr", "ExistsExpr"}:
+        return {
+            "kind": kind,
+            "var_name": expr.get("var_name", ""),
+            "lower": normalize_go_expr(expr.get("lower")),
+            "upper": normalize_go_expr(expr.get("upper")),
+            "expr": normalize_go_expr(expr.get("expr")),
+        }
     return {"kind": kind or "UnknownExpr"}
 
 
@@ -418,7 +426,32 @@ def dh_expr(node: dict[str, Any] | None) -> dict[str, Any]:
         return {"kind": "MissingExpr"}
     name = node_name(node)
     if name == "expr":
+        qexpr = first_child(node, "quantifier_expr")
+        if qexpr:
+            return dh_expr(qexpr)
         return dh_expr(first_child(node, "logic_or"))
+    if name == "quantifier_expr":
+        q_kind_node = next((c for c in children(node) if node_name(c) == ":Text" and text_of(c) in {"all", "each", "some"}), None)
+        is_forall = q_kind_node is not None and text_of(q_kind_node) in {"all", "each"}
+        
+        var_ident = first_child(node, "IDENT")
+        var_name = ident_text(var_ident) if var_ident else ""
+        
+        logic_ors = children(node, "logic_or")
+        lower = dh_expr(logic_ors[0]) if len(logic_ors) > 0 else {"kind": "MissingExpr"}
+        upper = dh_expr(logic_ors[1]) if len(logic_ors) > 1 else {"kind": "MissingExpr"}
+        
+        body_expr = first_child(node, "expr")
+        body = dh_expr(body_expr) if body_expr else {"kind": "MissingExpr"}
+        
+        kind_str = "ForAllExpr" if is_forall else "ExistsExpr"
+        return {
+            "kind": kind_str,
+            "var_name": var_name,
+            "lower": lower,
+            "upper": upper,
+            "expr": body
+        }
     if name in BINARY_LEVELS:
         return dh_binary(node, BINARY_LEVELS[name])
     if name == "unary":

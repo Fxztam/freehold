@@ -26,6 +26,7 @@ from freehold.core.ast import (
     IfStmt,
     ExistsExpr,
     ForAllExpr,
+    IsExpr,
     ImportDecl,
     IndexedFieldAccessExpr,
     IndexExpr,
@@ -52,6 +53,11 @@ from freehold.core.ast import (
     VarExpr,
     WhileStmt,
     type_to_string,
+    RecordField,
+    CaseBranch,
+    ArrayLiteralType,
+    AwaitableType,
+    AbortClause,
 )
 from freehold.core.module_resolver import ModuleResolver, ResolvedModule
 from freehold.core.parser import parse_source
@@ -326,6 +332,30 @@ def project_result_json(files: list[GoProjectFile], build_files: list[GoProjectB
     ) + "\n"
 
 
+def extract_generic_record_instances(type_ref: Any) -> list[tuple[str, list[str]]]:
+    if type_ref is None:
+        return []
+    if isinstance(type_ref, str):
+        gen = parse_generic(type_ref)
+        if gen is not None:
+            base, args = gen
+            res = [(base, args)]
+            for arg in args:
+                res.extend(extract_generic_record_instances(arg))
+            return res
+        return []
+    if isinstance(type_ref, TypeName):
+        return extract_generic_record_instances(type_ref.name)
+    if isinstance(type_ref, ArrayTypeName):
+        return extract_generic_record_instances(type_ref.element_type)
+    if isinstance(type_ref, ResultTypeName):
+        res = []
+        res.extend(extract_generic_record_instances(type_ref.ok_type))
+        res.extend(extract_generic_record_instances(type_ref.error_type))
+        return res
+    return []
+
+
 class GoGenerator:
     def __init__(self, program: Program, resolved_modules: dict[str, ResolvedModule] | None = None):
         self.program = program
@@ -336,6 +366,7 @@ class GoGenerator:
         self.local_types = {declaration.name for declaration in program.declarations if isinstance(declaration, (TypeDecl, RecordTypeDecl, ErrorDecl))}
         self.local_errors = {declaration.name for declaration in program.declarations if isinstance(declaration, ErrorDecl)}
         self.routines_by_name = {declaration.name: declaration for declaration in program.declarations if isinstance(declaration, RoutineDecl)}
+        self.generic_records_by_name = {declaration.name: declaration for declaration in program.declarations if isinstance(declaration, RecordTypeDecl) and declaration.type_params}
         self.imports_by_module = {import_decl.module_name: import_decl for import_decl in self.imports}
         self.exposed_symbols = self.build_exposed_symbols(self.imports)
         self.exposed_type_modules = self.build_exposed_type_modules(self.imports)
@@ -356,8 +387,560 @@ class GoGenerator:
         self.contract_bindings: dict[str, str] = {}
         self.current_routine_read_names: set[str] = set()
 
+    def parse_type_ref_simple(self, type_name: str) -> TypeRef:
+        generic = parse_generic(type_name)
+        if generic is not None:
+            base, args = generic
+            if base == "Array" and len(args) == 2 and args[1].isdigit():
+                return ArrayTypeName(args[0], int(args[1]))
+            if base == "Result" and len(args) == 2:
+                return ResultTypeName(self.parse_type_ref_simple(args[0]), args[1])
+        return TypeName(type_name)
+
+    def substitute_type_simple(self, type_name: str, substitutions: dict[str, str]) -> str:
+        if type_name in substitutions:
+            return substitutions[type_name]
+        generic = parse_generic(type_name)
+        if generic is not None:
+            base, args = generic
+            new_args = [self.substitute_type_simple(arg, substitutions) for arg in args]
+            return f"{base}<{', '.join(new_args)}>"
+        return type_name
+
+    def substitute_type_ref_simple(self, type_ref: Any, substitutions: dict[str, str]) -> Any:
+        if type_ref is None:
+            return None
+        if isinstance(type_ref, TypeName):
+            return TypeName(self.substitute_type_simple(type_ref.name, substitutions))
+        if isinstance(type_ref, ArrayTypeName):
+            return ArrayTypeName(self.substitute_type_simple(type_ref.element_type, substitutions), type_ref.size)
+        if isinstance(type_ref, ResultTypeName):
+            return ResultTypeName(
+                self.substitute_type_ref_simple(type_ref.ok_type, substitutions),
+                self.substitute_type_simple(type_ref.error_type, substitutions)
+            )
+        return type_ref
+
+    def match_types_simple(self, formal: TypeRef, actual: TypeRef, type_params: set[str], inferred: dict[str, set[str]]) -> None:
+        if isinstance(formal, TypeName):
+            if formal.name in type_params:
+                inferred[formal.name].add(type_to_string(actual))
+                return
+            generic_formal = parse_generic(formal.name)
+            if generic_formal is not None:
+                if not isinstance(actual, TypeName):
+                    return
+                generic_actual = parse_generic(actual.name)
+                if generic_actual is not None:
+                    base_formal, args_formal = generic_formal
+                    base_actual, args_actual = generic_actual
+                    if base_formal == base_actual and len(args_formal) == len(args_actual):
+                        for f_arg, a_arg in zip(args_formal, args_actual):
+                            self.match_types_simple(self.parse_type_ref_simple(f_arg), self.parse_type_ref_simple(a_arg), type_params, inferred)
+        elif isinstance(formal, ArrayTypeName):
+            if isinstance(actual, (ArrayTypeName, ArrayLiteralType)):
+                self.match_types_simple(self.parse_type_ref_simple(formal.element_type), self.parse_type_ref_simple(actual.element_type), type_params, inferred)
+        elif isinstance(formal, ResultTypeName):
+            if isinstance(actual, ResultTypeName):
+                self.match_types_simple(formal.ok_type, actual.ok_type, type_params, inferred)
+                if formal.error_type in type_params:
+                    inferred[formal.error_type].add(actual.error_type)
+
+    def go_declared_base_simple(self, t: TypeRef) -> str:
+        if isinstance(t, TypeName):
+            return t.name
+        if isinstance(t, ArrayTypeName) or isinstance(t, ArrayLiteralType):
+            return "Array"
+        if isinstance(t, ResultTypeName):
+            return "Result"
+        return "Unknown"
+
+    def infer_expr_type(self, expr: Any) -> TypeRef:
+        if isinstance(expr, StringExpr):
+            return TypeName("String")
+        if isinstance(expr, NumberExpr):
+            return TypeName("Integer")
+        if isinstance(expr, DoubleExpr):
+            return TypeName("Double")
+        if isinstance(expr, BoolExpr):
+            return TypeName("Boolean")
+        if isinstance(expr, VarExpr):
+            if expr.name == "result" and self.current_return_type is not None:
+                return self.current_return_type
+            if expr.name in self.current_local_types:
+                return self.current_local_types[expr.name]
+            for param in (self.current_routine_decl.params if self.current_routine_decl else []):
+                if param.name == expr.name:
+                    return self.parse_type_ref_simple(param.type_name)
+            return TypeName("Integer")
+        if isinstance(expr, FieldAccessExpr):
+            head, *tail = expr.path
+            curr_type = self.infer_expr_type(VarExpr(head, expr.pos))
+            for part in tail:
+                if isinstance(curr_type, TypeName):
+                    rec = self.find_record_decl(curr_type.name)
+                    if rec is not None:
+                        for field in rec.fields:
+                            if field.name == part:
+                                curr_type = self.parse_type_ref_simple(field.type_name)
+                                break
+            return curr_type
+        if isinstance(expr, IndexedFieldAccessExpr):
+            head_type = self.infer_expr_type(VarExpr(expr.name, expr.pos))
+            if isinstance(head_type, ArrayTypeName):
+                curr_type = self.parse_type_ref_simple(head_type.element_type)
+            elif isinstance(head_type, ResultTypeName):
+                curr_type = head_type.ok_type
+            else:
+                curr_type = head_type
+            for part in expr.fields:
+                if isinstance(curr_type, TypeName):
+                    rec = self.find_record_decl(curr_type.name)
+                    if rec is not None:
+                        for field in rec.fields:
+                            if field.name == part:
+                                curr_type = self.parse_type_ref_simple(field.type_name)
+                                break
+            return curr_type
+        if isinstance(expr, IndexExpr):
+            head_type = self.infer_expr_type(VarExpr(expr.name, expr.pos))
+            if isinstance(head_type, ArrayTypeName):
+                return self.parse_type_ref_simple(head_type.element_type)
+            return head_type
+        if isinstance(expr, CallExpr):
+            rot = self.called_routine(expr.name)
+            if rot is not None:
+                if rot.return_type is not None:
+                    type_args = self.infer_type_args(rot, expr)
+                    substitutions = dict(zip(rot.type_params or [], type_args))
+                    return self.substitute_type_ref_simple(rot.return_type, substitutions)
+            return TypeName("Integer")
+        if isinstance(expr, RecordLiteralExpr):
+            return TypeName(expr.type_name)
+        if isinstance(expr, ArrayLiteralExpr):
+            if expr.items:
+                elem_type = self.infer_expr_type(expr.items[0])
+                return ArrayTypeName(type_to_string(elem_type), len(expr.items))
+            return ArrayTypeName("Integer", 0)
+        if isinstance(expr, AwaitExpr):
+            awaited = self.infer_expr_type(expr.expr)
+            if isinstance(awaited, AwaitableType):
+                return awaited.inner_type
+            gen = parse_generic(type_to_string(awaited))
+            if gen is not None and gen[0] == "JoinHandle":
+                return self.parse_type_ref_simple(gen[1][0])
+            return awaited
+        if isinstance(expr, UnaryExpr):
+            return self.infer_expr_type(expr.expr)
+        if isinstance(expr, BinaryExpr):
+            if expr.op in ("=", "!=", "<", "<=", ">", ">=", "and", "or"):
+                return TypeName("Boolean")
+            left = self.infer_expr_type(expr.left)
+            right = self.infer_expr_type(expr.right)
+            if type_to_string(left) == "Double" or type_to_string(right) == "Double":
+                return TypeName("Double")
+            return TypeName("Integer")
+        return TypeName("Integer")
+
+    def infer_type_args(self, routine: RoutineDecl, call_node: Any) -> list[str]:
+        if call_node.type_args:
+            return call_node.type_args
+        params = routine.type_params or []
+        inferred = {p: set() for p in params}
+        for arg, p in zip(call_node.args, routine.params):
+            actual_type = self.infer_expr_type(arg)
+            formal_type_ref = self.parse_type_ref_simple(p.type_name)
+            self.match_types_simple(formal_type_ref, actual_type, set(params), inferred)
+        resolved = []
+        for p in params:
+            types_set = inferred[p]
+            if not types_set:
+                resolved.append("Integer")
+            elif len(types_set) == 1:
+                resolved.append(list(types_set)[0])
+            else:
+                bases = {self.go_declared_base_simple(self.parse_type_ref_simple(t)) for t in types_set}
+                if len(bases) == 1:
+                    resolved.append(list(bases)[0])
+                else:
+                    resolved.append(sorted(list(types_set))[0])
+        return resolved
+
+    def specialize_record(self, name: str, args: list[str]) -> RecordTypeDecl:
+        decl = self.generic_records_by_name[name]
+        substitutions = dict(zip(decl.type_params or [], args))
+        specialized_fields = []
+        for field in decl.fields:
+            new_type_name = self.substitute_type_simple(field.type_name, substitutions)
+            specialized_fields.append(RecordField(field.name, new_type_name, field.pos, field.proto_id))
+        specialized_name = name + "_" + "_".join(go_exported_name(arg) for arg in args)
+        return RecordTypeDecl(specialized_name, specialized_fields, decl.pos, None)
+
+    def specialize_routine(self, name: str, args: list[str]) -> RoutineDecl:
+        routine = self.routines_by_name[name]
+        substitutions = dict(zip(routine.type_params or [], args))
+
+        def sub_type_ref(t):
+            return self.substitute_type_ref_simple(t, substitutions)
+
+        def sub_type_str(s: str) -> str:
+            return self.substitute_type_simple(s, substitutions)
+
+        def sub_expr(expr):
+            if expr is None:
+                return None
+            if isinstance(expr, VarExpr):
+                return expr
+            if isinstance(expr, NumberExpr):
+                return expr
+            if isinstance(expr, DoubleExpr):
+                return expr
+            if isinstance(expr, BoolExpr):
+                return expr
+            if isinstance(expr, StringExpr):
+                return expr
+            if isinstance(expr, SpecialResultExpr):
+                return expr
+            if isinstance(expr, FieldAccessExpr):
+                return expr
+            if isinstance(expr, IndexExpr):
+                return IndexExpr(expr.name, sub_expr(expr.index), expr.pos)
+            if isinstance(expr, IndexedFieldAccessExpr):
+                return IndexedFieldAccessExpr(expr.name, sub_expr(expr.index), expr.fields, expr.pos)
+            if isinstance(expr, UnaryExpr):
+                return UnaryExpr(expr.op, sub_expr(expr.expr), expr.pos)
+            if isinstance(expr, BinaryExpr):
+                return BinaryExpr(expr.op, sub_expr(expr.left), sub_expr(expr.right), expr.pos)
+            if isinstance(expr, CallExpr):
+                new_type_args = [sub_type_str(ta) for ta in expr.type_args] if expr.type_args is not None else None
+                return CallExpr(expr.name, [sub_expr(a) for a in expr.args], expr.pos, new_type_args)
+            if isinstance(expr, AwaitExpr):
+                return AwaitExpr(sub_expr(expr.expr), expr.pos)
+            if isinstance(expr, NamedArg):
+                return NamedArg(expr.name, sub_expr(expr.expr), expr.pos)
+            if isinstance(expr, RecordLiteralExpr):
+                return RecordLiteralExpr(sub_type_str(expr.type_name), [sub_expr(a) for a in expr.args], expr.pos)
+            if isinstance(expr, ArrayLiteralExpr):
+                return ArrayLiteralExpr([sub_expr(item) for item in expr.items], expr.pos)
+            if isinstance(expr, ForAllExpr):
+                return ForAllExpr(expr.var_name, sub_expr(expr.lower), sub_expr(expr.upper), sub_expr(expr.expr), expr.pos)
+            if isinstance(expr, ExistsExpr):
+                return ExistsExpr(expr.var_name, sub_expr(expr.lower), sub_expr(expr.upper), sub_expr(expr.expr), expr.pos)
+            return expr
+
+        def sub_stmt(stmt):
+            if isinstance(stmt, LetStmt):
+                return LetStmt(stmt.name, sub_type_ref(stmt.type_ref), sub_expr(stmt.expr), stmt.pos)
+            if isinstance(stmt, AssignStmt):
+                return AssignStmt(stmt.name, sub_expr(stmt.expr), stmt.pos)
+            if isinstance(stmt, FieldAssignStmt):
+                return FieldAssignStmt(stmt.path, sub_expr(stmt.expr), stmt.pos)
+            if isinstance(stmt, ReturnStmt):
+                new_val = stmt.value
+                if isinstance(new_val, ReturnPlain):
+                    new_val = ReturnPlain(sub_expr(new_val.expr), new_val.pos)
+                elif isinstance(new_val, ReturnOk):
+                    new_val = ReturnOk(sub_expr(new_val.expr), new_val.pos)
+                return ReturnStmt(new_val, stmt.pos)
+            if isinstance(stmt, CheckStmt):
+                return CheckStmt(sub_expr(stmt.expr), stmt.pos)
+            if isinstance(stmt, CallStmt):
+                new_type_args = [sub_type_str(ta) for ta in stmt.type_args] if stmt.type_args is not None else None
+                return CallStmt(stmt.name, [sub_expr(a) for a in stmt.args], stmt.pos, new_type_args)
+            if isinstance(stmt, IfStmt):
+                return IfStmt(sub_expr(stmt.condition), [sub_stmt(s) for s in stmt.then_body], [sub_stmt(s) for s in stmt.else_body], stmt.pos)
+            if isinstance(stmt, WhileStmt):
+                return WhileStmt(sub_expr(stmt.condition), [sub_expr(i) for i in stmt.invariants], sub_expr(stmt.variant), [sub_stmt(s) for s in stmt.body], stmt.pos)
+            if isinstance(stmt, CaseStmt):
+                new_branches = []
+                for b in stmt.branches:
+                    new_branches.append(CaseBranch(sub_expr(b.value), [sub_stmt(s) for s in b.body], b.pos))
+                return CaseStmt(sub_expr(stmt.expr), new_branches, [sub_stmt(s) for s in stmt.default_body], stmt.pos)
+            if isinstance(stmt, ScopeStmt):
+                return ScopeStmt(stmt.name, [sub_stmt(s) for s in stmt.spawn_body], [sub_stmt(s) for s in stmt.join_body], [sub_stmt(s) for s in stmt.result_body], stmt.pos)
+            return stmt
+
+        specialized_name = name + "_" + "_".join(go_exported_name(arg) for arg in args)
+        specialized_params = [Param(p.name, sub_type_str(p.type_name), p.pos) for p in routine.params]
+        specialized_return_type = sub_type_ref(routine.return_type)
+        specialized_requires = [sub_expr(req) for req in routine.requires or []]
+        specialized_ensures = [sub_expr(ens) for ens in routine.ensures or []]
+        specialized_aborts = []
+        for ab in routine.aborts or []:
+            specialized_aborts.append(AbortClause(ab.error_name, sub_expr(ab.condition), ab.pos))
+        specialized_body = [sub_stmt(s) for s in routine.body]
+
+        return RoutineDecl(
+            kind=routine.kind,
+            name=specialized_name,
+            params=specialized_params,
+            return_type=specialized_return_type,
+            requires=specialized_requires,
+            aborts=specialized_aborts,
+            ensures=specialized_ensures,
+            body=specialized_body,
+            pos=routine.pos,
+            type_params=None,
+            is_async=routine.is_async,
+            global_specs=routine.global_specs,
+            depends_specs=routine.depends_specs
+        )
+
+    def collect_record_instantiations(self) -> dict[str, set[tuple[str, ...]]]:
+        instantiations: dict[str, set[tuple[str, ...]]] = {}
+        all_programs = [self.program]
+        for resolved in self.resolved_modules.values():
+            if resolved.ast.module_name != self.program.module_name:
+                all_programs.append(resolved.ast)
+        def process_type_ref(t):
+            instances = extract_generic_record_instances(t)
+            for base, args in instances:
+                if base in self.generic_records_by_name:
+                    instantiations.setdefault(base, set()).add(tuple(args))
+        for prog in all_programs:
+            for decl in prog.declarations:
+                if isinstance(decl, TypeDecl):
+                    process_type_ref(decl.base)
+                elif isinstance(decl, RecordTypeDecl):
+                    for field in decl.fields:
+                        process_type_ref(field.type_name)
+                elif isinstance(decl, RoutineDecl):
+                    for param in decl.params:
+                        process_type_ref(param.type_name)
+                    process_type_ref(decl.return_type)
+                    def visit_stmt(stmt):
+                        if isinstance(stmt, LetStmt):
+                            process_type_ref(stmt.type_ref)
+                            visit_expr(stmt.expr)
+                        elif isinstance(stmt, AssignStmt):
+                            visit_expr(stmt.expr)
+                        elif isinstance(stmt, FieldAssignStmt):
+                            visit_expr(stmt.expr)
+                        elif isinstance(stmt, ReturnStmt):
+                            if isinstance(stmt.value, (ReturnPlain, ReturnOk)):
+                                visit_expr(stmt.value.expr)
+                        elif isinstance(stmt, CheckStmt):
+                            visit_expr(stmt.expr)
+                        elif isinstance(stmt, IfStmt):
+                            visit_expr(stmt.condition)
+                            for s in stmt.then_body + stmt.else_body:
+                                visit_stmt(s)
+                        elif isinstance(stmt, WhileStmt):
+                            visit_expr(stmt.condition)
+                            for inv in stmt.invariants:
+                                visit_expr(inv)
+                            if stmt.variant is not None:
+                                visit_expr(stmt.variant)
+                            for s in stmt.body:
+                                visit_stmt(s)
+                        elif isinstance(stmt, CaseStmt):
+                            visit_expr(stmt.expr)
+                            for branch in stmt.branches:
+                                visit_expr(branch.value)
+                                for s in branch.body:
+                                    visit_stmt(s)
+                            for s in stmt.default_body:
+                                visit_stmt(s)
+                        elif isinstance(stmt, ScopeStmt):
+                            for s in stmt.spawn_body + stmt.join_body + stmt.result_body:
+                                visit_stmt(s)
+                        elif isinstance(stmt, CallStmt):
+                            for a in stmt.args:
+                                visit_expr(a)
+                            for ta in stmt.type_args or []:
+                                process_type_ref(ta)
+                    def visit_expr(expr):
+                        if isinstance(expr, UnaryExpr):
+                            visit_expr(expr.expr)
+                        elif isinstance(expr, BinaryExpr):
+                            visit_expr(expr.left)
+                            visit_expr(expr.right)
+                        elif isinstance(expr, CallExpr):
+                            for a in expr.args:
+                                visit_expr(a)
+                            for ta in expr.type_args or []:
+                                process_type_ref(ta)
+                        elif isinstance(expr, AwaitExpr):
+                            visit_expr(expr.expr)
+                        elif isinstance(expr, NamedArg):
+                            visit_expr(expr.expr)
+                        elif isinstance(expr, RecordLiteralExpr):
+                            process_type_ref(expr.type_name)
+                            for a in expr.args:
+                                visit_expr(a.expr)
+                        elif isinstance(expr, ArrayLiteralExpr):
+                            for item in expr.items:
+                                visit_expr(item)
+                        elif isinstance(expr, IndexExpr):
+                            visit_expr(expr.index)
+                        elif isinstance(expr, IndexedFieldAccessExpr):
+                            visit_expr(expr.index)
+                    for s in decl.body:
+                        visit_stmt(s)
+        return instantiations
+
+    def collect_generic_instantiations(self) -> dict[str, set[tuple[str, ...]]]:
+        instantiations: dict[str, set[tuple[str, ...]]] = {}
+        all_programs = [self.program]
+        for resolved in self.resolved_modules.values():
+            if resolved.ast.module_name != self.program.module_name:
+                all_programs.append(resolved.ast)
+        def process_call(name, node):
+            current_prefix = f"{self.program.module_name}."
+            local_name = name[len(current_prefix):] if name.startswith(current_prefix) else name
+            routine = None
+            if "." not in local_name:
+                for decl in self.program.declarations:
+                    if isinstance(decl, RoutineDecl) and decl.name == local_name and decl.type_params:
+                        routine = decl
+                        break
+            if routine is not None:
+                type_args = self.infer_type_args(routine, node)
+                if type_args:
+                    instantiations.setdefault(routine.name, set()).add(tuple(type_args))
+        for prog in all_programs:
+            for decl in prog.declarations:
+                if isinstance(decl, RoutineDecl):
+                    self.current_routine_decl = decl
+                    self.current_local_types = {}
+                    def visit_stmt(stmt):
+                        if isinstance(stmt, LetStmt):
+                            self.current_local_types[stmt.name] = stmt.type_ref
+                            visit_expr(stmt.expr)
+                        elif isinstance(stmt, AssignStmt):
+                            visit_expr(stmt.expr)
+                        elif isinstance(stmt, FieldAssignStmt):
+                            visit_expr(stmt.expr)
+                        elif isinstance(stmt, ReturnStmt):
+                            if isinstance(stmt.value, (ReturnPlain, ReturnOk)):
+                                visit_expr(stmt.value.expr)
+                        elif isinstance(stmt, CheckStmt):
+                            visit_expr(stmt.expr)
+                        elif isinstance(stmt, IfStmt):
+                            visit_expr(stmt.condition)
+                            for s in stmt.then_body + stmt.else_body:
+                                visit_stmt(s)
+                        elif isinstance(stmt, WhileStmt):
+                            visit_expr(stmt.condition)
+                            for inv in stmt.invariants:
+                                visit_expr(inv)
+                            if stmt.variant is not None:
+                                visit_expr(stmt.variant)
+                            for s in stmt.body:
+                                visit_stmt(s)
+                        elif isinstance(stmt, CaseStmt):
+                            visit_expr(stmt.expr)
+                            for branch in stmt.branches:
+                                visit_expr(branch.value)
+                                for s in branch.body:
+                                    visit_stmt(s)
+                            for s in stmt.default_body:
+                                visit_stmt(s)
+                        elif isinstance(stmt, ScopeStmt):
+                            for s in stmt.spawn_body + stmt.join_body + stmt.result_body:
+                                visit_stmt(s)
+                        elif isinstance(stmt, CallStmt):
+                            for a in stmt.args:
+                                visit_expr(a)
+                            process_call(stmt.name, stmt)
+                    def visit_expr(expr):
+                        if isinstance(expr, UnaryExpr):
+                            visit_expr(expr.expr)
+                        elif isinstance(expr, BinaryExpr):
+                            visit_expr(expr.left)
+                            visit_expr(expr.right)
+                        elif isinstance(expr, CallExpr):
+                            for a in expr.args:
+                                visit_expr(a)
+                            process_call(expr.name, expr)
+                        elif isinstance(expr, AwaitExpr):
+                            visit_expr(expr.expr)
+                        elif isinstance(expr, NamedArg):
+                            visit_expr(expr.expr)
+                        elif isinstance(expr, RecordLiteralExpr):
+                            for a in expr.args:
+                                visit_expr(a.expr)
+                        elif isinstance(expr, ArrayLiteralExpr):
+                            for item in expr.items:
+                                visit_expr(item)
+                        elif isinstance(expr, IndexExpr):
+                            visit_expr(expr.index)
+                        elif isinstance(expr, IndexedFieldAccessExpr):
+                            visit_expr(expr.index)
+                    for s in decl.body:
+                        visit_stmt(s)
+        self.current_routine_decl = None
+        self.current_local_types = {}
+        return instantiations
+
+    def find_record_decl(self, name: str) -> RecordTypeDecl | None:
+        current_prefix = f"{self.program.module_name}."
+        local_name = name[len(current_prefix):] if name.startswith(current_prefix) else name
+        if "." not in local_name:
+            for decl in self.program.declarations:
+                if isinstance(decl, RecordTypeDecl) and decl.name == local_name:
+                    return decl
+        if "." in name:
+            for module_name, resolved in sorted(self.resolved_modules.items(), key=lambda item: len(item[0]), reverse=True):
+                prefix = f"{module_name}."
+                if not name.startswith(prefix):
+                    continue
+                record_name = name[len(prefix):]
+                if resolved.verified is not None:
+                    for decl in resolved.ast.declarations:
+                        if isinstance(decl, RecordTypeDecl) and decl.name == record_name:
+                            return decl
+            return None
+        exposed_module = self.exposed_symbols.get(name)
+        if exposed_module is not None:
+            resolved = self.resolved_modules.get(exposed_module)
+            if resolved is not None:
+                for decl in resolved.ast.declarations:
+                    if isinstance(decl, RecordTypeDecl) and decl.name == name:
+                        return decl
+        return None
+
+    def go_resolved_name(self, name: str) -> str:
+        current_prefix = f"{self.program.module_name}."
+        if name.startswith(current_prefix):
+            return go_exported_name(name[len(current_prefix):])
+        for module_name in sorted(self.imports_by_module, key=len, reverse=True):
+            prefix = f"{module_name}."
+            if name.startswith(prefix):
+                symbol_name = name[len(prefix):]
+                self.used_import_modules.add(module_name)
+                return f"{go_import_alias(module_name)}.{go_exported_name(symbol_name)}"
+        imported = self.imported_type_module(name)
+        if imported is not None:
+            self.used_import_modules.add(imported)
+            return f"{go_import_alias(imported)}.{go_exported_name(name)}"
+        return go_exported_name(name)
+
     def generate(self) -> GoCodegenResult:
         package_name = go_package_name(self.program.module_name)
+
+        # Step 1: Scan for all generic instantiations
+        record_instantiations = self.collect_record_instantiations()
+        routine_instantiations = self.collect_generic_instantiations()
+
+        # Step 2: Pre-specialize and register them
+        self.specialized_records_to_emit = []
+        for rec_name, instances in sorted(record_instantiations.items()):
+            for args in sorted(instances):
+                specialized_name = rec_name + "_" + "_".join(go_exported_name(arg) for arg in args)
+                self.local_types.add(specialized_name)
+                spec_rec = self.specialize_record(rec_name, list(args))
+                self.specialized_records_to_emit.append(spec_rec)
+
+        self.specialized_routines_to_emit = []
+        for rot_name, instances in sorted(routine_instantiations.items()):
+            for args in sorted(instances):
+                specialized_name = rot_name + "_" + "_".join(go_exported_name(arg) for arg in args)
+                self.local_routines.add(specialized_name)
+                spec_rot = self.specialize_routine(rot_name, list(args))
+                self.routines_by_name[specialized_name] = spec_rot
+                self.specialized_routines_to_emit.append(spec_rot)
+
         body_lines: list[str] = []
         if program_uses_big_types(self.program):
             self.std_imports.add("math/big")
@@ -365,8 +948,12 @@ class GoGenerator:
             if isinstance(declaration, TypeDecl):
                 body_lines.extend(self.type_decl(declaration))
             elif isinstance(declaration, RecordTypeDecl):
+                if declaration.type_params:
+                    continue
                 body_lines.extend(self.record_decl(declaration))
             elif isinstance(declaration, RoutineDecl):
+                if declaration.type_params:
+                    continue
                 body_lines.extend(self.routine_decl(declaration))
             elif isinstance(declaration, ErrorDecl):
                 body_lines.extend(self.error_decl(declaration))
@@ -374,6 +961,13 @@ class GoGenerator:
                 body_lines.extend(self.service_decl(declaration))
             else:
                 self.unsupported(declaration, "declaration not supported by Go codegen V1")
+
+        # Emit specialized declarations
+        for spec_rec in self.specialized_records_to_emit:
+            body_lines.extend(self.record_decl(spec_rec))
+        for spec_rot in self.specialized_routines_to_emit:
+            body_lines.extend(self.routine_decl(spec_rot))
+
         lines = [
             "// Code generated by Freehold Go codegen V1; DO NOT EDIT.",
             f"package {package_name}",
@@ -1109,6 +1703,9 @@ class GoGenerator:
             if base == "Receiver" and len(args) == 1:
                 self.needs_async_helpers = True
                 return f"FreeholdReceiver[{self.go_type_string(args[0])}]"
+            resolved_base = self.go_type_string(base)
+            clean_args = [go_exported_name(self.go_type_string(arg)) for arg in args]
+            return resolved_base + "_" + "_".join(clean_args)
         
         current_prefix = f"{self.program.module_name}."
         if type_name.startswith(current_prefix):
@@ -1162,6 +1759,9 @@ class GoGenerator:
             base, args = generic
             if base == "Array" and len(args) == 2 and args[1].isdigit():
                 return f"[{args[1]}]{self.go_type_string(args[0])}{{}}"
+            if base == "Result" and len(args) == 2:
+                return f"{self.go_result_type_name(ResultTypeName(TypeName(args[0]), args[1]))}{{}}"
+            return f"{self.go_type_string(type_name)}{{}}"
         return go_zero_value_for_type_name(type_name)
 
     def go_error_name(self, error_name: str) -> str:
@@ -1283,13 +1883,13 @@ class GoGenerator:
             runtime_call = self.runtime_call_expr(expr, None)
             if runtime_call is not None:
                 return runtime_call
-            if expr.type_args:
-                self.unsupported(expr, "generic calls are not supported by Go codegen V1")
             call_routine = self.called_routine(expr.name)
             if call_routine is not None and call_routine.aborts:
                 self.unsupported(expr, "aborting calls in expressions are not supported by Go codegen V1")
             args = self.render_call_args(expr.args, call_routine)
             return f"{self.callable_name(expr.name, expr)}({args})"
+        if isinstance(expr, IsExpr):
+            return "true"
         self.unsupported(expr, "expression not supported by Go codegen V1")
         return "nil"
 
@@ -1299,28 +1899,45 @@ class GoGenerator:
         return self.expr(expr.expr)
 
     def callable_name(self, name: str, node: Any) -> str:
+        routine = self.called_routine(name)
+        resolved_name = name
+        if routine is not None and routine.type_params:
+            type_args = self.infer_type_args(routine, node)
+            if "." in name:
+                parts = name.split(".")
+                base_name = parts[-1]
+                module_part = ".".join(parts[:-1])
+                specialized_base = base_name + "_" + "_".join(go_exported_name(arg) for arg in type_args)
+                resolved_name = f"{module_part}.{specialized_base}"
+            else:
+                resolved_name = name + "_" + "_".join(go_exported_name(arg) for arg in type_args)
+
         current_prefix = f"{self.program.module_name}."
-        if name.startswith(current_prefix):
-            return go_exported_name(name[len(current_prefix):])
+        if resolved_name.startswith(current_prefix):
+            return go_exported_name(resolved_name[len(current_prefix):])
         for module_name in sorted(self.imports_by_module, key=len, reverse=True):
             prefix = f"{module_name}."
-            if name.startswith(prefix):
-                symbol_name = name[len(prefix):]
+            if resolved_name.startswith(prefix):
+                symbol_name = resolved_name[len(prefix):]
                 if "." in symbol_name:
-                    self.unsupported(node, f"nested imported routine names are not supported by Go codegen V1: {name}")
+                    self.unsupported(node, f"nested imported routine names are not supported by Go codegen V1: {resolved_name}")
                 self.used_import_modules.add(module_name)
                 return f"{go_import_alias(module_name)}.{go_exported_name(symbol_name)}"
-        if "." in name:
-            self.unsupported(node, f"qualified call target is not imported by this module: {name}")
-            return go_qualified_name(name)
-        exposed_module = self.exposed_symbols.get(name)
-        if exposed_module is None and name in self.exposed_symbols:
-            self.unsupported(node, f"ambiguous exposed symbol in imported modules: {name}")
-            return go_exported_name(name)
-        if exposed_module is not None and name not in self.local_routines:
+        if "." in resolved_name:
+            parts = resolved_name.split(".")
+            if len(parts) == 2 and parts[0] in self.imports_by_module:
+                self.used_import_modules.add(parts[0])
+                return f"{go_import_alias(parts[0])}.{go_exported_name(parts[1])}"
+            self.unsupported(node, f"qualified call target is not imported by this module: {resolved_name}")
+            return go_qualified_name(resolved_name)
+        exposed_module = self.exposed_symbols.get(resolved_name)
+        if exposed_module is None and resolved_name in self.exposed_symbols:
+            self.unsupported(node, f"ambiguous exposed symbol in imported modules: {resolved_name}")
+            return go_exported_name(resolved_name)
+        if exposed_module is not None and resolved_name not in self.local_routines:
             self.used_import_modules.add(exposed_module)
-            return f"{go_import_alias(exposed_module)}.{go_exported_name(name)}"
-        return go_exported_name(name)
+            return f"{go_import_alias(exposed_module)}.{go_exported_name(resolved_name)}"
+        return go_exported_name(resolved_name)
 
     def runtime_call_statement(self, stmt: CallStmt) -> list[str] | None:
         if stmt.name == "Std.IO.log":
