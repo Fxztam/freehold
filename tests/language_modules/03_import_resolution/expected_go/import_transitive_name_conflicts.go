@@ -10,8 +10,8 @@ func TotalCityIds(seed int64) int64 {
 	if !(seed > 0) {
 		panic("freehold requires contract failed")
 	}
-	domestic := domestic_reports.LoadDomestic(seed)
-	partner := partner_reports.LoadPartner(seed)
+	var domestic domestic_reports.DomesticReport = domestic_reports.LoadDomestic(seed)
+	var partner partner_reports.PartnerReport = partner_reports.LoadPartner(seed)
 	if !(domestic.Order.Address.CityId == domestic.Depot.CityId) {
 		panic("freehold check failed")
 	}

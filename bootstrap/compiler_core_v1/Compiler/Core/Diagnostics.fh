@@ -11,7 +11,7 @@ end record
 
 function make_diagnostic(code: String, message: String, module_name: ModuleName, symbol_name: SymbolName) returns Diagnostic
 requires String.instr(code, "FH-") = 0
-ensures result.code = code, result.message = message
+ensures result.code = code, result.message = message, result.module_name.full = module_name.full, result.symbol_name.raw = symbol_name.raw
 is
     return Diagnostic { code: code, message: message, module_name: module_name, symbol_name: symbol_name }
 end make_diagnostic

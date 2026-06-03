@@ -1,0 +1,26 @@
+module Concurrency.ConcurrencyPreconditionTaskFail
+
+async function worker(val: Integer) returns Integer
+  requires val >= 20
+is
+    return val + 1
+end worker
+
+async function run_failing_spawn() returns Integer
+is
+    let chan: Channel<Integer> = channel<Integer>(8) with invariant for all X in 0 .. 0 => X >= 10
+    let receiver: Receiver<Integer> = channel_receiver<Integer>(chan)
+
+    let val: Integer = await channel_receive<Integer>(receiver)
+
+    scope sc do
+        spawn
+            let handle: JoinHandle<Integer> = sc.spawn<Integer>(worker(val))
+        join
+            let res: Integer = await sc.join<Integer>(handle)
+        result
+            return res
+    end scope
+end run_failing_spawn
+
+end Concurrency.ConcurrencyPreconditionTaskFail

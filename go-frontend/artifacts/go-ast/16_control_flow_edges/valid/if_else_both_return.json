@@ -1,6 +1,6 @@
 {
   "source_file": "..\\tests\\language_modules\\16_control_flow_edges\\valid\\if_else_both_return.fh",
-  "source_snippet": "module Control.IfElseReturn\r\n\r\nfunction classify(amount: Integer) returns Integer\r\nis\r\n    if amount \u003e 0 then\r\n        return 1\r\n    else\r\n        return 0\r\n    end if\r\nend classify\r\n\r\nprocedure main()\r\nis\r\n    check classify(1) = 1\r\nend main\r\n\r\nend Control.IfElseReturn",
+  "source_snippet": "module Control.IfElseReturn\r\n\r\nfunction classify(amount: Integer) returns Integer\r\n    ensures (amount \u003e 0 and result = 1) or (amount \u003c= 0 and result = 0)\r\nis\r\n    if amount \u003e 0 then\r\n        return 1\r\n    else\r\n        return 0\r\n    end if\r\nend classify\r\n\r\nprocedure main()\r\nis\r\n    check classify(1) = 1\r\nend main\r\n\r\nend Control.IfElseReturn",
   "module_name": "16_control_flow_edges",
   "case_kind": "valid",
   "parse_ok": true,
@@ -18,6 +18,68 @@
           }
         ],
         "return_type": "Integer",
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "or",
+            "left": {
+              "kind": "BinaryExpr",
+              "op": "and",
+              "left": {
+                "kind": "BinaryExpr",
+                "op": "\u003e",
+                "left": {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": "0"
+                }
+              },
+              "right": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "IdentifierExpr",
+                  "name": "result"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": "1"
+                }
+              }
+            },
+            "right": {
+              "kind": "BinaryExpr",
+              "op": "and",
+              "left": {
+                "kind": "BinaryExpr",
+                "op": "\u003c=",
+                "left": {
+                  "kind": "IdentifierExpr",
+                  "name": "amount"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": "0"
+                }
+              },
+              "right": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "IdentifierExpr",
+                  "name": "result"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": "0"
+                }
+              }
+            }
+          }
+        ],
         "body": [
           {
             "kind": "IfStmt",

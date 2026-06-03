@@ -108,13 +108,16 @@ Instead of introducing new streaming APIs inside the Freehold language, gRPC str
 
 ---
 
-## 4. Implementation Phases & Estimation
+## 4. Implementation Status & Conformance (ERLEDIGT)
 
-| Phase | Description | Estimated Effort |
+Alle Implementierungsphasen wurden erfolgreich abgeschlossen und in den Compiler sowie die Test-Suite integriert:
+
+| Phase | Status | Beschreibung & Verifikation |
 | :--- | :--- | :--- |
-| **Phase 1: Grammar & Parser** | Lark grammar and AST node updates to support `stream` modifiers. | 1 Day |
-| **Phase 2: Semantic Verification** | Verifier validation rules for streaming types and mapping to Channels. | 2 Days |
-| **Phase 3: Go Codegen** | Stream descriptor and handler adapter code generation in `go_codegen.py`. | 4 Days |
-| **Phase 4: Conformance Tests** | E2E integration test suite verification with live streaming server/client. | 2 Days |
+| **Phase 1: Grammar & Parser** | **ERLEDIGT** | Lark-Grammatik und AST-Strukturen erweitert, um `stream` für Request- und Response-Parameter in gRPC-Services zu unterstützen. |
+| **Phase 2: Semantic Verification** | **ERLEDIGT** | Validierung im Typechecker implementiert: Prüfung auf Record-Typen mit `proto`-IDs, korrekte Typ-Abbildung zu Freehold-Channels (`Sender<T>` / `Receiver<T>`). |
+| **Phase 3: Go Codegen** | **ERLEDIGT** | Generierung der gRPC-Streaming-Deskriptoren und asynchronen Adapter-Methoden in den Go-Bindings zur Weiterleitung von gRPC-Netzwerkströmen. |
+| **Phase 4: Conformance Tests** | **ERLEDIGT** | Abgesichert über das Testmodul `24_grpc_idl` (inklusive `streaming_service.fh` und verifizierten Golden-Go-Bindings unter `expected_go_bindings/streaming_service.go`). |
 
-**Total Estimated Effort:** ~9 Arbeitstage (ca. 1.5 - 2 Wochen)
+Die vollständige Suite läuft unter `python tools/test_steps.py` stabil und fehlerfrei durch.
+

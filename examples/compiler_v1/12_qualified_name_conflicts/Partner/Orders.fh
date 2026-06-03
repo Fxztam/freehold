@@ -27,6 +27,7 @@ end make_order
 function load_order(seed: Integer) returns Result<Order, NotFound>
 requires seed > 0
 ensures value.address.city_id = 7
+ensures value.id = seed + 100
 is
     let depot: Address = make_address(7, "Hamburg")
     let order: Order = make_order(seed + 100, depot)
@@ -34,6 +35,7 @@ is
 end load_order
 
 function order_id(seed: Integer) returns Integer
+ensures result = seed + 100
 is
     let outcome: Result<Order, NotFound> = load_order(seed)
     return outcome.value.id

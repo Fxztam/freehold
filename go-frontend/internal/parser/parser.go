@@ -244,18 +244,32 @@ func (p *Parser) parseRpcDecl() ast.RpcDecl {
 	p.expect(token.LParen)
 	requestName := p.parseName()
 	p.expect(token.Colon)
+
+	requestStream := false
+	if p.at(token.Stream) {
+		p.expect(token.Stream)
+		requestStream = true
+	}
 	requestType := p.parseTypeName()
 	p.expect(token.RParen)
 	p.expect(token.Colon)
+
+	responseStream := false
+	if p.at(token.Stream) {
+		p.expect(token.Stream)
+		responseStream = true
+	}
 	responseType := p.parseTypeName()
 
 	return ast.RpcDecl{
-		Kind:         "RpcDecl",
-		Pos:          start.Pos,
-		Name:         name,
-		RequestName:  requestName,
-		RequestType:  requestType,
-		ResponseType: responseType,
+		Kind:           "RpcDecl",
+		Pos:            start.Pos,
+		Name:           name,
+		RequestName:    requestName,
+		RequestType:    requestType,
+		ResponseType:   responseType,
+		RequestStream:  requestStream,
+		ResponseStream: responseStream,
 	}
 }
 
@@ -318,7 +332,7 @@ func (p *Parser) parseFunction() ast.FunctionDecl {
 	}
 	returnType := p.parseTypeName()
 
-	globalSpecs, requires, aborts, ensures := p.parseContracts()
+	globalSpecs, dependsSpecs, requires, aborts, ensures := p.parseContracts()
 
 	p.expect(token.Is)
 
@@ -331,19 +345,20 @@ func (p *Parser) parseFunction() ast.FunctionDecl {
 	endName := p.parseName()
 
 	return ast.FunctionDecl{
-		Kind:        "FunctionDecl",
-		Pos:         start.Pos,
-		Name:        name,
-		IsAsync:     isAsync,
-		TypeParams:  typeParams,
-		Params:      params,
-		ReturnType:  returnType,
-		GlobalSpecs: globalSpecs,
-		Requires:    requires,
-		Aborts:      aborts,
-		Ensures:     ensures,
-		Body:        body,
-		EndName:     endName,
+		Kind:         "FunctionDecl",
+		Pos:          start.Pos,
+		Name:         name,
+		IsAsync:      isAsync,
+		TypeParams:   typeParams,
+		Params:       params,
+		ReturnType:   returnType,
+		GlobalSpecs:  globalSpecs,
+		DependsSpecs: dependsSpecs,
+		Requires:     requires,
+		Aborts:       aborts,
+		Ensures:      ensures,
+		Body:         body,
+		EndName:      endName,
 	}
 }
 
@@ -356,7 +371,7 @@ func (p *Parser) parseProcedure() ast.ProcedureDecl {
 	params := p.parseParams()
 	p.expect(token.RParen)
 
-	globalSpecs, requires, aborts, ensures := p.parseContracts()
+	globalSpecs, dependsSpecs, requires, aborts, ensures := p.parseContracts()
 
 	p.expect(token.Is)
 
@@ -369,20 +384,21 @@ func (p *Parser) parseProcedure() ast.ProcedureDecl {
 	endName := p.parseName()
 
 	return ast.ProcedureDecl{
-		Kind:        "ProcedureDecl",
-		Pos:         start.Pos,
-		Name:        name,
-		Params:      params,
-		GlobalSpecs: globalSpecs,
-		Requires:    requires,
-		Aborts:      aborts,
-		Ensures:     ensures,
-		Body:        body,
-		EndName:     endName,
+		Kind:         "ProcedureDecl",
+		Pos:          start.Pos,
+		Name:         name,
+		Params:       params,
+		GlobalSpecs:  globalSpecs,
+		DependsSpecs: dependsSpecs,
+		Requires:     requires,
+		Aborts:       aborts,
+		Ensures:      ensures,
+		Body:         body,
+		EndName:      endName,
 	}
 }
 
-func (p *Parser) parseContracts() ([]ast.GlobalSpec, []ast.Expr, []ast.AbortClause, []ast.Expr) {
+func (p *Parser) parseContracts() ([]ast.GlobalSpec, []ast.DependsSpec, []ast.Expr, []ast.AbortClause, []ast.Expr) {
 	var globalSpecs []ast.GlobalSpec
 
 	// Parse global specs
@@ -421,21 +437,26 @@ func (p *Parser) parseContracts() ([]ast.GlobalSpec, []ast.Expr, []ast.AbortClau
 		}
 	}
 
-	// Skip depends specs
+	var dependsSpecs []ast.DependsSpec
+
+	// Parse depends specs
 	for p.at(token.Ident) && p.peek().Lexeme == "depends" {
 		p.pos++ // consume "depends"
 
 		for {
-			p.parseQualifiedName()
+			targetTok := p.peek()
+			target := p.parseQualifiedName()
 			p.expect(token.Arrow)
 
+			var sources []string
 			if p.at(token.LParen) {
 				p.expect(token.LParen)
 				for {
 					if p.at(token.Plus) {
 						p.pos++
+						sources = append(sources, "+")
 					} else {
-						p.parseQualifiedName()
+						sources = append(sources, p.parseQualifiedName())
 					}
 					if p.at(token.Comma) {
 						p.expect(token.Comma)
@@ -447,10 +468,17 @@ func (p *Parser) parseContracts() ([]ast.GlobalSpec, []ast.Expr, []ast.AbortClau
 			} else {
 				if p.at(token.Plus) {
 					p.pos++
+					sources = append(sources, "+")
 				} else {
-					p.parseQualifiedName()
+					sources = append(sources, p.parseQualifiedName())
 				}
 			}
+
+			dependsSpecs = append(dependsSpecs, ast.DependsSpec{
+				Pos:     targetTok.Pos,
+				Target:  target,
+				Sources: sources,
+			})
 
 			if p.at(token.Comma) {
 				p.expect(token.Comma)
@@ -479,7 +507,7 @@ func (p *Parser) parseContracts() ([]ast.GlobalSpec, []ast.Expr, []ast.AbortClau
 		ensures = append(ensures, p.parseContractExprList()...)
 	}
 
-	return globalSpecs, requires, aborts, ensures
+	return globalSpecs, dependsSpecs, requires, aborts, ensures
 }
 
 func (p *Parser) parseAbortClause() ast.AbortClause {

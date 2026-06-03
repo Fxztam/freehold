@@ -1,8 +1,8 @@
 # Open: Async/Await, Structured Concurrency und Channels in Freehold
 
-Stand: 2026-06-01
-
-Status: V1 abgeschlossen mit formaler Verifikation; Concurrency-Verifikation (Kanal-Invarianten, Spawn-Vorbedingungen, sequentielles Scope-Pfadthreading) und Go-Codegen-Senkung für Scopes/Kanäle implementiert.
+Stand: 2026-06-03
+ 
+Status: V1 & V2/V3 vollständig gelöst und implementiert. Neben der formalen Verifikation (Kanal-Invarianten, Spawn-Vorbedingungen) sind auch der voll funktionsfähige asynchrone M:N Thread-Pool-Scheduler mit prioritätsbasiertem Work-Stealing, Cancellation Tokens & Timeout-Propagation und Concurrency-Limitierungen (Semaphoren/Load Throttling) im Go-Codegen-Backend umgesetzt.
 
 Dieses Dokument haelt die erste Diskussion und Grundsatzentscheidung zur Concurrent-/Async-Runtime in Freehold fest. V1 ist als statische Sprach-/Verifier-Schicht abgeschlossen: async/await-Grundlagen, Runtime-Kerntypen, Channel-Typregeln und strukturierte Scope-Lifetime-Regeln sind testbar. Formale Verifikationsregeln für Kanäle, Scopes, Spawn-Vorbedingungen und Z3/SMT-Modellierung sind vollständig integriert. Echte Scheduler-Cancellation und fortgeschrittenes Thread-Stealing bleiben für V2/V3 geparkt.
 

@@ -2,7 +2,11 @@
 package functioncallexpressionvalue
 
 func One() int64 {
-	return 1
+	var freeholdResult int64 = 1
+	if !(freeholdResult == 1) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }
 
 func Main() {

@@ -95,4 +95,171 @@ Verifiziert:
 - `verify-stage3-compiler-core-v1.cmd`: **erfolgreich durchgelaufen** (Total contracts: 1, Matching: 1, Failing: 0).
 - Alle Go-Quellcodedateien im Stage-3 Build kompilieren und verifizieren sich fehlerfrei.
 
+## Generics-Monomorphisierung & Quantoren-Syntax (Go-Codegen-Pipeline)
 
+Stand: 2026-06-03
+
+Umgesetzt:
+
+- **Generics Monomorphization Pipeline (Go-Backend):**
+  - Implementierung von `collect_record_instantiations` und `collect_generic_instantiations` in `GoGenerator` zur Vorabanalyse aller konkreten Typinstantiierungen.
+  - Implementierung der AST-Spezialisierungsmethoden `specialize_record` und `specialize_routine`, um Typparameter durch konkrete Argumente auf AST-Ebene zu ersetzen und spezialisierte Go-Varianten ohne Interface-Boxing zu emittieren.
+  - Dynamische Anpassung von `callable_name` und `go_type_string`, um generische Referenzen auf monomorphisierte Go-Identifier abzubilden (z. B. `Box<Integer>` $\rightarrow$ `Box_Integer`, `identity<Integer>` $\rightarrow$ `IdentityInteger`).
+  - Behebung eines Package-Präfix-Auflösungsfehlers in `callable_name` bei der Spezialisierung importierter unqualifizierter Routinen (z. B. `assert_val(x)`), sodass importierte Generics korrekt mit ihrem Zielpaket-Alias qualifiziert werden (z. B. `util_helper.AssertValInteger`).
+- **Quantoren-Syntax (Universal- & Existenzquantoren):**
+  - Integration von `ForAllExpr` und `ExistsExpr` in die EBNF-Grammatik (`freehold.dhparser.ebnf`) zur Unterstützung von `for all` / `for some` Ausdrücken.
+  - Erweiterung von `compare_ast_shape.py` und `compare_ast_semantic.py` um Normalisierung und Shape-Vergleiche für diese Ausdrücke, um die Parität zwischen Parser und semantischem Analysator sicherzustellen.
+  - Behebung eines FH-IR-Export-Absturzes in `freehold/core/fhir.py` durch Hinzufügen der Serialisierungsunterstützung für `IsExpr`.
+- **Aktivierung generischer Compiler-Beispiele:**
+  - Verschiebung des bisher ununterstützten Beispiels `generic_function` nach `examples/compiler_v1/26_generic_function/`.
+  - Überführung der Beispiele `23_generic_type_inference_and_constraints` und `26_generic_function` in die `SUPPORTED_EXAMPLES`-Liste von `verify_compiler_examples.py`. Beide Beispiele werden nun nativ in Go kompiliert und getestet.
+
+Verifiziert:
+
+- `verify-compiler-examples.cmd`: **erfolgreich durchgelaufen** (Alle 26 Go-Compilerbeispiele kompilieren und bauen fehlerfrei auf).
+- `verify-parser-conformance.cmd`: **erfolgreich durchgelaufen** (Alle 341 Parser-Konformitätstests, AST-Vergleiche, FH-IR-Spezifikationen und additiven Zeilentests bestanden).
+- Alle Go-Tests im Frontend (`go test ./...` in `go-frontend`) sind grün.
+
+## Generics V2: Type Inference (Implizite Typinferenz für generische Funktionsargumente)
+
+Stand: 2026-06-03
+
+Umgesetzt:
+
+- **Automatische Typinferenz im Verifier (`verifier.py`):**
+  - Erweiterung des semantischen Analysators und Type-Checkers (`routine_type_substitutions`), um bei Aufrufen ohne explizit übergebene Typparameter die Typparameter über die formalen Parameter und die Typen der übergebenen Argumente per Type-Unification (`match_types`) automatisch herzuleiten.
+  - Die erfolgreich inferierten Typparameter werden zur Compilezeit direkt im AST (`CallExpr` und `CallStmt` Knoten) über das Attribut `type_args` persistiert. Dadurch steht die volle Spezialisierungsinformation downstream in der Monomorphisierungs-Pipeline zur Verfügung.
+- **Go-Codegen- & FH-IR-Integration:**
+  - Da die Typen nun direkt im AST annotiert werden, profitiert die Go-Codegen-Monomorphisierung (`GoGenerator`) nahtlos von den im Verifier berechneten Typen.
+  - Aktualisierung der FH-IR Conformance-Baselines (`compare_fhir.py --update`), um die neuen, automatisch befüllten `type_args`-Felder bei impliziten Generics-Aufrufen in den JSON-Ausgaben zu erhalten und zu sichern.
+
+Verifiziert:
+
+- `verify-language-modules-v2_3.cmd`: **erfolgreich durchgelaufen** (Alle 45/45 modularisierten Sprachtests bestanden, inklusive der vollständigen Suite für Typinferenz und Constraints).
+- `verify-parser-conformance.cmd`: **erfolgreich durchgelaufen** (AST-Shape-, Semantik- und FH-IR-Konformitätstests über alle 341 Testfälle vollständig grün).
+- E2E-Generics-Pipeline arbeitet vollautomatisch: implizite Aufrufe wie `check_value(42)` werden zur Compilezeit korrekt in `check_value_Integer(42)` übersetzt und verhalten sich identisch zu expliziten Spezialisierungen.
+
+## VM & Interpreter-Erweiterung (Phase 4): Dynamischer Call-Stack
+
+Stand: 2026-06-03
+
+Umgesetzt:
+
+- **Dynamische Aktivierungsrahmen-Stapel (Activation Frame Stack):**
+  - Erweiterung der VM-Taskstruktur (`VmTask`) in `Compiler/Core/Vm.fh` um dynamisch verwaltete Aufruflisten für Frames (`stack`), Routinen (`routine_stack`) und Zielregister (`caller_dest_reg_stack`).
+  - Ablösung der festen, statischen Array-Zuweisung durch flexible Stapelzeiger (`stack_pointer`), um verschachtelte und rekursive Funktionsaufrufe beliebiger Tiefe zu ermöglichen.
+- **Frame-Pushing bei verschachtelten `CALL`-Instruktionen:**
+  - Anpassung des `CALL`-Befehlshandlers in `execute_instruction_multitask`, sodass bei Aufrufen nicht-host-basierter Funktionen der aktuelle Zustand des Aufrufers (inkl. des inkrementierten Befehlszeigers `ip + 1` und des Zielregisters für den Rückgabewert) auf den Stapel gelegt wird.
+  - Initialisierung eines frischen Aktivierungsrahmens (`callee_frame`) für die Zielroutine und Übergabe der Argumente über die Standardregister `_arg0` und `_arg1`.
+- **Kontext-Restaurierung bei `RETURN`:**
+  - Anpassung des `RETURN`-Terminatorhandlers in der Task-Ausführungsschleife (`execute_task_slice`), um bei einem `stack_pointer > 0` den Kontext des Aufrufers vom Stapel zu holen.
+  - Übertragung des Rückgabewerts (`return_value`) in das spezifizierte Empfängerregister des Aufrufers.
+  - Rücksprung zum gespeicherten Befehlszeiger (`ip`) der aufrufenden Routine und Fortsetzung der Ausführung.
+- **End-to-End-Verifikation & Integration:**
+  - Implementierung von `test_vm_nested_call` in `bootstrap/compiler_core_v1/App/Main.fh`, das ein transitiv geschachteltes Aufrufszenario (`main` $\rightarrow$ `add_two` $\rightarrow$ `add_one`) aufbaut, ausführt und das mathematisch korrekte Ergebnis (`7` bei Input `5`) validiert.
+  - Aktualisierung der Goldenen Test-Erwartungen (`compiler_core_results.expected.txt`), um die Log-Ausgaben der neuen VM-Nested-Call E2E-Tests zu integrieren.
+
+Verifiziert:
+
+- `verify-stage3-compiler-core-v1.cmd`: **erfolgreich durchgelaufen** (Total contracts: 1, Matching: 1, Failing: 0).
+- `verify-stage3-compiler-examples.cmd`: **erfolgreich durchgelaufen** (Sämtliche Compilerbeispiele und Fuzzing-Tests bestanden).
+- Die VM verhält sich bei verschachtelten Funktionsaufrufen hochgradig präzise und stellt Registerzustände und Ausführungskontexte fehlerfrei wieder her.
+
+## VM-Laufzeitprüfungen & Typmetadaten (Runtime Assertions & Type Metadata Integration)
+
+Stand: 2026-06-03
+
+Umgesetzt:
+
+- **Dynamische Typmetadaten-Integration:**
+  - Erweiterung des `IrType`-Datentyps in `Compiler/Core/Ir.fh` um Wertebereichs-Constraints (`has_range`, `min_value`, `max_value`) für die Verifizierung und Laufzeitprüfung von Subtypen.
+  - Erweiterung der IR-Routine-Definition (`IrRoutine`) um eine Typmetadaten-Tabelle (`types: Array<IrType, 10>` und `type_count: Integer`), um eine effiziente O(1)-Typsuche zur Laufzeit zu ermöglichen.
+- **Compiler AST-zu-IR Lowering-Synchronisierung:**
+  - Erweiterung der Lowering-Routine (`lower_routine` und Typ-Resolving) in `Compiler/Core/Lowering.fh`, um die Subtyp-Metadaten direkt aus der Symboltabelle in die IR-Routine-Tabelle zu übernehmen.
+- **Hardening des VM-Interpreters (Runtime-Assertions):**
+  - **Subtyp-Bereichsprüfung (Range Checks):** Integration von `check_type_range` in den VM-Instruktionsverteiler in `Compiler/Core/Vm.fh`. Vor jeder Zuweisung, Registerladung (`LOAD`), Register-Speicherung (`STORE`) oder arithmetischen Operation (`ASSIGN`, `BINARY_OP`) mit zugeordneter Typ-ID wird geprüft, ob der Wert innerhalb der Grenzwerte des Subtyps liegt. Bei einer Verletzung bricht die VM kontrolliert ab (`RUNTIME ERROR: Value <X> is out of bounds for subtype <T> (range <Min>..<Max>)`) und setzt den Fehler-Befehlszeiger (`ip = 999999`).
+  - **Index-Grenzprüfung (Array Bounds Checks):** Absicherung von Heap-Array-Zugriffen (`LOAD`, `STORE`) gegen Out-of-Bounds-Indizes. Falls der berechnete Index außerhalb des gültigen Bereichs des Zielarrays liegt, wird die Ausführung abgebrochen (`RUNTIME ERROR: Array index out of bounds`).
+  - **CHECK-Instruktion-Verifikation:** Implementierung des `CHECK`-Handlers in `Compiler/Core/Vm.fh`. Diese Instruktion prüft, ob die in `src_reg_left` übergebene Bedingung wahr ist. Ist sie falsch, wird die Ausführung mit einer Fehlermeldung abgebrochen (`RUNTIME ERROR: <abort_error> (CHECK instruction failed)`).
+- **Behebung von Syntax-Restriktionen im FH-Parser:**
+  - Da der FH-Parser direkte geschachtelte Record-Array-Zugriffe der Form `r.types[idx]` als syntaktisch unzulässig abweist, wurde ein lokaler Variablen-Bindungs-Workaround eingeführt (`let rtypes: Array<IrType, 10> = r.types; let t: IrType = rtypes[type_idx]`).
+- **End-to-End Testabdeckung in der Testsuite:**
+  - Implementierung von `test_vm_runtime_assertions` in `bootstrap/compiler_core_v1/App/Main.fh`.
+  - Der E2E-Laufzeittest simuliert dedizierte Instruktionen für gültige und ungültige Zuweisungen (z. B. Wert 11 für Subtyp im Bereich 5..10), Out-of-Bounds-Arrayzugriffe (Index 3 bei Arraygröße 3) sowie fehlschlagende `CHECK`-Zusicherungen, und validiert den korrekten VM-Abbruch und die Fehlerausgabe.
+  - Abgleich der erwarteten Testausgaben in `compiler_core_results.expected.txt`.
+
+Verifiziert:
+
+- `verify-stage3-compiler-core-v1.cmd`: **erfolgreich durchgelaufen** (Total contracts: 1, Matching: 1, Failing: 0).
+- Alle modularisierten Sprachtests und Compiler-Beispiele verifizieren und kompilieren sich fehlerfrei nach Go und Z3/fallback.
+
+## Symbolic Verifier Call-Inlining & Flow Contract Stabilization
+
+Stand: 2026-06-03
+
+Umgesetzt:
+
+- **Echtes Prozedur-Inlining im symbolischen Verifizierer (`symbolic.py`):**
+  - Implementierung eines in-place Prozedur-Inlining-Verfahrens in `walk_body` für `CallStmt` Aufrufe. Anstatt auf unvollständige Postkonditionen-Deklarationen im SMT-Solver zu vertrauen, wird der Rumpf der gerufenen Prozedur zur SMT-Generierungszeit direkt in die Anweisungsliste des Aufrufers expandiert.
+  - Das Inlining läuft sequenziäler ab und fügt die expandierten Anweisungen direkt nach der `CallStmt` in die zu verarbeitende Anweisungsliste (`body`) ein, was die korrekte Akkumulation von Pfadbedingungen und lokalen Variablen-Substitutionszuständen im selben Ausführungskontext garantiert.
+- **Parametermapping über Roh-Argumentausdrücke:**
+  - Behebung des Aliasing- und Mutationsverarbeitungs-Bugs: Mutierte Parameter (über `depends` definiert) werden nun direkt auf die rohen Argumentausdrücke des Aufrufers (z. B. `VarExpr("a")`, `VarExpr("b")`) statt auf deren substituierte Konstantenwerte abgebildet.
+  - Dadurch bleibt die Mutationsfähigkeit der Variablen im Aufrufer über das gesamte inlined Ausführungsspektrum hinweg erhalten, da Zuweisungen an Parameter im SMT-Modell als Zuweisungen an die Originalvariablen des Aufrufers interpretiert und aktualisiert werden.
+- **Kollisionsfreie lokale Namensbereiche:**
+  - Lokale Variablen der inlined Prozedur werden mithilfe eines eindeutigen Präfixes (`_inl_N_`) umbenannt, um Namenskollisionen mit Variablen des Aufrufers oder anderer inlined Aufrufe vollständig auszuschließen.
+- **Korrekte Vorbedingungsprüfung:**
+  - Die Vorbedingungen (`requires`) der gerufenen Prozeduren werden vor dem Rumpf-Inlining ausgewertet, indem die formalen Parameter auf die Argumente abgebildet und anschließend die lokalen Ersetzungen des Aufrufers angewendet werden, bevor sie in SMT-Verpflichtungen übersetzt werden.
+
+Verifiziert:
+
+- `verify-stage3-compiler-examples.cmd`: **erfolgreich durchgelaufen** (Beispiel `24_flow_contracts` verifiziert sich vollständig und fehlerfrei über Z3/fallback, alle 27 Compilerbeispiele sowie Fuzzingtests bestanden).
+- `verify-stage3-compiler-core-v1.cmd`: **erfolgreich durchgelaufen**.
+
+## V2/V3 Channel-Verifikation & symbolische Substitutions-Haertung
+
+Stand: 2026-06-03
+
+Umgesetzt:
+
+- **Multi-Channel Request/Response Demo:**
+  - Erweiterung von `tests/language_modules_v2_3/07_concurrency_verification` um ein komplexeres kooperatives Channel-Szenario mit Producer, Request-Channel, Service, Response-Channel und Consumer.
+  - Positivfall `multichannel_request_response_pos.fh` validiert den strukturierten Producer/Consumer- und Request/Response-Ablauf ueber mehrere Channels und Tasks.
+  - Negativfall `multichannel_request_response_violation_fail.fh` erzwingt eine compile-time Verifikationsverletzung am Request-Channel und endet gezielt als `VF-V001` mit `channel_invariant obligation is satisfiable (violated)`.
+- **Let-Chain-Substitutionsabdeckung fuer Channel-Invarianten:**
+  - Ergaenzung von `channel_send_let_chain_substitution_pos.fh`, das lokale Alias- und Ausdrucksketten (`base -> adjusted -> payload`) bis in `await channel_send(...)` hinein absichert.
+  - Ergaenzung von `channel_send_let_chain_violation_fail.fh` plus `.err`-Golden, um die gleiche Kette negativ gegen eine strengere Channel-Invariant zu pruefen.
+  - Ergebnis: Die bestehende symbolische Substitution fuer lokale `let`-Alias-/Ausdrucksketten ist ausreichend stark; es war kein weiterer Code-Fix noetig, aber die Kante ist jetzt regressionssicher abgedeckt.
+- **Manifest-Erweiterung:**
+  - Registrierung der neuen positiven und negativen Faelle in `tests/language_modules_v2_3/07_concurrency_verification/manifest.json`.
+
+Verifiziert:
+
+- `python -m freehold test-language --root .\tests\language_modules_v2_3 --module 07_concurrency_verification`: **erfolgreich durchgelaufen** (`15/15`).
+- `verify-language-modules-v2_3.cmd`: **erfolgreich durchgelaufen** (`60/60 language module tests passed`).
+- `git diff --check -- tests/language_modules_v2_3/07_concurrency_verification`: **ohne Whitespace-Fehler**.
+
+## FH-Native Stage3 Loader V1
+
+Stand: 2026-06-03
+
+Umgesetzt:
+
+- **Scope festgezogen:**
+  - Der begonnene breite Loader-Prototyp wurde auf einen ersten Stage3-tauglichen V1-Slice reduziert.
+  - `Compiler.Core.Loader` liest aktuell einen begrenzten JSON-Projektgraphen in ein kleines `ProjectGraph`-Record mit `module_name`, `import_count`, `routine_name` und `return_value`.
+  - Bewusst noch nicht Teil dieses Slice: vollstaendiges JSON-AST-Rehydrating, IR-Lowering im Loader selbst, echte Projektdatei-Ausfuehrung und Runtime-Golden.
+- **Loader-Demo-Fixture:**
+  - Ergaenzung von `bootstrap/compiler_core_v1/fixtures/project_graph_loader_demo.json` als sprechende V1-Demo fuer den aktuellen Loader-Scope.
+  - Das Demo beschreibt einen minimalen Projektgraphen mit Modul `App.Main`, einem Import `Domain.Math exposing inc` und einer `main`-Routine mit `ReturnStmt`/`NumberExpr(42)`.
+  - Der vollstaendige JSON-AST-/Projektgraph-Loader bleibt bewusst der naechste V2-Schritt: Er wird fuer Rehydratisierung und spaeteres Re-Compilieren aus AST-/IR-Artefakten benoetigt, ist aber noch nicht Teil dieses stabilen Stage3-V1-Gates.
+- **Loader-Gate definiert:**
+  - Neuer Gate-Command `verify-stage3-loader-v1.cmd`.
+  - Neues Manifest `artifacts/stage3/compiler_core_loader_v1/manifest.json`.
+  - Neues Report-Verzeichnis `artifacts/stage3/compiler_core_loader_v1/report`.
+  - Das bestehende Stage3-Vertragswerkzeug unterstuetzt nun optionale modul-only Contracts ueber `build_options.emit_executable: false`.
+- **Generator-Scope geklaert:**
+  - `tools/generate_loader.py` ueberschreibt den Loader nicht mehr mit dem alten breiten Prototyp, sondern dokumentiert, dass `Loader.fh` fuer diesen Slice direkt gepflegt wird.
+
+Verifiziert:
+
+- `python -m freehold verify .\bootstrap\compiler_core_v1\Compiler\Core\Loader.fh`: **erfolgreich durchgelaufen**.
+- `verify-stage3-loader-v1.cmd`: **erfolgreich durchgelaufen** (`1/1`, keine Failures).

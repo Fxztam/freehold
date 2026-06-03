@@ -2,21 +2,20 @@
 package genericfunctionunwrapbox
 
 func Main() {
-	b := Box_Int64{Item: 1}
-	x := UnwrapInteger(b)
+	var b GenericFunctionUnwrapBoxBoxInteger = GenericFunctionUnwrapBoxBoxInteger{Item: 1}
+	var x int64 = GenericFunctionUnwrapBoxUnwrapInteger(b)
 	if !(x == 1) {
 		panic("freehold check failed")
 	}
 }
 
-type BoxInteger struct {
-	Item int64 `json:"item"`
-}
-
-type BoxT struct {
-	Item T `json:"item"`
-}
-
-func UnwrapInteger(box Box_Int64) int64 {
-	return box.Item
+func GenericFunctionUnwrapBoxUnwrapInteger(box BoxInteger) int64 {
+	if !(true) {
+		panic("freehold requires contract failed")
+	}
+	var freeholdResult int64 = box.Item
+	if !(freeholdResult == box.Item) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }

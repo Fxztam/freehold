@@ -6,7 +6,7 @@ import (
 )
 
 func Main() {
-	root := math.Sqrt(float64(9.0))
+	var root float64 = math.Sqrt(float64(9.0))
 	if !(root == 3.0) {
 		panic("freehold check failed")
 	}

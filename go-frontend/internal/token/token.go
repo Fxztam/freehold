@@ -59,6 +59,7 @@ const (
 	Service   Kind = "service"
 	Rpc       Kind = "rpc"
 	Proto     Kind = "proto"
+	Stream    Kind = "stream"
 
 	Plus         Kind = "+"
 	Minus        Kind = "-"

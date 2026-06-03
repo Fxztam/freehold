@@ -2,7 +2,7 @@
 package emptyarrayliteral
 
 func Main() {
-	values := [0]int64{}
+	var values [0]int64 = [0]int64{}
 	_ = values
 	if !(true) {
 		panic("freehold check failed")

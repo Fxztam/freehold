@@ -2,13 +2,13 @@
 package genericinferencesuccess
 
 func Main() {
-	x := MaxInteger(3, 4)
+	var x int64 = GenericInferenceSuccessMaxInteger(3, 4)
 	_ = x
-	y := MaxDouble(5.0, 2.0)
+	var y float64 = GenericInferenceSuccessMaxDouble(5.0, 2.0)
 	_ = y
 }
 
-func MaxDouble(a float64, b float64) float64 {
+func GenericInferenceSuccessMaxDouble(a float64, b float64) float64 {
 	if !(true) {
 		panic("freehold requires contract failed")
 	}
@@ -19,7 +19,7 @@ func MaxDouble(a float64, b float64) float64 {
 	}
 }
 
-func MaxInteger(a int64, b int64) int64 {
+func GenericInferenceSuccessMaxInteger(a int64, b int64) int64 {
 	if !(true) {
 		panic("freehold requires contract failed")
 	}

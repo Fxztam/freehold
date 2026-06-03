@@ -32,6 +32,7 @@ is
 end load_unit_price
 
 async function reserve_inventory(quantity: Integer) returns Boolean
+requires quantity > 0
 is
     check quantity > 0
     return true
@@ -47,6 +48,7 @@ is
 end audit_roundtrip
 
 async function quote(request: PriceRequest, sender: Sender<AuditEvent>, receiver: Receiver<AuditEvent>) returns PriceReply
+requires request.quantity > 0
 is
     scope quote_scope do
         spawn

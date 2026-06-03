@@ -2,10 +2,10 @@
 package genericmissingfunctiontypeargument
 
 func Main() {
-	x := IdentityInteger(1)
+	var x int64 = GenericMissingFunctionTypeArgumentIdentityInteger(1)
 	_ = x
 }
 
-func IdentityInteger(x int64) int64 {
+func GenericMissingFunctionTypeArgumentIdentityInteger(x int64) int64 {
 	return x
 }

@@ -6,9 +6,17 @@ type Account struct {
 }
 
 func MakeAccount() Account {
-	return Account{Id: 1}
+	var freeholdResult Account = Account{Id: 1}
+	if !(freeholdResult.Id == 1) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }
 
 func IsValid(account Account) bool {
-	return account.Id == 1
+	var freeholdResult bool = account.Id == 1
+	if !(freeholdResult == (account.Id == 1)) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }

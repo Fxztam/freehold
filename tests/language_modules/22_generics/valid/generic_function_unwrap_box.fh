@@ -5,6 +5,8 @@ type Box<T> is record
 end record
 
 function unwrap<T>(box: Box<T>) returns T
+    requires T is Equatable
+    ensures result = box.item
 is
     return box.item
 end unwrap

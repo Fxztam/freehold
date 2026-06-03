@@ -1,6 +1,6 @@
 # OPEN Status
 
-Stand: 2026-06-02
+Stand: 2026-06-03
 
 Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V2/V3-Themen. Die ehemals offenen `OPEN-*.md`-Dateien, die vollständig für V1 gelöst sind, wurden mit `=== CLOSED ===` versehen und in den neuen Ordner `CLOSED-OPENS/` verschoben. 
 
@@ -21,7 +21,7 @@ Die folgenden Dokumente wurden erfolgreich gelöst, geschlossen und nach `CLOSED
 | Structured Concurrency | `CLOSED-OPENS/OPEN-CONCURRENT.md` | V1 async/await core, runtime types, channels, structured scope, and formal concurrency verification implemented. |
 | gRPC IDL | `CLOSED-OPENS/OPEN-GRPC.md` | V1 parser/AST/semantics, diagnostics, proto3 codegen, and unary Go server binding generation implemented. |
 | Transport Scope Architecture | `CLOSED-OPENS/OPEN-CONRURRENT-GRPC-WEBSOCKET-REST.md` | V1 architecture decision recorded: transport libs reuse common Concurrent.Scope. |
-| Generics | `CLOSED-OPENS/OPEN-GENERICS.md` | V1b record and function generics implemented; codegen/inference/bounds parked. |
+| Generics | `CLOSED-OPENS/OPEN-GENERICS.md` | V1b record and function generics implemented; V2/V3 inference, constraints, procedure generics and Go codegen monomorphization are now covered by language-module and compiler-example tests. |
 | Stage 3 Compiler Core | `CLOSED-OPENS/OPEN-STAGE3-COMPILER-CORE.md` | Mini-Compilerkern in Freehold implementiert, Go-transpiliert und verifiziert. |
 | Stage 1 Bootstrapping | `CLOSED-OPENS/OPEN-STAGE1-BOOTSTRAPPING.md` | Alle Meilensteine 1-5 (Lexer, Parser, Resolver, Lowering und Selbstübersetzung) erfolgreich abgeschlossen und per bytegleichem IR-Vergleich verifiziert. Post-Self-Hosting Roadmap gestartet. |
 | Before Go Compiler | `CLOSED-OPENS/OPEN-BEFORE-GO-COMPILER.md` | Abgeschlossen fuer Compiler V1 Start: proto mapping getestet, schema minimal rule, generics codegen policy, Result/Abort policy, runtime builtins boundary, syntax freeze. |
@@ -46,7 +46,6 @@ Die folgenden komplexen Sprach- und Runtime-Features sind bewusst geparkt und bl
 - **gRPC-Client-Bindings, Streaming, Deadlines und Metadaten-Annotationen.**
 - **Async-Runtime-Executor (Scheduling, Cancellation Tokens).**
 - **REST/WebSocket-Verbindungsbibliotheken.**
-- **Generics-Inferenz und Monomorphisierung des generierten Go-Codes.**
 - **Pfadsensitive Kontrollfluss-Analyse (Path-aware analysis) und Abort-Implikationsprüfung.**
 
 Weitere Details:
@@ -55,14 +54,14 @@ Weitere Details:
 - gRPC streaming, cancellation, deadlines, metadata, and auth annotations.
 - Runtime execution for async tasks, executor scheduling, cancellation tokens, and channel runtime behavior.
 - Transport libraries for REST, WebSocket, SSE, and their ergonomic request/connection scopes.
-- Generics bounds, inference, qualified generic calls, monomorphized codegen artifacts, and generic IDL monomorphization.
+- Remaining generics expansion beyond the current V2/V3 slice, especially qualified generic calls in broader module contexts and generic IDL monomorphization.
 - Path-aware control-flow analysis, abort condition implication, handler syntax, reachability, and proof-obligation integration.
 - Broad Go compiler feature coverage beyond the modular Compiler V1 start slice.
 - AST-based VS Code formatter and semantic editor completion; pragmatic completion V1 comes first.
 
 ## Current Gate Baseline
 
-Latest verified baseline after the compiler runtime breadth expansion:
+Latest verified baseline after the compiler runtime breadth, V2/V3 generics, channel-verification, and runtime-assertion updates:
 
 ```text
 verify-go-semantic-projects.cmd
@@ -85,7 +84,7 @@ Report warnings: 71
 Mismatches:      0
 
 verify-compiler-examples.cmd
-Compiler example smoke passed; includes compiler_v1_result_abort_array_runtime_builtins.expected.log
+Compiler example smoke passed; includes compiler_v1_result_abort_array_runtime_builtins.expected.log and the positive generics examples `23_generic_type_inference_and_constraints` / `26_generic_function`
 
 verify-additive-test-line.cmd
 Allowed additions:       0
@@ -96,8 +95,18 @@ Total contracts:    1
 Matching contracts: 1
 Failing contracts:  0
 
+verify-stage3-loader-v1.cmd
+Total contracts:    1
+Matching contracts: 1
+Failing contracts:  0
+
 verify-language-modules-v2_3.cmd
-Passed language module tests: 45/45
+Passed language module tests: 60/60
+
+Included V2/V3 slices:
+- `03_generic_type_inference_and_constraints` covers inference, constraints, procedure generics, nested inference conflicts, and monomorphized Go codegen.
+- `07_concurrency_verification` covers channel invariant send substitution and alias violation diagnostics.
+- `08_runtime_assertions` covers VM runtime assertion hardening cases for subtype ranges, array bounds, and check verification.
 
 git diff --check
 No whitespace errors.
@@ -118,8 +127,10 @@ The normal single-module Go semantic gate remains intentionally narrow and uncha
 3. Go Codegen V1 Runtime-Breite weiter ausbauen.
    - Erledigt: `15_result_abort_array_runtime_builtins` prueft `Result<Array<imported Record, 3>, imported Error>`, eine abortende importierte Domain-Routine, komplexere `requires`/`ensures` und Math/String/Json/Big-Builtins in einem echten Mehr-Package-Beispiel mit `verify-compiler-examples.cmd`-Ausgabevergleich.
    - Erledigt: Result-Array-Contracts koennen im Python-Frontend und Go-Codegen `value[index].field` nutzen; Beispiel 15 prueft diese Form im Mehr-Package-Runtime-Smoke.
+   - Erledigt: Generics-Inferenz, Constraints und Function/Procedure-Monomorphisierung sind in V2/V3 und in den Compiler-V1-Beispielen als positive Go-Codegen-Smokes abgedeckt.
    - Naechste Runtime-Smokes koennen gezielt die noch offenen Grenzen wie abortende Calls im Runtime-Ausdruckspfad adressieren.
 
 4. Spaeter groessere Bootstrap-Bloecke angehen.
+   - Erledigt: FH-Native Loader V1-Scope festgezogen als begrenzter JSON-ProjectGraph-Reader (`Compiler.Core.Loader`) mit eigenem Stage3-Gate `verify-stage3-loader-v1.cmd`.
    - Go-native Control-Flow-V0 analog Python-CFlow.
    - Breitere Abort-Contract-Implication und Handler-Syntax bleiben bewusst nachgelagert.

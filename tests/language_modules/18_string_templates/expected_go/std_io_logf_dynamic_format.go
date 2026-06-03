@@ -96,6 +96,6 @@ func freeholdStringTemplate(template string, positional []any, named map[string]
 }
 
 func Main() {
-	format := "value=${}"
+	var format string = "value=${}"
 	fmt.Println(freeholdStringTemplate(format, []any{3}, nil))
 }

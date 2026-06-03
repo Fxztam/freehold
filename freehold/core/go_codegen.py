@@ -385,7 +385,18 @@ class GoGenerator:
         self.current_local_types: dict[str, Any] = {}
         self.inferred_int_locals: set[str] = set()
         self.contract_bindings: dict[str, str] = {}
-        self.current_routine_read_names: set[str] = set()
+        self.current_routine_read_names = set()
+        self.active_scopes: list[str] = []
+
+    def current_context_expr(self) -> str:
+        if self.active_scopes:
+            return f"{self.active_scopes[-1]}.ctx"
+        return "ctx"
+
+    def parent_context_expr(self) -> str:
+        if len(self.active_scopes) > 1:
+            return f"{self.active_scopes[-2]}.ctx"
+        return "ctx"
 
     def parse_type_ref_simple(self, type_name: str) -> TypeRef:
         generic = parse_generic(type_name)
@@ -566,25 +577,148 @@ class GoGenerator:
                     resolved.append(sorted(list(types_set))[0])
         return resolved
 
+    def go_specialized_name(self, name: str, args: list[str]) -> str:
+        parts = name.split(".")
+        normalized_parts = [go_exported_name(p) for p in parts]
+        base_name = "".join(normalized_parts)
+        
+        def format_arg(arg: str) -> str:
+            cleaned = arg.replace("<", "_").replace(">", "").replace(",", "_").replace(" ", "")
+            parts = cleaned.split(".")
+            return "".join(go_exported_name(p) for p in parts)
+            
+        args_str = "_".join(format_arg(a) for a in args)
+        return f"{base_name}_{args_str}"
+
+    def qualify_type_name(self, type_name: str | None, context_module: str) -> str:
+        if type_name is None:
+            return ""
+        generic = parse_generic(type_name)
+        if generic is not None:
+            base, args = generic
+            qualified_base = self.qualify_type_name(base, context_module)
+            qualified_args = [self.qualify_type_name(arg, context_module) for arg in args]
+            return f"{qualified_base}<{', '.join(qualified_args)}>"
+
+        builtins = {"Integer", "Boolean", "Double", "String", "BigInteger", "BigFloat", "Scope", "JoinHandle", "Channel", "Sender", "Receiver", "Result", "Array"}
+        if type_name in builtins:
+            return type_name
+
+        if "." in type_name:
+            return type_name
+
+        if context_module == self.program.module_name:
+            for decl in self.program.declarations:
+                if isinstance(decl, (TypeDecl, RecordTypeDecl, ErrorDecl)) and decl.name == type_name:
+                    return f"{self.program.module_name}.{type_name}"
+            exposed = self.exposed_type_modules.get(type_name)
+            if exposed is not None:
+                return f"{exposed}.{type_name}"
+        else:
+            resolved = self.resolved_modules.get(context_module)
+            if resolved is not None:
+                for decl in resolved.ast.declarations:
+                    if isinstance(decl, (TypeDecl, RecordTypeDecl, ErrorDecl)) and decl.name == type_name:
+                        return f"{context_module}.{type_name}"
+                temp_exposed = self.build_exposed_type_modules(resolved.ast.imports or [])
+                exposed = temp_exposed.get(type_name)
+                if exposed is not None:
+                    return f"{exposed}.{type_name}"
+
+        return type_name
+
+    def qualify_type_ref(self, type_ref: TypeRef | None, context_module: str) -> TypeRef | None:
+        if type_ref is None:
+            return None
+        if isinstance(type_ref, TypeName):
+            return TypeName(self.qualify_type_name(type_ref.name, context_module))
+        if isinstance(type_ref, ArrayTypeName):
+            return ArrayTypeName(self.qualify_type_name(type_ref.element_type, context_module), type_ref.size)
+        if isinstance(type_ref, ResultTypeName):
+            return ResultTypeName(
+                self.qualify_type_ref(type_ref.ok_type, context_module),
+                self.qualify_type_name(type_ref.error_type, context_module)
+            )
+        return type_ref
+
+    def qualify_routine_name(self, name: str, context_module: str) -> str:
+        builtins = {"channel", "channel_sender", "channel_receiver", "channel_send", "channel_receive"}
+        if name in builtins or name.endswith(".spawn") or name.endswith(".join") or name == "scope_spawn" or name == "scope_join":
+            return name
+
+        if "." in name:
+            return name
+
+        if context_module == self.program.module_name:
+            for decl in self.program.declarations:
+                if isinstance(decl, RoutineDecl) and decl.name == name:
+                    return f"{self.program.module_name}.{name}"
+            exposed = self.exposed_symbols.get(name)
+            if exposed is not None:
+                return f"{exposed}.{name}"
+        else:
+            resolved = self.resolved_modules.get(context_module)
+            if resolved is not None:
+                for decl in resolved.ast.declarations:
+                    if isinstance(decl, RoutineDecl) and decl.name == name:
+                        return f"{context_module}.{name}"
+                temp_exposed = self.build_exposed_symbols(resolved.ast.imports or [])
+                exposed = temp_exposed.get(name)
+                if exposed is not None:
+                    return f"{exposed}.{name}"
+
+        return name
+
     def specialize_record(self, name: str, args: list[str]) -> RecordTypeDecl:
-        decl = self.generic_records_by_name[name]
+        decl = self.find_record_decl(name)
+        if decl is None:
+            raise ValueError(f"Generic record {name} not found")
         substitutions = dict(zip(decl.type_params or [], args))
+        
+        context_module = self.program.module_name
+        if "." in name:
+            context_module = ".".join(name.split(".")[:-1])
+        elif name in self.exposed_symbols:
+            exposed = self.exposed_symbols[name]
+            if exposed is not None:
+                context_module = exposed
+                
         specialized_fields = []
         for field in decl.fields:
             new_type_name = self.substitute_type_simple(field.type_name, substitutions)
+            new_type_name = self.qualify_type_name(new_type_name, context_module)
             specialized_fields.append(RecordField(field.name, new_type_name, field.pos, field.proto_id))
-        specialized_name = name + "_" + "_".join(go_exported_name(arg) for arg in args)
+            
+        specialized_name = self.go_specialized_name(name, args)
         return RecordTypeDecl(specialized_name, specialized_fields, decl.pos, None)
 
     def specialize_routine(self, name: str, args: list[str]) -> RoutineDecl:
-        routine = self.routines_by_name[name]
+        routine = self.called_routine(name)
+        if routine is None:
+            raise ValueError(f"Generic routine {name} not found")
         substitutions = dict(zip(routine.type_params or [], args))
 
+        context_module = self.program.module_name
+        if "." in name:
+            context_module = ".".join(name.split(".")[:-1])
+        elif name in self.exposed_symbols:
+            exposed = self.exposed_symbols[name]
+            if exposed is not None:
+                context_module = exposed
+
         def sub_type_ref(t):
-            return self.substitute_type_ref_simple(t, substitutions)
+            res = self.substitute_type_ref_simple(t, substitutions)
+            if isinstance(res, TypeName):
+                return TypeName(self.qualify_type_name(res.name, context_module))
+            if isinstance(res, ArrayTypeName):
+                return ArrayTypeName(self.qualify_type_name(res.element_type, context_module), res.size)
+            if isinstance(res, ResultTypeName):
+                return ResultTypeName(sub_type_ref(res.ok_type), self.qualify_type_name(res.error_type, context_module))
+            return res
 
         def sub_type_str(s: str) -> str:
-            return self.substitute_type_simple(s, substitutions)
+            res = self.substitute_type_simple(s, substitutions)
+            return self.qualify_type_name(res, context_module)
 
         def sub_expr(expr):
             if expr is None:
@@ -613,7 +747,8 @@ class GoGenerator:
                 return BinaryExpr(expr.op, sub_expr(expr.left), sub_expr(expr.right), expr.pos)
             if isinstance(expr, CallExpr):
                 new_type_args = [sub_type_str(ta) for ta in expr.type_args] if expr.type_args is not None else None
-                return CallExpr(expr.name, [sub_expr(a) for a in expr.args], expr.pos, new_type_args)
+                qualified_call_name = self.qualify_routine_name(expr.name, context_module)
+                return CallExpr(qualified_call_name, [sub_expr(a) for a in expr.args], expr.pos, new_type_args)
             if isinstance(expr, AwaitExpr):
                 return AwaitExpr(sub_expr(expr.expr), expr.pos)
             if isinstance(expr, NamedArg):
@@ -646,7 +781,8 @@ class GoGenerator:
                 return CheckStmt(sub_expr(stmt.expr), stmt.pos)
             if isinstance(stmt, CallStmt):
                 new_type_args = [sub_type_str(ta) for ta in stmt.type_args] if stmt.type_args is not None else None
-                return CallStmt(stmt.name, [sub_expr(a) for a in stmt.args], stmt.pos, new_type_args)
+                qualified_call_name = self.qualify_routine_name(stmt.name, context_module)
+                return CallStmt(qualified_call_name, [sub_expr(a) for a in stmt.args], stmt.pos, new_type_args)
             if isinstance(stmt, IfStmt):
                 return IfStmt(sub_expr(stmt.condition), [sub_stmt(s) for s in stmt.then_body], [sub_stmt(s) for s in stmt.else_body], stmt.pos)
             if isinstance(stmt, WhileStmt):
@@ -660,7 +796,7 @@ class GoGenerator:
                 return ScopeStmt(stmt.name, [sub_stmt(s) for s in stmt.spawn_body], [sub_stmt(s) for s in stmt.join_body], [sub_stmt(s) for s in stmt.result_body], stmt.pos)
             return stmt
 
-        specialized_name = name + "_" + "_".join(go_exported_name(arg) for arg in args)
+        specialized_name = self.go_specialized_name(name, args)
         specialized_params = [Param(p.name, sub_type_str(p.type_name), p.pos) for p in routine.params]
         specialized_return_type = sub_type_ref(routine.return_type)
         specialized_requires = [sub_expr(req) for req in routine.requires or []]
@@ -686,192 +822,201 @@ class GoGenerator:
             depends_specs=routine.depends_specs
         )
 
-    def collect_record_instantiations(self) -> dict[str, set[tuple[str, ...]]]:
-        instantiations: dict[str, set[tuple[str, ...]]] = {}
-        all_programs = [self.program]
-        for resolved in self.resolved_modules.values():
+    def monomorphize(self) -> None:
+        self.specialized_records: dict[tuple[str, tuple[str, ...]], RecordTypeDecl] = {}
+        self.specialized_routines: dict[tuple[str, tuple[str, ...]], RoutineDecl] = {}
+        
+        self.pending_scans: list[tuple[str, Any]] = []
+        
+        for decl in self.program.declarations:
+            if isinstance(decl, RecordTypeDecl) and not decl.type_params:
+                self.pending_scans.append((self.program.module_name, decl))
+            elif isinstance(decl, RoutineDecl) and not decl.type_params:
+                self.pending_scans.append((self.program.module_name, decl))
+                
+        for module_name, resolved in self.resolved_modules.items():
             if resolved.ast.module_name != self.program.module_name:
-                all_programs.append(resolved.ast)
-        def process_type_ref(t):
-            instances = extract_generic_record_instances(t)
-            for base, args in instances:
-                if base in self.generic_records_by_name:
-                    instantiations.setdefault(base, set()).add(tuple(args))
-        for prog in all_programs:
-            for decl in prog.declarations:
-                if isinstance(decl, TypeDecl):
-                    process_type_ref(decl.base)
-                elif isinstance(decl, RecordTypeDecl):
-                    for field in decl.fields:
-                        process_type_ref(field.type_name)
-                elif isinstance(decl, RoutineDecl):
-                    for param in decl.params:
-                        process_type_ref(param.type_name)
-                    process_type_ref(decl.return_type)
-                    def visit_stmt(stmt):
-                        if isinstance(stmt, LetStmt):
-                            process_type_ref(stmt.type_ref)
-                            visit_expr(stmt.expr)
-                        elif isinstance(stmt, AssignStmt):
-                            visit_expr(stmt.expr)
-                        elif isinstance(stmt, FieldAssignStmt):
-                            visit_expr(stmt.expr)
-                        elif isinstance(stmt, ReturnStmt):
-                            if isinstance(stmt.value, (ReturnPlain, ReturnOk)):
-                                visit_expr(stmt.value.expr)
-                        elif isinstance(stmt, CheckStmt):
-                            visit_expr(stmt.expr)
-                        elif isinstance(stmt, IfStmt):
-                            visit_expr(stmt.condition)
-                            for s in stmt.then_body + stmt.else_body:
-                                visit_stmt(s)
-                        elif isinstance(stmt, WhileStmt):
-                            visit_expr(stmt.condition)
-                            for inv in stmt.invariants:
-                                visit_expr(inv)
-                            if stmt.variant is not None:
-                                visit_expr(stmt.variant)
-                            for s in stmt.body:
-                                visit_stmt(s)
-                        elif isinstance(stmt, CaseStmt):
-                            visit_expr(stmt.expr)
-                            for branch in stmt.branches:
-                                visit_expr(branch.value)
-                                for s in branch.body:
-                                    visit_stmt(s)
-                            for s in stmt.default_body:
-                                visit_stmt(s)
-                        elif isinstance(stmt, ScopeStmt):
-                            for s in stmt.spawn_body + stmt.join_body + stmt.result_body:
-                                visit_stmt(s)
-                        elif isinstance(stmt, CallStmt):
-                            for a in stmt.args:
-                                visit_expr(a)
-                            for ta in stmt.type_args or []:
-                                process_type_ref(ta)
-                    def visit_expr(expr):
-                        if isinstance(expr, UnaryExpr):
-                            visit_expr(expr.expr)
-                        elif isinstance(expr, BinaryExpr):
-                            visit_expr(expr.left)
-                            visit_expr(expr.right)
-                        elif isinstance(expr, CallExpr):
-                            for a in expr.args:
-                                visit_expr(a)
-                            for ta in expr.type_args or []:
-                                process_type_ref(ta)
-                        elif isinstance(expr, AwaitExpr):
-                            visit_expr(expr.expr)
-                        elif isinstance(expr, NamedArg):
-                            visit_expr(expr.expr)
-                        elif isinstance(expr, RecordLiteralExpr):
-                            process_type_ref(expr.type_name)
-                            for a in expr.args:
-                                visit_expr(a.expr)
-                        elif isinstance(expr, ArrayLiteralExpr):
-                            for item in expr.items:
-                                visit_expr(item)
-                        elif isinstance(expr, IndexExpr):
-                            visit_expr(expr.index)
-                        elif isinstance(expr, IndexedFieldAccessExpr):
-                            visit_expr(expr.index)
-                    for s in decl.body:
-                        visit_stmt(s)
-        return instantiations
+                for decl in resolved.ast.declarations:
+                    if isinstance(decl, RecordTypeDecl) and not decl.type_params:
+                        self.pending_scans.append((module_name, decl))
+                    elif isinstance(decl, RoutineDecl) and not decl.type_params:
+                        self.pending_scans.append((module_name, decl))
+                        
+        scanned_decls = set()
+        
+        while self.pending_scans:
+            context_module, decl = self.pending_scans.pop(0)
+            
+            decl_key = (context_module, decl.name, type(decl))
+            if decl_key in scanned_decls:
+                continue
+            scanned_decls.add(decl_key)
+            
+            self.current_routine_decl = decl if isinstance(decl, RoutineDecl) else None
+            self.current_local_types = {}
+            if isinstance(decl, RoutineDecl):
+                self.current_return_type = decl.return_type
+                def build_local_types(stmt):
+                    if isinstance(stmt, LetStmt):
+                        self.current_local_types[stmt.name] = stmt.type_ref
+                    elif isinstance(stmt, IfStmt):
+                        for s in stmt.then_body + stmt.else_body:
+                            build_local_types(s)
+                    elif isinstance(stmt, WhileStmt):
+                        for s in stmt.body:
+                            build_local_types(s)
+                    elif isinstance(stmt, CaseStmt):
+                        for b in stmt.branches:
+                            for s in b.body:
+                                build_local_types(s)
+                        for s in stmt.default_body:
+                            build_local_types(s)
+                    elif isinstance(stmt, ScopeStmt):
+                        for s in stmt.spawn_body + stmt.join_body + stmt.result_body:
+                            build_local_types(s)
+                for s in decl.body:
+                    build_local_types(s)
+            else:
+                self.current_return_type = None
+                
+            self.scan_declaration(context_module, decl)
+            
+        self.specialized_records_to_emit = []
+        for key, spec_rec in sorted(self.specialized_records.items()):
+            self.local_types.add(spec_rec.name)
+            self.specialized_records_to_emit.append(spec_rec)
+            
+        self.specialized_routines_to_emit = []
+        for key, spec_rot in sorted(self.specialized_routines.items()):
+            self.local_routines.add(spec_rot.name)
+            self.routines_by_name[spec_rot.name] = spec_rot
+            self.specialized_routines_to_emit.append(spec_rot)
 
-    def collect_generic_instantiations(self) -> dict[str, set[tuple[str, ...]]]:
-        instantiations: dict[str, set[tuple[str, ...]]] = {}
-        all_programs = [self.program]
-        for resolved in self.resolved_modules.values():
-            if resolved.ast.module_name != self.program.module_name:
-                all_programs.append(resolved.ast)
-        def process_call(name, node):
-            current_prefix = f"{self.program.module_name}."
-            local_name = name[len(current_prefix):] if name.startswith(current_prefix) else name
-            routine = None
-            if "." not in local_name:
-                for decl in self.program.declarations:
-                    if isinstance(decl, RoutineDecl) and decl.name == local_name and decl.type_params:
-                        routine = decl
-                        break
-            if routine is not None:
-                type_args = self.infer_type_args(routine, node)
-                if type_args:
-                    instantiations.setdefault(routine.name, set()).add(tuple(type_args))
-        for prog in all_programs:
-            for decl in prog.declarations:
-                if isinstance(decl, RoutineDecl):
-                    self.current_routine_decl = decl
-                    self.current_local_types = {}
-                    def visit_stmt(stmt):
-                        if isinstance(stmt, LetStmt):
-                            self.current_local_types[stmt.name] = stmt.type_ref
-                            visit_expr(stmt.expr)
-                        elif isinstance(stmt, AssignStmt):
-                            visit_expr(stmt.expr)
-                        elif isinstance(stmt, FieldAssignStmt):
-                            visit_expr(stmt.expr)
-                        elif isinstance(stmt, ReturnStmt):
-                            if isinstance(stmt.value, (ReturnPlain, ReturnOk)):
-                                visit_expr(stmt.value.expr)
-                        elif isinstance(stmt, CheckStmt):
-                            visit_expr(stmt.expr)
-                        elif isinstance(stmt, IfStmt):
-                            visit_expr(stmt.condition)
-                            for s in stmt.then_body + stmt.else_body:
-                                visit_stmt(s)
-                        elif isinstance(stmt, WhileStmt):
-                            visit_expr(stmt.condition)
-                            for inv in stmt.invariants:
-                                visit_expr(inv)
-                            if stmt.variant is not None:
-                                visit_expr(stmt.variant)
-                            for s in stmt.body:
-                                visit_stmt(s)
-                        elif isinstance(stmt, CaseStmt):
-                            visit_expr(stmt.expr)
-                            for branch in stmt.branches:
-                                visit_expr(branch.value)
-                                for s in branch.body:
-                                    visit_stmt(s)
-                            for s in stmt.default_body:
-                                visit_stmt(s)
-                        elif isinstance(stmt, ScopeStmt):
-                            for s in stmt.spawn_body + stmt.join_body + stmt.result_body:
-                                visit_stmt(s)
-                        elif isinstance(stmt, CallStmt):
-                            for a in stmt.args:
-                                visit_expr(a)
-                            process_call(stmt.name, stmt)
-                    def visit_expr(expr):
-                        if isinstance(expr, UnaryExpr):
-                            visit_expr(expr.expr)
-                        elif isinstance(expr, BinaryExpr):
-                            visit_expr(expr.left)
-                            visit_expr(expr.right)
-                        elif isinstance(expr, CallExpr):
-                            for a in expr.args:
-                                visit_expr(a)
-                            process_call(expr.name, expr)
-                        elif isinstance(expr, AwaitExpr):
-                            visit_expr(expr.expr)
-                        elif isinstance(expr, NamedArg):
-                            visit_expr(expr.expr)
-                        elif isinstance(expr, RecordLiteralExpr):
-                            for a in expr.args:
-                                visit_expr(a.expr)
-                        elif isinstance(expr, ArrayLiteralExpr):
-                            for item in expr.items:
-                                visit_expr(item)
-                        elif isinstance(expr, IndexExpr):
-                            visit_expr(expr.index)
-                        elif isinstance(expr, IndexedFieldAccessExpr):
-                            visit_expr(expr.index)
-                    for s in decl.body:
+    def scan_declaration(self, context_module: str, decl: Any) -> None:
+        def resolve_type_str(s: str) -> str:
+            return self.qualify_type_name(s, context_module)
+
+        def resolve_type_ref(t: TypeRef | None) -> TypeRef | None:
+            return self.qualify_type_ref(t, context_module)
+            
+        def process_type_ref(t: TypeRef | str | None):
+            if isinstance(t, str):
+                resolved = resolve_type_str(t)
+            else:
+                resolved = resolve_type_ref(t)
+            instances = extract_generic_record_instances(resolved)
+            for base, args in instances:
+                rec_decl = self.find_record_decl(base)
+                if rec_decl is not None and rec_decl.type_params:
+                    if any("<" in arg or arg == "T" for arg in args):
+                        continue
+                    key = (base, tuple(args))
+                    if key not in self.specialized_records:
+                        spec_rec = self.specialize_record(base, list(args))
+                        self.specialized_records[key] = spec_rec
+                        self.pending_scans.append((self.program.module_name, spec_rec))
+
+        def process_call(name: str, node: Any):
+            qualified_name = self.qualify_routine_name(name, context_module)
+            routine = self.called_routine(qualified_name)
+            if routine is not None and routine.type_params:
+                type_args = []
+                if node.type_args:
+                    type_args = [resolve_type_str(ta) for ta in node.type_args]
+                else:
+                    inferred = self.infer_type_args(routine, node)
+                    type_args = [resolve_type_str(ta) for ta in inferred]
+                
+                if any("<" in arg or arg == "T" for arg in type_args):
+                    return
+                    
+                key = (qualified_name, tuple(type_args))
+                if key not in self.specialized_routines:
+                    spec_rot = self.specialize_routine(qualified_name, type_args)
+                    self.specialized_routines[key] = spec_rot
+                    self.pending_scans.append((self.program.module_name, spec_rot))
+
+        if isinstance(decl, RecordTypeDecl):
+            for field in decl.fields:
+                process_type_ref(field.type_name)
+        elif isinstance(decl, RoutineDecl):
+            for param in decl.params:
+                process_type_ref(param.type_name)
+            process_type_ref(decl.return_type)
+            
+            def visit_stmt(stmt):
+                if stmt is None:
+                    return
+                if isinstance(stmt, LetStmt):
+                    process_type_ref(stmt.type_ref)
+                    visit_expr(stmt.expr)
+                elif isinstance(stmt, AssignStmt):
+                    visit_expr(stmt.expr)
+                elif isinstance(stmt, FieldAssignStmt):
+                    visit_expr(stmt.expr)
+                elif isinstance(stmt, ReturnStmt):
+                    if isinstance(stmt.value, (ReturnPlain, ReturnOk)):
+                        visit_expr(stmt.value.expr)
+                elif isinstance(stmt, CheckStmt):
+                    visit_expr(stmt.expr)
+                elif isinstance(stmt, IfStmt):
+                    visit_expr(stmt.condition)
+                    for s in stmt.then_body + stmt.else_body:
                         visit_stmt(s)
-        self.current_routine_decl = None
-        self.current_local_types = {}
-        return instantiations
+                elif isinstance(stmt, WhileStmt):
+                    visit_expr(stmt.condition)
+                    for inv in stmt.invariants:
+                        visit_expr(inv)
+                    if stmt.variant is not None:
+                        visit_expr(stmt.variant)
+                    for s in stmt.body:
+                        visit_stmt(s)
+                elif isinstance(stmt, CaseStmt):
+                    visit_expr(stmt.expr)
+                    for branch in stmt.branches:
+                        visit_expr(branch.value)
+                        for s in branch.body:
+                            visit_stmt(s)
+                    for s in stmt.default_body:
+                        visit_stmt(s)
+                elif isinstance(stmt, ScopeStmt):
+                    for s in stmt.spawn_body + stmt.join_body + stmt.result_body:
+                        visit_stmt(s)
+                elif isinstance(stmt, CallStmt):
+                    for a in stmt.args:
+                        visit_expr(a)
+                    process_call(stmt.name, stmt)
+
+            def visit_expr(expr):
+                if expr is None:
+                    return
+                if isinstance(expr, UnaryExpr):
+                    visit_expr(expr.expr)
+                elif isinstance(expr, BinaryExpr):
+                    visit_expr(expr.left)
+                    visit_expr(expr.right)
+                elif isinstance(expr, CallExpr):
+                    for a in expr.args:
+                        visit_expr(a)
+                    process_call(expr.name, expr)
+                elif isinstance(expr, AwaitExpr):
+                    visit_expr(expr.expr)
+                elif isinstance(expr, NamedArg):
+                    visit_expr(expr.expr)
+                elif isinstance(expr, RecordLiteralExpr):
+                    process_type_ref(expr.type_name)
+                    for a in expr.args:
+                        visit_expr(a.expr)
+                elif isinstance(expr, ArrayLiteralExpr):
+                    for item in expr.items:
+                        visit_expr(item)
+                elif isinstance(expr, IndexExpr):
+                    visit_expr(expr.index)
+                elif isinstance(expr, IndexedFieldAccessExpr):
+                    visit_expr(expr.index)
+
+            for s in decl.body:
+                visit_stmt(s)
 
     def find_record_decl(self, name: str) -> RecordTypeDecl | None:
         current_prefix = f"{self.program.module_name}."
@@ -919,27 +1064,7 @@ class GoGenerator:
     def generate(self) -> GoCodegenResult:
         package_name = go_package_name(self.program.module_name)
 
-        # Step 1: Scan for all generic instantiations
-        record_instantiations = self.collect_record_instantiations()
-        routine_instantiations = self.collect_generic_instantiations()
-
-        # Step 2: Pre-specialize and register them
-        self.specialized_records_to_emit = []
-        for rec_name, instances in sorted(record_instantiations.items()):
-            for args in sorted(instances):
-                specialized_name = rec_name + "_" + "_".join(go_exported_name(arg) for arg in args)
-                self.local_types.add(specialized_name)
-                spec_rec = self.specialize_record(rec_name, list(args))
-                self.specialized_records_to_emit.append(spec_rec)
-
-        self.specialized_routines_to_emit = []
-        for rot_name, instances in sorted(routine_instantiations.items()):
-            for args in sorted(instances):
-                specialized_name = rot_name + "_" + "_".join(go_exported_name(arg) for arg in args)
-                self.local_routines.add(specialized_name)
-                spec_rot = self.specialize_routine(rot_name, list(args))
-                self.routines_by_name[specialized_name] = spec_rot
-                self.specialized_routines_to_emit.append(spec_rot)
+        self.monomorphize()
 
         body_lines: list[str] = []
         if program_uses_big_types(self.program):
@@ -1040,6 +1165,10 @@ class GoGenerator:
 
     def import_block(self) -> list[str]:
         used_imports = [import_decl for import_decl in self.imports if import_decl.module_name in self.used_import_modules]
+        if self.needs_async_helpers:
+            self.std_imports.add("sync")
+            self.std_imports.add("context")
+            self.std_imports.add("runtime")
         if not used_imports and not self.std_imports:
             return []
         lines = ["import ("]
@@ -1085,11 +1214,168 @@ class GoGenerator:
     def helper_decls(self) -> list[str]:
         lines: list[str] = []
         if self.needs_async_helpers:
+            self.std_imports.add("context")
+            self.std_imports.add("runtime")
             lines.extend([
-                "type FreeholdScope struct{}",
+                "type freeholdTask struct {",
+                "\tfn       func()",
+                "\tpriority int",
+                "}",
+                "",
+                "type freeholdWorker struct {",
+                "\tid         int",
+                "\tmu         sync.Mutex",
+                "\tq          []freeholdTask",
+                "\tsch        *freeholdScheduler",
+                "\tlastVictim int",
+                "}",
+                "",
+                "type freeholdScheduler struct {",
+                "\tmu          sync.Mutex",
+                "\tworkers     []*freeholdWorker",
+                "\tworkerCount int",
+                "\tcond        *sync.Cond",
+                "\tshutdown    bool",
+                "\tnextWorker  int",
+                "}",
+                "",
+                "var globalScheduler *freeholdScheduler",
+                "var schedulerOnce sync.Once",
+                "",
+                "func getScheduler() *freeholdScheduler {",
+                "\tschedulerOnce.Do(func() {",
+                "\t\tglobalScheduler = newScheduler(runtime.NumCPU())",
+                "\t})",
+                "\treturn globalScheduler",
+                "}",
+                "",
+                "func newScheduler(workerCount int) *freeholdScheduler {",
+                "\ts := &freeholdScheduler{",
+                "\t\tworkerCount: workerCount,",
+                "\t}",
+                "\ts.cond = sync.NewCond(&s.mu)",
+                "\ts.workers = make([]*freeholdWorker, workerCount)",
+                "\tfor i := 0; i < workerCount; i++ {",
+                "\t\ts.workers[i] = &freeholdWorker{",
+                "\t\t\tid:         i,",
+                "\t\t\tsch:        s,",
+                "\t\t\tlastVictim: i,",
+                "\t\t}",
+                "\t}",
+                "\tfor i := 0; i < workerCount; i++ {",
+                "\t\tgo s.workers[i].run()",
+                "\t}",
+                "\treturn s",
+                "}",
+                "",
+                "func (s *freeholdScheduler) Schedule(fn func(), priority int) {",
+                "\ttask := freeholdTask{fn: fn, priority: priority}",
+                "\ts.mu.Lock()",
+                "\tnext := s.nextWorker",
+                "\ts.nextWorker = (s.nextWorker + 1) % s.workerCount",
+                "\ts.mu.Unlock()",
+                "",
+                "\tw := s.workers[next]",
+                "\tw.mu.Lock()",
+                "\tinsertIndex := len(w.q)",
+                "\tfor i, t := range w.q {",
+                "\t\tif task.priority > t.priority {",
+                "\t\t\tinsertIndex = i",
+                "\t\t\tbreak",
+                "\t\t}",
+                "\t}",
+                "\tw.q = append(w.q, freeholdTask{})",
+                "\tcopy(w.q[insertIndex+1:], w.q[insertIndex:])",
+                "\tw.q[insertIndex] = task",
+                "\tw.mu.Unlock()",
+                "",
+                "\ts.cond.Broadcast()",
+                "}",
+                "",
+                "func (w *freeholdWorker) run() {",
+                "\ts := w.sch",
+                "\tfor {",
+                "\t\tvar task freeholdTask",
+                "\t\tfound := false",
+                "",
+                "\t\tw.mu.Lock()",
+                "\t\tif len(w.q) > 0 {",
+                "\t\t\ttask = w.q[0]",
+                "\t\t\tw.q = w.q[1:]",
+                "\t\t\tfound = true",
+                "\t\t}",
+                "\t\tw.mu.Unlock()",
+                "",
+                "\t\tif !found {",
+                "\t\t\ttask, found = w.steal()",
+                "\t\t}",
+                "",
+                "\t\tif !found {",
+                "\t\t\ts.mu.Lock()",
+                "\t\t\tfor !s.shutdown {",
+                "\t\t\t\tw.mu.Lock()",
+                "\t\t\t\tif len(w.q) > 0 {",
+                "\t\t\t\t\ttask = w.q[0]",
+                "\t\t\t\t\tw.q = w.q[1:]",
+                "\t\t\t\t\tfound = true",
+                "\t\t\t\t}",
+                "\t\t\t\tw.mu.Unlock()",
+                "\t\t\t\tif found {",
+                "\t\t\t\t\tbreak",
+                "\t\t\t\t}",
+                "",
+                "\t\t\t\ttask, found = w.steal()",
+                "\t\t\t\tif found {",
+                "\t\t\t\t\tbreak",
+                "\t\t\t\t}",
+                "",
+                "\t\t\t\ts.cond.Wait()",
+                "\t\t\t}",
+                "\t\t\ts.mu.Unlock()",
+                "\t\t}",
+                "",
+                "\t\tif s.shutdown {",
+                "\t\t\treturn",
+                "\t\t}",
+                "",
+                "\t\tif found {",
+                "\t\t\ttask.fn()",
+                "\t\t}",
+                "\t}",
+                "}",
+                "",
+                "func (w *freeholdWorker) steal() (freeholdTask, bool) {",
+                "\ts := w.sch",
+                "\tnumWorkers := len(s.workers)",
+                "\tif numWorkers <= 1 {",
+                "\t\treturn freeholdTask{}, false",
+                "\t}",
+                "\tw.lastVictim = (w.lastVictim + 1) % numWorkers",
+                "\tif w.lastVictim == w.id {",
+                "\t\tw.lastVictim = (w.lastVictim + 1) % numWorkers",
+                "\t}",
+                "\tvictim := s.workers[w.lastVictim]",
+                "",
+                "\tvictim.mu.Lock()",
+                "\tdefer victim.mu.Unlock()",
+                "\tif len(victim.q) > 0 {",
+                "\t\ttask := victim.q[len(victim.q)-1]",
+                "\t\tvictim.q = victim.q[:len(victim.q)-1]",
+                "\t\treturn task, true",
+                "\t}",
+                "\treturn freeholdTask{}, false",
+                "}",
+                "",
+                "type FreeholdScope struct {",
+                "\twg       sync.WaitGroup",
+                "\tctx      context.Context",
+                "\tcancel   context.CancelFunc",
+                "\tpriority int",
+                "\tsem      chan struct{}",
+                "}",
                 "",
                 "type FreeholdJoinHandle[T any] struct {",
-                "\tvalue T",
+                "\tch chan T",
                 "}",
                 "",
                 "type FreeholdChannel[T any] struct {",
@@ -1102,6 +1388,21 @@ class GoGenerator:
                 "",
                 "type FreeholdReceiver[T any] struct {",
                 "\tch chan T",
+                "}",
+                "",
+                "func freeholdSpawn[T any](wg *sync.WaitGroup, priority int, sem chan struct{}, f func() T) FreeholdJoinHandle[T] {",
+                "\twg.Add(1)",
+                "\tch := make(chan T, 1)",
+                "\ttaskFn := func() {",
+                "\t\tdefer wg.Done()",
+                "\t\tif sem != nil {",
+                "\t\t\tsem <- struct{}{}",
+                "\t\t\tdefer func() { <-sem }()",
+                "\t\t}",
+                "\t\tch <- f()",
+                "\t}",
+                "\tgetScheduler().Schedule(taskFn, priority)",
+                "\treturn FreeholdJoinHandle[T]{ch: ch}",
                 "}",
                 "",
                 "func freeholdChannelSend[T any](sender FreeholdSender[T], value T) bool {",
@@ -1267,7 +1568,12 @@ class GoGenerator:
         if routine.type_params:
             self.unsupported(routine, "generic routines are not supported by Go codegen V1")
             return []
-        params = ", ".join(self.param(param) for param in routine.params)
+        params_list = []
+        if routine.is_async:
+            self.std_imports.add("context")
+            params_list.append("ctx context.Context")
+        params_list.extend(self.param(param) for param in routine.params)
+        params = ", ".join(params_list)
         result_type = self.routine_result_type(routine)
         lines = [f"func {go_exported_name(routine.name)}({params}){result_type} {{"]
         previous_return_type = self.current_return_type
@@ -1320,9 +1626,14 @@ class GoGenerator:
                 call_routine = self.called_routine(stmt.expr.name)
                 if call_routine is not None and call_routine.aborts:
                     return self.let_aborting_call(stmt, already_declared, call_routine)
-            operator = "=" if already_declared else ":="
-            target_type = None if is_inferred_int else stmt.type_ref
-            lines = [f"{go_local_name(stmt.name)} {operator} {self.expr_with_type(stmt.expr, target_type)}"]
+            if already_declared:
+                target_type = None if is_inferred_int else stmt.type_ref
+                lines = [f"{go_local_name(stmt.name)} = {self.expr_with_type(stmt.expr, target_type)}"]
+            else:
+                if is_inferred_int:
+                    lines = [f"{go_local_name(stmt.name)} := {self.expr_with_type(stmt.expr, None)}"]
+                else:
+                    lines = [f"var {go_local_name(stmt.name)} {self.go_type_ref(stmt.type_ref)} = {self.expr_with_type(stmt.expr, stmt.type_ref)}"]
             if stmt.name not in self.current_routine_read_names:
                 lines.append(f"_ = {go_local_name(stmt.name)}")
             return lines
@@ -1334,54 +1645,67 @@ class GoGenerator:
             target = ".".join([go_local_name(head)] + [go_exported_name(part) for part in tail])
             return [f"{target} = {self.expr(stmt.expr)}"]
         if isinstance(stmt, ReturnStmt):
+            wait_lines = []
+            for scope_name in reversed(self.active_scopes):
+                wait_lines.append(f"{scope_name}.wg.Wait()")
+
+            ret_lines: list[str] = []
             if isinstance(stmt.value, ReturnPlain):
                 if isinstance(stmt.value.expr, CallExpr):
                     call_routine = self.called_routine(stmt.value.expr.name)
                     if call_routine is not None and call_routine.aborts:
-                        return self.return_aborting_call(stmt.value.expr, call_routine)
-                rendered = self.expr_with_type(stmt.value.expr, self.current_return_type)
-                if self.current_ensures():
-                    result_name = self.fresh_local_name("result")
-                    lines = [f"var {result_name} {self.go_type_ref(self.current_return_type)} = {rendered}"]
-                    lines.extend(self.ensure_checks_for_value(result_name))
-                    if self.current_aborts:
-                        lines.append(f"return {result_name}, nil")
+                        ret_lines = self.return_aborting_call(stmt.value.expr, call_routine)
+                if not ret_lines:
+                    rendered = self.expr_with_type(stmt.value.expr, self.current_return_type)
+                    if self.current_ensures():
+                        result_name = self.fresh_local_name("result")
+                        lines = [f"var {result_name} {self.go_type_ref(self.current_return_type)} = {rendered}"]
+                        lines.extend(self.ensure_checks_for_value(result_name))
+                        if self.current_aborts:
+                            lines.append(f"return {result_name}, nil")
+                        else:
+                            lines.append(f"return {result_name}")
+                        ret_lines = lines
+                    elif self.current_aborts:
+                        ret_lines = [f"return {rendered}, nil"]
                     else:
-                        lines.append(f"return {result_name}")
-                    return lines
-                if self.current_aborts:
-                    return [f"return {rendered}, nil"]
-                return [f"return {rendered}"]
-            if isinstance(stmt.value, ReturnOk):
+                        ret_lines = [f"return {rendered}"]
+            elif isinstance(stmt.value, ReturnOk):
                 if not isinstance(self.current_return_type, ResultTypeName):
                     self.unsupported(stmt, "return ok requires a Result return type")
-                    return ["// unsupported result return"]
-                result_expr = f"{self.go_result_type_name(self.current_return_type)}{{Ok: true, Value: {self.expr_with_type(stmt.value.expr, self.current_return_type.ok_type)}}}"
-                if self.current_ensures():
-                    result_name = self.fresh_local_name("result")
-                    lines = [f"{result_name} := {result_expr}"]
-                    lines.extend(self.ensure_checks_for_result(result_name))
-                    lines.append(f"return {result_name}, nil" if self.current_aborts else f"return {result_name}")
-                    return lines
-                if self.current_aborts:
-                    return [f"return {result_expr}, nil"]
-                return [f"return {result_expr}"]
-            if isinstance(stmt.value, ReturnError):
+                    ret_lines = ["// unsupported result return"]
+                else:
+                    result_expr = f"{self.go_result_type_name(self.current_return_type)}{{Ok: true, Value: {self.expr_with_type(stmt.value.expr, self.current_return_type.ok_type)}}}"
+                    if self.current_ensures():
+                        result_name = self.fresh_local_name("result")
+                        lines = [f"{result_name} := {result_expr}"]
+                        lines.extend(self.ensure_checks_for_result(result_name))
+                        lines.append(f"return {result_name}, nil" if self.current_aborts else f"return {result_name}")
+                        ret_lines = lines
+                    elif self.current_aborts:
+                        ret_lines = [f"return {result_expr}, nil"]
+                    else:
+                        ret_lines = [f"return {result_expr}"]
+            elif isinstance(stmt.value, ReturnError):
                 if not isinstance(self.current_return_type, ResultTypeName):
                     self.unsupported(stmt, "return error requires a Result return type")
-                    return ["// unsupported result return"]
-                result_expr = f"{self.go_result_type_name(self.current_return_type)}{{Ok: false, Error: {self.go_error_name(stmt.value.error_name)}}}"
-                if self.current_ensures():
-                    result_name = self.fresh_local_name("result")
-                    lines = [f"{result_name} := {result_expr}"]
-                    lines.extend(self.ensure_checks_for_result(result_name))
-                    lines.append(f"return {result_name}, nil" if self.current_aborts else f"return {result_name}")
-                    return lines
-                if self.current_aborts:
-                    return [f"return {result_expr}, nil"]
-                return [f"return {result_expr}"]
-            self.unsupported(stmt, "return form is not supported by Go codegen V1")
-            return ["// unsupported return"]
+                    ret_lines = ["// unsupported result return"]
+                else:
+                    result_expr = f"{self.go_result_type_name(self.current_return_type)}{{Ok: false, Error: {self.go_error_name(stmt.value.error_name)}}}"
+                    if self.current_ensures():
+                        result_name = self.fresh_local_name("result")
+                        lines = [f"{result_name} := {result_expr}"]
+                        lines.extend(self.ensure_checks_for_result(result_name))
+                        lines.append(f"return {result_name}, nil" if self.current_aborts else f"return {result_name}")
+                        ret_lines = lines
+                    elif self.current_aborts:
+                        ret_lines = [f"return {result_expr}, nil"]
+                    else:
+                        ret_lines = [f"return {result_expr}"]
+            else:
+                self.unsupported(stmt, "return form is not supported by Go codegen V1")
+                ret_lines = ["// unsupported return"]
+            return wait_lines + ret_lines
         if isinstance(stmt, AbortStmt):
             return self.abort_return(stmt.error_name)
         if isinstance(stmt, CheckStmt):
@@ -1420,14 +1744,26 @@ class GoGenerator:
             return lines
         if isinstance(stmt, ScopeStmt):
             self.needs_async_helpers = True
+            self.std_imports.add("sync")
+            self.std_imports.add("context")
             scope_name = go_local_name(stmt.name)
+            parent_ctx = self.current_context_expr()
+            self.active_scopes.append(scope_name)
             lines = ["{"]
             lines.append(f"\t{scope_name} := FreeholdScope{{}}")
+            lines.append(f"\t{scope_name}.ctx, {scope_name}.cancel = context.WithCancel({parent_ctx})")
+            lines.append(f"\t{scope_name}.priority = 3")
+            lines.append(f"\t{scope_name}.sem = nil")
+            lines.append(f"\tdefer {scope_name}.cancel()")
             lines.append(f"\t_ = {scope_name}")
             lines.extend(indent_lines(self.statement_block(stmt.spawn_body)))
             lines.extend(indent_lines(self.statement_block(stmt.join_body)))
             lines.extend(indent_lines(self.statement_block(stmt.result_body)))
+            has_return = any(isinstance(s, ReturnStmt) for s in stmt.spawn_body + stmt.join_body + stmt.result_body)
+            if not has_return:
+                lines.append(f"\t{scope_name}.wg.Wait()")
             lines.append("}")
+            self.active_scopes.pop()
             return lines
         self.unsupported(stmt, "statement not supported by Go codegen V1")
         return ["// unsupported statement"]
@@ -1539,9 +1875,12 @@ class GoGenerator:
 
     def abort_return(self, error_name: str) -> list[str]:
         self.std_imports.add("errors")
+        wait_lines = []
+        for scope_name in reversed(self.active_scopes):
+            wait_lines.append(f"{scope_name}.wg.Wait()")
         if self.current_return_type is None:
-            return [f"return errors.New({self.go_error_name(error_name)})"]
-        return [f"return {self.go_zero_value(self.current_return_type)}, errors.New({self.go_error_name(error_name)})"]
+            return wait_lines + [f"return errors.New({self.go_error_name(error_name)})"]
+        return wait_lines + [f"return {self.go_zero_value(self.current_return_type)}, errors.New({self.go_error_name(error_name)})"]
 
     def call_aborting_routine(self, name: str, args: list[Any], routine: RoutineDecl) -> list[str]:
         args_text = self.render_call_args(args, routine)
@@ -1591,9 +1930,12 @@ class GoGenerator:
         if not self.current_aborts:
             self.unsupported(self.program, "aborting call requires the enclosing routine to declare abort propagation")
             return ["// unsupported abort propagation"]
+        wait_lines = []
+        for scope_name in reversed(self.active_scopes):
+            wait_lines.append(f"{scope_name}.wg.Wait()")
         if self.current_return_type is None:
-            return ["return err"]
-        return [f"return {self.go_zero_value(self.current_return_type)}, err"]
+            return wait_lines + ["return err"]
+        return wait_lines + [f"return {self.go_zero_value(self.current_return_type)}, err"]
 
     def local_called_routine(self, name: str) -> RoutineDecl | None:
         current_prefix = f"{self.program.module_name}."
@@ -1703,9 +2045,10 @@ class GoGenerator:
             if base == "Receiver" and len(args) == 1:
                 self.needs_async_helpers = True
                 return f"FreeholdReceiver[{self.go_type_string(args[0])}]"
-            resolved_base = self.go_type_string(base)
-            clean_args = [go_exported_name(self.go_type_string(arg)) for arg in args]
-            return resolved_base + "_" + "_".join(clean_args)
+            qualified_base = self.qualify_type_name(base, self.program.module_name)
+            qualified_args = [self.qualify_type_name(arg, self.program.module_name) for arg in args]
+            specialized = self.go_specialized_name(qualified_base, qualified_args)
+            return go_exported_name(specialized)
         
         current_prefix = f"{self.program.module_name}."
         if type_name.startswith(current_prefix):
@@ -1869,7 +2212,13 @@ class GoGenerator:
         if isinstance(expr, BinaryExpr):
             precedence = go_precedence(expr.op)
             if expr.op in {"=", "!=", "<", "<=", ">", ">="}:
-                rendered = f"{self.expr_for_integer_comparison(expr.left, expr.right)} {go_operator(expr.op)} {self.expr_for_integer_comparison(expr.right, expr.left)}"
+                left_type = type_to_string(self.infer_expr_type(expr.left))
+                right_type = type_to_string(self.infer_expr_type(expr.right))
+                if left_type in {"BigInteger", "BigFloat"} or right_type in {"BigInteger", "BigFloat"}:
+                    go_op = "==" if expr.op == "=" else expr.op
+                    rendered = f"{self.expr(expr.left)}.Cmp({self.expr(expr.right)}) {go_op} 0"
+                else:
+                    rendered = f"{self.expr_for_integer_comparison(expr.left, expr.right, precedence, 'left')} {go_operator(expr.op)} {self.expr_for_integer_comparison(expr.right, expr.left, precedence, 'right')}"
             else:
                 rendered = f"{self.expr_at(expr.left, precedence, 'left')} {go_operator(expr.op)} {self.expr_at(expr.right, precedence, 'right')}"
             return parenthesize_if_needed(rendered, precedence, parent_precedence, side, expr.op)
@@ -1900,18 +2249,17 @@ class GoGenerator:
 
     def callable_name(self, name: str, node: Any) -> str:
         routine = self.called_routine(name)
-        resolved_name = name
         if routine is not None and routine.type_params:
-            type_args = self.infer_type_args(routine, node)
-            if "." in name:
-                parts = name.split(".")
-                base_name = parts[-1]
-                module_part = ".".join(parts[:-1])
-                specialized_base = base_name + "_" + "_".join(go_exported_name(arg) for arg in type_args)
-                resolved_name = f"{module_part}.{specialized_base}"
+            qualified_name = self.qualify_routine_name(name, self.program.module_name)
+            if node.type_args:
+                type_args = [self.qualify_type_name(ta, self.program.module_name) for ta in node.type_args]
             else:
-                resolved_name = name + "_" + "_".join(go_exported_name(arg) for arg in type_args)
+                inferred = self.infer_type_args(routine, node)
+                type_args = [self.qualify_type_name(ta, self.program.module_name) for ta in inferred]
+            specialized = self.go_specialized_name(qualified_name, type_args)
+            return go_exported_name(specialized)
 
+        resolved_name = name
         current_prefix = f"{self.program.module_name}."
         if resolved_name.startswith(current_prefix):
             return go_exported_name(resolved_name[len(current_prefix):])
@@ -1930,9 +2278,9 @@ class GoGenerator:
                 return f"{go_import_alias(parts[0])}.{go_exported_name(parts[1])}"
             self.unsupported(node, f"qualified call target is not imported by this module: {resolved_name}")
             return go_qualified_name(resolved_name)
-        exposed_module = self.exposed_symbols.get(resolved_name)
-        if exposed_module is None and resolved_name in self.exposed_symbols:
-            self.unsupported(node, f"ambiguous exposed symbol in imported modules: {resolved_name}")
+        exposed_module = self.exposed_symbols.get(name)
+        if exposed_module is None and name in self.exposed_symbols:
+            self.unsupported(node, f"ambiguous exposed symbol in imported modules: {name}")
             return go_exported_name(resolved_name)
         if exposed_module is not None and resolved_name not in self.local_routines:
             self.used_import_modules.add(exposed_module)
@@ -1954,6 +2302,20 @@ class GoGenerator:
             self.used_runtime_modules.add("Std.IO")
             self.std_imports.add("fmt")
             return [f"fmt.Println({self.expr(stmt.args[0])})"]
+        if stmt.name.endswith(".cancel"):
+            scope_var = go_local_name(stmt.name.split(".")[0])
+            return [f"{scope_var}.cancel()"]
+        if stmt.name.endswith(".timeout"):
+            scope_var = go_local_name(stmt.name.split(".")[0])
+            self.std_imports.add("time")
+            self.std_imports.add("context")
+            return [f"{scope_var}.ctx, {scope_var}.cancel = context.WithTimeout({scope_var}.ctx, time.Duration({self.expr(stmt.args[0])})*time.Millisecond)"]
+        if stmt.name.endswith(".priority"):
+            scope_var = go_local_name(stmt.name.split(".")[0])
+            return [f"{scope_var}.priority = int({self.expr(stmt.args[0])})"]
+        if stmt.name.endswith(".limit"):
+            scope_var = go_local_name(stmt.name.split(".")[0])
+            return [f"{scope_var}.sem = make(chan struct{{}}, {self.expr(stmt.args[0])})"]
         return None
 
     def runtime_call_expr(self, expr: CallExpr, expected_type: Any) -> str | None:
@@ -2051,6 +2413,23 @@ class GoGenerator:
             return self.render_spawn_call(expr, task_arg_index=0)
         if expr.name.endswith(".join"):
             return self.render_join_call(expr, handle_arg_index=0)
+        if expr.name.endswith(".cancel"):
+            scope_var = go_local_name(expr.name.split(".")[0])
+            return f"func() {{ {scope_var}.cancel() }}()"
+        if expr.name.endswith(".timeout"):
+            scope_var = go_local_name(expr.name.split(".")[0])
+            self.std_imports.add("time")
+            self.std_imports.add("context")
+            return f"func() {{ {scope_var}.ctx, {scope_var}.cancel = context.WithTimeout({scope_var}.ctx, time.Duration({self.expr(expr.args[0])})*time.Millisecond) }}()"
+        if expr.name.endswith(".is_cancelled"):
+            scope_var = go_local_name(expr.name.split(".")[0])
+            return f"({scope_var}.ctx.Err() != nil)"
+        if expr.name.endswith(".priority"):
+            scope_var = go_local_name(expr.name.split(".")[0])
+            return f"func() {{ {scope_var}.priority = int({self.expr(expr.args[0])}) }}()"
+        if expr.name.endswith(".limit"):
+            scope_var = go_local_name(expr.name.split(".")[0])
+            return f"func() {{ {scope_var}.sem = make(chan struct{{}}, {self.expr(expr.args[0])}) }}()"
         return None
 
     def render_channel_call(self, expr: CallExpr) -> str:
@@ -2087,18 +2466,23 @@ class GoGenerator:
 
     def render_spawn_call(self, expr: CallExpr, task_arg_index: int) -> str:
         self.needs_async_helpers = True
+        self.std_imports.add("sync")
         if not expr.type_args or len(expr.type_args) != 1 or task_arg_index >= len(expr.args):
             self.unsupported(expr, "scope spawn requires one type argument and an awaitable value")
             return "FreeholdJoinHandle[any]{}"
         value_type = self.go_type_string(expr.type_args[0])
-        return f"FreeholdJoinHandle[{value_type}]{{value: {self.expr(expr.args[task_arg_index])}}}"
+        if expr.name == "scope_spawn":
+            scope_expr = self.expr(expr.args[0])
+        else:
+            scope_expr = go_local_name(expr.name.split(".")[0])
+        return f"freeholdSpawn[{value_type}](&{scope_expr}.wg, {scope_expr}.priority, {scope_expr}.sem, func() {value_type} {{ return {self.expr(expr.args[task_arg_index])} }})"
 
     def render_join_call(self, expr: CallExpr, handle_arg_index: int) -> str:
         self.needs_async_helpers = True
         if handle_arg_index >= len(expr.args):
             self.unsupported(expr, "scope join requires a JoinHandle argument")
             return "nil"
-        return f"{self.expr(expr.args[handle_arg_index])}.value"
+        return f"<-{self.expr(expr.args[handle_arg_index])}.ch"
 
     def is_join_handle_type(self, type_ref: Any) -> bool:
         if isinstance(type_ref, TypeName):
@@ -2178,26 +2562,30 @@ class GoGenerator:
         return None
 
     def render_call_args(self, args: list[Any], routine: RoutineDecl | None) -> str:
-        if routine is None:
-            return ", ".join(self.expr(arg) for arg in args)
         rendered: list[str] = []
-        for index, arg in enumerate(args):
-            if index < len(routine.params) and routine.params[index].type_name == "Integer":
-                rendered.append(self.expr_as_int64(arg))
-            else:
-                rendered.append(self.expr(arg))
+        if routine is not None and getattr(routine, "is_async", False):
+            self.std_imports.add("context")
+            rendered.append(self.current_context_expr())
+        if routine is None:
+            rendered.extend(self.expr(arg) for arg in args)
+        else:
+            for index, arg in enumerate(args):
+                if index < len(routine.params) and routine.params[index].type_name == "Integer":
+                    rendered.append(self.expr_as_int64(arg))
+                else:
+                    rendered.append(self.expr(arg))
         return ", ".join(rendered)
 
     def expr_as_int64(self, expr: Any) -> str:
         rendered = self.expr(expr)
         return f"int64({rendered})" if self.integer_expr_kind(expr) == "inferred_int" else rendered
 
-    def expr_for_integer_comparison(self, expr: Any, other: Any) -> str:
+    def expr_for_integer_comparison(self, expr: Any, other: Any, parent_precedence: int = 0, side: str = "") -> str:
         if self.integer_expr_kind(expr) == "inferred_int":
             other_kind = self.integer_expr_kind(other)
             if other_kind not in {"inferred_int", "untyped"}:
-                return f"int64({self.expr(expr)})"
-        return self.expr(expr)
+                return f"int64({self.expr_at(expr, parent_precedence, side)})"
+        return self.expr_at(expr, parent_precedence, side)
 
     def integer_expr_kind(self, expr: Any) -> str | None:
         if isinstance(expr, NumberExpr):
@@ -2346,6 +2734,18 @@ def go_type_string(type_name: str) -> str:
             return f"FreeholdSender[{go_type_string(args[0])}]"
         if base == "Receiver" and len(args) == 1:
             return f"FreeholdReceiver[{go_type_string(args[0])}]"
+        
+        parts = base.split(".")
+        normalized_parts = [go_exported_name(p) for p in parts]
+        base_name = "".join(normalized_parts)
+        
+        def format_arg(arg: str) -> str:
+            cleaned = arg.replace("<", "_").replace(">", "").replace(",", "_").replace(" ", "")
+            parts = cleaned.split(".")
+            return "".join(go_exported_name(p) for p in parts)
+            
+        args_str = "_".join(format_arg(a) for a in args)
+        return go_exported_name(f"{base_name}_{args_str}")
     if type_name == "Scope":
         return "FreeholdScope"
     mapping = {
@@ -2717,7 +3117,16 @@ def go_exported_name(name: str) -> str:
 
 def go_local_name(name: str) -> str:
     exported = go_exported_name(name)
-    return exported[:1].lower() + exported[1:]
+    local = exported[:1].lower() + exported[1:]
+    if local in {
+        "break", "default", "func", "interface", "select",
+        "case", "defer", "go", "map", "struct",
+        "chan", "else", "goto", "package", "switch",
+        "const", "fallthrough", "if", "range", "type",
+        "continue", "for", "import", "return", "var"
+    }:
+        return local + "_"
+    return local
 
 
 def go_qualified_name(name: str) -> str:

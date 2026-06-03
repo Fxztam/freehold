@@ -3,9 +3,17 @@ package control_ifelsereturn
 
 func Classify(amount int64) int64 {
 	if amount > 0 {
-		return 1
+		var freeholdResult int64 = 1
+		if !(amount > 0 && freeholdResult == 1 || amount <= 0 && freeholdResult == 0) {
+			panic("freehold ensures contract failed")
+		}
+		return freeholdResult
 	} else {
-		return 0
+		var freeholdResult int64 = 0
+		if !(amount > 0 && freeholdResult == 1 || amount <= 0 && freeholdResult == 0) {
+			panic("freehold ensures contract failed")
+		}
+		return freeholdResult
 	}
 }
 

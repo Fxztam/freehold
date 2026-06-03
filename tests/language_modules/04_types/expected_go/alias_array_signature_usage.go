@@ -4,12 +4,16 @@ package aliasarraysignatureusage
 type Money int64
 
 func Values() [3]Money {
-	return [3]Money{1, 2, 3}
+	var freeholdResult [3]Money = [3]Money{1, 2, 3}
+	if !(freeholdResult[0] == 1) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }
 
 func Main() {
-	amounts := Values()
-	amount := amounts[0]
+	var amounts [3]Money = Values()
+	var amount Money = amounts[0]
 	if !(amount == 1) {
 		panic("freehold check failed")
 	}

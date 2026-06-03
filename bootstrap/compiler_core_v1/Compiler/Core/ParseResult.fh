@@ -35,7 +35,7 @@ end make_parse_error
 
 function parse_ok(module_node: ModuleNode) returns ParseResult
 requires String.instr(module_node.name.name, "") = 0
-ensures result.status.name = "ok"
+ensures result.status.name = "ok", result.module_node.name.name = module_node.name.name
 is
     let status: ParseStatus = make_parse_status("ok")
     let empty_span: SourceSpan = SourceSpan { source_name: module_node.span.source_name, start_line: module_node.span.start_line, start_column: module_node.span.start_column, end_line: module_node.span.end_line, end_column: module_node.span.end_column }
@@ -45,7 +45,7 @@ end parse_ok
 
 function parse_error_result(issue: ParseError, module_node: ModuleNode) returns ParseResult
 requires String.instr(issue.code, "FH-PARSE-") = 0
-ensures result.status.name = "error", result.issue.code = issue.code
+ensures result.status.name = "error", result.issue.code = issue.code, result.module_node.name.name = module_node.name.name
 is
     let status: ParseStatus = make_parse_status("error")
     return ParseResult { status: status, module_node: module_node, issue: issue }

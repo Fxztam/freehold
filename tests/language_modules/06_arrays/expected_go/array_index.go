@@ -2,7 +2,7 @@
 package arrayindex
 
 func Main() {
-	values := [3]int64{1, 2, 3}
+	var values [3]int64 = [3]int64{1, 2, 3}
 	if !(values[1] == 2) {
 		panic("freehold check failed")
 	}

@@ -26,6 +26,7 @@ from freehold.core.ast import (
     ExistsExpr,
     ForAllExpr,
     ImportDecl,
+    IsExpr,
     IndexExpr,
     IndexedFieldAccessExpr,
     LetStmt,
@@ -362,6 +363,8 @@ def export_rpc_decl(rpc: Any) -> dict[str, Any]:
         "request_type_repr": export_type_name_ref(rpc.request_type),
         "response_type": rpc.response_type,
         "response_type_repr": export_type_name_ref(rpc.response_type),
+        "request_stream": getattr(rpc, "request_stream", False),
+        "response_stream": getattr(rpc, "response_stream", False),
     }
 
 
@@ -626,6 +629,8 @@ def export_expr(expr: Any) -> dict[str, Any]:
         return {"kind": "UnaryExpr", "op": expr.op, "value": export_expr(expr.expr)}
     if isinstance(expr, BinaryExpr):
         return {"kind": "BinaryExpr", "op": expr.op, "left": export_expr(expr.left), "right": export_expr(expr.right)}
+    if isinstance(expr, IsExpr):
+        return {"kind": "IsExpr", "left": export_expr(expr.left), "right": expr.right}
     if expr is None:
         return {"kind": "NullExpr"}
     raise TypeError(f"unsupported expression for FH-IR export: {type(expr).__name__}")

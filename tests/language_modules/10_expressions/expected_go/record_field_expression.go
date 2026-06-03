@@ -7,7 +7,7 @@ type Account struct {
 }
 
 func Main() {
-	account := Account{Id: 1, Active: true}
+	var account Account = Account{Id: 1, Active: true}
 	if !(account.Id == 1 && account.Active) {
 		panic("freehold check failed")
 	}

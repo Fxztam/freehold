@@ -2,6 +2,9 @@
 package callstatement
 
 func Accept(flag bool) {
+	if !(flag == true) {
+		panic("freehold requires contract failed")
+	}
 	if !(flag) {
 		panic("freehold check failed")
 	}

@@ -132,7 +132,9 @@
                     "response_type_repr": {
                       "kind": "TypeName",
                       "name": "PriceReply"
-                    }
+                    },
+                    "request_stream": false,
+                    "response_stream": false
                   }
                 ]
               },
@@ -894,11 +896,48 @@
                   "kind": "TypeName",
                   "name": "PriceReply"
                 },
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": ">",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "request",
+                        "quantity"
+                      ]
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 0
+                    }
+                  }
+                ],
                 "aborts": [],
                 "ensures": [],
                 "contracts": {
-                  "requires": [],
+                  "requires": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "requires",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": ">",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "request",
+                            "quantity"
+                          ]
+                        },
+                        "right": {
+                          "kind": "NumberExpr",
+                          "value": 0
+                        }
+                      }
+                    }
+                  ],
                   "ensures": [],
                   "aborts": []
                 },
@@ -1308,11 +1347,42 @@
                   "kind": "TypeName",
                   "name": "Boolean"
                 },
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": ">",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "quantity"
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 0
+                    }
+                  }
+                ],
                 "aborts": [],
                 "ensures": [],
                 "contracts": {
-                  "requires": [],
+                  "requires": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "requires",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": ">",
+                        "left": {
+                          "kind": "VarExpr",
+                          "name": "quantity"
+                        },
+                        "right": {
+                          "kind": "NumberExpr",
+                          "value": 0
+                        }
+                      }
+                    }
+                  ],
                   "ensures": [],
                   "aborts": []
                 },
@@ -2406,11 +2476,48 @@
                   "kind": "TypeName",
                   "name": "PriceReply"
                 },
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": ">",
+                    "left": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "request",
+                        "quantity"
+                      ]
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 0
+                    }
+                  }
+                ],
                 "aborts": [],
                 "ensures": [],
                 "contracts": {
-                  "requires": [],
+                  "requires": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "requires",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": ">",
+                        "left": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "request",
+                            "quantity"
+                          ]
+                        },
+                        "right": {
+                          "kind": "NumberExpr",
+                          "value": 0
+                        }
+                      }
+                    }
+                  ],
                   "ensures": [],
                   "aborts": []
                 },
@@ -2820,11 +2927,42 @@
                   "kind": "TypeName",
                   "name": "Boolean"
                 },
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "BinaryExpr",
+                    "op": ">",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "quantity"
+                    },
+                    "right": {
+                      "kind": "NumberExpr",
+                      "value": 0
+                    }
+                  }
+                ],
                 "aborts": [],
                 "ensures": [],
                 "contracts": {
-                  "requires": [],
+                  "requires": [
+                    {
+                      "kind": "ContractClause",
+                      "role": "requires",
+                      "index": 0,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": ">",
+                        "left": {
+                          "kind": "VarExpr",
+                          "name": "quantity"
+                        },
+                        "right": {
+                          "kind": "NumberExpr",
+                          "value": 0
+                        }
+                      }
+                    }
+                  ],
                   "ensures": [],
                   "aborts": []
                 },
@@ -2965,12 +3103,55 @@
                     "response_type_repr": {
                       "kind": "TypeName",
                       "name": "PriceReply"
-                    }
+                    },
+                    "request_stream": false,
+                    "response_stream": false
                   }
                 ]
               }
             ],
-            "proof_obligations": [],
+            "proof_obligations": [
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "assert",
+                  "location": "line 30:5",
+                  "obligation": "(= (str.indexof sku \"\" 0) 0)",
+                  "routine": "load_unit_price",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const sku String)\n(assert (not (= (str.indexof sku \"\" 0) 0)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "assert",
+                  "location": "line 37:5",
+                  "obligation": "(> quantity 0)",
+                  "routine": "reserve_inventory",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const quantity Int)\n(assert (> quantity 0))\n(assert (not (> quantity 0)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "assert",
+                  "location": "line 45:5",
+                  "obligation": "(= sent true)",
+                  "routine": "audit_roundtrip",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const sent Bool)\n(assert sent)\n(assert (not (= sent true)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "precondition",
+                  "location": "line 56:13",
+                  "obligation": "(> request_quantity 0)",
+                  "routine": "quote",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const request_quantity Int)\n(assert (> request_quantity 0))\n(assert (not (> request_quantity 0)))\n(check-sat)\n; unsat means proved"
+                }
+              }
+            ],
             "flow_summaries": [
               {
                 "kind": "RoutineFlowSummary",
@@ -3045,7 +3226,48 @@
             ],
             "verifier": {
               "node": "VerifierReport",
-              "proof_obligations": [],
+              "proof_obligations": [
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "assert",
+                    "location": "line 30:5",
+                    "obligation": "(= (str.indexof sku \"\" 0) 0)",
+                    "routine": "load_unit_price",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const sku String)\n(assert (not (= (str.indexof sku \"\" 0) 0)))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "assert",
+                    "location": "line 37:5",
+                    "obligation": "(> quantity 0)",
+                    "routine": "reserve_inventory",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const quantity Int)\n(assert (> quantity 0))\n(assert (not (> quantity 0)))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "assert",
+                    "location": "line 45:5",
+                    "obligation": "(= sent true)",
+                    "routine": "audit_roundtrip",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const sent Bool)\n(assert sent)\n(assert (not (= sent true)))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "precondition",
+                    "location": "line 56:13",
+                    "obligation": "(> request_quantity 0)",
+                    "routine": "quote",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const request_quantity Int)\n(assert (> request_quantity 0))\n(assert (not (> request_quantity 0)))\n(check-sat)\n; unsat means proved"
+                  }
+                }
+              ],
               "flow_summaries": [
                 {
                   "kind": "RoutineFlowSummary",
@@ -3233,7 +3455,9 @@
                   "response_type_repr": {
                     "kind": "TypeName",
                     "name": "PriceReply"
-                  }
+                  },
+                  "request_stream": false,
+                  "response_stream": false
                 }
               ]
             },
@@ -3995,11 +4219,48 @@
                 "kind": "TypeName",
                 "name": "PriceReply"
               },
-              "requires": [],
+              "requires": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": ">",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "request",
+                      "quantity"
+                    ]
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              ],
               "aborts": [],
               "ensures": [],
               "contracts": {
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "requires",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": ">",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "request",
+                          "quantity"
+                        ]
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 0
+                      }
+                    }
+                  }
+                ],
                 "ensures": [],
                 "aborts": []
               },
@@ -4409,11 +4670,42 @@
                 "kind": "TypeName",
                 "name": "Boolean"
               },
-              "requires": [],
+              "requires": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": ">",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "quantity"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              ],
               "aborts": [],
               "ensures": [],
               "contracts": {
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "requires",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": ">",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "quantity"
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 0
+                      }
+                    }
+                  }
+                ],
                 "ensures": [],
                 "aborts": []
               },
@@ -5504,11 +5796,48 @@
                 "kind": "TypeName",
                 "name": "PriceReply"
               },
-              "requires": [],
+              "requires": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": ">",
+                  "left": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "request",
+                      "quantity"
+                    ]
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              ],
               "aborts": [],
               "ensures": [],
               "contracts": {
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "requires",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": ">",
+                      "left": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "request",
+                          "quantity"
+                        ]
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 0
+                      }
+                    }
+                  }
+                ],
                 "ensures": [],
                 "aborts": []
               },
@@ -5918,11 +6247,42 @@
                 "kind": "TypeName",
                 "name": "Boolean"
               },
-              "requires": [],
+              "requires": [
+                {
+                  "kind": "BinaryExpr",
+                  "op": ">",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "quantity"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": 0
+                  }
+                }
+              ],
               "aborts": [],
               "ensures": [],
               "contracts": {
-                "requires": [],
+                "requires": [
+                  {
+                    "kind": "ContractClause",
+                    "role": "requires",
+                    "index": 0,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": ">",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "quantity"
+                      },
+                      "right": {
+                        "kind": "NumberExpr",
+                        "value": 0
+                      }
+                    }
+                  }
+                ],
                 "ensures": [],
                 "aborts": []
               },
@@ -6063,12 +6423,55 @@
                   "response_type_repr": {
                     "kind": "TypeName",
                     "name": "PriceReply"
-                  }
+                  },
+                  "request_stream": false,
+                  "response_stream": false
                 }
               ]
             }
           ],
-          "proof_obligations": [],
+          "proof_obligations": [
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "assert",
+                "location": "line 30:5",
+                "obligation": "(= (str.indexof sku \"\" 0) 0)",
+                "routine": "load_unit_price",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const sku String)\n(assert (not (= (str.indexof sku \"\" 0) 0)))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "assert",
+                "location": "line 37:5",
+                "obligation": "(> quantity 0)",
+                "routine": "reserve_inventory",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const quantity Int)\n(assert (> quantity 0))\n(assert (not (> quantity 0)))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "assert",
+                "location": "line 45:5",
+                "obligation": "(= sent true)",
+                "routine": "audit_roundtrip",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const sent Bool)\n(assert sent)\n(assert (not (= sent true)))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "precondition",
+                "location": "line 56:13",
+                "obligation": "(> request_quantity 0)",
+                "routine": "quote",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const request_quantity Int)\n(assert (> request_quantity 0))\n(assert (not (> request_quantity 0)))\n(check-sat)\n; unsat means proved"
+              }
+            }
+          ],
           "flow_summaries": [
             {
               "kind": "RoutineFlowSummary",
@@ -6143,7 +6546,48 @@
           ],
           "verifier": {
             "node": "VerifierReport",
-            "proof_obligations": [],
+            "proof_obligations": [
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "assert",
+                  "location": "line 30:5",
+                  "obligation": "(= (str.indexof sku \"\" 0) 0)",
+                  "routine": "load_unit_price",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const sku String)\n(assert (not (= (str.indexof sku \"\" 0) 0)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "assert",
+                  "location": "line 37:5",
+                  "obligation": "(> quantity 0)",
+                  "routine": "reserve_inventory",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const quantity Int)\n(assert (> quantity 0))\n(assert (not (> quantity 0)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "assert",
+                  "location": "line 45:5",
+                  "obligation": "(= sent true)",
+                  "routine": "audit_roundtrip",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const sent Bool)\n(assert sent)\n(assert (not (= sent true)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "precondition",
+                  "location": "line 56:13",
+                  "obligation": "(> request_quantity 0)",
+                  "routine": "quote",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const request_quantity Int)\n(assert (> request_quantity 0))\n(assert (not (> request_quantity 0)))\n(check-sat)\n; unsat means proved"
+                }
+              }
+            ],
             "flow_summaries": [
               {
                 "kind": "RoutineFlowSummary",

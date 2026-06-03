@@ -80,7 +80,13 @@ def verify_contract(contract: dict[str, Any], build_root: Path) -> dict[str, Any
     source_path = REPO_ROOT / source_file
     try:
         files = generate_go_project(source_path)
-        build_files = generate_go_project_build_files(files, executable_name="stage3_compiler_core_v1", entry_module_name="App.Main")
+        build_options = contract.get("build_options") or {}
+        if build_options.get("emit_executable", True):
+            executable_name = build_options.get("executable_name", "stage3_compiler_core_v1")
+            entry_module_name = build_options.get("entry_module_name", "App.Main")
+            build_files = generate_go_project_build_files(files, executable_name=executable_name, entry_module_name=entry_module_name)
+        else:
+            build_files = generate_go_project_build_files(files)
         extra_files = generate_go_project_extra_files(files)
     except Exception as exc:
         import traceback
@@ -103,6 +109,7 @@ def verify_contract(contract: dict[str, Any], build_root: Path) -> dict[str, Any
     check_codegen_files(contract.get("files", []), project["files"], "files", failures)
     check_text_files(contract.get("build_files", []), project["build_files"], "build_files", failures)
     check_text_files(contract.get("extra_files", []), project["extra_files"], "extra_files", failures)
+    check_repo_files(contract.get("repo_files", []), failures)
 
     if not failures:
         write_project(build_root, files, build_files, extra_files)
@@ -223,6 +230,20 @@ def check_text_files(expected_items: list[dict[str, Any]], actual: dict[str, Any
         if "kind" in expected and file.kind != expected["kind"]:
             failures.append(f"{label}: {path} expected kind {expected['kind']!r}, found {file.kind!r}")
         check_snippets(label, path, file.content, expected.get("must_contain", []), failures)
+
+
+def check_repo_files(expected_items: list[dict[str, Any]], failures: list[str]) -> None:
+    for expected in expected_items:
+        path = expected.get("path")
+        if not path:
+            failures.append("repo_files: expected item without path")
+            continue
+        repo_path = REPO_ROOT / path
+        if not repo_path.exists():
+            failures.append(f"repo_files: missing {path}")
+            continue
+        content = repo_path.read_text(encoding="utf-8")
+        check_snippets("repo_files", path, content, expected.get("must_contain", []), failures)
 
 
 def check_snippets(label: str, path: str, content: str, snippets: list[str], failures: list[str]) -> None:

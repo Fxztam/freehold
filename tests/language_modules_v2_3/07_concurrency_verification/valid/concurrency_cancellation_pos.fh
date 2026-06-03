@@ -1,0 +1,25 @@
+module Concurrency.CancellationPos
+
+async function worker(val: Integer) returns Integer
+is
+    return val * 2
+end worker
+
+async function execute_cancellation(input: Integer) returns Integer
+is
+    scope sc do
+        spawn
+            call sc.timeout(500)
+            let handle: JoinHandle<Integer> = sc.spawn<Integer>(worker(input))
+            let is_cancelled: Boolean = sc.is_cancelled()
+            if is_cancelled = true then
+                call sc.cancel()
+            end if
+        join
+            let res: Integer = await sc.join<Integer>(handle)
+        result
+            return res
+    end scope
+end execute_cancellation
+
+end Concurrency.CancellationPos

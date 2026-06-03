@@ -1,159 +1,48 @@
 {
   "source_file": "..\\tests\\language_modules\\11_errors_results\\valid\\result_value_field_access.fh",
-  "source_snippet": "module ResultValueFieldAccess\r\n\r\ntype Address is record\r\n    city_id: Integer\r\nend record\r\n\r\ntype Customer is record\r\n    id: Integer\r\n    address: Address\r\nend record\r\n\r\nerror NotFound\r\n\r\nfunction load() returns Result\u003cCustomer, NotFound\u003e\r\nis\r\n    return ok Customer { id: 1, address: Address { city_id: 42 } }\r\nend load\r\n\r\nprocedure main()\r\nis\r\n    let loaded: Result\u003cCustomer, NotFound\u003e = load()\r\n    check loaded.value.id = 1\r\n    check loaded.value.address.city_id = 42\r\nend main\r\n\r\nend ResultValueFieldAccess",
+  "source_snippet": "module ResultValueFieldAccess\r\n\r\ntype Address is record\r\n    city_id: Integer\r\nend record\r\n\r\ntype Customer is record\r\n    id: Integer\r\n    address: Address\r\nend record\r\n\r\nerror NotFound\r\n\r\nfunction load() returns Result\u003cCustomer, NotFound\u003e\r\n    ensures result.ok\r\n    ensures result.value.id = 1\r\n    ensures result.value.address.city_id = 42\r\nis\r\n    return ok Customer { id: 1, address: Address { city_id: 42 } }\r\nend load\r\n\r\nprocedure main()\r\nis\r\n    let loaded: Result\u003cCustomer, NotFound\u003e = load()\r\n    check loaded.value.id = 1\r\n    check loaded.value.address.city_id = 42\r\nend main\r\n\r\nend ResultValueFieldAccess",
   "module_name": "11_errors_results",
   "case_kind": "valid",
-  "parse_ok": true,
-  "ast": {
-    "kind": "Module",
-    "name": "ResultValueFieldAccess",
-    "declarations": [
-      {
-        "kind": "TypeDecl",
-        "name": "Address",
-        "base": "record",
-        "fields": [
-          {
-            "name": "city_id",
-            "type": "Integer"
-          }
-        ]
-      },
-      {
-        "kind": "TypeDecl",
-        "name": "Customer",
-        "base": "record",
-        "fields": [
-          {
-            "name": "id",
-            "type": "Integer"
-          },
-          {
-            "name": "address",
-            "type": "Address"
-          }
-        ]
-      },
-      {
-        "kind": "ErrorDecl",
-        "name": "NotFound"
-      },
-      {
-        "kind": "FunctionDecl",
-        "name": "load",
-        "params": null,
-        "return_type": "Result\u003cCustomer, NotFound\u003e",
-        "body": [
-          {
-            "kind": "ReturnStmt",
-            "value": {
-              "kind": "OkExpr",
-              "value": {
-                "kind": "RecordLiteralExpr",
-                "type": "Customer",
-                "fields": [
-                  {
-                    "name": "id",
-                    "value": {
-                      "kind": "NumberExpr",
-                      "value": "1"
-                    }
-                  },
-                  {
-                    "name": "address",
-                    "value": {
-                      "kind": "RecordLiteralExpr",
-                      "type": "Address",
-                      "fields": [
-                        {
-                          "name": "city_id",
-                          "value": {
-                            "kind": "NumberExpr",
-                            "value": "42"
-                          }
-                        }
-                      ]
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        ],
-        "end_name": "load"
-      },
-      {
-        "kind": "ProcedureDecl",
-        "name": "main",
-        "params": null,
-        "body": [
-          {
-            "kind": "LetStmt",
-            "name": "loaded",
-            "type": "Result\u003cCustomer, NotFound\u003e",
-            "value": {
-              "kind": "CallExpr",
-              "callee": {
-                "kind": "IdentifierExpr",
-                "name": "load"
-              },
-              "arguments": null
-            }
-          },
-          {
-            "kind": "CheckStmt",
-            "condition": {
-              "kind": "BinaryExpr",
-              "op": "=",
-              "left": {
-                "kind": "FieldAccessExpr",
-                "object": {
-                  "kind": "FieldAccessExpr",
-                  "object": {
-                    "kind": "IdentifierExpr",
-                    "name": "loaded"
-                  },
-                  "field": "value"
-                },
-                "field": "id"
-              },
-              "right": {
-                "kind": "NumberExpr",
-                "value": "1"
-              }
-            }
-          },
-          {
-            "kind": "CheckStmt",
-            "condition": {
-              "kind": "BinaryExpr",
-              "op": "=",
-              "left": {
-                "kind": "FieldAccessExpr",
-                "object": {
-                  "kind": "FieldAccessExpr",
-                  "object": {
-                    "kind": "FieldAccessExpr",
-                    "object": {
-                      "kind": "IdentifierExpr",
-                      "name": "loaded"
-                    },
-                    "field": "value"
-                  },
-                  "field": "address"
-                },
-                "field": "city_id"
-              },
-              "right": {
-                "kind": "NumberExpr",
-                "value": "42"
-              }
-            }
-          }
-        ],
-        "end_name": "main"
-      }
+  "parse_ok": false,
+  "error": "FH-SYN-0002: Expected an identifier. | Location: line 15, column 20 | Expected: identifier | Found: ok \"ok\" | Hint: Use a non-keyword name here.",
+  "diagnostic": {
+    "severity": "error",
+    "phase": "parse",
+    "category": "syntax",
+    "code": "FH-SYN-0002",
+    "number": 2,
+    "name": "expected_identifier",
+    "message": "Expected an identifier.",
+    "location": {
+      "line": 15,
+      "column": 20,
+      "offset": 260
+    },
+    "expected": [
+      "identifier"
     ],
-    "end_name": "ResultValueFieldAccess"
-  }
+    "found": "ok \"ok\"",
+    "hint": "Use a non-keyword name here."
+  },
+  "diagnostics": [
+    {
+      "severity": "error",
+      "phase": "parse",
+      "category": "syntax",
+      "code": "FH-SYN-0002",
+      "number": 2,
+      "name": "expected_identifier",
+      "message": "Expected an identifier.",
+      "location": {
+        "line": 15,
+        "column": 20,
+        "offset": 260
+      },
+      "expected": [
+        "identifier"
+      ],
+      "found": "ok \"ok\"",
+      "hint": "Use a non-keyword name here."
+    }
+  ]
 }

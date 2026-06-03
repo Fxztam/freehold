@@ -6,7 +6,7 @@ import (
 )
 
 func Main() {
-	total := math.Sqrt(float64(9.0)) + math.Pow(float64(2.0), float64(2.0))
+	var total float64 = math.Sqrt(float64(9.0)) + math.Pow(float64(2.0), float64(2.0))
 	if !(total == 7.0) {
 		panic("freehold check failed")
 	}

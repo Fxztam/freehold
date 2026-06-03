@@ -1,6 +1,6 @@
 {
   "source_file": "..\\tests\\language_modules\\22_generics\\valid\\generic_function_identity.fh",
-  "source_snippet": "module GenericFunctionIdentity\r\n\r\nfunction identity\u003cT\u003e(x: T) returns T\r\nis\r\n    return x\r\nend identity\r\n\r\nprocedure main()\r\nis\r\n    let x: Integer = identity\u003cInteger\u003e(1)\r\n    let text: String = identity\u003cString\u003e(\"ok\")\r\n    check x = 1\r\n    check text = \"ok\"\r\nend main\r\n\r\nend GenericFunctionIdentity",
+  "source_snippet": "module GenericFunctionIdentity\r\n\r\nfunction identity\u003cT\u003e(x: T) returns T\r\n    requires T is Equatable\r\n    ensures result = x\r\nis\r\n    return x\r\nend identity\r\n\r\nprocedure main()\r\nis\r\n    let x: Integer = identity\u003cInteger\u003e(1)\r\n    let text: String = identity\u003cString\u003e(\"ok\")\r\n    check x = 1\r\n    check text = \"ok\"\r\nend main\r\n\r\nend GenericFunctionIdentity",
   "module_name": "22_generics",
   "case_kind": "valid",
   "parse_ok": true,
@@ -21,6 +21,34 @@
           }
         ],
         "return_type": "T",
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": "is",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "T"
+            },
+            "right": {
+              "kind": "IdentifierExpr",
+              "name": "Equatable"
+            }
+          }
+        ],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "IdentifierExpr",
+              "name": "x"
+            }
+          }
+        ],
         "body": [
           {
             "kind": "ReturnStmt",

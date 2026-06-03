@@ -2,12 +2,8 @@
 package genericrecordbox
 
 func Main() {
-	b := Box_Int64{Item: 1}
+	var b GenericRecordBoxBoxInteger = GenericRecordBoxBoxInteger{Item: 1}
 	if !(b.Item == 1) {
 		panic("freehold check failed")
 	}
-}
-
-type BoxInteger struct {
-	Item int64 `json:"item"`
 }

@@ -6,8 +6,8 @@ import (
 )
 
 func Main() {
-	root := math.Sqrt(float64(9.0))
-	power := math.Pow(float64(2.0), float64(3.0))
+	var root float64 = math.Sqrt(float64(9.0))
+	var power float64 = math.Pow(float64(2.0), float64(3.0))
 	if !(root == 3.0) {
 		panic("freehold check failed")
 	}

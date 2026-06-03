@@ -2,7 +2,7 @@
 package doublearithmetic
 
 func Main() {
-	total := 1.5 + 2.5
+	var total float64 = 1.5 + 2.5
 	if !(total > 3.0) {
 		panic("freehold check failed")
 	}

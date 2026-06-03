@@ -19,11 +19,21 @@ type Customer struct {
 const NotFound = "NotFound"
 
 func Load() ResultCustomerNotFound {
-	return ResultCustomerNotFound{Ok: true, Value: Customer{Id: 1, Address: Address{CityId: 42}}}
+	freeholdResult := ResultCustomerNotFound{Ok: true, Value: Customer{Id: 1, Address: Address{CityId: 42}}}
+	if !(freeholdResult.Ok) {
+		panic("freehold ensures contract failed")
+	}
+	if !(freeholdResult.Value.Id == 1) {
+		panic("freehold ensures contract failed")
+	}
+	if !(freeholdResult.Value.Address.CityId == 42) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }
 
 func Main() {
-	loaded := Load()
+	var loaded ResultCustomerNotFound = Load()
 	if !(loaded.Value.Id == 1) {
 		panic("freehold check failed")
 	}

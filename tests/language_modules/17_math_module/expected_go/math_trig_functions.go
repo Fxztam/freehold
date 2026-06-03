@@ -6,9 +6,9 @@ import (
 )
 
 func Main() {
-	sine := math.Sin(float64(0.0))
-	cosine := math.Cos(float64(0.0))
-	tangent := math.Tan(float64(0.0))
+	var sine float64 = math.Sin(float64(0.0))
+	var cosine float64 = math.Cos(float64(0.0))
+	var tangent float64 = math.Tan(float64(0.0))
 	if !(sine == 0.0) {
 		panic("freehold check failed")
 	}

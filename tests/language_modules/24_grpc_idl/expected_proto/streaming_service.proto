@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package grpcidl.streamingservice;
+
+message StreamRequest {
+  string query = 1;
+}
+
+message StreamResponse {
+  string response_data = 1;
+}
+
+service RouteService {
+  rpc GetRoute (StreamRequest) returns (stream StreamResponse);
+  rpc RecordRoute (stream StreamRequest) returns (StreamResponse);
+  rpc Chat (stream StreamRequest) returns (stream StreamResponse);
+}

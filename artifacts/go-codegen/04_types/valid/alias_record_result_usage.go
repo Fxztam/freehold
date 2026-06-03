@@ -23,7 +23,7 @@ func Load(id AccountId) ResultAccountMissingAccount {
 }
 
 func Main() {
-	account := Load("acct-1")
+	var account ResultAccountMissingAccount = Load("acct-1")
 	if !(account.Value.Id == "acct-1") {
 		panic("freehold check failed")
 	}

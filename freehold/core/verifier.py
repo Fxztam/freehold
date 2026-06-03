@@ -93,8 +93,13 @@ class Verifier:
         self.services(services, records)
         flow_summaries = ControlFlowAnalyzer(routines, program.module_name).analyze_routines()
         vp = VerifiedProgram(program, types, records, errors, routines, services, obs, flow_summaries)
-        from freehold.core.symbolic import symbolic_obligations, solve_smt_query
-        new_obs = symbolic_obligations(vp, imported_modules=imported_modules)
+        import os
+        prover_env = os.environ.get("FREEHOLD_PROVER", "")
+        if prover == "none" or prover_env == "none":
+            new_obs = []
+        else:
+            from freehold.core.symbolic import symbolic_obligations, solve_smt_query
+            new_obs = symbolic_obligations(vp, imported_modules=imported_modules)
         failed_obs = []
         for ob in new_obs:
             res = solve_smt_query(ob["smt_query"], prover=prover, timeout=timeout)
@@ -891,6 +896,11 @@ class Verifier:
             elif isinstance(s, CallStmt):
                 if self.std_procedure_call(s.name, s.args, env, ctx, s.pos):
                     continue
+                method_owner, method_name = ctx.scope_method_name(s.name)
+                if method_name in ("spawn", "join", "cancel", "timeout", "is_cancelled", "priority", "limit") and method_owner in ctx.scope_vars:
+                    expr = CallExpr(s.name, s.args, s.pos, s.type_args)
+                    self.infer(expr, env, ctx, False, None)
+                    continue
                 cal = ctx.routine(s.name, s.pos)
                 if cal.kind != "procedure": raise TypeCheckError(f"{s.pos.text()}: call requires procedure")
 
@@ -970,7 +980,7 @@ class Verifier:
                                 f"which is mutated by '{s.name}'"
                             )
 
-                substitutions = self.routine_type_substitutions(cal, s.type_args, s.pos, s.args, env, ctx)
+                substitutions = self.routine_type_substitutions(cal, s, env, ctx)
                 self.args(cal, s.args, env, ctx, s.pos, substitutions)
                 self.require_abort_propagation(r, cal, s.pos)
         return saw
@@ -990,6 +1000,8 @@ class Verifier:
             if name != "value":
                 raise TypeCheckError(f"{pos.text()}: Result contract expression {name} is only available in Result ensures")
             raise TypeCheckError(f"{pos.text()}: contract expression {name} is only available in function ensures")
+        if name == "result":
+            return result_type
         if name == "value":
             return result_type.ok_type if isinstance(result_type, ResultTypeName) else result_type
         if isinstance(result_type, ResultTypeName):
@@ -1066,7 +1078,7 @@ class Verifier:
         return self.infer_field_path_obj(e.path, e.pos, env, ctx, allow_result, result_type)
 
     def infer_index_target(self, name, index, pos, env, ctx, allow_result, result_type):
-        if name == "value" and allow_result and result_type is not None:
+        if name in {"result", "value"} and allow_result and result_type is not None:
             arr_t = self.contract_value_type(name, pos, allow_result, result_type)
         elif name in {"result", "value", "error"}:
             raise TypeCheckError(f"{pos.text()}: Result contract expression {name} is only available in ensures")
@@ -1220,6 +1232,35 @@ class Verifier:
             if isinstance(e.args[0], VarExpr):
                 ctx.mark_scope_handle_joined(method_owner, e.args[0].name, e.args[0].pos)
             return AwaitableType(TypeName(item_type))
+        if method_name == "timeout":
+            expect_count(1)
+            if method_owner not in ctx.scope_vars:
+                raise TypeCheckError(f"{e.pos.text()}: scope timeout requires a local Scope created by scope block: {method_owner}")
+            expect_exact_type(0, "Integer")
+            return TypeName("Void")
+        if method_name == "cancel":
+            expect_count(0)
+            if method_owner not in ctx.scope_vars:
+                raise TypeCheckError(f"{e.pos.text()}: scope cancel requires a local Scope created by scope block: {method_owner}")
+            return TypeName("Void")
+        if method_name == "is_cancelled":
+            expect_count(0)
+            if method_owner not in ctx.scope_vars:
+                raise TypeCheckError(f"{e.pos.text()}: scope is_cancelled requires a local Scope created by scope block: {method_owner}")
+            return TypeName("Boolean")
+        if method_name == "priority":
+            expect_count(1)
+            if method_owner not in ctx.scope_vars:
+                raise TypeCheckError(f"{e.pos.text()}: scope priority requires a local Scope created by scope block: {method_owner}")
+            expect_exact_type(0, "Integer")
+            return TypeName("Void")
+        if method_name == "limit":
+            expect_count(1)
+            if method_owner not in ctx.scope_vars:
+                raise TypeCheckError(f"{e.pos.text()}: scope limit requires a local Scope created by scope block: {method_owner}")
+            expect_exact_type(0, "Integer")
+            return TypeName("Void")
+
         if e.name == "String.concat":
             if len(e.args) != 2:
                 raise TypeCheckError(f"{e.pos.text()}: String.concat expects 2 arguments")
@@ -1508,6 +1549,7 @@ class Verifier:
                 constraint = ctx.type_param_constraints.get(a.name)
                 if constraint != "Numeric":
                     raise TypeCheckError(f"{e.pos.text()}: type parameter {a.name} does not support arithmetic (requires Numeric)")
+                return a
             elif base_a not in ("Integer", "Double") or base_b not in ("Integer", "Double"):
                 raise TypeCheckError(f"{e.pos.text()}: arithmetic operator {e.op} requires numeric operands, got {type_to_string(a)} and {type_to_string(b)}")
             return TypeName("Double" if base_a=="Double" or base_b=="Double" else "Integer")
@@ -1520,7 +1562,7 @@ class Verifier:
         r = ctx.routine(e.name, e.pos)
         if r.kind != "function":
             raise TypeCheckError(f"{e.pos.text()}: function call requires function")
-        substitutions = self.routine_type_substitutions(r, e.type_args, e.pos, e.args, env, ctx)
+        substitutions = self.routine_type_substitutions(r, e, env, ctx)
         self.args(r, e.args, env, ctx, e.pos, substitutions)
         self.require_abort_propagation(ctx.current_routine, r, e.pos)
         return_type = ctx.substitute_type_ref(r.return_type, substitutions)
@@ -1620,7 +1662,10 @@ class Verifier:
                 if formal.error_type in type_params:
                     inferred[formal.error_type].add(actual.error_type)
 
-    def routine_type_substitutions(self, routine: RoutineDecl, type_args: list[str] | None, pos: SourcePos, args: list[Any], env: dict[str, Any], ctx: Any) -> dict[str, str]:
+    def routine_type_substitutions(self, routine: RoutineDecl, call_node: Any, env: dict[str, Any], ctx: Any) -> dict[str, str]:
+        type_args = call_node.type_args
+        pos = call_node.pos
+        args = call_node.args
         params = routine.type_params or []
         if not params:
             if type_args:
@@ -1658,6 +1703,11 @@ class Verifier:
                         resolved[p] = list(bases)[0]
                     else:
                         raise TypeCheckError(f"{pos.text()}: cannot infer type parameter {p} due to conflicting types: {', '.join(sorted(types_set))}")
+            resolved_type_args = [resolved[p] for p in params]
+            try:
+                object.__setattr__(call_node, "type_args", resolved_type_args)
+            except Exception:
+                pass
         for p in params:
             if p in routine_constraints:
                 const = routine_constraints[p]

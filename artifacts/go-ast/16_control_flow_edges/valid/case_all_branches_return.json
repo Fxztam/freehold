@@ -1,6 +1,6 @@
 {
   "source_file": "..\\tests\\language_modules\\16_control_flow_edges\\valid\\case_all_branches_return.fh",
-  "source_snippet": "module Control.CaseReturn\r\n\r\nfunction score(choice: Integer) returns Integer\r\nis\r\n    case choice is\r\n        when 1 =\u003e\r\n            return 10\r\n        when 2 =\u003e\r\n            return 20\r\n        default =\u003e\r\n            return 0\r\n    end case\r\nend score\r\n\r\nprocedure main()\r\nis\r\n    check score(2) = 20\r\nend main\r\n\r\nend Control.CaseReturn",
+  "source_snippet": "module Control.CaseReturn\r\n\r\nfunction score(choice: Integer) returns Integer\r\n    ensures (choice = 1 and result = 10) or (choice = 2 and result = 20) or (choice != 1 and choice != 2 and result = 0)\r\nis\r\n    case choice is\r\n        when 1 =\u003e\r\n            return 10\r\n        when 2 =\u003e\r\n            return 20\r\n        default =\u003e\r\n            return 0\r\n    end case\r\nend score\r\n\r\nprocedure main()\r\nis\r\n    check score(2) = 20\r\nend main\r\n\r\nend Control.CaseReturn",
   "module_name": "16_control_flow_edges",
   "case_kind": "valid",
   "parse_ok": true,
@@ -18,6 +18,116 @@
           }
         ],
         "return_type": "Integer",
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "or",
+            "left": {
+              "kind": "BinaryExpr",
+              "op": "or",
+              "left": {
+                "kind": "BinaryExpr",
+                "op": "and",
+                "left": {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "IdentifierExpr",
+                    "name": "choice"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                },
+                "right": {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "IdentifierExpr",
+                    "name": "result"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": "10"
+                  }
+                }
+              },
+              "right": {
+                "kind": "BinaryExpr",
+                "op": "and",
+                "left": {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "IdentifierExpr",
+                    "name": "choice"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": "2"
+                  }
+                },
+                "right": {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "IdentifierExpr",
+                    "name": "result"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": "20"
+                  }
+                }
+              }
+            },
+            "right": {
+              "kind": "BinaryExpr",
+              "op": "and",
+              "left": {
+                "kind": "BinaryExpr",
+                "op": "and",
+                "left": {
+                  "kind": "BinaryExpr",
+                  "op": "!=",
+                  "left": {
+                    "kind": "IdentifierExpr",
+                    "name": "choice"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": "1"
+                  }
+                },
+                "right": {
+                  "kind": "BinaryExpr",
+                  "op": "!=",
+                  "left": {
+                    "kind": "IdentifierExpr",
+                    "name": "choice"
+                  },
+                  "right": {
+                    "kind": "NumberExpr",
+                    "value": "2"
+                  }
+                }
+              },
+              "right": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "IdentifierExpr",
+                  "name": "result"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": "0"
+                }
+              }
+            }
+          }
+        ],
         "body": [
           {
             "kind": "CaseStmt",

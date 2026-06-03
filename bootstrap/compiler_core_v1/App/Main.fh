@@ -19,6 +19,8 @@ import Compiler.Core.Ir exposing IrType, IrInstruction, IrBasicBlock, IrRoutine
 import Compiler.Core.Lowering exposing lower_routine
 import Compiler.Core.Vm exposing VmState, VmHeap, VmHeapObject, ActivationFrame, VmRegister, VmValue, execute_instruction, get_register, execute_routine, execute_scheduler
 
+import Compiler.Core.Loader exposing LoadedProject, ProjectManifest, load_project_ir, parse_manifest
+
 import Std.IO
 import System
 import File
@@ -71,7 +73,7 @@ function scan_imports(source: String, current_deps: String) returns String
 is
     let current_source: String = source
     let deps: String = current_deps
-    
+
     let loop_flag: Boolean = true
     while loop_flag invariant String.length(deps) >= 0 do
         let pos: Integer = String.instr(current_source, "import ")
@@ -87,7 +89,7 @@ is
                     is_start := true
                 end if
             end if
-            
+
             if is_start then
                 let mod_name: String = extract_word(current_source, pos + 7)
                 if mod_name != "" then
@@ -97,7 +99,7 @@ is
                     end if
                 end if
             end if
-            
+
             let len: Integer = String.length(current_source)
             let next_start: Integer = pos + 7
             if next_start >= len then
@@ -122,7 +124,7 @@ is
         end if
         i := i + 1
     end while
-    
+
     if last_slash = -1 then
         return ""
     else
@@ -142,7 +144,7 @@ is
                 current := String.substr(current, 0, curr_len - 1)
             end if
         end if
-        
+
         let new_len: Integer = String.length(current)
         let last_slash: Integer = -1
         let i: Integer = 0
@@ -153,13 +155,13 @@ is
             end if
             i := i + 1
         end while
-        
+
         if last_slash = -1 then
             current := ""
         else
             current := String.substr(current, 0, last_slash + 1)
         end if
-        
+
         l := l + 1
     end while
     return current
@@ -182,35 +184,35 @@ end count_dots
 function scan_all_dependencies(entry_file: String, entry_module: String) returns ScannerState
 is
     let root_dir: String = go_up_directories(get_directory_path(entry_file), count_dots(entry_module))
-    
+
     let visited: String = ","
     let pending: String = String.template(",${name},", name: entry_module)
-    
+
     let loop_flag: Boolean = true
     while String.length(pending) > 1 invariant String.length(pending) >= 0 do
         let pop_res: PopResult = pop_first(pending)
         pending := pop_res.rest
         let current_mod: String = pop_res.item
-        
+
         let visited_pattern: String = String.template(",${name},", name: current_mod)
         if String.instr(visited, visited_pattern) = -1 then
             visited := String.concat(visited, String.concat(current_mod, ","))
         end if
-        
+
         let relative_path: String = String.replace(current_mod, ".", "/")
         let file_path: String = String.concat(root_dir, relative_path)
         file_path := String.concat(file_path, ".fh")
-        
+
         let file_res: Result<String, String> = File.read_to_string(file_path)
         if file_res.ok then
             let new_deps: String = scan_imports(file_res.value, ",")
-            
+
             let temp_deps: String = new_deps
             while String.length(temp_deps) > 1 invariant String.length(temp_deps) >= 0 do
                 let dep_pop: PopResult = pop_first(temp_deps)
                 temp_deps := dep_pop.rest
                 let dep_name: String = dep_pop.item
-                
+
                 if dep_name != "System" and dep_name != "File" and dep_name != "Std.IO" and dep_name != "Math" and dep_name != "Big" then
                     let in_visited: Boolean = String.instr(visited, String.template(",${name},", name: dep_name)) >= 0
                     let in_pending: Boolean = String.instr(pending, String.template(",${name},", name: dep_name)) >= 0
@@ -221,7 +223,7 @@ is
             end while
         end if
     end while
-    
+
     let d0: String = ""
     let d1: String = ""
     let d2: String = ""
@@ -254,10 +256,10 @@ is
     let d29: String = ""
     let d30: String = ""
     let d31: String = ""
-    
+
     let temp: String = visited
     let count: Integer = 0
-    
+
     if String.length(temp) > 1 then
         let res: PopResult = pop_first(temp)
         d0 := res.item
@@ -450,7 +452,7 @@ is
         temp := res.rest
         count := count + 1
     end if
-    
+
     let final_deps: Array<String, 32> = [ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, d13, d14, d15, d16, d17, d18, d19, d20, d21, d22, d23, d24, d25, d26, d27, d28, d29, d30, d31 ]
     return ScannerState { deps: final_deps, count: count }
 end scan_all_dependencies
@@ -465,8 +467,68 @@ end build_sample_diagnostic
 procedure test_vm_builtins()
 is
     let span: SourceSpan = make_source_span("test", 1, 1, 1, 1)
-    
-    -- Test Math.sqrt
+    let empty_type: IrType = IrType { kind: "", name: "", element_type_idx: -1, array_size: 0, has_range: false, min_value: 0, max_value: 0 }
+    let types_val: Array<IrType, 10> = [
+        empty_type, empty_type, empty_type, empty_type, empty_type,
+        empty_type, empty_type, empty_type, empty_type, empty_type
+    ]
+    let inst_assign1: IrInstruction = IrInstruction {
+        span: span,
+        kind: "ASSIGN",
+        dest_reg: "r1",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "9.0",
+        type_idx: -1,
+        field_name: "",
+        index_reg: ""
+    }
+    let dummy_block: IrBasicBlock = IrBasicBlock {
+        label: "",
+        instructions: [
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1,
+            inst_assign1, inst_assign1, inst_assign1, inst_assign1
+        ],
+        instruction_count: 0,
+        terminator_kind: "",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "",
+        abort_error: ""
+    }
+    let dummy_routine: IrRoutine = IrRoutine {
+        name: "",
+        entry_block: "",
+        blocks: [
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block
+        ],
+        block_count: 0,
+        types: types_val,
+        type_count: 0
+    }
     let inst_assign1: IrInstruction = IrInstruction {
         span: span,
         kind: "ASSIGN",
@@ -491,7 +553,7 @@ is
         field_name: "",
         index_reg: ""
     }
-    
+
     -- Test Big.addInt
     let inst_assign2: IrInstruction = IrInstruction {
         span: span,
@@ -529,7 +591,7 @@ is
         field_name: "",
         index_reg: ""
     }
-    
+
     let empty_obj: VmHeapObject = VmHeapObject {
         kind: "FREE",
         field_names: [ "", "", "", "", "", "", "", "", "", "" ],
@@ -605,17 +667,17 @@ is
         return_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
         has_returned: false
     }
-    
+
     let state: VmState = VmState { heap: heap, frame: initial_frame }
-    state := execute_instruction(inst_assign1, state)
-    state := execute_instruction(inst_sqrt, state)
-    state := execute_instruction(inst_assign2, state)
-    state := execute_instruction(inst_big_int, state)
-    state := execute_instruction(inst_big_add, state)
-    
+    state := execute_instruction(inst_assign1, state, dummy_routine)
+    state := execute_instruction(inst_sqrt, state, dummy_routine)
+    state := execute_instruction(inst_assign2, state, dummy_routine)
+    state := execute_instruction(inst_big_int, state, dummy_routine)
+    state := execute_instruction(inst_big_add, state, dummy_routine)
+
     let r2_val: VmValue = get_register(state.frame, "r2")
     let r5_val: VmValue = get_register(state.frame, "r5")
-    
+
     if r2_val.str_val != "3" and r2_val.str_val != "3.0" and r2_val.str_val != "3.000000" and r2_val.str_val != "3.000000000000000000000000000000" then
         call Std.IO.logf("ERROR: VM unit test Math.sqrt failed, got ${}", r2_val.str_val)
     end if
@@ -629,7 +691,7 @@ is
     let empty_span: SourceSpan = SourceSpan { source_name: "test", start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
     let empty_stmt: StmtNode = make_stmt_node(empty_span, "", "", "", -1, -1, -1, 0, -1, 0, "", "")
     let empty_expr: ExprNode = make_expr_node(empty_span, "", "", "", "", -1, -1, "", -1, -1, 0, -1)
-    
+
     let exprs: Array<ExprNode, 64> = [
         make_expr_node(empty_span, "RECORD_NEW", "", "", "", -1, -1, "", -1, -1, 0, -1),
         make_expr_node(empty_span, "LITERAL", "Integer", "10", "", -1, -1, "", -1, -1, 0, -1),
@@ -660,7 +722,7 @@ is
         empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr, empty_expr,
         empty_expr, empty_expr
     ]
-    
+
     let stmts: Array<StmtNode, 64> = [
         make_stmt_node(empty_span, "LET", "rec", "Record", 0, -1, -1, 0, -1, 0, "", ""),
         make_stmt_node(empty_span, "FIELD_WRITE", "rec", "", 1, -1, -1, 0, -1, 0, "x", ""),
@@ -680,10 +742,10 @@ is
         empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt,
         empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt
     ]
-    
+
     -- Lower the program to IR
     let routine: IrRoutine = lower_routine("test_loop", stmts, exprs, 0, 8)
-    
+
     -- Initialize VM Heap
     let empty_obj: VmHeapObject = VmHeapObject {
         kind: "FREE",
@@ -737,7 +799,7 @@ is
         ],
         element_count: 0
     }
-    
+
     let heap: VmHeap = VmHeap {
         objects: [
             empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
@@ -747,7 +809,7 @@ is
         ],
         object_count: 0
     }
-    
+
     let empty_reg: VmRegister = VmRegister { name: "", reg_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 } }
     let initial_frame: ActivationFrame = ActivationFrame {
         registers: [
@@ -762,11 +824,11 @@ is
         return_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
         has_returned: false
     }
-    
+
     let state: VmState = VmState { heap: heap, frame: initial_frame }
-    
+
     let final_state: VmState = execute_routine(routine, state)
-    
+
     if final_state.frame.return_value.int_val != 45 then
         call Std.IO.logf("ERROR: VM E2E test failed. Expected sum=45, got sum=${}", final_state.frame.return_value.int_val)
     end if
@@ -775,7 +837,12 @@ end test_vm_e2e
 procedure test_vm_concurrency()
 is
     let dummy_span: SourceSpan = SourceSpan { source_name: "", start_line: 0, start_column: 0, end_line: 0, end_column: 0 }
-    
+    let empty_type: IrType = IrType { kind: "", name: "", element_type_idx: -1, array_size: 0, has_range: false, min_value: 0, max_value: 0 }
+    let types_val: Array<IrType, 10> = [
+        empty_type, empty_type, empty_type, empty_type, empty_type,
+        empty_type, empty_type, empty_type, empty_type, empty_type
+    ]
+
     -- Let's construct worker routine
     let w_inst0: IrInstruction = IrInstruction {
         span: dummy_span,
@@ -813,7 +880,7 @@ is
         field_name: "",
         index_reg: ""
     }
-    
+
     let w_block: IrBasicBlock = IrBasicBlock {
         label: "entry",
         instructions: [
@@ -834,9 +901,9 @@ is
         return_reg: "res",
         abort_error: ""
     }
-    
+
     let dummy_block: IrBasicBlock = w_block -- safe fallback
-    
+
     let worker_routine: IrRoutine = IrRoutine {
         name: "worker",
         entry_block: "entry",
@@ -850,9 +917,11 @@ is
             dummy_block, dummy_block, dummy_block, dummy_block,
             dummy_block, dummy_block, dummy_block, dummy_block
         ],
-        block_count: 1
+        block_count: 1,
+        types: types_val,
+        type_count: 0
     }
-    
+
     -- Let's construct main routine
     let m_inst0: IrInstruction = IrInstruction {
         span: dummy_span,
@@ -998,7 +1067,7 @@ is
         field_name: "",
         index_reg: ""
     }
-    
+
     let m_block: IrBasicBlock = IrBasicBlock {
         label: "entry",
         instructions: [
@@ -1019,7 +1088,7 @@ is
         return_reg: "final_val",
         abort_error: ""
     }
-    
+
     let main_routine: IrRoutine = IrRoutine {
         name: "main",
         entry_block: "entry",
@@ -1033,16 +1102,18 @@ is
             dummy_block, dummy_block, dummy_block, dummy_block,
             dummy_block, dummy_block, dummy_block, dummy_block
         ],
-        block_count: 1
+        block_count: 1,
+        types: types_val,
+        type_count: 0
     }
-    
+
     let dummy_routine: IrRoutine = main_routine
     let routines: Array<IrRoutine, 10> = [
         main_routine, worker_routine, dummy_routine, dummy_routine,
         dummy_routine, dummy_routine, dummy_routine, dummy_routine,
         dummy_routine, dummy_routine
     ]
-    
+
     -- Initialize VM Heap
     let empty_obj: VmHeapObject = VmHeapObject {
         kind: "FREE",
@@ -1096,7 +1167,7 @@ is
         ],
         element_count: 0
     }
-    
+
     let heap: VmHeap = VmHeap {
         objects: [
             empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
@@ -1106,9 +1177,9 @@ is
         ],
         object_count: 0
     }
-    
+
     let final_state: VmState = execute_scheduler(routines, 2, main_routine, heap)
-    
+
     call Std.IO.logf("VM Concurrency E2E: Final Return Value Kind = ${}, IntVal = ${}", final_state.frame.return_value.kind, final_state.frame.return_value.int_val)
     if final_state.frame.return_value.int_val != 15 then
         call Std.IO.logf("ERROR: VM Concurrency E2E test failed! Expected 15, got ${}", final_state.frame.return_value.int_val)
@@ -1120,7 +1191,12 @@ end test_vm_concurrency
 procedure test_vm_concurrency_deadlock()
 is
     let dummy_span: SourceSpan = SourceSpan { source_name: "", start_line: 0, start_column: 0, end_line: 0, end_column: 0 }
-    
+    let empty_type: IrType = IrType { kind: "", name: "", element_type_idx: -1, array_size: 0, has_range: false, min_value: 0, max_value: 0 }
+    let types_val: Array<IrType, 10> = [
+        empty_type, empty_type, empty_type, empty_type, empty_type,
+        empty_type, empty_type, empty_type, empty_type, empty_type
+    ]
+
     -- Construct worker routine (blocks on receive)
     let w_inst0: IrInstruction = IrInstruction {
         span: dummy_span,
@@ -1134,7 +1210,7 @@ is
         field_name: "",
         index_reg: ""
     }
-    
+
     let w_block: IrBasicBlock = IrBasicBlock {
         label: "entry",
         instructions: [
@@ -1155,9 +1231,9 @@ is
         return_reg: "val",
         abort_error: ""
     }
-    
+
     let dummy_block: IrBasicBlock = w_block
-    
+
     let worker_routine: IrRoutine = IrRoutine {
         name: "worker",
         entry_block: "entry",
@@ -1171,9 +1247,11 @@ is
             dummy_block, dummy_block, dummy_block, dummy_block,
             dummy_block, dummy_block, dummy_block, dummy_block
         ],
-        block_count: 1
+        block_count: 1,
+        types: types_val,
+        type_count: 0
     }
-    
+
     -- Construct main routine
     let m_inst0: IrInstruction = IrInstruction {
         span: dummy_span,
@@ -1235,7 +1313,7 @@ is
         field_name: "",
         index_reg: ""
     }
-    
+
     let m_block: IrBasicBlock = IrBasicBlock {
         label: "entry",
         instructions: [
@@ -1256,7 +1334,7 @@ is
         return_reg: "join_res",
         abort_error: ""
     }
-    
+
     let main_routine: IrRoutine = IrRoutine {
         name: "main",
         entry_block: "entry",
@@ -1270,16 +1348,18 @@ is
             dummy_block, dummy_block, dummy_block, dummy_block,
             dummy_block, dummy_block, dummy_block, dummy_block
         ],
-        block_count: 1
+        block_count: 1,
+        types: types_val,
+        type_count: 0
     }
-    
+
     let dummy_routine: IrRoutine = main_routine
     let routines: Array<IrRoutine, 10> = [
         main_routine, worker_routine, dummy_routine, dummy_routine,
         dummy_routine, dummy_routine, dummy_routine, dummy_routine,
         dummy_routine, dummy_routine
     ]
-    
+
     -- Initialize VM Heap
     let empty_obj: VmHeapObject = VmHeapObject {
         kind: "FREE",
@@ -1333,7 +1413,7 @@ is
         ],
         element_count: 0
     }
-    
+
     let heap: VmHeap = VmHeap {
         objects: [
             empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
@@ -1343,11 +1423,1285 @@ is
         ],
         object_count: 0
     }
-    
+
     call Std.IO.logf("VM Deadlock Check: Starting Scheduler...")
     let final_state: VmState = execute_scheduler(routines, 2, main_routine, heap)
     call Std.IO.logf("VM Deadlock Check: Scheduler Finished.")
 end test_vm_concurrency_deadlock
+
+procedure test_vm_concurrency_buffered()
+is
+    let dummy_span: SourceSpan = SourceSpan { source_name: "", start_line: 0, start_column: 0, end_line: 0, end_column: 0 }
+    let empty_type: IrType = IrType { kind: "", name: "", element_type_idx: -1, array_size: 0, has_range: false, min_value: 0, max_value: 0 }
+    let types_val: Array<IrType, 10> = [
+        empty_type, empty_type, empty_type, empty_type, empty_type,
+        empty_type, empty_type, empty_type, empty_type, empty_type
+    ]
+
+    -- producer routine: sends 10 then 20 to _arg0 (sender)
+    let p_inst0: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "v10",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "10",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let p_inst1: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "s1",
+        src_reg_left: "_arg0",
+        src_reg_right: "v10",
+        op: "channel_send",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let p_inst2: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "v20",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "20",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let p_inst3: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "s2",
+        src_reg_left: "_arg0",
+        src_reg_right: "v20",
+        op: "channel_send",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+
+    let p_block: IrBasicBlock = IrBasicBlock {
+        label: "entry",
+        instructions: [
+            p_inst0, p_inst1, p_inst2, p_inst3, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0
+        ],
+        instruction_count: 4,
+        terminator_kind: "RETURN",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "s2",
+        abort_error: ""
+    }
+
+    let dummy_block: IrBasicBlock = p_block
+
+    let producer_routine: IrRoutine = IrRoutine {
+        name: "producer",
+        entry_block: "entry",
+        blocks: [
+            p_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block
+        ],
+        block_count: 1,
+        types: types_val,
+        type_count: 0
+    }
+
+    -- main routine: creates channel of capacity 2, spawns producer, receives twice, sums them.
+    let m_inst0: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "cap",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "2",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst1: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "chan",
+        src_reg_left: "cap",
+        src_reg_right: "",
+        op: "channel",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst2: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "snd",
+        src_reg_left: "chan",
+        src_reg_right: "",
+        op: "channel_sender",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst3: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "rcv",
+        src_reg_left: "chan",
+        src_reg_right: "",
+        op: "channel_receiver",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst4: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "handle",
+        src_reg_left: "snd",
+        src_reg_right: "",
+        op: "spawn",
+        literal_value: "producer",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst5: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "r1",
+        src_reg_left: "rcv",
+        src_reg_right: "",
+        op: "channel_receive",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst6: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "r2",
+        src_reg_left: "rcv",
+        src_reg_right: "",
+        op: "channel_receive",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst7: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "BINARY_OP",
+        dest_reg: "sum",
+        src_reg_left: "r1",
+        src_reg_right: "r2",
+        op: "+",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst8: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "j_res",
+        src_reg_left: "handle",
+        src_reg_right: "",
+        op: "join",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+
+    let m_block: IrBasicBlock = IrBasicBlock {
+        label: "entry",
+        instructions: [
+            m_inst0, m_inst1, m_inst2, m_inst3, m_inst4, m_inst5, m_inst6, m_inst7,
+            m_inst8, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0
+        ],
+        instruction_count: 9,
+        terminator_kind: "RETURN",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "sum",
+        abort_error: ""
+    }
+
+    let main_routine: IrRoutine = IrRoutine {
+        name: "main",
+        entry_block: "entry",
+        blocks: [
+            m_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block
+        ],
+        block_count: 1,
+        types: types_val,
+        type_count: 0
+    }
+
+    let dummy_routine: IrRoutine = main_routine
+    let routines: Array<IrRoutine, 10> = [
+        main_routine, producer_routine, dummy_routine, dummy_routine,
+        dummy_routine, dummy_routine, dummy_routine, dummy_routine,
+        dummy_routine, dummy_routine
+    ]
+
+    let empty_obj: VmHeapObject = VmHeapObject {
+        kind: "FREE",
+        field_names: [ "", "", "", "", "", "", "", "", "", "" ],
+        field_values: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        field_count: 0,
+        elements: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        element_count: 0
+    }
+
+    let heap: VmHeap = VmHeap {
+        objects: [
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj
+        ],
+        object_count: 0
+    }
+
+    call Std.IO.logf("VM Concurrency Buffered: Starting Scheduler...")
+    let final_state: VmState = execute_scheduler(routines, 2, main_routine, heap)
+    let ret_val: VmValue = final_state.frame.return_value
+    call Std.IO.logf("VM Concurrency Buffered: Final Return Value Kind = ${}, IntVal = ${}", ret_val.kind, ret_val.int_val)
+    if ret_val.kind = "INTEGER" and ret_val.int_val = 30 then
+        call Std.IO.logf("SUCCESS: VM Concurrency Buffered test passed!")
+    else
+        call Std.IO.logf("ERROR: VM Concurrency Buffered test failed!")
+    end if
+end test_vm_concurrency_buffered
+
+procedure test_vm_concurrency_buffer_exhaustion_deadlock()
+is
+    let dummy_span: SourceSpan = SourceSpan { source_name: "", start_line: 0, start_column: 0, end_line: 0, end_column: 0 }
+    let empty_type: IrType = IrType { kind: "", name: "", element_type_idx: -1, array_size: 0, has_range: false, min_value: 0, max_value: 0 }
+    let types_val: Array<IrType, 10> = [
+        empty_type, empty_type, empty_type, empty_type, empty_type,
+        empty_type, empty_type, empty_type, empty_type, empty_type
+    ]
+
+    -- producer routine: tries to send three values (10, 20, 30) to a capacity 1 channel
+    let p_inst0: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "v10",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "10",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let p_inst1: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "s1",
+        src_reg_left: "_arg0",
+        src_reg_right: "v10",
+        op: "channel_send",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let p_inst2: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "v20",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "20",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let p_inst3: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "s2",
+        src_reg_left: "_arg0",
+        src_reg_right: "v20",
+        op: "channel_send",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+
+    let p_block: IrBasicBlock = IrBasicBlock {
+        label: "entry",
+        instructions: [
+            p_inst0, p_inst1, p_inst2, p_inst3, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0,
+            p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0, p_inst0
+        ],
+        instruction_count: 4,
+        terminator_kind: "RETURN",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "s2",
+        abort_error: ""
+    }
+
+    let dummy_block: IrBasicBlock = p_block
+
+    let producer_routine: IrRoutine = IrRoutine {
+        name: "producer",
+        entry_block: "entry",
+        blocks: [
+            p_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block
+        ],
+        block_count: 1,
+        types: types_val,
+        type_count: 0
+    }
+
+    -- main routine: creates channel of capacity 1, spawns producer, joins.
+    let m_inst0: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "cap",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "1",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst1: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "chan",
+        src_reg_left: "cap",
+        src_reg_right: "",
+        op: "channel",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst2: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "snd",
+        src_reg_left: "chan",
+        src_reg_right: "",
+        op: "channel_sender",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst3: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "handle",
+        src_reg_left: "snd",
+        src_reg_right: "",
+        op: "spawn",
+        literal_value: "producer",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+    let m_inst4: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "j_res",
+        src_reg_left: "handle",
+        src_reg_right: "",
+        op: "join",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+
+    let m_block: IrBasicBlock = IrBasicBlock {
+        label: "entry",
+        instructions: [
+            m_inst0, m_inst1, m_inst2, m_inst3, m_inst4, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0
+        ],
+        instruction_count: 5,
+        terminator_kind: "RETURN",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "j_res",
+        abort_error: ""
+    }
+
+    let main_routine: IrRoutine = IrRoutine {
+        name: "main",
+        entry_block: "entry",
+        blocks: [
+            m_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block
+        ],
+        block_count: 1,
+        types: types_val,
+        type_count: 0
+    }
+
+    let dummy_routine: IrRoutine = main_routine
+    let routines: Array<IrRoutine, 10> = [
+        main_routine, producer_routine, dummy_routine, dummy_routine,
+        dummy_routine, dummy_routine, dummy_routine, dummy_routine,
+        dummy_routine, dummy_routine
+    ]
+
+    let empty_obj: VmHeapObject = VmHeapObject {
+        kind: "FREE",
+        field_names: [ "", "", "", "", "", "", "", "", "", "" ],
+        field_values: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        field_count: 0,
+        elements: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        element_count: 0
+    }
+
+    let heap: VmHeap = VmHeap {
+        objects: [
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj
+        ],
+        object_count: 0
+    }
+
+    call Std.IO.logf("VM Deadlock Buffer Exhaustion Check: Starting Scheduler...")
+    let final_state: VmState = execute_scheduler(routines, 2, main_routine, heap)
+    call Std.IO.logf("VM Deadlock Buffer Exhaustion Check: Scheduler Finished.")
+end test_vm_concurrency_buffer_exhaustion_deadlock
+
+procedure test_vm_nested_call()
+is
+    let dummy_span: SourceSpan = SourceSpan { source_name: "", start_line: 0, start_column: 0, end_line: 0, end_column: 0 }
+    let empty_type: IrType = IrType { kind: "", name: "", element_type_idx: -1, array_size: 0, has_range: false, min_value: 0, max_value: 0 }
+    let types_val: Array<IrType, 10> = [
+        empty_type, empty_type, empty_type, empty_type, empty_type,
+        empty_type, empty_type, empty_type, empty_type, empty_type
+    ]
+
+    -- add_one(x): returns x + 1
+    let add1_inst: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "BINARY_OP",
+        dest_reg: "res",
+        src_reg_left: "_arg0",
+        src_reg_right: "",
+        op: "+",
+        literal_value: "1",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+
+    let add1_block: IrBasicBlock = IrBasicBlock {
+        label: "entry",
+        instructions: [
+            add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst,
+            add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst,
+            add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst,
+            add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst,
+            add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst,
+            add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst,
+            add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst,
+            add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst, add1_inst
+        ],
+        instruction_count: 1,
+        terminator_kind: "RETURN",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "res",
+        abort_error: ""
+    }
+
+    let dummy_block: IrBasicBlock = add1_block
+
+    let add_one_routine: IrRoutine = IrRoutine {
+        name: "add_one",
+        entry_block: "entry",
+        blocks: [
+            add1_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block
+        ],
+        block_count: 1,
+        types: types_val,
+        type_count: 0
+    }
+
+    -- add_two(x): y = add_one(x); z = add_one(y); return z
+    let add2_inst0: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL",
+        dest_reg: "y",
+        src_reg_left: "_arg0",
+        src_reg_right: "",
+        op: "add_one",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+
+    let add2_inst1: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL",
+        dest_reg: "z",
+        src_reg_left: "y",
+        src_reg_right: "",
+        op: "add_one",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+
+    let add2_block: IrBasicBlock = IrBasicBlock {
+        label: "entry",
+        instructions: [
+            add2_inst0, add2_inst1, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0,
+            add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0,
+            add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0,
+            add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0,
+            add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0,
+            add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0,
+            add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0,
+            add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0, add2_inst0
+        ],
+        instruction_count: 2,
+        terminator_kind: "RETURN",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "z",
+        abort_error: ""
+    }
+
+    let add_two_routine: IrRoutine = IrRoutine {
+        name: "add_two",
+        entry_block: "entry",
+        blocks: [
+            add2_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block
+        ],
+        block_count: 1,
+        types: types_val,
+        type_count: 0
+    }
+
+    -- main(): five = 5; seven = add_two(five); return seven
+    let m_inst0: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL_HOST",
+        dest_reg: "five",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "5",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+
+    let m_inst1: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CALL",
+        dest_reg: "seven",
+        src_reg_left: "five",
+        src_reg_right: "",
+        op: "add_two",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+
+    let main_block: IrBasicBlock = IrBasicBlock {
+        label: "entry",
+        instructions: [
+            m_inst0, m_inst1, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0,
+            m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0, m_inst0
+        ],
+        instruction_count: 2,
+        terminator_kind: "RETURN",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "seven",
+        abort_error: ""
+    }
+
+    let main_routine: IrRoutine = IrRoutine {
+        name: "main",
+        entry_block: "entry",
+        blocks: [
+            main_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block
+        ],
+        block_count: 1,
+        types: types_val,
+        type_count: 0
+    }
+
+    let routines: Array<IrRoutine, 10> = [
+        main_routine, add_one_routine, add_two_routine, add_one_routine,
+        add_one_routine, add_one_routine, add_one_routine, add_one_routine,
+        add_one_routine, add_one_routine
+    ]
+
+    let empty_obj: VmHeapObject = VmHeapObject {
+        kind: "FREE",
+        field_names: [ "", "", "", "", "", "", "", "", "", "" ],
+        field_values: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        field_count: 0,
+        elements: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        element_count: 0
+    }
+
+    let heap: VmHeap = VmHeap {
+        objects: [
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj
+        ],
+        object_count: 0
+    }
+
+    call Std.IO.logf("VM Nested Call: Starting Scheduler...")
+    let final_state: VmState = execute_scheduler(routines, 3, main_routine, heap)
+    call Std.IO.logf("VM Nested Call: Final Return Value Kind = ${}, IntVal = ${}", final_state.frame.return_value.kind, final_state.frame.return_value.int_val)
+    if final_state.frame.return_value.int_val != 7 then
+        call Std.IO.logf("ERROR: VM Nested Call E2E test failed! Expected 7, got ${}", final_state.frame.return_value.int_val)
+    else
+        call Std.IO.logf("SUCCESS: VM Nested Call E2E test passed!")
+    end if
+end test_vm_nested_call
+
+procedure test_vm_runtime_assertions()
+is
+    let dummy_span: SourceSpan = SourceSpan { source_name: "", start_line: 0, start_column: 0, end_line: 0, end_column: 0 }
+    let empty_type: IrType = IrType { kind: "", name: "", element_type_idx: -1, array_size: 0, has_range: false, min_value: 0, max_value: 0 }
+    let subtype_with_range: IrType = IrType { kind: "PRIMITIVE", name: "MySubtype", element_type_idx: -1, array_size: 0, has_range: true, min_value: 5, max_value: 10 }
+    let types_val: Array<IrType, 10> = [
+        empty_type, subtype_with_range, empty_type, empty_type, empty_type,
+        empty_type, empty_type, empty_type, empty_type, empty_type
+    ]
+
+    let inst_assign_invalid: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "ASSIGN",
+        dest_reg: "r1",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "11",
+        type_idx: 1,
+        field_name: "",
+        index_reg: ""
+    }
+
+    let inst_assign_valid: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "ASSIGN",
+        dest_reg: "r1",
+        src_reg_left: "",
+        src_reg_right: "",
+        op: "",
+        literal_value: "7",
+        type_idx: 1,
+        field_name: "",
+        index_reg: ""
+    }
+
+    let inst_check_failed: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "CHECK",
+        dest_reg: "",
+        src_reg_left: "cond",
+        src_reg_right: "",
+        op: "",
+        literal_value: "Assertion failed",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+
+    let inst_load_invalid: IrInstruction = IrInstruction {
+        span: dummy_span,
+        kind: "LOAD",
+        dest_reg: "res",
+        src_reg_left: "ptr",
+        src_reg_right: "",
+        op: "",
+        literal_value: "",
+        type_idx: 0,
+        field_name: "",
+        index_reg: ""
+    }
+
+    let empty_reg: VmRegister = VmRegister { name: "", reg_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 } }
+    let cond_reg: VmRegister = VmRegister { name: "cond", reg_value: VmValue { kind: "BOOLEAN", int_val: 0, bool_val: false, str_val: "", ref_val: -1 } }
+    let ptr_reg: VmRegister = VmRegister { name: "ptr", reg_value: VmValue { kind: "PTR", int_val: 3, bool_val: false, str_val: "", ref_val: 0 } }
+
+    let initial_frame: ActivationFrame = ActivationFrame {
+        registers: [
+            ptr_reg, cond_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg,
+            empty_reg, empty_reg, empty_reg, empty_reg
+        ],
+        register_count: 2,
+        current_block_label: "entry",
+        ip: 0,
+        return_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+        has_returned: false
+    }
+
+    let empty_obj: VmHeapObject = VmHeapObject {
+        kind: "FREE",
+        field_names: [ "", "", "", "", "", "", "", "", "", "" ],
+        field_values: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        field_count: 0,
+        elements: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        element_count: 0
+    }
+
+    let array_obj: VmHeapObject = VmHeapObject {
+        kind: "ARRAY",
+        field_names: [ "", "", "", "", "", "", "", "", "", "" ],
+        field_values: [
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        field_count: 0,
+        elements: [
+            VmValue { kind: "INTEGER", int_val: 10, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "INTEGER", int_val: 20, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "INTEGER", int_val: 30, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+            VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        ],
+        element_count: 3
+    }
+
+    let heap: VmHeap = VmHeap {
+        objects: [
+            array_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+            empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj
+        ],
+        object_count: 1
+    }
+
+    let dummy_block: IrBasicBlock = IrBasicBlock {
+        label: "",
+        instructions: [
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid,
+            inst_assign_valid, inst_assign_valid, inst_assign_valid, inst_assign_valid
+        ],
+        instruction_count: 0,
+        terminator_kind: "",
+        target_block_label: "",
+        true_block_label: "",
+        false_block_label: "",
+        return_reg: "",
+        abort_error: ""
+    }
+
+    let dummy_routine: IrRoutine = IrRoutine {
+        name: "",
+        entry_block: "",
+        blocks: [
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block,
+            dummy_block, dummy_block, dummy_block, dummy_block
+        ],
+        block_count: 0,
+        types: types_val,
+        type_count: 2
+    }
+
+    -- 1. Test range check PASS
+    let state_valid: VmState = VmState { heap: heap, frame: initial_frame }
+    let res_valid: VmState = execute_instruction(inst_assign_valid, state_valid, dummy_routine)
+    if res_valid.frame.has_returned or res_valid.frame.ip = 999999 then
+        call Std.IO.logf("ERROR: VM Range Check positive test failed! Subtype range [5..10] should accept 7.")
+    else
+        call Std.IO.logf("SUCCESS: VM Range Check positive test passed (7 accepted).")
+    end if
+
+    -- 2. Test range check FAIL (invalid value 11)
+    let res_invalid: VmState = execute_instruction(inst_assign_invalid, state_valid, dummy_routine)
+    if res_invalid.frame.has_returned and res_invalid.frame.ip = 999999 then
+        call Std.IO.logf("SUCCESS: VM Range Check negative test passed (11 correctly rejected).")
+    else
+        call Std.IO.logf("ERROR: VM Range Check negative test failed! Subtype range [5..10] did not reject 11.")
+    end if
+
+    -- 3. Test array bounds check FAIL (index 3 out of bounds for size 3)
+    let res_bounds: VmState = execute_instruction(inst_load_invalid, state_valid, dummy_routine)
+    if res_bounds.frame.has_returned and res_bounds.frame.ip = 999999 then
+        call Std.IO.logf("SUCCESS: VM Array Bounds Check negative test passed (correctly rejected).")
+    else
+        call Std.IO.logf("ERROR: VM Array Bounds Check negative test failed!")
+    end if
+
+    -- 4. Test CHECK instruction FAIL
+    let res_check: VmState = execute_instruction(inst_check_failed, state_valid, dummy_routine)
+    if res_check.frame.has_returned and res_check.frame.ip = 999999 then
+        call Std.IO.logf("SUCCESS: VM CHECK assertion negative test passed (correctly rejected).")
+    else
+        call Std.IO.logf("ERROR: VM CHECK assertion negative test failed!")
+    end if
+end test_vm_runtime_assertions
+
+procedure test_vm_dynamic_ir_loader()
+is
+    let json_content: String = "{\"routines\":[{\"name\":\"add_one\",\"blocks\":[{\"label\":\"entry\",\"insts\":[{\"op\":\"+\",\"dest\":\"res\",\"arg0\":\"_arg0\",\"arg1\":\"1\"},{\"op\":\"RET\",\"dest\":\"\",\"arg0\":\"res\",\"arg1\":\"\"}]}]},{\"name\":\"main\",\"blocks\":[{\"label\":\"entry\",\"insts\":[{\"op\":\"ASSIGN\",\"dest\":\"five\",\"arg0\":\"5\",\"arg1\":\"\"},{\"op\":\"CALL\",\"dest\":\"six\",\"arg0\":\"add_one\",\"arg1\":\"five\"},{\"op\":\"RET\",\"dest\":\"\",\"arg0\":\"six\",\"arg1\":\"\"}]}]}]}"
+    let proj: LoadedProject = load_project_ir(json_content)
+
+    call Std.IO.logf("VM Dynamic IR Loader: Parsed ${} routines.", proj.routine_count)
+    if proj.routine_count = 2 then
+        let manifest_content: String = "{\"entry_module\":\"Demo\",\"entry_routine\":\"main\"}"
+        let manifest: ProjectManifest = parse_manifest(manifest_content)
+        call Std.IO.logf("VM Dynamic IR Loader: Manifest entry module = ${}, entry routine = ${}", manifest.entry_module, manifest.entry_routine)
+
+        if manifest.entry_routine = "main" then
+            let routines: Array<IrRoutine, 10> = proj.routines
+            let main_routine: IrRoutine = routines[0]
+            let found_main: Boolean = false
+            let r_idx: Integer = 0
+            while r_idx < proj.routine_count invariant r_idx >= 0 do
+                let current_rot: IrRoutine = routines[r_idx]
+                if current_rot.name = manifest.entry_routine then
+                    main_routine := current_rot
+                    found_main := true
+                end if
+                r_idx := r_idx + 1
+            end while
+
+            if found_main then
+
+                let empty_obj: VmHeapObject = VmHeapObject {
+                    kind: "",
+                    field_names: [
+                        "", "", "", "", "", "", "", "", "", ""
+                    ],
+                    field_values: [
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+                    ],
+                    field_count: 0,
+                    elements: [
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                        VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+                    ],
+                    element_count: 0
+                }
+
+                let heap: VmHeap = VmHeap {
+                    objects: [
+                        empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+                        empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+                        empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj,
+                        empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj, empty_obj
+                    ],
+                    object_count: 0
+                }
+
+                call Std.IO.logf("VM Dynamic IR Loader: Starting Scheduler E2E execution...")
+                let final_state: VmState = execute_scheduler(routines, 2, main_routine, heap)
+                call Std.IO.logf("VM Dynamic IR Loader: Scheduler execution finished. Result IntVal = ${}", final_state.frame.return_value.int_val)
+
+                if final_state.frame.return_value.int_val != 6 then
+                    call Std.IO.logf("ERROR: VM Dynamic IR Loader E2E Execution failed! Expected 6, got ${}", final_state.frame.return_value.int_val)
+                else
+                    call Std.IO.logf("SUCCESS: VM Dynamic IR Loader E2E Execution passed!")
+                end if
+            else
+                call Std.IO.logf("ERROR: VM Dynamic IR Loader test failed! Main routine not found.")
+            end if
+        else
+            call Std.IO.logf("ERROR: VM Dynamic IR Loader manifest test failed! Expected entry_routine 'main', got '${}'", manifest.entry_routine)
+        end if
+    else
+        call Std.IO.logf("ERROR: VM Dynamic IR Loader test failed! Expected 2 routines, got ${}", proj.routine_count)
+    end if
+end test_vm_dynamic_ir_loader
 
 procedure main()
 is
@@ -1355,6 +2709,11 @@ is
     call test_vm_e2e()
     call test_vm_concurrency()
     call test_vm_concurrency_deadlock()
+    call test_vm_concurrency_buffered()
+    call test_vm_concurrency_buffer_exhaustion_deadlock()
+    call test_vm_nested_call()
+    call test_vm_runtime_assertions()
+    call test_vm_dynamic_ir_loader()
     let diagnostic: Diagnostic = build_sample_diagnostic()
 
     let module_name: ModuleName = make_module_name("Compiler.Core.Names")
@@ -1611,7 +2970,10 @@ is
         kind: "PRIMITIVE",
         name: "Integer",
         element_type_idx: -1,
-        array_size: 0
+        array_size: 0,
+        has_range: false,
+        min_value: 0,
+        max_value: 0
     }
     call Std.IO.logf("ir.type.name = ${}", dummy_type.name)
 
@@ -1675,7 +3037,7 @@ is
         let exe_name: String = args[3]
         if entry_file != "" and out_dir != "" then
             call Std.IO.logf("compiler_core_v1 running native build-exe for: ${}", entry_file)
-            
+
             let entry_module: String = "App.Main"
             let entry_src_res: Result<String, String> = File.read_to_string(entry_file)
             if entry_src_res.ok then
@@ -1685,18 +3047,18 @@ is
                     entry_module := entry_mod_res.node.name
                 end if
             end if
-            
+
             call Std.IO.logf("compiler_core_v1 scanned entry module: ${}", entry_module)
             let scan_state: ScannerState = scan_all_dependencies(entry_file, entry_module)
             call Std.IO.logf("compiler_core_v1 found ${} dependencies", scan_state.count)
-            
+
             let deps_arr: Array<String, 32> = scan_state.deps
             let dep_idx: Integer = 0
             while dep_idx < scan_state.count invariant dep_idx >= 0 do
                 call Std.IO.logf("  dependency: ${}", deps_arr[dep_idx])
                 dep_idx := dep_idx + 1
             end while
-            
+
             let go_mod_content: String = "module freehold.local\n\ngo 1.22\n"
             let go_mod_path: String = String.concat(out_dir, "/go.mod")
             let write_mod_res: Result<Boolean, String> = File.write_string(go_mod_path, go_mod_content)
@@ -1705,12 +3067,12 @@ is
             else
                 call Std.IO.logf("compiler_core_v1 failed to write go.mod: ${}", write_mod_res.value)
             end if
-            
+
             let tidy_cmd: String = String.template("go -C ${dir} mod tidy", dir: out_dir)
             call Std.IO.logf("compiler_core_v1 executing: ${}", tidy_cmd)
             let tidy_exit: Integer = System.run_command(tidy_cmd)
             call Std.IO.logf("compiler_core_v1 go mod tidy exited with: ${}", tidy_exit)
-            
+
             if exe_name != "" then
                 let build_cmd: String = String.template("go -C ${dir} build -trimpath -o ${exe} ./cmd/${exe}", dir: out_dir, exe: exe_name)
                 call Std.IO.logf("compiler_core_v1 executing: ${}", build_cmd)

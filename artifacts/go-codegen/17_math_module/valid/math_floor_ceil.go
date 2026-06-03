@@ -6,8 +6,8 @@ import (
 )
 
 func Main() {
-	low := int64(math.Floor(float64(2.8)))
-	high := int64(math.Ceil(float64(2.2)))
+	var low int64 = int64(math.Floor(float64(2.8)))
+	var high int64 = int64(math.Ceil(float64(2.2)))
 	if !(low == 2) {
 		panic("freehold check failed")
 	}

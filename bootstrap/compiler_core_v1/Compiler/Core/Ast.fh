@@ -311,7 +311,7 @@ end make_function_import_reference_node
 
 function make_module_with_import_reference_node(module_node: ModuleNode, import_decl: ImportNode, routine: FunctionImportReferenceNode) returns ModuleWithImportReferenceNode
 requires String.instr(module_node.name.name, "") = 0, String.instr(import_decl.module_name.name, "") = 0, String.instr(routine.name.name, "") = 0
-ensures result.module_node.name.name = module_node.name.name, result.routine.name.name = routine.name.name
+ensures result.module_node.name.name = module_node.name.name, result.routine.name.name = routine.name.name, result.routine.return_symbol.symbol_name.name = routine.return_symbol.symbol_name.name
 is
     return ModuleWithImportReferenceNode { module_node: module_node, import_decl: import_decl, routine: routine }
 end make_module_with_import_reference_node
@@ -461,22 +461,22 @@ is
 end make_record_literal_node
 
 function make_module_with_record_literal_node(module_node: ModuleNode, record_literal: RecordLiteralNode) returns ModuleWithRecordLiteralNode
-requires String.instr(module_node.name.name, "") = 0
-ensures result.module_node.name.name = module_node.name.name
+requires String.instr(module_node.name.name, "") = 0, String.instr(record_literal.type_name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name, result.record_literal.type_name.name = record_literal.type_name.name
 is
     return ModuleWithRecordLiteralNode { module_node: module_node, record_literal: record_literal }
 end make_module_with_record_literal_node
 
 function make_return_stmt_node(span: SourceSpan, kind: String, val: LiteralNode, error_ref: IdentifierNode) returns ReturnStmtNode
 requires String.instr(kind, "") = 0
-ensures result.kind = kind
+ensures result.kind = kind, result.error_ref.name = error_ref.name
 is
     return ReturnStmtNode { span: span, kind: kind, val: val, error_ref: error_ref }
 end make_return_stmt_node
 
 function make_module_with_return_node(module_node: ModuleNode, return_stmt: ReturnStmtNode) returns ModuleWithReturnNode
-requires String.instr(module_node.name.name, "") = 0
-ensures result.module_node.name.name = module_node.name.name
+requires String.instr(module_node.name.name, "") = 0, String.instr(return_stmt.kind, "") = 0
+ensures result.module_node.name.name = module_node.name.name, result.return_stmt.kind = return_stmt.kind, result.return_stmt.error_ref.name = return_stmt.error_ref.name
 is
     return ModuleWithReturnNode { module_node: module_node, return_stmt: return_stmt }
 end make_module_with_return_node
@@ -494,8 +494,8 @@ is
 end make_call_stmt_node
 
 function make_module_with_call_node(module_node: ModuleNode, call_stmt: CallStmtNode) returns ModuleWithCallNode
-requires String.instr(module_node.name.name, "") = 0
-ensures result.module_node.name.name = module_node.name.name
+requires String.instr(module_node.name.name, "") = 0, String.instr(call_stmt.routine_name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name, result.call_stmt.routine_name.name = call_stmt.routine_name.name
 is
     return ModuleWithCallNode { module_node: module_node, call_stmt: call_stmt }
 end make_module_with_call_node
@@ -544,21 +544,29 @@ is
 end module_with_call_text
 
 function make_nested_call_stmt_node(span: SourceSpan, var_name: IdentifierNode, outer_routine: IdentifierNode, inner_routine: IdentifierNode, argument: LiteralNode) returns NestedCallStmtNode
+requires String.instr(var_name.name, "") = 0
+ensures result.var_name.name = var_name.name
 is
     return NestedCallStmtNode { span: span, var_name: var_name, outer_routine: outer_routine, inner_routine: inner_routine, argument: argument }
 end make_nested_call_stmt_node
 
 function make_module_with_nested_call_node(module_node: ModuleNode, nested_call: NestedCallStmtNode) returns ModuleWithNestedCallNode
+requires String.instr(module_node.name.name, "") = 0, String.instr(nested_call.var_name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name, result.nested_call.var_name.name = nested_call.var_name.name
 is
     return ModuleWithNestedCallNode { module_node: module_node, nested_call: nested_call }
 end make_module_with_nested_call_node
 
 function make_lowered_call_node(span: SourceSpan, var_name: IdentifierNode, routine_name: IdentifierNode, argument_var: String) returns LoweredCallNode
+requires String.instr(var_name.name, "") = 0
+ensures result.var_name.name = var_name.name
 is
     return LoweredCallNode { span: span, var_name: var_name, routine_name: routine_name, argument_var: argument_var }
 end make_lowered_call_node
 
 function make_module_with_lowered_calls_node(module_node: ModuleNode, first_call: LoweredCallNode, second_call: LoweredCallNode) returns ModuleWithLoweredCallsNode
+requires String.instr(module_node.name.name, "") = 0, String.instr(first_call.var_name.name, "") = 0, String.instr(second_call.var_name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name, result.first_call.var_name.name = first_call.var_name.name, result.second_call.var_name.name = second_call.var_name.name
 is
     return ModuleWithLoweredCallsNode { module_node: module_node, first_call: first_call, second_call: second_call }
 end make_module_with_lowered_calls_node
@@ -649,6 +657,8 @@ type RpcDeclNode is record
     name: IdentifierNode
     request_type: IdentifierNode
     response_type: IdentifierNode
+    request_stream: Boolean
+    response_stream: Boolean
 end record
 
 type ServiceDeclNode is record
@@ -675,11 +685,25 @@ type JoinStmtNode is record
     handle_var_name: String
 end record
 
-function make_rpc_decl_node(span: SourceSpan, name: IdentifierNode, request_type: IdentifierNode, response_type: IdentifierNode) returns RpcDeclNode
+function make_rpc_decl_node(
+    span: SourceSpan,
+    name: IdentifierNode,
+    request_type: IdentifierNode,
+    response_type: IdentifierNode,
+    request_stream: Boolean,
+    response_stream: Boolean
+) returns RpcDeclNode
 requires String.instr(name.name, "") = 0
-ensures result.name.name = name.name
+ensures result.name.name = name.name, result.request_stream = request_stream, result.response_stream = response_stream
 is
-    return RpcDeclNode { span: span, name: name, request_type: request_type, response_type: response_type }
+    return RpcDeclNode {
+        span: span,
+        name: name,
+        request_type: request_type,
+        response_type: response_type,
+        request_stream: request_stream,
+        response_stream: response_stream
+    }
 end make_rpc_decl_node
 
 function make_service_decl_node(span: SourceSpan, name: IdentifierNode, rpc_count: Integer) returns ServiceDeclNode

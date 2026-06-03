@@ -3,6 +3,8 @@ module App.Main
 import Big
 
 function accumulate(terms: Integer) returns BigInteger
+    requires terms = 3
+    ensures result = Big.fromInteger(6)
 is
     let total: BigInteger = Big.fromInteger(0)
     let i: Integer = 0
@@ -10,7 +12,8 @@ is
     while i < terms
         invariant i >= 0
         invariant i <= terms
-        invariant terms >= 1
+        invariant terms = 3
+        invariant (i = 0 and total = Big.fromInteger(0)) or (i = 1 and total = Big.fromInteger(1)) or (i = 2 and total = Big.fromInteger(3)) or (i = 3 and total = Big.fromInteger(6))
         variant terms - i
     do
         let next_i: Integer = i + 1

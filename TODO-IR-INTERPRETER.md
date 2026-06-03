@@ -51,6 +51,6 @@ Folgende Module und Komponenten müssen aufgebaut werden, um die emittierte IR a
 - [ ] **Runtime-Assertions & dynamische Sicherheitsprüfungen:**
   - Einbau von dynamischen Wertebereichsprüfungen für Subtypen und Array-Zugehörigkeiten direkt in der Ausführungsschleife.
   - Auslösen kontrollierter VM-Exceptions bei Index-Grenzen-Verletzungen.
-- [ ] **Dynamischer IR-Loader für Projektdateien:**
+- [x] **Dynamischer IR-Loader für Projektdateien:**
   - Entwicklung einer Lade-Routine, die das emittierte `.fhir` JSON-Projekt-Graph und `manifest.json` einliest und direkt auf der VM startet.
 

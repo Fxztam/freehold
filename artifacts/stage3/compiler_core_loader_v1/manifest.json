@@ -1,0 +1,74 @@
+{
+  "schema": "stage3-compiler-core-contracts-v1",
+  "stage": "stage3-compiler-core-loader-v1",
+  "entry": "bootstrap/compiler_core_v1/Compiler/Core/Loader.fh",
+  "policy": {
+    "slice": "first Freehold-native project graph loader artifact",
+    "purpose": "prove Stage3 can build the bounded Loader V1 project-graph reader as a standalone compiler-core module",
+    "total_contracts": 1
+  },
+  "contracts": [
+    {
+      "name": "compiler_core_loader_go_project",
+      "source_file": "bootstrap/compiler_core_v1/Compiler/Core/Loader.fh",
+      "build_options": {
+        "emit_executable": false
+      },
+      "expected": {
+        "module_path": "freehold.local",
+        "total_files": 3,
+        "total_build_files": 3,
+        "total_extra_files": 0,
+        "supported": true
+      },
+      "files": [
+        {
+          "output_path": "compiler/core/loader/loader.go",
+          "module": "Compiler.Core.Loader",
+          "supported": true,
+          "must_contain": [
+            "type ProjectGraph struct",
+            "func ExtractJsonString",
+            "func DetectReturnNumber",
+            "func LoadProjectGraph",
+            "ModuleName  string",
+            "ImportCount int64",
+            "RoutineName string",
+            "ReturnValue string",
+            "strings.Index"
+          ]
+        }
+      ],
+      "build_files": [
+        {
+          "output_path": "go.mod",
+          "kind": "go_mod",
+          "must_contain": ["module freehold.local", "go 1.22"]
+        },
+        {
+          "output_path": "build.cmd",
+          "kind": "build_cmd",
+          "must_contain": ["go test ./..."]
+        },
+        {
+          "output_path": "build.sh",
+          "kind": "build_sh",
+          "must_contain": ["go test ./..."]
+        }
+      ],
+      "extra_files": [],
+      "repo_files": [
+        {
+          "path": "bootstrap/compiler_core_v1/fixtures/project_graph_loader_demo.json",
+          "must_contain": [
+            "\"node\": \"Module\"",
+            "\"name\": \"App.Main\"",
+            "\"module\": \"Domain.Math\"",
+            "\"kind\": \"ReturnStmt\"",
+            "\"value\": 42"
+          ]
+        }
+      ]
+    }
+  ]
+}

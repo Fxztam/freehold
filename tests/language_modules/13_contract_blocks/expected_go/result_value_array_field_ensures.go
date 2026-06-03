@@ -19,8 +19,8 @@ type Customer struct {
 }
 
 func Load() ResultArrayCustomer2NotFound {
-	first := Customer{Id: 1, Address: Address{CityId: 42}}
-	second := Customer{Id: 2, Address: Address{CityId: 7}}
+	var first Customer = Customer{Id: 1, Address: Address{CityId: 42}}
+	var second Customer = Customer{Id: 2, Address: Address{CityId: 7}}
 	freeholdResult := ResultArrayCustomer2NotFound{Ok: true, Value: [2]Customer{first, second}}
 	if !(freeholdResult.Ok) {
 		panic("freehold ensures contract failed")

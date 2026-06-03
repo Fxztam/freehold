@@ -1,0 +1,46 @@
+module Concurrency.MultiChannelRequestResponsePos
+
+async function producer(outbox: Sender<Integer>) returns Boolean
+is
+    let sent: Boolean = await channel_send<Integer>(outbox, 12)
+    return sent
+end producer
+
+async function quote_service(requests: Receiver<Integer>, responses: Sender<Integer>) returns Boolean
+is
+    let req: Integer = await channel_receive<Integer>(requests)
+    let reply_sent: Boolean = await channel_send<Integer>(responses, req + 1)
+    return reply_sent
+end quote_service
+
+async function consumer(inbox: Receiver<Integer>) returns Integer
+is
+    let reply: Integer = await channel_receive<Integer>(inbox)
+    return reply
+end consumer
+
+async function run_request_response_demo() returns Integer
+is
+    let request_chan: Channel<Integer> = channel<Integer>(4) with invariant for all X in 0 .. 0 => X >= 0
+    let response_chan: Channel<Integer> = channel<Integer>(4) with invariant for all X in 0 .. 0 => X >= 1
+
+    let request_sender: Sender<Integer> = channel_sender<Integer>(request_chan)
+    let request_receiver: Receiver<Integer> = channel_receiver<Integer>(request_chan)
+    let response_sender: Sender<Integer> = channel_sender<Integer>(response_chan)
+    let response_receiver: Receiver<Integer> = channel_receiver<Integer>(response_chan)
+
+    scope sc do
+        spawn
+            let producer_handle: JoinHandle<Boolean> = sc.spawn<Boolean>(producer(request_sender))
+            let service_handle: JoinHandle<Boolean> = sc.spawn<Boolean>(quote_service(request_receiver, response_sender))
+            let consumer_handle: JoinHandle<Integer> = sc.spawn<Integer>(consumer(response_receiver))
+        join
+            let producer_ok: Boolean = await sc.join<Boolean>(producer_handle)
+            let service_ok: Boolean = await sc.join<Boolean>(service_handle)
+            let reply: Integer = await sc.join<Integer>(consumer_handle)
+        result
+            return reply
+    end scope
+end run_request_response_demo
+
+end Concurrency.MultiChannelRequestResponsePos

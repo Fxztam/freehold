@@ -34,8 +34,8 @@ func freeholdBigFloatAbs(value *big.Float) *big.Float {
 }
 
 func Main() {
-	item := freeholdBigInt("42")
-	text := item.String()
+	var item *big.Int = freeholdBigInt("42")
+	var text string = item.String()
 	if !(text == "42") {
 		panic("freehold check failed")
 	}

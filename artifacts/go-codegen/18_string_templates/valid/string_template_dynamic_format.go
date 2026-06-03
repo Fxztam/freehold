@@ -96,10 +96,10 @@ func freeholdStringTemplate(template string, positional []any, named map[string]
 }
 
 func Main() {
-	format := "id=${}, active=${}"
+	var format string = "id=${}, active=${}"
 	id := 7
-	active := true
-	message := freeholdStringTemplate(format, []any{id, active}, nil)
+	var active bool = true
+	var message string = freeholdStringTemplate(format, []any{id, active}, nil)
 	if !(message == "id=7, active=true") {
 		panic("freehold check failed")
 	}

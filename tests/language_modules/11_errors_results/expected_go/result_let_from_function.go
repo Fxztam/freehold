@@ -14,7 +14,7 @@ func Load() ResultIntegerNotFound {
 }
 
 func Main() {
-	outcome := Load()
+	var outcome ResultIntegerNotFound = Load()
 	_ = outcome
 	if !(true) {
 		panic("freehold check failed")

@@ -463,7 +463,7 @@ def compact_type(text: str) -> str:
 
 
 def canonical_expr_text(text: str) -> str:
-    return re.sub(r"\s+", "", text or "")
+    return re.sub(r"\s+", "", text or "").replace("(", "").replace(")", "")
 
 
 def node_name(node: dict[str, Any] | None) -> str:

@@ -108,6 +108,8 @@ type rpcDecl struct {
 	RequestTypeRepr  typeRefIR `json:"request_type_repr"`
 	ResponseType     string    `json:"response_type"`
 	ResponseTypeRepr typeRefIR `json:"response_type_repr"`
+	RequestStream    bool      `json:"request_stream"`
+	ResponseStream   bool      `json:"response_stream"`
 }
 
 type routineDecl struct {
@@ -607,6 +609,8 @@ func exportServiceDecl(value ast.ServiceDecl) serviceDecl {
 			RequestTypeRepr:  typeRefFromName(rpc.RequestType),
 			ResponseType:     rpc.ResponseType,
 			ResponseTypeRepr: typeRefFromName(rpc.ResponseType),
+			RequestStream:    rpc.RequestStream,
+			ResponseStream:   rpc.ResponseStream,
 		})
 	}
 	return serviceDecl{Kind: "ServiceDecl", Name: value.Name, Rpcs: items}

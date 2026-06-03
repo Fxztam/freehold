@@ -22,12 +22,12 @@ end record
 
 type VmHeapObject is record
     kind: String             -- "RECORD", "ARRAY", "FREE"
-    
+
     -- For records: field names and values
     field_names: Array<String, 10>
     field_values: Array<VmValue, 10>
     field_count: Integer
-    
+
     -- For arrays: elements
     elements: Array<VmValue, 32>
     element_count: Integer
@@ -41,10 +41,10 @@ end record
 type ActivationFrame is record
     registers: Array<VmRegister, 32>
     register_count: Integer
-    
+
     current_block_label: String
     ip: Integer
-    
+
     return_value: VmValue
     has_returned: Boolean
 end record
@@ -78,7 +78,7 @@ function parse_int(s: String) returns Integer
 is
     let len: Integer = String.length(s)
     if len = 0 then return 0 end if
-    
+
     let is_neg: Boolean = false
     let start_idx: Integer = len - len
     let first: String = String.substr(s, 0, 1)
@@ -86,7 +86,7 @@ is
         is_neg := true
         start_idx := len - len + 1
     end if
-    
+
     let val: Integer = len - len
     let i: Integer = start_idx
     while i < len invariant i >= 0 and i <= len do
@@ -97,7 +97,7 @@ is
         end if
         i := i + 1
     end while
-    
+
     if is_neg then
         return -val
     end if
@@ -135,7 +135,7 @@ function parse_double(s: String) returns Double
 is
     let len: Integer = String.length(s)
     if len = 0 then return 0.0 end if
-    
+
     let is_neg: Boolean = false
     let start_idx: Integer = len - len
     let first: String = String.substr(s, 0, 1)
@@ -143,13 +143,13 @@ is
         is_neg := true
         start_idx := len - len + 1
     end if
-    
+
     let dot_idx: Integer = String.instr(s, ".")
     let int_part_len: Integer = len
     if dot_idx >= 0 then
         int_part_len := dot_idx
     end if
-    
+
     let val: Double = 0.0
     let i: Integer = start_idx
     while i < int_part_len invariant i >= 0 and i <= len do
@@ -160,7 +160,7 @@ is
         end if
         i := i + 1
     end while
-    
+
     if dot_idx >= 0 then
         let frac_val: Double = 0.0
         let frac_div: Double = 1.0
@@ -176,7 +176,7 @@ is
         end while
         val := val + frac_val
     end if
-    
+
     if is_neg then
         return -val
     end if
@@ -189,20 +189,20 @@ is
     if len = 0 then
         return VmValue { kind: "STRING", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
     end if
-    
+
     let first: String = String.substr(s, 0, 1)
     if first = "\"" then
         return VmValue { kind: "STRING", int_val: 0, bool_val: false, str_val: parse_string_lit(s), ref_val: -1 }
     end if
-    
+
     if s = "true" or s = "false" then
         return VmValue { kind: "BOOLEAN", int_val: 0, bool_val: parse_bool(s), str_val: "", ref_val: -1 }
     end if
-    
+
     if String.instr(s, ".") >= 0 then
         return VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: s, ref_val: -1 }
     end if
-    
+
     return VmValue { kind: "INTEGER", int_val: parse_int(s), bool_val: false, str_val: "", ref_val: -1 }
 end parse_literal
 
@@ -514,7 +514,7 @@ is
     let found: Boolean = false
     let updated_names: Array<String, 10> = obj.field_names
     let updated_vals: Array<VmValue, 10> = obj.field_values
-    
+
     while i < obj.field_count invariant i >= 0 and i <= obj.field_count do
         let fname: String = updated_names[i]
         if fname = name then
@@ -523,7 +523,7 @@ is
         end if
         i := i + 1
     end while
-    
+
     if not found then
         if obj.field_count < 10 then
             updated_names := set_string_10(updated_names, obj.field_count, name)
@@ -538,7 +538,7 @@ is
             }
         end if
     end if
-    
+
     return VmHeapObject {
         kind: obj.kind,
         field_names: updated_names,
@@ -669,7 +669,7 @@ is
     let i: Integer = frame.register_count - frame.register_count
     let found: Boolean = false
     let updated_regs: Array<VmRegister, 32> = frame.registers
-    
+
     let regs: Array<VmRegister, 32> = frame.registers
     while i < frame.register_count invariant i >= 0 and i <= frame.register_count do
         let reg: VmRegister = regs[i]
@@ -679,7 +679,7 @@ is
         end if
         i := i + 1
     end while
-    
+
     if not found then
         if frame.register_count < 32 then
             updated_regs := set_register(updated_regs, frame.register_count, VmRegister { name: name, reg_value: val })
@@ -693,7 +693,7 @@ is
             }
         end if
     end if
-    
+
     return ActivationFrame {
         registers: updated_regs,
         register_count: frame.register_count,
@@ -704,7 +704,23 @@ is
     }
 end update_register
 
-function execute_instruction(inst: IrInstruction, state: VmState) returns VmState
+function check_type_range(val: VmValue, type_idx: Integer, r: IrRoutine) returns Boolean
+is
+    if type_idx >= 0 and type_idx < 10 then
+        let rtypes: Array<IrType, 10> = r.types
+        let t: IrType = rtypes[type_idx]
+        if t.has_range then
+            if val.kind = "INTEGER" then
+                if val.int_val < t.min_value or val.int_val > t.max_value then
+                    return false
+                end if
+            end if
+        end if
+    end if
+    return true
+end check_type_range
+
+function execute_instruction(inst: IrInstruction, state: VmState, r: IrRoutine) returns VmState
 is
     if inst.kind = "ALLOCA" then
         if inst.op = "RECORD" then
@@ -826,7 +842,7 @@ is
             end if
         end if
     end if
-    
+
     if inst.kind = "GET_ELEMENT_PTR" then
         let base: VmValue = get_register(state.frame, inst.src_reg_left)
         if base.kind = "REF" then
@@ -837,6 +853,14 @@ is
             else
                 if inst.index_reg != "" then
                     let idx_val: VmValue = get_register(state.frame, inst.index_reg)
+                    let base_obj: VmHeapObject = get_heap_obj(state.heap, base.ref_val)
+                    if idx_val.int_val < 0 or idx_val.int_val >= base_obj.element_count then
+                        call Std.IO.logf("RUNTIME ERROR: Array index out of bounds: index ${} is out of bounds for array of size ${}", idx_val.int_val, base_obj.element_count)
+                        let error_frame: ActivationFrame = state.frame
+                        error_frame.has_returned := true
+                        error_frame.ip := 999999
+                        return VmState { heap: state.heap, frame: error_frame }
+                    end if
                     let ptr: VmValue = VmValue { kind: "PTR", int_val: idx_val.int_val, bool_val: false, str_val: "", ref_val: base.ref_val }
                     let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, ptr)
                     return VmState { heap: state.heap, frame: new_frame }
@@ -845,7 +869,7 @@ is
         end if
         return state
     end if
-    
+
     if inst.kind = "LOAD" then
         let src_val: VmValue = get_register(state.frame, inst.src_reg_left)
         if src_val.kind = "PTR" then
@@ -855,20 +879,54 @@ is
                 loaded := get_heap_field(obj, src_val.str_val)
             else
                 if src_val.int_val >= 0 then
+                    if src_val.int_val >= obj.element_count then
+                        call Std.IO.logf("RUNTIME ERROR: Array index out of bounds: index ${} is out of bounds for array of size ${}", src_val.int_val, obj.element_count)
+                        let error_frame: ActivationFrame = state.frame
+                        error_frame.has_returned := true
+                        error_frame.ip := 999999
+                        return VmState { heap: state.heap, frame: error_frame }
+                    end if
                     loaded := get_heap_element(obj, src_val.int_val)
                 end if
+            end if
+            if not check_type_range(loaded, inst.type_idx, r) then
+                let rtypes: Array<IrType, 10> = r.types
+                let t: IrType = rtypes[inst.type_idx]
+                call Std.IO.logf("RUNTIME ERROR: Value ${} is out of bounds for subtype ${} (range ${}..${})", loaded.int_val, t.name, t.min_value, t.max_value)
+                let error_frame: ActivationFrame = state.frame
+                error_frame.has_returned := true
+                error_frame.ip := 999999
+                return VmState { heap: state.heap, frame: error_frame }
             end if
             let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, loaded)
             return VmState { heap: state.heap, frame: new_frame }
         else
+            if not check_type_range(src_val, inst.type_idx, r) then
+                let rtypes: Array<IrType, 10> = r.types
+                let t: IrType = rtypes[inst.type_idx]
+                call Std.IO.logf("RUNTIME ERROR: Value ${} is out of bounds for subtype ${} (range ${}..${})", src_val.int_val, t.name, t.min_value, t.max_value)
+                let error_frame: ActivationFrame = state.frame
+                error_frame.has_returned := true
+                error_frame.ip := 999999
+                return VmState { heap: state.heap, frame: error_frame }
+            end if
             let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, src_val)
             return VmState { heap: state.heap, frame: new_frame }
         end if
     end if
-    
+
     if inst.kind = "STORE" then
         let val: VmValue = get_register(state.frame, inst.src_reg_left)
         let dest_val: VmValue = get_register(state.frame, inst.dest_reg)
+        if not check_type_range(val, inst.type_idx, r) then
+            let rtypes: Array<IrType, 10> = r.types
+            let t: IrType = rtypes[inst.type_idx]
+            call Std.IO.logf("RUNTIME ERROR: Value ${} is out of bounds for subtype ${} (range ${}..${})", val.int_val, t.name, t.min_value, t.max_value)
+            let error_frame: ActivationFrame = state.frame
+            error_frame.has_returned := true
+            error_frame.ip := 999999
+            return VmState { heap: state.heap, frame: error_frame }
+        end if
         if dest_val.kind = "PTR" then
             let obj: VmHeapObject = get_heap_obj(state.heap, dest_val.ref_val)
             let updated_obj: VmHeapObject = obj
@@ -876,6 +934,13 @@ is
                 updated_obj := set_heap_field(obj, dest_val.str_val, val)
             else
                 if dest_val.int_val >= 0 then
+                    if dest_val.int_val >= obj.element_count then
+                        call Std.IO.logf("RUNTIME ERROR: Array index out of bounds: index ${} is out of bounds for array of size ${}", dest_val.int_val, obj.element_count)
+                        let error_frame: ActivationFrame = state.frame
+                        error_frame.has_returned := true
+                        error_frame.ip := 999999
+                        return VmState { heap: state.heap, frame: error_frame }
+                    end if
                     updated_obj := set_heap_element(obj, dest_val.int_val, val)
                 end if
             end if
@@ -886,13 +951,22 @@ is
             return VmState { heap: state.heap, frame: new_frame }
         end if
     end if
-    
+
     if inst.kind = "ASSIGN" then
         let val: VmValue = parse_literal(inst.literal_value)
+        if not check_type_range(val, inst.type_idx, r) then
+            let rtypes: Array<IrType, 10> = r.types
+            let t: IrType = rtypes[inst.type_idx]
+            call Std.IO.logf("RUNTIME ERROR: Value ${} is out of bounds for subtype ${} (range ${}..${})", val.int_val, t.name, t.min_value, t.max_value)
+            let error_frame: ActivationFrame = state.frame
+            error_frame.has_returned := true
+            error_frame.ip := 999999
+            return VmState { heap: state.heap, frame: error_frame }
+        end if
         let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, val)
         return VmState { heap: state.heap, frame: new_frame }
     end if
-    
+
     if inst.kind = "BINARY_OP" then
         let left: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
         if inst.src_reg_left != "" then
@@ -902,7 +976,7 @@ is
                 left := parse_literal(inst.literal_value)
             end if
         end if
-        
+
         let right: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
         if inst.src_reg_right != "" then
             right := get_register(state.frame, inst.src_reg_right)
@@ -911,9 +985,9 @@ is
                 right := parse_literal(inst.literal_value)
             end if
         end if
-        
+
         let val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
-        
+
         if left.kind = "DOUBLE" or right.kind = "DOUBLE" then
             let l_dbl: Double = 0.0
             if left.kind = "DOUBLE" then
@@ -921,14 +995,14 @@ is
             else
                 l_dbl := to_double(left.int_val)
             end if
-            
+
             let r_dbl: Double = 0.0
             if right.kind = "DOUBLE" then
                 r_dbl := parse_double(right.str_val)
             else
                 r_dbl := to_double(right.int_val)
             end if
-            
+
             if inst.op = "+" then
                 val := VmValue { kind: "DOUBLE", int_val: 0, bool_val: false, str_val: String.template("${v}", v: l_dbl + r_dbl), ref_val: -1 }
             end if
@@ -1009,11 +1083,21 @@ is
                 val := VmValue { kind: "BOOLEAN", int_val: 0, bool_val: left.bool_val or right.bool_val, str_val: "", ref_val: -1 }
             end if
         end if
-        
+
+        if not check_type_range(val, inst.type_idx, r) then
+            let rtypes: Array<IrType, 10> = r.types
+            let t: IrType = rtypes[inst.type_idx]
+            call Std.IO.logf("RUNTIME ERROR: Value ${} is out of bounds for subtype ${} (range ${}..${})", val.int_val, t.name, t.min_value, t.max_value)
+            let error_frame: ActivationFrame = state.frame
+            error_frame.has_returned := true
+            error_frame.ip := 999999
+            return VmState { heap: state.heap, frame: error_frame }
+        end if
+
         let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, val)
         return VmState { heap: state.heap, frame: new_frame }
     end if
-    
+
     if inst.kind = "CALL_HOST" then
         if inst.op = "" then
             let val: VmValue = parse_literal(inst.literal_value)
@@ -1032,7 +1116,7 @@ is
             call Std.IO.log(msg)
             return state
         end if
-        
+
         -- Math functions
         if inst.op = "Math.sin" then
             let arg: VmValue = get_register(state.frame, inst.src_reg_left)
@@ -1118,7 +1202,7 @@ is
                 return VmState { heap: state.heap, frame: new_frame }
             end if
         end if
-        
+
         -- Big library functions
         if inst.op = "Big.int" or inst.op = "Big.integer" then
             let arg: VmValue = get_register(state.frame, inst.src_reg_left)
@@ -1259,7 +1343,7 @@ is
             let new_frame: ActivationFrame = update_register(state.frame, inst.dest_reg, VmValue { kind: "STRING", int_val: 0, bool_val: false, str_val: val, ref_val: -1 })
             return VmState { heap: state.heap, frame: new_frame }
         end if
-        
+
         -- String functions
         if inst.op = "String.length" then
             let arg: VmValue = get_register(state.frame, inst.src_reg_left)
@@ -1282,7 +1366,26 @@ is
             return VmState { heap: state.heap, frame: new_frame }
         end if
     end if
-    
+
+    if inst.kind = "CHECK" then
+        let cond: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+        if inst.src_reg_left != "" then
+            cond := get_register(state.frame, inst.src_reg_left)
+        else
+            if inst.literal_value != "" then
+                cond := parse_literal(inst.literal_value)
+            end if
+        end if
+        if cond.kind != "BOOLEAN" or cond.bool_val = false then
+            call Std.IO.logf("RUNTIME ERROR: Assertion failed (CHECK instruction failed)")
+            let error_frame: ActivationFrame = state.frame
+            error_frame.has_returned := true
+            error_frame.ip := 999999
+            return VmState { heap: state.heap, frame: error_frame }
+        end if
+        return state
+    end if
+
     return state
 end execute_instruction
 
@@ -1292,13 +1395,13 @@ function execute_routine(
 ) returns VmState
 is
     let state: VmState = initial_state
-    
+
     let current_label: String = "entry"
     let has_jumped: Boolean = true
-    
+
     while has_jumped invariant has_jumped or not has_jumped do
         has_jumped := false
-        
+
         let block_idx: Integer = routine.block_count - routine.block_count - 1
         let k: Integer = routine.block_count - routine.block_count
         let rblocks: Array<IrBasicBlock, 32> = routine.blocks
@@ -1309,18 +1412,18 @@ is
             end if
             k := k + 1
         end while
-        
+
         if block_idx >= 0 then
             let blk: IrBasicBlock = rblocks[block_idx]
-            
+
             let i: Integer = blk.instruction_count - blk.instruction_count
             let binsts: Array<IrInstruction, 64> = blk.instructions
             while i < blk.instruction_count invariant i >= 0 and i <= blk.instruction_count do
                 let inst: IrInstruction = binsts[i]
-                state := execute_instruction(inst, state)
+                state := execute_instruction(inst, state, routine)
                 i := i + 1
             end while
-            
+
             if blk.terminator_kind = "RETURN" then
                 let ret_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
                 if blk.return_reg != "" then
@@ -1355,7 +1458,7 @@ is
             end if
         end if
     end while
-    
+
     return state
 end execute_routine
 
@@ -1363,12 +1466,86 @@ type VmTask is record
     id: Integer
     routine: IrRoutine
     frame: ActivationFrame
+    stack: Array<ActivationFrame, 8>
+    stack_pointer: Integer
+    routine_stack: Array<IrRoutine, 8>
+    caller_dest_reg_stack: Array<String, 8>
     status: String           -- "READY", "BLOCKED", "DONE", "FREE"
     blocked_on_channel: Integer
     blocked_on_join: Integer
     blocked_reg: String
     blocked_val: VmValue
 end record
+
+function set_frame_stack(arr: Array<ActivationFrame, 8>, idx: Integer, val: ActivationFrame) returns Array<ActivationFrame, 8>
+is
+    let i0: ActivationFrame = arr[0]
+    let i1: ActivationFrame = arr[1]
+    let i2: ActivationFrame = arr[2]
+    let i3: ActivationFrame = arr[3]
+    let i4: ActivationFrame = arr[4]
+    let i5: ActivationFrame = arr[5]
+    let i6: ActivationFrame = arr[6]
+    let i7: ActivationFrame = arr[7]
+
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+
+    return [ i0, i1, i2, i3, i4, i5, i6, i7 ]
+end set_frame_stack
+
+function set_routine_stack(arr: Array<IrRoutine, 8>, idx: Integer, val: IrRoutine) returns Array<IrRoutine, 8>
+is
+    let i0: IrRoutine = arr[0]
+    let i1: IrRoutine = arr[1]
+    let i2: IrRoutine = arr[2]
+    let i3: IrRoutine = arr[3]
+    let i4: IrRoutine = arr[4]
+    let i5: IrRoutine = arr[5]
+    let i6: IrRoutine = arr[6]
+    let i7: IrRoutine = arr[7]
+
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+
+    return [ i0, i1, i2, i3, i4, i5, i6, i7 ]
+end set_routine_stack
+
+function set_string_stack(arr: Array<String, 8>, idx: Integer, val: String) returns Array<String, 8>
+is
+    let i0: String = arr[0]
+    let i1: String = arr[1]
+    let i2: String = arr[2]
+    let i3: String = arr[3]
+    let i4: String = arr[4]
+    let i5: String = arr[5]
+    let i6: String = arr[6]
+    let i7: String = arr[7]
+
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+
+    return [ i0, i1, i2, i3, i4, i5, i6, i7 ]
+end set_string_stack
+
 
 type MultiTaskResult is record
     heap: VmHeap
@@ -1430,7 +1607,7 @@ function execute_instruction_multitask(
 ) returns MultiTaskResult
 is
     let task: VmTask = tasks[task_idx]
-    
+
     if inst.kind = "CALL" or inst.kind = "CALL_HOST" then
         if inst.op = "channel" then
             let capacity_val: VmValue = get_register(task.frame, inst.src_reg_left)
@@ -1461,6 +1638,10 @@ is
                 id: task.id,
                 routine: task.routine,
                 frame: new_frame,
+                stack: task.stack,
+                stack_pointer: task.stack_pointer,
+                routine_stack: task.routine_stack,
+                caller_dest_reg_stack: task.caller_dest_reg_stack,
                 status: task.status,
                 blocked_on_channel: task.blocked_on_channel,
                 blocked_on_join: task.blocked_on_join,
@@ -1470,7 +1651,7 @@ is
             let new_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_task)
             return MultiTaskResult { heap: alloc_res.heap, tasks: new_tasks, task_count: task_count, yielded: false }
         end if
-        
+
         if inst.op = "channel_sender" or inst.op = "channel_receiver" then
             let ch_ref: VmValue = get_register(task.frame, inst.src_reg_left)
             let new_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, ch_ref)
@@ -1478,6 +1659,10 @@ is
                 id: task.id,
                 routine: task.routine,
                 frame: new_frame,
+                stack: task.stack,
+                stack_pointer: task.stack_pointer,
+                routine_stack: task.routine_stack,
+                caller_dest_reg_stack: task.caller_dest_reg_stack,
                 status: task.status,
                 blocked_on_channel: task.blocked_on_channel,
                 blocked_on_join: task.blocked_on_join,
@@ -1487,12 +1672,12 @@ is
             let new_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_task)
             return MultiTaskResult { heap: heap, tasks: new_tasks, task_count: task_count, yielded: false }
         end if
-        
+
         if inst.op = "channel_send" then
             let chan_ref_val: VmValue = get_register(task.frame, inst.src_reg_left)
             let chan_ref: Integer = chan_ref_val.ref_val
             let val_to_send: VmValue = get_register(task.frame, inst.src_reg_right)
-            
+
             let found_reader_idx: Integer = -1
             let j: Integer = 0
             while j < task_count invariant j >= 0 and j <= task_count do
@@ -1502,7 +1687,7 @@ is
                 end if
                 j := j + 1
             end while
-            
+
             if found_reader_idx >= 0 then
                 let t_reader: VmTask = tasks[found_reader_idx]
                 let r_frame: ActivationFrame = update_register(t_reader.frame, t_reader.blocked_reg, val_to_send)
@@ -1511,6 +1696,10 @@ is
                     id: t_reader.id,
                     routine: t_reader.routine,
                     frame: r_frame,
+                    stack: t_reader.stack,
+                    stack_pointer: t_reader.stack_pointer,
+                    routine_stack: t_reader.routine_stack,
+                    caller_dest_reg_stack: t_reader.caller_dest_reg_stack,
                     status: "READY",
                     blocked_on_channel: -1,
                     blocked_on_join: t_reader.blocked_on_join,
@@ -1518,12 +1707,16 @@ is
                     blocked_val: empty_val
                 }
                 let next_tasks: Array<VmTask, 16> = set_task(tasks, found_reader_idx, new_reader)
-                
+
                 let s_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, VmValue { kind: "BOOLEAN", int_val: 0, bool_val: true, str_val: "", ref_val: -1 })
                 let new_sender: VmTask = VmTask {
                     id: task.id,
                     routine: task.routine,
                     frame: s_frame,
+                    stack: task.stack,
+                    stack_pointer: task.stack_pointer,
+                    routine_stack: task.routine_stack,
+                    caller_dest_reg_stack: task.caller_dest_reg_stack,
                     status: task.status,
                     blocked_on_channel: task.blocked_on_channel,
                     blocked_on_join: task.blocked_on_join,
@@ -1540,7 +1733,7 @@ is
                 let capacity: Integer = cap_val.int_val
                 let cnt_val: VmValue = fvals[1]
                 let count: Integer = cnt_val.int_val
-                
+
                 if count < capacity then
                     let new_elements: Array<VmValue, 32> = set_value_32(ch_obj.elements, count, val_to_send)
                     let count_val: VmValue = VmValue { kind: "INTEGER", int_val: count + 1, bool_val: false, str_val: "", ref_val: -1 }
@@ -1555,12 +1748,16 @@ is
                     }
                     let next_heap_objs: Array<VmHeapObject, 32> = set_heap_obj(heap.objects, chan_ref, new_ch_obj)
                     let next_heap: VmHeap = VmHeap { objects: next_heap_objs, object_count: heap.object_count }
-                    
+
                     let s_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, VmValue { kind: "BOOLEAN", int_val: 0, bool_val: true, str_val: "", ref_val: -1 })
                     let new_sender: VmTask = VmTask {
                         id: task.id,
                         routine: task.routine,
                         frame: s_frame,
+                        stack: task.stack,
+                        stack_pointer: task.stack_pointer,
+                        routine_stack: task.routine_stack,
+                        caller_dest_reg_stack: task.caller_dest_reg_stack,
                         status: task.status,
                         blocked_on_channel: task.blocked_on_channel,
                         blocked_on_join: task.blocked_on_join,
@@ -1574,6 +1771,10 @@ is
                         id: task.id,
                         routine: task.routine,
                         frame: task.frame,
+                        stack: task.stack,
+                        stack_pointer: task.stack_pointer,
+                        routine_stack: task.routine_stack,
+                        caller_dest_reg_stack: task.caller_dest_reg_stack,
                         status: "BLOCKED",
                         blocked_on_channel: chan_ref,
                         blocked_on_join: task.blocked_on_join,
@@ -1585,7 +1786,7 @@ is
                 end if
             end if
         end if
-        
+
         if inst.op = "channel_receive" then
             let chan_ref_val: VmValue = get_register(task.frame, inst.src_reg_left)
             let chan_ref: Integer = chan_ref_val.ref_val
@@ -1594,11 +1795,11 @@ is
             let fvals: Array<VmValue, 10> = ch_obj.field_values
             let cnt_val: VmValue = fvals[1]
             let count: Integer = cnt_val.int_val
-            
+
             if count > 0 then
                 let ch_elements: Array<VmValue, 32> = ch_obj.elements
                 let val_received: VmValue = ch_elements[0]
-                
+
                 -- Shift remaining elements
                 let next_elements: Array<VmValue, 32> = ch_obj.elements
                 let k: Integer = 0
@@ -1606,7 +1807,7 @@ is
                     next_elements := set_value_32(next_elements, k, ch_elements[k + 1])
                     k := k + 1
                 end while
-                
+
                 let count_val: VmValue = VmValue { kind: "INTEGER", int_val: count - 1, bool_val: false, str_val: "", ref_val: -1 }
                 let new_field_values: Array<VmValue, 10> = set_value_10(ch_obj.field_values, 1, count_val)
                 let new_ch_obj: VmHeapObject = VmHeapObject {
@@ -1619,7 +1820,7 @@ is
                 }
                 let next_heap_objs: Array<VmHeapObject, 32> = set_heap_obj(heap.objects, chan_ref, new_ch_obj)
                 let next_heap: VmHeap = VmHeap { objects: next_heap_objs, object_count: heap.object_count }
-                
+
                 -- Check for blocked writers
                 let found_writer_idx: Integer = -1
                 let j: Integer = 0
@@ -1630,7 +1831,7 @@ is
                     end if
                     j := j + 1
                 end while
-                
+
                 let next_tasks: Array<VmTask, 16> = tasks
                 if found_writer_idx >= 0 then
                     let t_writer: VmTask = tasks[found_writer_idx]
@@ -1648,7 +1849,7 @@ is
                     }
                     next_heap_objs := set_heap_obj(next_heap.objects, chan_ref, new_ch_obj)
                     next_heap := VmHeap { objects: next_heap_objs, object_count: heap.object_count }
-                    
+
                     -- Wake up writer
                     let w_frame: ActivationFrame = update_register(t_writer.frame, t_writer.blocked_reg, VmValue { kind: "BOOLEAN", int_val: 0, bool_val: true, str_val: "", ref_val: -1 })
                     let empty_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
@@ -1656,6 +1857,10 @@ is
                         id: t_writer.id,
                         routine: t_writer.routine,
                         frame: w_frame,
+                        stack: t_writer.stack,
+                        stack_pointer: t_writer.stack_pointer,
+                        routine_stack: t_writer.routine_stack,
+                        caller_dest_reg_stack: t_writer.caller_dest_reg_stack,
                         status: "READY",
                         blocked_on_channel: -1,
                         blocked_on_join: t_writer.blocked_on_join,
@@ -1664,12 +1869,16 @@ is
                     }
                     next_tasks := set_task(next_tasks, found_writer_idx, new_writer)
                 end if
-                
+
                 let r_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, val_received)
                 let new_reader: VmTask = VmTask {
                     id: task.id,
                     routine: task.routine,
                     frame: r_frame,
+                    stack: task.stack,
+                    stack_pointer: task.stack_pointer,
+                    routine_stack: task.routine_stack,
+                    caller_dest_reg_stack: task.caller_dest_reg_stack,
                     status: task.status,
                     blocked_on_channel: task.blocked_on_channel,
                     blocked_on_join: task.blocked_on_join,
@@ -1689,10 +1898,10 @@ is
                     end if
                     j := j + 1
                 end while
-                
+
                 if found_writer_idx >= 0 then
                     let t_writer: VmTask = tasks[found_writer_idx]
-                    
+
                     -- Wake up writer
                     let w_frame: ActivationFrame = update_register(t_writer.frame, t_writer.blocked_reg, VmValue { kind: "BOOLEAN", int_val: 0, bool_val: true, str_val: "", ref_val: -1 })
                     let empty_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
@@ -1700,6 +1909,10 @@ is
                         id: t_writer.id,
                         routine: t_writer.routine,
                         frame: w_frame,
+                        stack: t_writer.stack,
+                        stack_pointer: t_writer.stack_pointer,
+                        routine_stack: t_writer.routine_stack,
+                        caller_dest_reg_stack: t_writer.caller_dest_reg_stack,
                         status: "READY",
                         blocked_on_channel: -1,
                         blocked_on_join: t_writer.blocked_on_join,
@@ -1707,13 +1920,17 @@ is
                         blocked_val: empty_val
                     }
                     let next_tasks: Array<VmTask, 16> = set_task(tasks, found_writer_idx, new_writer)
-                    
+
                     -- Set reader's received value
                     let r_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, t_writer.blocked_val)
                     let new_reader: VmTask = VmTask {
                         id: task.id,
                         routine: task.routine,
                         frame: r_frame,
+                        stack: task.stack,
+                        stack_pointer: task.stack_pointer,
+                        routine_stack: task.routine_stack,
+                        caller_dest_reg_stack: task.caller_dest_reg_stack,
                         status: task.status,
                         blocked_on_channel: task.blocked_on_channel,
                         blocked_on_join: task.blocked_on_join,
@@ -1729,6 +1946,10 @@ is
                         id: task.id,
                         routine: task.routine,
                         frame: task.frame,
+                        stack: task.stack,
+                        stack_pointer: task.stack_pointer,
+                        routine_stack: task.routine_stack,
+                        caller_dest_reg_stack: task.caller_dest_reg_stack,
                         status: "BLOCKED",
                         blocked_on_channel: chan_ref,
                         blocked_on_join: task.blocked_on_join,
@@ -1740,7 +1961,7 @@ is
                 end if
             end if
         end if
-        
+
         if inst.op = "spawn" then
             let routine_idx: Integer = -1
             let k: Integer = 0
@@ -1751,7 +1972,7 @@ is
                 end if
                 k := k + 1
             end while
-            
+
             let spawned_routine: IrRoutine = routines[routine_idx]
             let empty_reg: VmRegister = VmRegister { name: "", reg_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 } }
             let spawned_frame: ActivationFrame = ActivationFrame {
@@ -1767,22 +1988,51 @@ is
                 return_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
                 has_returned: false
             }
-            
+
             if inst.src_reg_left != "" then
                 let arg0_val: VmValue = get_register(task.frame, inst.src_reg_left)
                 spawned_frame := update_register(spawned_frame, "_arg0", arg0_val)
             end if
-            
+
             if inst.src_reg_right != "" then
                 let arg1_val: VmValue = get_register(task.frame, inst.src_reg_right)
                 spawned_frame := update_register(spawned_frame, "_arg1", arg1_val)
             end if
-            
+
             let empty_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
+            let empty_frame: ActivationFrame = ActivationFrame {
+                registers: [
+                    empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+                    empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+                    empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+                    empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg
+                ],
+                register_count: 0,
+                current_block_label: "entry",
+                ip: 0,
+                return_value: empty_val,
+                has_returned: false
+            }
+            let empty_frame_stack: Array<ActivationFrame, 8> = [
+                empty_frame, empty_frame, empty_frame, empty_frame,
+                empty_frame, empty_frame, empty_frame, empty_frame
+            ]
+            let empty_routine_stack: Array<IrRoutine, 8> = [
+                spawned_routine, spawned_routine, spawned_routine, spawned_routine,
+                spawned_routine, spawned_routine, spawned_routine, spawned_routine
+            ]
+            let empty_string_stack: Array<String, 8> = [
+                "", "", "", "", "", "", "", ""
+            ]
+
             let spawned_task: VmTask = VmTask {
                 id: task_count,
                 routine: spawned_routine,
                 frame: spawned_frame,
+                stack: empty_frame_stack,
+                stack_pointer: 0,
+                routine_stack: empty_routine_stack,
+                caller_dest_reg_stack: empty_string_stack,
                 status: "READY",
                 blocked_on_channel: -1,
                 blocked_on_join: -1,
@@ -1790,12 +2040,16 @@ is
                 blocked_val: empty_val
             }
             let next_tasks: Array<VmTask, 16> = set_task(tasks, task_count, spawned_task)
-            
+
             let new_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, VmValue { kind: "REF", int_val: task_count, bool_val: false, str_val: "", ref_val: task_count })
             let new_sender: VmTask = VmTask {
                 id: task.id,
                 routine: task.routine,
                 frame: new_frame,
+                stack: task.stack,
+                stack_pointer: task.stack_pointer,
+                routine_stack: task.routine_stack,
+                caller_dest_reg_stack: task.caller_dest_reg_stack,
                 status: task.status,
                 blocked_on_channel: task.blocked_on_channel,
                 blocked_on_join: task.blocked_on_join,
@@ -1805,18 +2059,22 @@ is
             next_tasks := set_task(next_tasks, task_idx, new_sender)
             return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count + 1, yielded: false }
         end if
-        
+
         if inst.op = "join" then
             let target_id_val: VmValue = get_register(task.frame, inst.src_reg_left)
             let target_id: Integer = target_id_val.ref_val
             let t_target: VmTask = tasks[target_id]
-            
+
             if t_target.status = "DONE" then
                 let new_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, t_target.frame.return_value)
                 let new_task: VmTask = VmTask {
                     id: task.id,
                     routine: task.routine,
                     frame: new_frame,
+                    stack: task.stack,
+                    stack_pointer: task.stack_pointer,
+                    routine_stack: task.routine_stack,
+                    caller_dest_reg_stack: task.caller_dest_reg_stack,
                     status: task.status,
                     blocked_on_channel: task.blocked_on_channel,
                     blocked_on_join: task.blocked_on_join,
@@ -1830,6 +2088,10 @@ is
                     id: task.id,
                     routine: task.routine,
                     frame: task.frame,
+                    stack: task.stack,
+                    stack_pointer: task.stack_pointer,
+                    routine_stack: task.routine_stack,
+                    caller_dest_reg_stack: task.caller_dest_reg_stack,
                     status: "BLOCKED",
                     blocked_on_channel: task.blocked_on_channel,
                     blocked_on_join: target_id,
@@ -1840,14 +2102,89 @@ is
                 return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count, yielded: true }
             end if
         end if
+
+        -- Non-host CALL (nested function calls)
+        if inst.kind = "CALL" then
+            let routine_idx: Integer = -1
+            let k: Integer = 0
+            while k < routine_count invariant k >= 0 and k <= routine_count do
+                let r: IrRoutine = routines[k]
+                if r.name = inst.op then
+                    routine_idx := k
+                end if
+                k := k + 1
+            end while
+
+            if routine_idx >= 0 then
+                let callee_routine: IrRoutine = routines[routine_idx]
+
+                -- Prepare callee frame
+                let empty_reg: VmRegister = VmRegister { name: "", reg_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 } }
+                let callee_frame: ActivationFrame = ActivationFrame {
+                    registers: [
+                        empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+                        empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+                        empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
+                        empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg
+                    ],
+                    register_count: 0,
+                    current_block_label: "entry",
+                    ip: 0,
+                    return_value: VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 },
+                    has_returned: false
+                }
+
+                -- Bind arguments
+                if inst.src_reg_left != "" then
+                    let arg0_val: VmValue = get_register(task.frame, inst.src_reg_left)
+                    callee_frame := update_register(callee_frame, "_arg0", arg0_val)
+                end if
+                if inst.src_reg_right != "" then
+                    let arg1_val: VmValue = get_register(task.frame, inst.src_reg_right)
+                    callee_frame := update_register(callee_frame, "_arg1", arg1_val)
+                end if
+
+                -- Caller frame with next IP (the instruction AFTER the CALL)
+                let caller_frame: ActivationFrame = task.frame
+                caller_frame.ip := task.frame.ip + 1
+
+                -- Push onto task stack
+                let sp: Integer = task.stack_pointer
+                let new_stack: Array<ActivationFrame, 8> = set_frame_stack(task.stack, sp, caller_frame)
+                let new_rot_stack: Array<IrRoutine, 8> = set_routine_stack(task.routine_stack, sp, task.routine)
+                let new_dest_stack: Array<String, 8> = set_string_stack(task.caller_dest_reg_stack, sp, inst.dest_reg)
+
+                let updated_task: VmTask = VmTask {
+                    id: task.id,
+                    routine: callee_routine,
+                    frame: callee_frame,
+                    stack: new_stack,
+                    stack_pointer: sp + 1,
+                    routine_stack: new_rot_stack,
+                    caller_dest_reg_stack: new_dest_stack,
+                    status: task.status,
+                    blocked_on_channel: task.blocked_on_channel,
+                    blocked_on_join: task.blocked_on_join,
+                    blocked_reg: task.blocked_reg,
+                    blocked_val: task.blocked_val
+                }
+
+                let next_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, updated_task)
+                return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count, yielded: true }
+            end if
+        end if
     end if
-    
+
     let old_state: VmState = VmState { heap: heap, frame: task.frame }
-    let new_state: VmState = execute_instruction(inst, old_state)
+    let new_state: VmState = execute_instruction(inst, old_state, task.routine)
     let new_task: VmTask = VmTask {
         id: task.id,
         routine: task.routine,
         frame: new_state.frame,
+        stack: task.stack,
+        stack_pointer: task.stack_pointer,
+        routine_stack: task.routine_stack,
+        caller_dest_reg_stack: task.caller_dest_reg_stack,
         status: task.status,
         blocked_on_channel: task.blocked_on_channel,
         blocked_on_join: task.blocked_on_join,
@@ -1875,10 +2212,10 @@ is
     let current_heap: VmHeap = heap
     let current_tasks: Array<VmTask, 16> = tasks
     let current_task_count: Integer = task_count
-    
+
     while has_jumped invariant has_jumped or not has_jumped do
         has_jumped := false
-        
+
         let block_idx: Integer = routine.block_count - routine.block_count - 1
         let k: Integer = routine.block_count - routine.block_count
         let rblocks: Array<IrBasicBlock, 32> = routine.blocks
@@ -1889,81 +2226,110 @@ is
             end if
             k := k + 1
         end while
-        
+
         if block_idx >= 0 then
             let blk: IrBasicBlock = rblocks[block_idx]
-            
+
             let i: Integer = ip
             let binsts: Array<IrInstruction, 64> = blk.instructions
             let yielded: Boolean = false
-            
+
             while i < blk.instruction_count and not yielded invariant i >= 0 and i <= blk.instruction_count do
                 let inst: IrInstruction = binsts[i]
-                
+
                 -- Save current state inside current task for execution
                 let temp_task: VmTask = current_tasks[task_idx]
                 temp_task.frame.current_block_label := current_label
                 temp_task.frame.ip := i
                 current_tasks := set_task(current_tasks, task_idx, temp_task)
-                
+
                 let res: MultiTaskResult = execute_instruction_multitask(inst, task_idx, current_heap, current_tasks, current_task_count, routines, routine_count)
                 current_heap := res.heap
                 current_tasks := res.tasks
                 current_task_count := res.task_count
                 yielded := res.yielded
-                
+
                 if yielded then
                     let t_yielded: VmTask = current_tasks[task_idx]
-                    t_yielded.frame.ip := i + 1
-                    current_tasks := set_task(current_tasks, task_idx, t_yielded)
+                    if t_yielded.stack_pointer = temp_task.stack_pointer then
+                        t_yielded.frame.ip := i + 1
+                        current_tasks := set_task(current_tasks, task_idx, t_yielded)
+                    end if
                 end if
-                
+
                 i := i + 1
             end while
-            
+
             if yielded then
                 return MultiTaskResult { heap: current_heap, tasks: current_tasks, task_count: current_task_count, yielded: true }
             end if
-            
+
             -- Reset IP for subsequent blocks
             ip := 0
-            
+
             if blk.terminator_kind = "RETURN" then
                 let cur_t: VmTask = current_tasks[task_idx]
                 let ret_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
                 if blk.return_reg != "" then
                     ret_val := get_register(cur_t.frame, blk.return_reg)
                 end if
-                
-                cur_t.status := "DONE"
-                cur_t.frame.return_value := ret_val
-                cur_t.frame.has_returned := true
-                cur_t.frame.current_block_label := ""
-                cur_t.frame.ip := 0
-                current_tasks := set_task(current_tasks, task_idx, cur_t)
-                
-                -- When a task is DONE, unblock any tasks waiting to JOIN this task
-                let j: Integer = 0
-                while j < current_task_count invariant j >= 0 and j <= current_task_count do
-                    let t_other: VmTask = current_tasks[j]
-                    if t_other.status = "BLOCKED" and t_other.blocked_on_join = cur_t.id then
-                        let other_frame: ActivationFrame = update_register(t_other.frame, t_other.blocked_reg, ret_val)
-                        let new_other: VmTask = VmTask {
-                            id: t_other.id,
-                            routine: t_other.routine,
-                            frame: other_frame,
-                            status: "READY",
-                            blocked_on_channel: t_other.blocked_on_channel,
-                            blocked_on_join: -1,
-                            blocked_reg: "",
-                            blocked_val: t_other.blocked_val
-                        }
-                        current_tasks := set_task(current_tasks, j, new_other)
+
+                if cur_t.stack_pointer > 0 then
+                    -- Pop caller context
+                    let caller_sp: Integer = cur_t.stack_pointer - 1
+                    let stack_arr: Array<ActivationFrame, 8> = cur_t.stack
+                    let caller_frame: ActivationFrame = stack_arr[caller_sp]
+                    let rot_stack: Array<IrRoutine, 8> = cur_t.routine_stack
+                    let caller_routine: IrRoutine = rot_stack[caller_sp]
+                    let dest_stack: Array<String, 8> = cur_t.caller_dest_reg_stack
+                    let caller_dest_reg: String = dest_stack[caller_sp]
+
+                    -- If caller expected a return value in a destination register, update it
+                    if caller_dest_reg != "" then
+                        caller_frame := update_register(caller_frame, caller_dest_reg, ret_val)
                     end if
-                    j := j + 1
-                end while
-                
-                return MultiTaskResult { heap: current_heap, tasks: current_tasks, task_count: current_task_count, yielded: false }
+
+                    cur_t.frame := caller_frame
+                    cur_t.routine := caller_routine
+                    cur_t.stack_pointer := caller_sp
+                    current_tasks := set_task(current_tasks, task_idx, cur_t)
+
+                    return MultiTaskResult { heap: current_heap, tasks: current_tasks, task_count: current_task_count, yielded: true }
+                else
+                    cur_t.status := "DONE"
+                    cur_t.frame.return_value := ret_val
+                    cur_t.frame.has_returned := true
+                    cur_t.frame.current_block_label := ""
+                    cur_t.frame.ip := 0
+                    current_tasks := set_task(current_tasks, task_idx, cur_t)
+
+                    -- When a task is DONE, unblock any tasks waiting to JOIN this task
+                    let j: Integer = 0
+                    while j < current_task_count invariant j >= 0 and j <= current_task_count do
+                        let t_other: VmTask = current_tasks[j]
+                        if t_other.status = "BLOCKED" and t_other.blocked_on_join = cur_t.id then
+                            let other_frame: ActivationFrame = update_register(t_other.frame, t_other.blocked_reg, ret_val)
+                            let new_other: VmTask = VmTask {
+                                id: t_other.id,
+                                routine: t_other.routine,
+                                frame: other_frame,
+                                stack: t_other.stack,
+                                stack_pointer: t_other.stack_pointer,
+                                routine_stack: t_other.routine_stack,
+                                caller_dest_reg_stack: t_other.caller_dest_reg_stack,
+                                status: "READY",
+                                blocked_on_channel: t_other.blocked_on_channel,
+                                blocked_on_join: -1,
+                                blocked_reg: "",
+                                blocked_val: t_other.blocked_val
+                            }
+                            current_tasks := set_task(current_tasks, j, new_other)
+                        end if
+                        j := j + 1
+                    end while
+
+                    return MultiTaskResult { heap: current_heap, tasks: current_tasks, task_count: current_task_count, yielded: false }
+                end if
             else
                 if blk.terminator_kind = "JUMP" then
                     current_label := blk.target_block_label
@@ -1983,7 +2349,7 @@ is
             end if
         end if
     end while
-    
+
     return MultiTaskResult { heap: current_heap, tasks: current_tasks, task_count: current_task_count, yielded: false }
 end execute_task_slice
 
@@ -2015,25 +2381,41 @@ is
         return_value: empty_val,
         has_returned: false
     }
-    
+
+    let empty_frame_stack: Array<ActivationFrame, 8> = [
+        empty_frame, empty_frame, empty_frame, empty_frame,
+        empty_frame, empty_frame, empty_frame, empty_frame
+    ]
+    let empty_routine_stack: Array<IrRoutine, 8> = [
+        main_routine, main_routine, main_routine, main_routine,
+        main_routine, main_routine, main_routine, main_routine
+    ]
+    let empty_string_stack: Array<String, 8> = [
+        "", "", "", "", "", "", "", ""
+    ]
+
     let empty_task: VmTask = VmTask {
         id: -1,
         routine: main_routine,
         frame: empty_frame,
+        stack: empty_frame_stack,
+        stack_pointer: 0,
+        routine_stack: empty_routine_stack,
+        caller_dest_reg_stack: empty_string_stack,
         status: "FREE",
         blocked_on_channel: -1,
         blocked_on_join: -1,
         blocked_reg: "",
         blocked_val: empty_val
     }
-    
+
     let tasks: Array<VmTask, 16> = [
         empty_task, empty_task, empty_task, empty_task,
         empty_task, empty_task, empty_task, empty_task,
         empty_task, empty_task, empty_task, empty_task,
         empty_task, empty_task, empty_task, empty_task
     ]
-    
+
     let main_frame: ActivationFrame = ActivationFrame {
         registers: [
             empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg, empty_reg,
@@ -2047,11 +2429,15 @@ is
         return_value: empty_val,
         has_returned: false
     }
-    
+
     let main_task: VmTask = VmTask {
         id: 0,
         routine: main_routine,
         frame: main_frame,
+        stack: empty_frame_stack,
+        stack_pointer: 0,
+        routine_stack: empty_routine_stack,
+        caller_dest_reg_stack: empty_string_stack,
         status: "READY",
         blocked_on_channel: -1,
         blocked_on_join: -1,
@@ -2060,17 +2446,17 @@ is
     }
     tasks := set_task(tasks, 0, main_task)
 
-    
+
     let task_count: Integer = as_integer(1)
     let has_active: Boolean = true
     let loop_count: Integer = 0
-    
+
     while has_active and loop_count < 200 invariant has_active or not has_active do
         has_active := false
-        
+
         let j: Integer = 0
         let executed_any: Boolean = false
-        
+
         while j < task_count invariant j >= 0 and j <= task_count do
             let t: VmTask = tasks[j]
             if t.status = "READY" then
@@ -2082,7 +2468,7 @@ is
             end if
             j := j + 1
         end while
-        
+
         -- Check if there are active tasks
         let k: Integer = 0
         while k < task_count invariant k >= 0 and k <= task_count do
@@ -2092,16 +2478,16 @@ is
             end if
             k := k + 1
         end while
-        
+
         -- Check deadlock: if has_active but we couldn't execute any task in this round
         if has_active and not executed_any then
             call Std.IO.logf("DEADLOCK DETECTED! Active tasks are blocked.")
             has_active := false
         end if
-        
+
         loop_count := loop_count + 1
     end while
-    
+
     let final_t: VmTask = tasks[0]
     return VmState {
         heap: heap,

@@ -1,6 +1,6 @@
 {
   "source_file": "..\\tests\\language_modules\\04_types\\valid\\alias_array_signature_usage.fh",
-  "source_snippet": "module AliasArraySignatureUsage\r\n\r\ntype Money is Integer\r\n\r\nfunction values() returns Array\u003cMoney, 3\u003e\r\nis\r\n    return [1, 2, 3]\r\nend values\r\n\r\nprocedure main()\r\nis\r\n    let amounts: Array\u003cMoney, 3\u003e = values()\r\n    let amount: Money = amounts[0]\r\n    check amount = 1\r\nend main\r\n\r\nend AliasArraySignatureUsage",
+  "source_snippet": "module AliasArraySignatureUsage\r\n\r\ntype Money is Integer\r\n\r\nfunction values() returns Array\u003cMoney, 3\u003e\r\n    ensures result[0] = 1\r\nis\r\n    return [1, 2, 3]\r\nend values\r\n\r\nprocedure main()\r\nis\r\n    let amounts: Array\u003cMoney, 3\u003e = values()\r\n    let amount: Money = amounts[0]\r\n    check amount = 1\r\nend main\r\n\r\nend AliasArraySignatureUsage",
   "module_name": "04_types",
   "case_kind": "valid",
   "parse_ok": true,
@@ -18,6 +18,27 @@
         "name": "values",
         "params": null,
         "return_type": "Array\u003cMoney, 3\u003e",
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "IndexExpr",
+              "array": {
+                "kind": "IdentifierExpr",
+                "name": "result"
+              },
+              "index": {
+                "kind": "NumberExpr",
+                "value": "0"
+              }
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": "1"
+            }
+          }
+        ],
         "body": [
           {
             "kind": "ReturnStmt",

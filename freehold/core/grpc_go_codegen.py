@@ -39,6 +39,7 @@ def generate_grpc_go_bindings(program: Program, verified: VerifiedProgram | None
         f"\tpb \"{pb_import_path}\"",
         "\t\"google.golang.org/grpc\"",
         "\t\"google.golang.org/grpc/codes\"",
+        "\t\"google.golang.org/grpc/metadata\"",
         "\t\"google.golang.org/grpc/status\"",
         ")",
         "",
@@ -56,11 +57,34 @@ def service_binding(service: ServiceDecl) -> list[str]:
     service_name = go_exported_name(service.name)
     handler_name = f"{service_name}Handler"
     server_name = f"{service_name}Server"
+    client_interface_name = f"{service_name}Client"
+    client_struct_name = service_name[0].lower() + service_name[1:] + "Client"
+    
+    # 1. Server Handler Interface
     lines: list[str] = [
         f"type {handler_name} interface {{",
     ]
     for rpc in service.rpcs:
-        lines.append(f"\t{go_exported_name(rpc.name)}(ctx context.Context, request *pb.{go_exported_name(rpc.request_type)}) (*pb.{go_exported_name(rpc.response_type)}, error)")
+        method_name = go_exported_name(rpc.name)
+        req_type = go_exported_name(rpc.request_type)
+        resp_type = go_exported_name(rpc.response_type)
+        
+        is_req_stream = getattr(rpc, "request_stream", False)
+        is_resp_stream = getattr(rpc, "response_stream", False)
+        
+        if not is_req_stream and not is_resp_stream:
+            # Unary
+            lines.append(f"\t{method_name}(ctx context.Context, request *pb.{req_type}) (*pb.{resp_type}, error)")
+        elif not is_req_stream and is_resp_stream:
+            # Server-side streaming
+            lines.append(f"\t{method_name}(request *pb.{req_type}, stream pb.{service_name}_{method_name}Server) error")
+        elif is_req_stream and not is_resp_stream:
+            # Client-side streaming
+            lines.append(f"\t{method_name}(stream pb.{service_name}_{method_name}Server) error")
+        else:
+            # Bidirectional streaming
+            lines.append(f"\t{method_name}(stream pb.{service_name}_{method_name}Server) error")
+            
     lines.extend([
         "}",
         "",
@@ -81,28 +105,170 @@ def service_binding(service: ServiceDecl) -> list[str]:
         "}",
         "",
     ])
+    
+    # 2. Server implementation methods
     for rpc in service.rpcs:
         method_name = go_exported_name(rpc.name)
-        request_name = go_exported_name(rpc.request_type)
-        response_name = go_exported_name(rpc.response_type)
-        lines.extend([
-            f"func (server *{server_name}) {method_name}(ctx context.Context, request *pb.{request_name}) (*pb.{response_name}, error) {{",
-            f"\tresponse, err := server.handler.{method_name}(ctx, request)",
-            "\tif err != nil {",
-            "\t\treturn nil, freeholdGrpcStatus(err)",
-            "\t}",
-            "\treturn response, nil",
-            "}",
-            "",
-        ])
+        req_type = go_exported_name(rpc.request_type)
+        resp_type = go_exported_name(rpc.response_type)
+        is_req_stream = getattr(rpc, "request_stream", False)
+        is_resp_stream = getattr(rpc, "response_stream", False)
+        
+        if not is_req_stream and not is_resp_stream:
+            # Unary
+            lines.extend([
+                f"func (server *{server_name}) {method_name}(ctx context.Context, request *pb.{req_type}) (*pb.{resp_type}, error) {{",
+                f"\tresponse, err := server.handler.{method_name}(ctx, request)",
+                "\tif err != nil {",
+                "\t\treturn nil, freeholdGrpcStatus(ctx, err)",
+                "\t}",
+                "\treturn response, nil",
+                "}",
+                "",
+            ])
+        elif not is_req_stream and is_resp_stream:
+            # Server-side streaming
+            lines.extend([
+                f"func (server *{server_name}) {method_name}(request *pb.{req_type}, stream pb.{service_name}_{method_name}Server) error {{",
+                f"\terr := server.handler.{method_name}(request, stream)",
+                "\tif err != nil {",
+                "\t\treturn freeholdGrpcStatus(stream.Context(), err)",
+                "\t}",
+                "\treturn nil",
+                "}",
+                "",
+            ])
+        elif is_req_stream and not is_resp_stream:
+            # Client-side streaming
+            lines.extend([
+                f"func (server *{server_name}) {method_name}(stream pb.{service_name}_{method_name}Server) error {{",
+                f"\terr := server.handler.{method_name}(stream)",
+                "\tif err != nil {",
+                "\t\treturn freeholdGrpcStatus(stream.Context(), err)",
+                "\t}",
+                "\treturn nil",
+                "}",
+                "",
+            ])
+        else:
+            # Bidirectional streaming
+            lines.extend([
+                f"func (server *{server_name}) {method_name}(stream pb.{service_name}_{method_name}Server) error {{",
+                f"\terr := server.handler.{method_name}(stream)",
+                "\tif err != nil {",
+                "\t\treturn freeholdGrpcStatus(stream.Context(), err)",
+                "\t}",
+                "\treturn nil",
+                "}",
+                "",
+            ])
+            
+    # 3. Client Interface
+    lines.extend([
+        f"type {client_interface_name} interface {{",
+    ])
+    for rpc in service.rpcs:
+        method_name = go_exported_name(rpc.name)
+        req_type = go_exported_name(rpc.request_type)
+        resp_type = go_exported_name(rpc.response_type)
+        is_req_stream = getattr(rpc, "request_stream", False)
+        is_resp_stream = getattr(rpc, "response_stream", False)
+        
+        if not is_req_stream and not is_resp_stream:
+            # Unary
+            lines.append(f"\t{method_name}(ctx context.Context, request *pb.{req_type}, opts ...grpc.CallOption) (*pb.{resp_type}, error)")
+        elif not is_req_stream and is_resp_stream:
+            # Server streaming
+            lines.append(f"\t{method_name}(ctx context.Context, request *pb.{req_type}, opts ...grpc.CallOption) (pb.{service_name}_{method_name}Client, error)")
+        elif is_req_stream and not is_resp_stream:
+            # Client streaming
+            lines.append(f"\t{method_name}(ctx context.Context, opts ...grpc.CallOption) (pb.{service_name}_{method_name}Client, error)")
+        else:
+            # Bidirectional streaming
+            lines.append(f"\t{method_name}(ctx context.Context, opts ...grpc.CallOption) (pb.{service_name}_{method_name}Client, error)")
+            
+    lines.extend([
+        "}",
+        "",
+        f"type {client_struct_name} struct {{",
+        f"\tclient pb.{client_interface_name}",
+        "}",
+        "",
+        f"func New{client_interface_name}(cc grpc.ClientConnInterface) {client_interface_name} {{",
+        f"\treturn &{client_struct_name}{{client: pb.New{client_interface_name}(cc)}}",
+        "}",
+        "",
+    ])
+    
+    # 4. Client struct implementation methods
+    for rpc in service.rpcs:
+        method_name = go_exported_name(rpc.name)
+        req_type = go_exported_name(rpc.request_type)
+        resp_type = go_exported_name(rpc.response_type)
+        is_req_stream = getattr(rpc, "request_stream", False)
+        is_resp_stream = getattr(rpc, "response_stream", False)
+        
+        if not is_req_stream and not is_resp_stream:
+            lines.extend([
+                f"func (c *{client_struct_name}) {method_name}(ctx context.Context, request *pb.{req_type}, opts ...grpc.CallOption) (*pb.{resp_type}, error) {{",
+                f"\tresp, err := c.client.{method_name}(ctx, request, opts...)",
+                "\tif err != nil {",
+                "\t\treturn nil, freeholdGrpcStatus(ctx, err)",
+                "\t}",
+                "\treturn resp, nil",
+                "}",
+                "",
+            ])
+        elif not is_req_stream and is_resp_stream:
+            lines.extend([
+                f"func (c *{client_struct_name}) {method_name}(ctx context.Context, request *pb.{req_type}, opts ...grpc.CallOption) (pb.{service_name}_{method_name}Client, error) {{",
+                f"\tstream, err := c.client.{method_name}(ctx, request, opts...)",
+                "\tif err != nil {",
+                "\t\treturn nil, freeholdGrpcStatus(ctx, err)",
+                "\t}",
+                "\treturn stream, nil",
+                "}",
+                "",
+            ])
+        else:
+            lines.extend([
+                f"func (c *{client_struct_name}) {method_name}(ctx context.Context, opts ...grpc.CallOption) (pb.{service_name}_{method_name}Client, error) {{",
+                f"\tstream, err := c.client.{method_name}(ctx, opts...)",
+                "\tif err != nil {",
+                "\t\treturn nil, freeholdGrpcStatus(ctx, err)",
+                "\t}",
+                "\treturn stream, nil",
+                "}",
+                "",
+            ])
+            
     return lines
 
 
 def status_mapping_helper() -> list[str]:
     return [
-        "func freeholdGrpcStatus(err error) error {",
+        "type FreeholdGrpcErrorMapping struct {",
+        "\tCode     codes.Code",
+        "\tMetadata map[string]string",
+        "}",
+        "",
+        "var FreeholdGrpcErrorRegistry = map[string]FreeholdGrpcErrorMapping{}",
+        "",
+        "func freeholdGrpcStatus(ctx context.Context, err error) error {",
         "\tif err == nil {",
         "\t\treturn nil",
+        "\t}",
+        "\tvar unwrappedErr = err",
+        "\tfor unwrappedErr != nil {",
+        "\t\tmsg := unwrappedErr.Error()",
+        "\t\tif mapping, ok := FreeholdGrpcErrorRegistry[msg]; ok {",
+        "\t\t\tif ctx != nil && len(mapping.Metadata) > 0 {",
+        "\t\t\t\tmd := metadata.New(mapping.Metadata)",
+        "\t\t\t\t_ = grpc.SendHeader(ctx, md)",
+        "\t\t\t}",
+        "\t\t\treturn status.Error(mapping.Code, msg)",
+        "\t\t}",
+        "\t\tunwrappedErr = errors.Unwrap(unwrappedErr)",
         "\t}",
         "\tif _, ok := status.FromError(err); ok {",
         "\t\treturn err",

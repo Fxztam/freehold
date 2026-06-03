@@ -3,7 +3,7 @@
   "module_name": "22_generics",
   "case_kind": "valid",
   "parse_ok": true,
-  "source_snippet": "module GenericFunctionIdentity\n\nfunction identity<T>(x: T) returns T\nis\n    return x\nend identity\n\nprocedure main()\nis\n    let x: Integer = identity<Integer>(1)\n    let text: String = identity<String>(\"ok\")\n    check x = 1\n    check text = \"ok\"\nend main\n\nend GenericFunctionIdentity",
+  "source_snippet": "module GenericFunctionIdentity\n\nfunction identity<T>(x: T) returns T\n    requires T is Equatable\n    ensures result = x\nis\n    return x\nend identity\n\nprocedure main()\nis\n    let x: Integer = identity<Integer>(1)\n    let text: String = identity<String>(\"ok\")\n    check x = 1\n    check text = \"ok\"\nend main\n\nend GenericFunctionIdentity",
   "ast": {
     "name": "start",
     "pos": 0,
@@ -148,78 +148,170 @@
               },
               {
                 "name": "contract_block",
-                "pos": 69,
-                "text": ""
-              },
-              {
-                "name": ":Text",
-                "pos": 69,
-                "text": "is"
-              },
-              {
-                "name": "stmt",
-                "pos": 76,
+                "pos": 73,
                 "children": [
                   {
-                    "name": "return_stmt",
-                    "pos": 76,
+                    "name": "requires_clause",
+                    "pos": 73,
                     "children": [
                       {
                         "name": ":Text",
-                        "pos": 76,
-                        "text": "return"
+                        "pos": 73,
+                        "text": "requires"
                       },
                       {
-                        "name": "return_value",
-                        "pos": 83,
+                        "name": "constraint_list",
+                        "pos": 82,
+                        "children": [
+                          {
+                            "name": "constraint",
+                            "pos": 82,
+                            "children": [
+                              {
+                                "name": "IDENT",
+                                "pos": 82,
+                                "children": [
+                                  {
+                                    "name": ":RegExp",
+                                    "pos": 82,
+                                    "text": "T"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": ":Text",
+                                "pos": 84,
+                                "text": "is"
+                              },
+                              {
+                                "name": "IDENT",
+                                "pos": 87,
+                                "children": [
+                                  {
+                                    "name": ":RegExp",
+                                    "pos": 87,
+                                    "text": "Equatable"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ensures_clause",
+                    "pos": 101,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 101,
+                        "text": "ensures"
+                      },
+                      {
+                        "name": "expr_list",
+                        "pos": 109,
                         "children": [
                           {
                             "name": "expr",
-                            "pos": 83,
+                            "pos": 109,
                             "children": [
                               {
                                 "name": "logic_or",
-                                "pos": 83,
+                                "pos": 109,
                                 "children": [
                                   {
                                     "name": "logic_and",
-                                    "pos": 83,
+                                    "pos": 109,
                                     "children": [
                                       {
                                         "name": "equality",
-                                        "pos": 83,
+                                        "pos": 109,
                                         "children": [
                                           {
                                             "name": "comparison",
-                                            "pos": 83,
+                                            "pos": 109,
                                             "children": [
                                               {
                                                 "name": "sum",
-                                                "pos": 83,
+                                                "pos": 109,
                                                 "children": [
                                                   {
                                                     "name": "product",
-                                                    "pos": 83,
+                                                    "pos": 109,
                                                     "children": [
                                                       {
                                                         "name": "unary",
-                                                        "pos": 83,
+                                                        "pos": 109,
                                                         "children": [
                                                           {
                                                             "name": "postfix_expr",
-                                                            "pos": 83,
+                                                            "pos": 109,
                                                             "children": [
                                                               {
                                                                 "name": "primary",
-                                                                "pos": 83,
+                                                                "pos": 109,
                                                                 "children": [
                                                                   {
                                                                     "name": "IDENT",
-                                                                    "pos": 83,
+                                                                    "pos": 109,
                                                                     "children": [
                                                                       {
                                                                         "name": ":RegExp",
-                                                                        "pos": 83,
+                                                                        "pos": 109,
+                                                                        "text": "result"
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "name": ":Text",
+                                            "pos": 116,
+                                            "text": "="
+                                          },
+                                          {
+                                            "name": "comparison",
+                                            "pos": 118,
+                                            "children": [
+                                              {
+                                                "name": "sum",
+                                                "pos": 118,
+                                                "children": [
+                                                  {
+                                                    "name": "product",
+                                                    "pos": 118,
+                                                    "children": [
+                                                      {
+                                                        "name": "unary",
+                                                        "pos": 118,
+                                                        "children": [
+                                                          {
+                                                            "name": "postfix_expr",
+                                                            "pos": 118,
+                                                            "children": [
+                                                              {
+                                                                "name": "primary",
+                                                                "pos": 118,
+                                                                "children": [
+                                                                  {
+                                                                    "name": "IDENT",
+                                                                    "pos": 118,
+                                                                    "children": [
+                                                                      {
+                                                                        "name": ":RegExp",
+                                                                        "pos": 118,
                                                                         "text": "x"
                                                                       }
                                                                     ]
@@ -252,16 +344,115 @@
               },
               {
                 "name": ":Text",
-                "pos": 85,
+                "pos": 120,
+                "text": "is"
+              },
+              {
+                "name": "stmt",
+                "pos": 127,
+                "children": [
+                  {
+                    "name": "return_stmt",
+                    "pos": 127,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 127,
+                        "text": "return"
+                      },
+                      {
+                        "name": "return_value",
+                        "pos": 134,
+                        "children": [
+                          {
+                            "name": "expr",
+                            "pos": 134,
+                            "children": [
+                              {
+                                "name": "logic_or",
+                                "pos": 134,
+                                "children": [
+                                  {
+                                    "name": "logic_and",
+                                    "pos": 134,
+                                    "children": [
+                                      {
+                                        "name": "equality",
+                                        "pos": 134,
+                                        "children": [
+                                          {
+                                            "name": "comparison",
+                                            "pos": 134,
+                                            "children": [
+                                              {
+                                                "name": "sum",
+                                                "pos": 134,
+                                                "children": [
+                                                  {
+                                                    "name": "product",
+                                                    "pos": 134,
+                                                    "children": [
+                                                      {
+                                                        "name": "unary",
+                                                        "pos": 134,
+                                                        "children": [
+                                                          {
+                                                            "name": "postfix_expr",
+                                                            "pos": 134,
+                                                            "children": [
+                                                              {
+                                                                "name": "primary",
+                                                                "pos": 134,
+                                                                "children": [
+                                                                  {
+                                                                    "name": "IDENT",
+                                                                    "pos": 134,
+                                                                    "children": [
+                                                                      {
+                                                                        "name": ":RegExp",
+                                                                        "pos": 134,
+                                                                        "text": "x"
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 136,
                 "text": "end"
               },
               {
                 "name": "IDENT",
-                "pos": 89,
+                "pos": 140,
                 "children": [
                   {
                     "name": ":RegExp",
-                    "pos": 89,
+                    "pos": 140,
                     "text": "identity"
                   }
                 ]
@@ -272,80 +463,80 @@
       },
       {
         "name": "declaration",
-        "pos": 99,
+        "pos": 150,
         "children": [
           {
             "name": "procedure_decl",
-            "pos": 99,
+            "pos": 150,
             "children": [
               {
                 "name": ":Text",
-                "pos": 99,
+                "pos": 150,
                 "text": "procedure"
               },
               {
                 "name": "IDENT",
-                "pos": 109,
+                "pos": 160,
                 "text": "main"
               },
               {
                 "name": ":Text",
-                "pos": 113,
+                "pos": 164,
                 "text": "("
               },
               {
                 "name": ":Text",
-                "pos": 114,
+                "pos": 165,
                 "text": ")"
               },
               {
                 "name": "contract_block",
-                "pos": 116,
+                "pos": 167,
                 "text": ""
               },
               {
                 "name": ":Text",
-                "pos": 116,
+                "pos": 167,
                 "text": "is"
               },
               {
                 "name": "stmt",
-                "pos": 123,
+                "pos": 174,
                 "children": [
                   {
                     "name": "let_stmt",
-                    "pos": 123,
+                    "pos": 174,
                     "children": [
                       {
                         "name": ":Text",
-                        "pos": 123,
+                        "pos": 174,
                         "text": "let"
                       },
                       {
                         "name": "IDENT",
-                        "pos": 127,
+                        "pos": 178,
                         "text": "x"
                       },
                       {
                         "name": ":Text",
-                        "pos": 128,
+                        "pos": 179,
                         "text": ":"
                       },
                       {
                         "name": "return_type",
-                        "pos": 130,
+                        "pos": 181,
                         "children": [
                           {
                             "name": "type_ref",
-                            "pos": 130,
+                            "pos": 181,
                             "children": [
                               {
                                 "name": "BASE_TYPE",
-                                "pos": 130,
+                                "pos": 181,
                                 "children": [
                                   {
                                     "name": ":Text",
-                                    "pos": 130,
+                                    "pos": 181,
                                     "text": "Integer"
                                   }
                                 ]
@@ -356,137 +547,137 @@
                       },
                       {
                         "name": ":Text",
-                        "pos": 138,
+                        "pos": 189,
                         "text": "="
                       },
                       {
                         "name": "expr",
-                        "pos": 140,
+                        "pos": 191,
                         "children": [
                           {
                             "name": "logic_or",
-                            "pos": 140,
+                            "pos": 191,
                             "children": [
                               {
                                 "name": "logic_and",
-                                "pos": 140,
+                                "pos": 191,
                                 "children": [
                                   {
                                     "name": "equality",
-                                    "pos": 140,
+                                    "pos": 191,
                                     "children": [
                                       {
                                         "name": "comparison",
-                                        "pos": 140,
+                                        "pos": 191,
                                         "children": [
                                           {
                                             "name": "sum",
-                                            "pos": 140,
+                                            "pos": 191,
                                             "children": [
                                               {
                                                 "name": "product",
-                                                "pos": 140,
+                                                "pos": 191,
                                                 "children": [
                                                   {
                                                     "name": "unary",
-                                                    "pos": 140,
+                                                    "pos": 191,
                                                     "children": [
                                                       {
                                                         "name": "postfix_expr",
-                                                        "pos": 140,
+                                                        "pos": 191,
                                                         "children": [
                                                           {
                                                             "name": "primary",
-                                                            "pos": 140,
+                                                            "pos": 191,
                                                             "children": [
                                                               {
                                                                 "name": "IDENT",
-                                                                "pos": 140,
+                                                                "pos": 191,
                                                                 "text": "identity"
                                                               },
                                                               {
                                                                 "name": "type_arg_list",
-                                                                "pos": 148,
+                                                                "pos": 199,
                                                                 "children": [
                                                                   {
                                                                     "name": ":Text",
-                                                                    "pos": 148,
+                                                                    "pos": 199,
                                                                     "text": "<"
                                                                   },
                                                                   {
                                                                     "name": "type_ref",
-                                                                    "pos": 149,
+                                                                    "pos": 200,
                                                                     "children": [
                                                                       {
                                                                         "name": "BASE_TYPE",
-                                                                        "pos": 149,
+                                                                        "pos": 200,
                                                                         "text": "Integer"
                                                                       }
                                                                     ]
                                                                   },
                                                                   {
                                                                     "name": ":Text",
-                                                                    "pos": 156,
+                                                                    "pos": 207,
                                                                     "text": ">"
                                                                   }
                                                                 ]
                                                               },
                                                               {
                                                                 "name": ":Text",
-                                                                "pos": 157,
+                                                                "pos": 208,
                                                                 "text": "("
                                                               },
                                                               {
                                                                 "name": "arg_list",
-                                                                "pos": 158,
+                                                                "pos": 209,
                                                                 "children": [
                                                                   {
                                                                     "name": "call_arg",
-                                                                    "pos": 158,
+                                                                    "pos": 209,
                                                                     "children": [
                                                                       {
                                                                         "name": "expr",
-                                                                        "pos": 158,
+                                                                        "pos": 209,
                                                                         "children": [
                                                                           {
                                                                             "name": "logic_or",
-                                                                            "pos": 158,
+                                                                            "pos": 209,
                                                                             "children": [
                                                                               {
                                                                                 "name": "logic_and",
-                                                                                "pos": 158,
+                                                                                "pos": 209,
                                                                                 "children": [
                                                                                   {
                                                                                     "name": "equality",
-                                                                                    "pos": 158,
+                                                                                    "pos": 209,
                                                                                     "children": [
                                                                                       {
                                                                                         "name": "comparison",
-                                                                                        "pos": 158,
+                                                                                        "pos": 209,
                                                                                         "children": [
                                                                                           {
                                                                                             "name": "sum",
-                                                                                            "pos": 158,
+                                                                                            "pos": 209,
                                                                                             "children": [
                                                                                               {
                                                                                                 "name": "product",
-                                                                                                "pos": 158,
+                                                                                                "pos": 209,
                                                                                                 "children": [
                                                                                                   {
                                                                                                     "name": "unary",
-                                                                                                    "pos": 158,
+                                                                                                    "pos": 209,
                                                                                                     "children": [
                                                                                                       {
                                                                                                         "name": "postfix_expr",
-                                                                                                        "pos": 158,
+                                                                                                        "pos": 209,
                                                                                                         "children": [
                                                                                                           {
                                                                                                             "name": "primary",
-                                                                                                            "pos": 158,
+                                                                                                            "pos": 209,
                                                                                                             "children": [
                                                                                                               {
                                                                                                                 "name": "INTEGER_LITERAL",
-                                                                                                                "pos": 158,
+                                                                                                                "pos": 209,
                                                                                                                 "text": "1"
                                                                                                               }
                                                                                                             ]
@@ -515,7 +706,7 @@
                                                               },
                                                               {
                                                                 "name": ":Text",
-                                                                "pos": 159,
+                                                                "pos": 210,
                                                                 "text": ")"
                                                               }
                                                             ]
@@ -544,42 +735,42 @@
               },
               {
                 "name": "stmt",
-                "pos": 165,
+                "pos": 216,
                 "children": [
                   {
                     "name": "let_stmt",
-                    "pos": 165,
+                    "pos": 216,
                     "children": [
                       {
                         "name": ":Text",
-                        "pos": 165,
+                        "pos": 216,
                         "text": "let"
                       },
                       {
                         "name": "IDENT",
-                        "pos": 169,
+                        "pos": 220,
                         "text": "text"
                       },
                       {
                         "name": ":Text",
-                        "pos": 173,
+                        "pos": 224,
                         "text": ":"
                       },
                       {
                         "name": "return_type",
-                        "pos": 175,
+                        "pos": 226,
                         "children": [
                           {
                             "name": "type_ref",
-                            "pos": 175,
+                            "pos": 226,
                             "children": [
                               {
                                 "name": "BASE_TYPE",
-                                "pos": 175,
+                                "pos": 226,
                                 "children": [
                                   {
                                     "name": ":Text",
-                                    "pos": 175,
+                                    "pos": 226,
                                     "text": "String"
                                   }
                                 ]
@@ -590,137 +781,137 @@
                       },
                       {
                         "name": ":Text",
-                        "pos": 182,
+                        "pos": 233,
                         "text": "="
                       },
                       {
                         "name": "expr",
-                        "pos": 184,
+                        "pos": 235,
                         "children": [
                           {
                             "name": "logic_or",
-                            "pos": 184,
+                            "pos": 235,
                             "children": [
                               {
                                 "name": "logic_and",
-                                "pos": 184,
+                                "pos": 235,
                                 "children": [
                                   {
                                     "name": "equality",
-                                    "pos": 184,
+                                    "pos": 235,
                                     "children": [
                                       {
                                         "name": "comparison",
-                                        "pos": 184,
+                                        "pos": 235,
                                         "children": [
                                           {
                                             "name": "sum",
-                                            "pos": 184,
+                                            "pos": 235,
                                             "children": [
                                               {
                                                 "name": "product",
-                                                "pos": 184,
+                                                "pos": 235,
                                                 "children": [
                                                   {
                                                     "name": "unary",
-                                                    "pos": 184,
+                                                    "pos": 235,
                                                     "children": [
                                                       {
                                                         "name": "postfix_expr",
-                                                        "pos": 184,
+                                                        "pos": 235,
                                                         "children": [
                                                           {
                                                             "name": "primary",
-                                                            "pos": 184,
+                                                            "pos": 235,
                                                             "children": [
                                                               {
                                                                 "name": "IDENT",
-                                                                "pos": 184,
+                                                                "pos": 235,
                                                                 "text": "identity"
                                                               },
                                                               {
                                                                 "name": "type_arg_list",
-                                                                "pos": 192,
+                                                                "pos": 243,
                                                                 "children": [
                                                                   {
                                                                     "name": ":Text",
-                                                                    "pos": 192,
+                                                                    "pos": 243,
                                                                     "text": "<"
                                                                   },
                                                                   {
                                                                     "name": "type_ref",
-                                                                    "pos": 193,
+                                                                    "pos": 244,
                                                                     "children": [
                                                                       {
                                                                         "name": "BASE_TYPE",
-                                                                        "pos": 193,
+                                                                        "pos": 244,
                                                                         "text": "String"
                                                                       }
                                                                     ]
                                                                   },
                                                                   {
                                                                     "name": ":Text",
-                                                                    "pos": 199,
+                                                                    "pos": 250,
                                                                     "text": ">"
                                                                   }
                                                                 ]
                                                               },
                                                               {
                                                                 "name": ":Text",
-                                                                "pos": 200,
+                                                                "pos": 251,
                                                                 "text": "("
                                                               },
                                                               {
                                                                 "name": "arg_list",
-                                                                "pos": 201,
+                                                                "pos": 252,
                                                                 "children": [
                                                                   {
                                                                     "name": "call_arg",
-                                                                    "pos": 201,
+                                                                    "pos": 252,
                                                                     "children": [
                                                                       {
                                                                         "name": "expr",
-                                                                        "pos": 201,
+                                                                        "pos": 252,
                                                                         "children": [
                                                                           {
                                                                             "name": "logic_or",
-                                                                            "pos": 201,
+                                                                            "pos": 252,
                                                                             "children": [
                                                                               {
                                                                                 "name": "logic_and",
-                                                                                "pos": 201,
+                                                                                "pos": 252,
                                                                                 "children": [
                                                                                   {
                                                                                     "name": "equality",
-                                                                                    "pos": 201,
+                                                                                    "pos": 252,
                                                                                     "children": [
                                                                                       {
                                                                                         "name": "comparison",
-                                                                                        "pos": 201,
+                                                                                        "pos": 252,
                                                                                         "children": [
                                                                                           {
                                                                                             "name": "sum",
-                                                                                            "pos": 201,
+                                                                                            "pos": 252,
                                                                                             "children": [
                                                                                               {
                                                                                                 "name": "product",
-                                                                                                "pos": 201,
+                                                                                                "pos": 252,
                                                                                                 "children": [
                                                                                                   {
                                                                                                     "name": "unary",
-                                                                                                    "pos": 201,
+                                                                                                    "pos": 252,
                                                                                                     "children": [
                                                                                                       {
                                                                                                         "name": "postfix_expr",
-                                                                                                        "pos": 201,
+                                                                                                        "pos": 252,
                                                                                                         "children": [
                                                                                                           {
                                                                                                             "name": "primary",
-                                                                                                            "pos": 201,
+                                                                                                            "pos": 252,
                                                                                                             "children": [
                                                                                                               {
                                                                                                                 "name": "STRING_LITERAL",
-                                                                                                                "pos": 201,
+                                                                                                                "pos": 252,
                                                                                                                 "text": "\"ok\""
                                                                                                               }
                                                                                                             ]
@@ -749,7 +940,7 @@
                                                               },
                                                               {
                                                                 "name": ":Text",
-                                                                "pos": 205,
+                                                                "pos": 256,
                                                                 "text": ")"
                                                               }
                                                             ]
@@ -778,64 +969,64 @@
               },
               {
                 "name": "stmt",
-                "pos": 211,
+                "pos": 262,
                 "children": [
                   {
                     "name": "check_stmt",
-                    "pos": 211,
+                    "pos": 262,
                     "children": [
                       {
                         "name": ":Text",
-                        "pos": 211,
+                        "pos": 262,
                         "text": "check"
                       },
                       {
                         "name": "expr",
-                        "pos": 217,
+                        "pos": 268,
                         "children": [
                           {
                             "name": "logic_or",
-                            "pos": 217,
+                            "pos": 268,
                             "children": [
                               {
                                 "name": "logic_and",
-                                "pos": 217,
+                                "pos": 268,
                                 "children": [
                                   {
                                     "name": "equality",
-                                    "pos": 217,
+                                    "pos": 268,
                                     "children": [
                                       {
                                         "name": "comparison",
-                                        "pos": 217,
+                                        "pos": 268,
                                         "children": [
                                           {
                                             "name": "sum",
-                                            "pos": 217,
+                                            "pos": 268,
                                             "children": [
                                               {
                                                 "name": "product",
-                                                "pos": 217,
+                                                "pos": 268,
                                                 "children": [
                                                   {
                                                     "name": "unary",
-                                                    "pos": 217,
+                                                    "pos": 268,
                                                     "children": [
                                                       {
                                                         "name": "postfix_expr",
-                                                        "pos": 217,
+                                                        "pos": 268,
                                                         "children": [
                                                           {
                                                             "name": "primary",
-                                                            "pos": 217,
+                                                            "pos": 268,
                                                             "children": [
                                                               {
                                                                 "name": "IDENT",
-                                                                "pos": 217,
+                                                                "pos": 268,
                                                                 "children": [
                                                                   {
                                                                     "name": ":RegExp",
-                                                                    "pos": 217,
+                                                                    "pos": 268,
                                                                     "text": "x"
                                                                   }
                                                                 ]
@@ -854,40 +1045,40 @@
                                       },
                                       {
                                         "name": ":Text",
-                                        "pos": 219,
+                                        "pos": 270,
                                         "text": "="
                                       },
                                       {
                                         "name": "comparison",
-                                        "pos": 221,
+                                        "pos": 272,
                                         "children": [
                                           {
                                             "name": "sum",
-                                            "pos": 221,
+                                            "pos": 272,
                                             "children": [
                                               {
                                                 "name": "product",
-                                                "pos": 221,
+                                                "pos": 272,
                                                 "children": [
                                                   {
                                                     "name": "unary",
-                                                    "pos": 221,
+                                                    "pos": 272,
                                                     "children": [
                                                       {
                                                         "name": "postfix_expr",
-                                                        "pos": 221,
+                                                        "pos": 272,
                                                         "children": [
                                                           {
                                                             "name": "primary",
-                                                            "pos": 221,
+                                                            "pos": 272,
                                                             "children": [
                                                               {
                                                                 "name": "INTEGER_LITERAL",
-                                                                "pos": 221,
+                                                                "pos": 272,
                                                                 "children": [
                                                                   {
                                                                     "name": ":RegExp",
-                                                                    "pos": 221,
+                                                                    "pos": 272,
                                                                     "text": "1"
                                                                   }
                                                                 ]
@@ -918,64 +1109,64 @@
               },
               {
                 "name": "stmt",
-                "pos": 227,
+                "pos": 278,
                 "children": [
                   {
                     "name": "check_stmt",
-                    "pos": 227,
+                    "pos": 278,
                     "children": [
                       {
                         "name": ":Text",
-                        "pos": 227,
+                        "pos": 278,
                         "text": "check"
                       },
                       {
                         "name": "expr",
-                        "pos": 233,
+                        "pos": 284,
                         "children": [
                           {
                             "name": "logic_or",
-                            "pos": 233,
+                            "pos": 284,
                             "children": [
                               {
                                 "name": "logic_and",
-                                "pos": 233,
+                                "pos": 284,
                                 "children": [
                                   {
                                     "name": "equality",
-                                    "pos": 233,
+                                    "pos": 284,
                                     "children": [
                                       {
                                         "name": "comparison",
-                                        "pos": 233,
+                                        "pos": 284,
                                         "children": [
                                           {
                                             "name": "sum",
-                                            "pos": 233,
+                                            "pos": 284,
                                             "children": [
                                               {
                                                 "name": "product",
-                                                "pos": 233,
+                                                "pos": 284,
                                                 "children": [
                                                   {
                                                     "name": "unary",
-                                                    "pos": 233,
+                                                    "pos": 284,
                                                     "children": [
                                                       {
                                                         "name": "postfix_expr",
-                                                        "pos": 233,
+                                                        "pos": 284,
                                                         "children": [
                                                           {
                                                             "name": "primary",
-                                                            "pos": 233,
+                                                            "pos": 284,
                                                             "children": [
                                                               {
                                                                 "name": "IDENT",
-                                                                "pos": 233,
+                                                                "pos": 284,
                                                                 "children": [
                                                                   {
                                                                     "name": ":RegExp",
-                                                                    "pos": 233,
+                                                                    "pos": 284,
                                                                     "text": "text"
                                                                   }
                                                                 ]
@@ -994,40 +1185,40 @@
                                       },
                                       {
                                         "name": ":Text",
-                                        "pos": 238,
+                                        "pos": 289,
                                         "text": "="
                                       },
                                       {
                                         "name": "comparison",
-                                        "pos": 240,
+                                        "pos": 291,
                                         "children": [
                                           {
                                             "name": "sum",
-                                            "pos": 240,
+                                            "pos": 291,
                                             "children": [
                                               {
                                                 "name": "product",
-                                                "pos": 240,
+                                                "pos": 291,
                                                 "children": [
                                                   {
                                                     "name": "unary",
-                                                    "pos": 240,
+                                                    "pos": 291,
                                                     "children": [
                                                       {
                                                         "name": "postfix_expr",
-                                                        "pos": 240,
+                                                        "pos": 291,
                                                         "children": [
                                                           {
                                                             "name": "primary",
-                                                            "pos": 240,
+                                                            "pos": 291,
                                                             "children": [
                                                               {
                                                                 "name": "STRING_LITERAL",
-                                                                "pos": 240,
+                                                                "pos": 291,
                                                                 "children": [
                                                                   {
                                                                     "name": ":RegExp",
-                                                                    "pos": 240,
+                                                                    "pos": 291,
                                                                     "text": "\"ok\""
                                                                   }
                                                                 ]
@@ -1058,16 +1249,16 @@
               },
               {
                 "name": ":Text",
-                "pos": 245,
+                "pos": 296,
                 "text": "end"
               },
               {
                 "name": "IDENT",
-                "pos": 249,
+                "pos": 300,
                 "children": [
                   {
                     "name": ":RegExp",
-                    "pos": 249,
+                    "pos": 300,
                     "text": "main"
                   }
                 ]
@@ -1078,20 +1269,20 @@
       },
       {
         "name": "module_end",
-        "pos": 255,
+        "pos": 306,
         "children": [
           {
             "name": ":Text",
-            "pos": 255,
+            "pos": 306,
             "text": "end"
           },
           {
             "name": "qualified_name",
-            "pos": 259,
+            "pos": 310,
             "children": [
               {
                 "name": "IDENT",
-                "pos": 259,
+                "pos": 310,
                 "text": "GenericFunctionIdentity"
               }
             ]
@@ -1100,7 +1291,7 @@
       },
       {
         "name": "EOF",
-        "pos": 282,
+        "pos": 333,
         "text": ""
       }
     ]

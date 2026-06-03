@@ -6,7 +6,7 @@ import (
 )
 
 func Main() {
-	message := fmt.Sprintf("id=%v, active=%v, rate=%v", 7, true, 2.5)
+	var message string = fmt.Sprintf("id=%v, active=%v, rate=%v", 7, true, 2.5)
 	if !(message == "id=7, active=true, rate=2.5") {
 		panic("freehold check failed")
 	}

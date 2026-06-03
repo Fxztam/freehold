@@ -1,0 +1,14 @@
+module Concurrency.CancellationNeg
+
+async function execute_cancellation(input: Integer) returns Integer
+is
+    scope sc do
+        spawn
+            call sc.timeout("not-an-integer")
+        join
+        result
+            return 0
+    end scope
+end execute_cancellation
+
+end Concurrency.CancellationNeg

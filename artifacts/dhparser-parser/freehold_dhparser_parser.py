@@ -158,7 +158,7 @@ class FreeholdGrammar(Grammar):
     stmt = Forward()
     type_ref = Forward()
     unary = Forward()
-    source_hash__ = "cde2fbcf978da62a9376ac4cd268b95d"
+    source_hash__ = "1744d42fbe875d4bd205372fa2431fcc"
     disposable__ = re.compile('$.')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
@@ -174,14 +174,15 @@ class FreeholdGrammar(Grammar):
        's\\b|let\\b|return\\b|abort\\b|ok\\b|if\\b|then\\b|else\\b|end\\b|while\\b|invar'
        'iant\\b|variant\\b|do\\b|case\\b|when\\b|default\\b|call\\b|check\\b|and\\b|or'
        '\\b|not\\b|async\\b|await\\b|scope\\b|spawn\\b|join\\b|true\\b|false\\b|success\\b'
-       '|failure\\b|value\\b|for\\b|all\\b|some\\b|each\\b|in\\b)[A-Za-z_][A-Za-z0-9_]*('
-       '?:\\.[A-Za-z_][A-Za-z0-9_]*)+'), wsp__)
+       '|failure\\b|value\\b|for\\b|all\\b|some\\b|each\\b|in\\b|stream\\b)[A-Za-z_][A-Z'
+       'a-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)+'), wsp__)
     IDENT = Series(RegExp('(?!module\\b|import\\b|exposing\\b|type\\b|is\\b|record\\b|error\\b|function\\b'
        '|procedure\\b|service\\b|rpc\\b|proto\\b|returns\\b|requires\\b|aborts\\b|ensure'
        's\\b|let\\b|return\\b|abort\\b|ok\\b|if\\b|then\\b|else\\b|end\\b|while\\b|invar'
        'iant\\b|variant\\b|do\\b|case\\b|when\\b|default\\b|call\\b|check\\b|and\\b|or'
        '\\b|not\\b|async\\b|await\\b|scope\\b|spawn\\b|join\\b|true\\b|false\\b|success\\b'
-       '|failure\\b|value\\b|for\\b|all\\b|some\\b|each\\b|in\\b)[A-Za-z_][A-Za-z0-9_]*'), wsp__)
+       '|failure\\b|value\\b|for\\b|all\\b|some\\b|each\\b|in\\b|stream\\b)[A-Za-z_][A-Z'
+       'a-z0-9_]*'), wsp__)
     INTEGER_LITERAL = Series(RegExp('-?[0-9]+'), wsp__)
     DOUBLE_LITERAL = Series(RegExp('-?(?:[0-9]+\\.[0-9]+)'), wsp__)
     NUMBER_LITERAL = Alternative(DOUBLE_LITERAL, INTEGER_LITERAL)
@@ -239,7 +240,7 @@ class FreeholdGrammar(Grammar):
     contract_block = Series(ZeroOrMore(requires_clause), ZeroOrMore(aborts_clause), ZeroOrMore(ensures_clause))
     param = Series(IDENT, Series(Text(":"), wsp__), type_ref)
     param_list = Series(param, ZeroOrMore(Series(Series(Text(","), wsp__), param)))
-    rpc_decl = Series(wsp__, Series(Text("rpc"), wsp__), IDENT, Series(Text("("), wsp__), IDENT, Series(Text(":"), wsp__), type_ref, Series(Text(")"), wsp__), Series(Text(":"), wsp__), type_ref)
+    rpc_decl = Series(wsp__, Series(Text("rpc"), wsp__), IDENT, Series(Text("("), wsp__), IDENT, Series(Text(":"), wsp__), Option(Series(Text("stream"), wsp__)), type_ref, Series(Text(")"), wsp__), Series(Text(":"), wsp__), Option(Series(Text("stream"), wsp__)), type_ref)
     service_decl = Series(wsp__, Series(Text("service"), wsp__), IDENT, Series(Text("is"), wsp__), rpc_decl, ZeroOrMore(rpc_decl), Series(Text("end"), wsp__), IDENT)
     type_param_list = Series(Series(Text("<"), wsp__), IDENT, ZeroOrMore(Series(Series(Text(","), wsp__), IDENT)), Series(Text(">"), wsp__))
     async_marker = Series(Text("async"), wsp__)

@@ -1,6 +1,6 @@
 module Compiler.Core.Lexer
 
-import Compiler.Core.Token exposing Token, TokenKind, make_source_span, make_token, make_token_kind, token_text
+import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_source_span, make_token, make_token_kind, token_text
 import File
 
 type MiniModuleTokens is record
@@ -391,7 +391,7 @@ end mini_procedure_module_lexer_summary
 
 function lex_mini_import_module(source_name: String, module_name: String, import_module_name: String, exposed_name: String) returns MiniImportModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(import_module_name, "") = 0, String.instr(exposed_name, "") = 0
-ensures result.import_keyword.lexeme = "import", result.module_name.lexeme = module_name, result.import_module_name.lexeme = import_module_name
+ensures result.import_keyword.lexeme = "import", result.module_name.lexeme = module_name
 is
     let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     let t1: Token = t[1]

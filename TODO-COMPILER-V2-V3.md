@@ -23,28 +23,28 @@ Diese Features erweitern das mathematische Beweissystem von Freehold auf Basis d
 
 ---
 
-## Priorität 2: Concurrency & Runtime-Scheduler (Performance)
-
+## Priorität 2: Concurrency & Runtime-Scheduler (Performance) [ERLEDIGT]
+ 
 Diese Features erwecken die asynchrone Sprachdefinition von Freehold auf Runtime-Ebene zum Leben.
-
-1. **Asynchroner Runtime-Executor**
+ 
+1. **Asynchroner Runtime-Executor [ERLEDIGT]**
    - *Ziel*: Implementierung eines physischen Task-Schedulers und Thread-Pools für die Ausführung von nebenläufigen Programmen in Go.
    - *Details*: Entwicklung effizienter Work-Stealing-Algorithmen zur Lastverteilung asynchroner Scopes.
-2. **Cancellation Tokens, Deadlines & Timeouts**
+2. **Cancellation Tokens, Deadlines & Timeouts [ERLEDIGT]**
    - *Ziel*: Sicheres Abbrechen asynchroner Operationen und Propagation von Timeouts über asynchrone Call-Chains hinweg.
-3. **Scheduler-Optimierung & Tuning**
+3. **Scheduler-Optimierung & Tuning [ERLEDIGT]**
    - *Ziel*: Priorisierung und Ressourcen-Tuning der Concurrent-Scopes unter Last.
 
 ---
 
-## Priorität 3: Go-Backend & Transpiler-Optimierung (Codegen)
+## Priorität 3: Go-Backend & Transpiler-Optimierung (Codegen) [ERLEDIGT]
 
 Diese Features optimieren die Codequalität und Performance des generierten Go-Codes.
 
-1. **Generics-Monomorphisierung**
+1. **Generics-Monomorphisierung [ERLEDIGT]**
    - *Ziel*: Vollständige Transpilierung von generischen Freehold-Typen und -Funktionen in spezifische, nicht-generische Go-Funktionen zur Kompilierungszeit.
    - *Details*: Vermeidet Performance-Einbußen durch dynamische Typ-Interface-Boxen in Go.
-2. **Qualifizierte generische Aufrufe**
+2. **Qualifizierte generische Aufrufe [ERLEDIGT]**
    - *Ziel*: Voller Support für den Zugriff auf geschachtelte generische Members und komplexe Typ-Kompositionen im Go-Frontend.
 
 ---
@@ -53,10 +53,10 @@ Diese Features optimieren die Codequalität und Performance des generierten Go-C
 
 Diese Features ermöglichen die native Interoperabilität von Freehold in verteilten Systemen.
 
-1. **gRPC-Client-Bindings & Streaming**
+1. **gRPC-Client-Bindings & Streaming [ERLEDIGT]**
    - *Ziel*: Generierung von Client-Stubs zur Kommunikation mit externen gRPC-Services.
    - *Details*: Unterstützung für bidirektionales, serverseitiges und clientseitiges gRPC-Streaming.
-2. **Custom Error- & Metadata-Mapping**
+2. **Custom Error- & Metadata-Mapping [ERLEDIGT]**
    - *Ziel*: Flexible, deklarative Abbildung von Freehold-Aborts auf gRPC-Header und spezifische Status-Codes.
 3. **REST- & WebSocket-Verbindungsbibliotheken**
    - *Ziel*: Bereitstellung standardisierter Modulbibliotheken für Web-Verbindungen (SSE, WebSockets und klassische HTTP-REST-APIs).

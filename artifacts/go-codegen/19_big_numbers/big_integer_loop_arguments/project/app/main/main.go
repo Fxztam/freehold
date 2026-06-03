@@ -34,20 +34,27 @@ func freeholdBigFloatAbs(value *big.Float) *big.Float {
 }
 
 func Accumulate(terms int64) *big.Int {
-	total := big.NewInt(0)
+	if !(terms == 3) {
+		panic("freehold requires contract failed")
+	}
+	var total *big.Int = big.NewInt(0)
 	i := 0
 	for int64(i) < terms {
 		nextI := i + 1
-		nextBig := big.NewInt(int64(nextI))
+		var nextBig *big.Int = big.NewInt(int64(nextI))
 		total = new(big.Int).Add(total, nextBig)
 		i = nextI
 	}
-	return total
+	var freeholdResult *big.Int = total
+	if !(freeholdResult.Cmp(big.NewInt(6)) == 0) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }
 
 func Main() {
 	terms := 3
-	total := Accumulate(int64(terms))
+	var total *big.Int = Accumulate(int64(terms))
 	if !(total.String() == "6") {
 		panic("freehold check failed")
 	}

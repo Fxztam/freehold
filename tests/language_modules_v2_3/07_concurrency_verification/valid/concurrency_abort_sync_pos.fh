@@ -1,0 +1,33 @@
+module Concurrency.AbortSyncPos
+error VerificationError
+
+async function compute(val: Integer) returns Integer
+  requires val > 0
+is
+    return val * 2
+end compute
+
+async function execute_task(input: Integer) returns Integer
+  requires input > 10
+  aborts VerificationError
+is
+    let chan: Integer = 5
+    let select: Integer = 10
+    
+    let is_valid: Boolean = (input > 0) = (chan < select)
+    check is_valid = true
+
+    scope sc do
+        spawn
+            let handle: JoinHandle<Integer> = sc.spawn<Integer>(compute(input))
+        join
+            let res: Integer = await sc.join<Integer>(handle)
+            if res > 100 then
+                abort VerificationError
+            end if
+        result
+            return res
+    end scope
+end execute_task
+
+end Concurrency.AbortSyncPos

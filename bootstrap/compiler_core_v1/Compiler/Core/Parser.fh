@@ -68,10 +68,10 @@ is
     let module_node: ModuleNode = make_module_node(tokens.module_keyword.span, module_identifier)
     let type_identifier: IdentifierNode = make_identifier_node(tokens.type_name.span, tokens.type_name.lexeme)
     let base_type_identifier: IdentifierNode = make_identifier_node(tokens.base_type.span, tokens.base_type.lexeme)
-    
+
     let min_val: String = tokens.min_value.lexeme
     let max_val: String = tokens.max_value.lexeme
-    
+
     let type_decl: TypeDeclNode = make_type_decl_node(tokens.type_keyword.span, type_identifier, base_type_identifier, min_val, max_val)
     return make_module_with_type_decl_node(module_node, type_decl)
 end parse_mini_subtype_range_module
@@ -195,7 +195,7 @@ is
     let f0_value_node: LiteralNode = make_literal_node(tokens.field0_value.span, "String", tokens.field0_value.lexeme)
     let f1_name_node: IdentifierNode = make_identifier_node(tokens.field1_name.span, tokens.field1_name.lexeme)
     let f1_value_node: LiteralNode = make_literal_node(tokens.field1_value.span, "String", tokens.field1_value.lexeme)
-    
+
     let dummy_span: SourceSpan = tokens.open_brace.span
     let dummy_id: IdentifierNode = make_identifier_node(dummy_span, "")
     let dummy_lit: LiteralNode = make_literal_node(dummy_span, "String", "")
@@ -490,7 +490,7 @@ is
         let empty_id_err: IdentifierNode = make_identifier_node(p.curr_tok.span, "")
         return ParserIdentifierResult { parser: p, node: empty_id_err }
     end if
-    
+
     if p.curr_tok.kind.name = "Identifier" then
         let node: IdentifierNode = make_identifier_node(p.curr_tok.span, p.curr_tok.lexeme)
         let p_next: GeneralParser = advance_parser(p)
@@ -519,11 +519,11 @@ is
     if res.parser.has_error then
         return res
     end if
-    
+
     let p_curr: GeneralParser = res.parser
     let full_name: String = res.node.name
     let last_span: SourceSpan = res.node.span
-    
+
     if p_curr.curr_tok.kind.name = "LessThan" then
         let p_lt: GeneralParser = advance_parser(p_curr)
         let res_inner: ParserIdentifierResult = parse_type_ref(p_lt)
@@ -539,7 +539,7 @@ is
         last_span := p_gt.curr_tok.span
         p_curr := p_gt
     end if
-    
+
     let combined_span: SourceSpan = make_source_span(p.source_name, res.node.span.start_line, res.node.span.start_column, last_span.end_line, last_span.end_column)
     let combined_node: IdentifierNode = make_identifier_node(combined_span, full_name)
     return ParserIdentifierResult { parser: p_curr, node: combined_node }
@@ -553,13 +553,14 @@ is
     if res.parser.has_error then
         return res
     end if
-    
+
     let p_curr: GeneralParser = res.parser
     let full_name: String = res.node.name
     let last_span: SourceSpan = res.node.span
-    
+
     while p_curr.has_error = false and p_curr.curr_tok.kind.name = "Dot"
         invariant p_curr.has_error = true or p_curr.has_error = false
+        invariant p_curr.source_name = p.source_name
     do
         let p_dot: GeneralParser = advance_parser(p_curr)
         let res_next: ParserIdentifierResult = parse_identifier(p_dot)
@@ -571,7 +572,7 @@ is
             p_curr := res_next.parser
         end if
     end while
-    
+
     let combined_span: SourceSpan = make_source_span(p.source_name, res.node.span.start_line, res.node.span.start_column, last_span.end_line, last_span.end_column)
     let combined_node: IdentifierNode = make_identifier_node(combined_span, full_name)
     return ParserIdentifierResult { parser: p_curr, node: combined_node }
@@ -617,13 +618,13 @@ is
     let p1: GeneralParser = expect_kind(p, "KeywordType", "FH-PARSE-0002", "Expected 'type'")
     let res_name: ParserIdentifierResult = parse_identifier(p1)
     let p2: GeneralParser = expect_kind(res_name.parser, "KeywordIs", "FH-PARSE-0002", "Expected 'is'")
-    
+
     if p2.curr_tok.kind.name = "KeywordRecord" then
         let p3: GeneralParser = expect_kind(p2, "KeywordRecord", "FH-PARSE-0002", "Expected 'record'")
         let p4: GeneralParser = expect_kind(p3, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
         let p5: GeneralParser = expect_kind(p4, "KeywordRecord", "FH-PARSE-0002", "Expected 'record'")
         let rec_node: RecordTypeNode = make_record_type_node(res_name.node.span, res_name.node)
-        
+
         let dummy_span: SourceSpan = res_name.node.span
         let dummy_ident: IdentifierNode = make_identifier_node(dummy_span, "")
         let dummy_type_decl: TypeDeclNode = make_type_decl_node(dummy_span, dummy_ident, dummy_ident, "0", "0")
@@ -631,20 +632,20 @@ is
     else
         let res_base: ParserIdentifierResult = parse_identifier(p2)
         let p3: GeneralParser = expect_kind(res_base.parser, "KeywordRange", "FH-PARSE-0002", "Expected 'range'")
-        
+
         let min_tok: Token = p3.curr_tok
         let p4: GeneralParser = expect_kind(p3, "NumberLiteral", "FH-PARSE-0002", "Expected number literal")
-        
+
         let p5: GeneralParser = expect_kind(p4, "DoubleDot", "FH-PARSE-0002", "Expected '..'")
-        
+
         let max_tok: Token = p5.curr_tok
         let p6: GeneralParser = expect_kind(p5, "NumberLiteral", "FH-PARSE-0002", "Expected number literal")
-        
+
         let min_val: String = min_tok.lexeme
         let max_val: String = max_tok.lexeme
-        
+
         let type_decl: TypeDeclNode = make_type_decl_node(res_name.node.span, res_name.node, res_base.node, min_val, max_val)
-        
+
         let dummy_rec: RecordTypeNode = make_record_type_node(res_name.node.span, res_name.node)
         return ParserTypeDeclResult { parser: p6, node: type_decl, is_record: false, record_node: dummy_rec }
     end if
@@ -660,7 +661,7 @@ is
     let p5: GeneralParser = expect_kind(p4, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
     let res_end_name: ParserIdentifierResult = parse_identifier(p5)
     let p6: GeneralParser = res_end_name.parser
-    
+
     if p6.has_error = false and res_name.node.name != res_end_name.node.name then
         let err_msg: String = String.template("procedure end name mismatch: expected ${expected}, got ${actual}", expected: res_name.node.name, actual: res_end_name.node.name)
         let err: ParseError = make_parse_error("FH-PARSE-0001", err_msg, res_end_name.node.span)
@@ -675,7 +676,7 @@ is
         let proc_node_err: ProcedureNode = make_procedure_node(res_name.node.span, res_name.node)
         return ParserProcedureResult { parser: p_err, node: proc_node_err }
     end if
-    
+
     let proc_node: ProcedureNode = make_procedure_node(res_name.node.span, res_name.node)
     return ParserProcedureResult { parser: p6, node: proc_node }
 end parse_procedure_decl
@@ -686,7 +687,7 @@ is
     let empty_literal: LiteralNode = make_literal_node(empty_literal_span, "", "")
     let empty_id: IdentifierNode = make_identifier_node(empty_literal_span, "")
     let empty_func_node: FunctionNode = make_function_node(empty_literal_span, empty_id, empty_id, empty_literal)
-    
+
     let dummy_import_module_id: IdentifierNode = make_identifier_node(empty_literal_span, "")
     let dummy_import: ImportNode = make_import_node(empty_literal_span, dummy_import_module_id, dummy_import_module_id)
     let dummy_import_ref: ImportReferenceNode = make_import_reference_node(empty_literal_span, dummy_import, empty_id)
@@ -700,16 +701,16 @@ is
     let res_ret_type: ParserIdentifierResult = parse_identifier(p4)
     let p5: GeneralParser = expect_kind(res_ret_type.parser, "KeywordIs", "FH-PARSE-0002", "Expected 'is'")
     let p6: GeneralParser = expect_kind(p5, "KeywordReturn", "FH-PARSE-0002", "Expected 'return'")
-    
+
     if p6.has_error then
         return ParserFunctionNodeResult { parser: p6, is_import_ref: false, func_node: empty_func_node, func_import_ref_node: empty_func_import_ref }
     end if
-    
+
     let is_imp: Boolean = false
     let literal_node: LiteralNode = empty_literal
     let func_import_ref_node: FunctionImportReferenceNode = empty_func_import_ref
     let p7: GeneralParser = p6
-    
+
     if is_literal_token(p6.curr_tok) then
         let lit_kind: String = "Integer"
         if p6.curr_tok.kind.name = "StringLiteral" then
@@ -728,11 +729,11 @@ is
         func_import_ref_node := make_function_import_reference_node(p.curr_tok.span, res_name.node, res_ret_type.node, import_ref)
         p7 := res_symbol.parser
     end if
-    
+
     let p8: GeneralParser = expect_kind(p7, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
     let res_end_name: ParserIdentifierResult = parse_identifier(p8)
     let p9: GeneralParser = res_end_name.parser
-    
+
     if p9.has_error = false and res_name.node.name != res_end_name.node.name then
         let err_msg_func_mismatch: String = String.template("function end name mismatch: expected ${expected}, got ${actual}", expected: res_name.node.name, actual: res_end_name.node.name)
         let err_func_mismatch: ParseError = make_parse_error("FH-PARSE-0001", err_msg_func_mismatch, res_end_name.node.span)
@@ -746,7 +747,7 @@ is
         }
         return ParserFunctionNodeResult { parser: p_err, is_import_ref: is_imp, func_node: empty_func_node, func_import_ref_node: empty_func_import_ref }
     end if
-    
+
     if is_imp then
         return ParserFunctionNodeResult { parser: p9, is_import_ref: true, func_node: empty_func_node, func_import_ref_node: func_import_ref_node }
     else
@@ -761,11 +762,11 @@ is
     let res_mod_id: ParserIdentifierResult = parse_module_decl(p)
     let p_mod: GeneralParser = res_mod_id.parser
     let module_node: ModuleNode = make_module_node(res_mod_id.node.span, res_mod_id.node)
-    
+
     if p_mod.has_error then
         return parse_error_result(p_mod.issue, module_node)
     end if
-    
+
     let p_curr: GeneralParser = p_mod
     let has_import: Boolean = false
     let import_node: ImportNode = ImportNode { span: res_mod_id.node.span, module_name: res_mod_id.node, exposed_name: res_mod_id.node }
@@ -824,25 +825,25 @@ is
             end if
         end if
     end while
-    
+
     if p_curr.has_error then
         return parse_error_result(p_curr.issue, module_node)
     end if
-    
+
     let p_end: GeneralParser = expect_kind(p_curr, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
     let res_end_name: ParserIdentifierResult = parse_identifier(p_end)
     let p_final: GeneralParser = res_end_name.parser
-    
+
     if p_final.has_error then
         return parse_error_result(p_final.issue, module_node)
     end if
-    
+
     if res_mod_id.node.name != res_end_name.node.name then
         let err_msg_mismatch: String = String.template("end module name mismatch: expected ${expected}, got ${actual}", expected: res_mod_id.node.name, actual: res_end_name.node.name)
         let err_mismatch: ParseError = make_parse_error("FH-PARSE-0001", err_msg_mismatch, res_end_name.node.span)
         return parse_error_result(err_mismatch, module_node)
     end if
-    
+
     return parse_ok(module_node)
 end parse_general_module_result
 
@@ -860,11 +861,11 @@ is
     let err_msg: String = ""
     let err: ParseError = ParseError { code: "", message: "", span: empty_span }
     let p_err: GeneralParser = p
-    
+
     if p.has_error then
         return ParserExprResult { parser: p, node: empty_expr }
     end if
-    
+
     if is_literal_token(p.curr_tok) then
         if p.curr_tok.kind.name = "StringLiteral" then
             lit_kind := "String"
@@ -891,7 +892,7 @@ is
                 if p2_gen.has_error then
                     return ParserExprResult { parser: p2_gen, node: empty_expr }
                 end if
-                
+
                 let p_type: GeneralParser = p2_gen
                 let done_type: Boolean = false
                 while not done_type
@@ -908,7 +909,7 @@ is
                         done_type := true
                     end if
                 end while
-                
+
                 let p3_gen: GeneralParser = expect_kind(p_type, "GreaterThan", "FH-PARSE-0002", "Expected '>'")
                 if p3_gen.has_error then
                     return ParserExprResult { parser: p3_gen, node: empty_expr }
@@ -917,7 +918,7 @@ is
                 if p4_gen.has_error then
                     return ParserExprResult { parser: p4_gen, node: empty_expr }
                 end if
-                
+
                 let p_arg: GeneralParser = p4_gen
                 let arg_count: Integer = 0
                 if p_arg.curr_tok.kind.name != "CloseParen" then
@@ -938,13 +939,13 @@ is
                         end if
                     end while
                 end if
-                
+
                 let close_tok: Token = p_arg.curr_tok
                 let p5_gen: GeneralParser = expect_kind(p_arg, "CloseParen", "FH-PARSE-0002", "Expected ')'")
                 if p5_gen.has_error then
                     return ParserExprResult { parser: p5_gen, node: empty_expr }
                 end if
-                
+
                 let inv_node_idx: Integer = -1
                 let p_final: GeneralParser = p5_gen
                 if p5_gen.curr_tok.kind.name = "KeywordWith" then
@@ -960,7 +961,7 @@ is
                     inv_node_idx := 0 -- Placeholder value; to be set correctly or checked
                     p_final := res_inv.parser
                 end if
-                
+
                 let node_span: SourceSpan = make_source_span(p.source_name, start_tok.span.start_line, start_tok.span.start_column, close_tok.span.end_line, close_tok.span.end_column)
                 let call_node: ExprNode = make_expr_node(node_span, "CALL", "", "", "", 0, -1, routine_name, 0, -1, arg_count, inv_node_idx)
                 return ParserExprResult { parser: p_final, node: call_node }
@@ -1001,11 +1002,11 @@ is
     let res: ParserExprResult = ParserExprResult { parser: p, node: empty_expr }
     let op: String = ""
     let node_un: ExprNode = empty_expr
-    
+
     if p.has_error then
         return ParserExprResult { parser: p, node: empty_expr }
     end if
-    
+
     if p.curr_tok.kind.name = "KeywordAwait" or p.curr_tok.kind.name = "KeywordNot" or p.curr_tok.kind.name = "Minus" then
         op_tok := p.curr_tok
         p1 := advance_parser(p)
@@ -1026,7 +1027,7 @@ is
     let op_tok: Token = p_curr.curr_tok
     let p1: GeneralParser = p_curr
     let res_right: ParserExprResult = ParserExprResult { parser: p_curr, node: left_node }
-    
+
     while (p_curr.curr_tok.kind.name = "Star" or p_curr.curr_tok.kind.name = "Slash") and p_curr.has_error = false
         invariant p_curr.has_error = true or p_curr.has_error = false
     do
@@ -1047,7 +1048,7 @@ is
     let op_tok: Token = p_curr.curr_tok
     let p1: GeneralParser = p_curr
     let res_right: ParserExprResult = ParserExprResult { parser: p_curr, node: left_node }
-    
+
     while (p_curr.curr_tok.kind.name = "Plus" or p_curr.curr_tok.kind.name = "Minus") and p_curr.has_error = false
         invariant p_curr.has_error = true or p_curr.has_error = false
     do
@@ -1068,7 +1069,7 @@ is
     let op_tok: Token = p_curr.curr_tok
     let p1: GeneralParser = p_curr
     let res_right: ParserExprResult = ParserExprResult { parser: p_curr, node: left_node }
-    
+
     while (p_curr.curr_tok.kind.name = "LessThan" or p_curr.curr_tok.kind.name = "GreaterThan" or p_curr.curr_tok.kind.name = "LessThanOrEqual" or p_curr.curr_tok.kind.name = "GreaterThanOrEqual") and p_curr.has_error = false
         invariant p_curr.has_error = true or p_curr.has_error = false
     do
@@ -1089,7 +1090,7 @@ is
     let op_tok: Token = p_curr.curr_tok
     let p1: GeneralParser = p_curr
     let res_right: ParserExprResult = ParserExprResult { parser: p_curr, node: left_node }
-    
+
     while (p_curr.curr_tok.kind.name = "Equal" or p_curr.curr_tok.kind.name = "NotEqual") and p_curr.has_error = false
         invariant p_curr.has_error = true or p_curr.has_error = false
     do
@@ -1110,7 +1111,7 @@ is
     let op_tok: Token = p_curr.curr_tok
     let p1: GeneralParser = p_curr
     let res_right: ParserExprResult = ParserExprResult { parser: p_curr, node: left_node }
-    
+
     while p_curr.curr_tok.kind.name = "KeywordAnd" and p_curr.has_error = false
         invariant p_curr.has_error = true or p_curr.has_error = false
     do
@@ -1131,7 +1132,7 @@ is
     let op_tok: Token = p_curr.curr_tok
     let p1: GeneralParser = p_curr
     let res_right: ParserExprResult = ParserExprResult { parser: p_curr, node: left_node }
-    
+
     while p_curr.curr_tok.kind.name = "KeywordOr" and p_curr.has_error = false
         invariant p_curr.has_error = true or p_curr.has_error = false
     do
@@ -1216,7 +1217,7 @@ is
     let err_msg: String = ""
     let err: ParseError = ParseError { code: "", message: "", span: empty_span }
     let p_err: GeneralParser = p
-    
+
     if p.curr_tok.kind.name = "KeywordLet" then
         p_let1 := advance_parser(p)
         res_var := parse_identifier(p_let1)
@@ -1234,7 +1235,7 @@ is
             p_if1 := advance_parser(p)
             res_cond := parse_expr(p_if1)
             p_if2 := expect_kind(res_cond.parser, "KeywordThen", "FH-PARSE-0002", "Expected 'then'")
-            
+
             p_curr := p_if2
             while p_curr.curr_tok.kind.name != "KeywordElse" and p_curr.curr_tok.kind.name != "KeywordEnd" and p_curr.has_error = false
                 invariant p_curr.has_error = true or p_curr.has_error = false
@@ -1242,7 +1243,7 @@ is
                 res_stmt := parse_stmt(p_curr)
                 p_curr := res_stmt.parser
             end while
-            
+
             if p_curr.curr_tok.kind.name = "KeywordElse" then
                 p_curr := advance_parser(p_curr)
                 while p_curr.curr_tok.kind.name != "KeywordEnd" and p_curr.has_error = false
@@ -1252,7 +1253,7 @@ is
                     p_curr := res_stmt.parser
                 end while
             end if
-            
+
             p_if3 := expect_kind(p_curr, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
             p_if4 := expect_kind(p_if3, "KeywordIf", "FH-PARSE-0002", "Expected 'if'")
             if p_if4.has_error then
@@ -1265,7 +1266,7 @@ is
                 p_wh1 := advance_parser(p)
                 res_wcond := parse_expr(p_wh1)
                 p_curr := res_wcond.parser
-                
+
                 while (p_curr.curr_tok.kind.name = "KeywordInvariant" or p_curr.curr_tok.kind.name = "KeywordVariant") and p_curr.has_error = false
                     invariant p_curr.has_error = true or p_curr.has_error = false
                 do
@@ -1273,9 +1274,9 @@ is
                     res_inv := parse_expr(p_inv_var)
                     p_curr := res_inv.parser
                 end while
-                
+
                 p_wh3 := expect_kind(p_curr, "KeywordDo", "FH-PARSE-0002", "Expected 'do'")
-                
+
                 p_curr := p_wh3
                 while p_curr.curr_tok.kind.name != "KeywordEnd" and p_curr.has_error = false
                     invariant p_curr.has_error = true or p_curr.has_error = false
@@ -1283,7 +1284,7 @@ is
                     res_stmt := parse_stmt(p_curr)
                     p_curr := res_stmt.parser
                 end while
-                
+
                 p_wh4 := expect_kind(p_curr, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
                 p_wh5 := expect_kind(p_wh4, "KeywordWhile", "FH-PARSE-0002", "Expected 'while'")
                 if p_wh5.has_error then
@@ -1449,4 +1450,4 @@ is
 end parse_stmt
 
 end Compiler.Core.Parser
-
+

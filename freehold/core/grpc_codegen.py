@@ -106,7 +106,9 @@ def generate_proto(program: Program, verified: VerifiedProgram | None = None) ->
         first_block = False
         lines.append(f"service {service.name} {{")
         for rpc in service.rpcs:
-            lines.append(f"  rpc {rpc.name} ({rpc.request_type}) returns ({rpc.response_type});")
+            req_prefix = "stream " if getattr(rpc, "request_stream", False) else ""
+            resp_prefix = "stream " if getattr(rpc, "response_stream", False) else ""
+            lines.append(f"  rpc {rpc.name} ({req_prefix}{rpc.request_type}) returns ({resp_prefix}{rpc.response_type});")
         lines.append("}")
 
     return "\n".join(lines).rstrip() + "\n"

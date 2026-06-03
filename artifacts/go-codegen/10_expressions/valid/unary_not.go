@@ -2,7 +2,7 @@
 package unarynot
 
 func Main() {
-	ready := false
+	var ready bool = false
 	if !(!ready) {
 		panic("freehold check failed")
 	}

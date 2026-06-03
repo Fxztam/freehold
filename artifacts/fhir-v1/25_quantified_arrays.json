@@ -329,6 +329,46 @@
                       "kind": "NumberExpr",
                       "value": 0
                     }
+                  },
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "result"
+                    },
+                    "right": {
+                      "kind": "BinaryExpr",
+                      "op": "+",
+                      "left": {
+                        "kind": "BinaryExpr",
+                        "op": "+",
+                        "left": {
+                          "kind": "IndexExpr",
+                          "name": "arr",
+                          "index": {
+                            "kind": "NumberExpr",
+                            "value": 0
+                          }
+                        },
+                        "right": {
+                          "kind": "IndexExpr",
+                          "name": "arr",
+                          "index": {
+                            "kind": "NumberExpr",
+                            "value": 1
+                          }
+                        }
+                      },
+                      "right": {
+                        "kind": "IndexExpr",
+                        "name": "arr",
+                        "index": {
+                          "kind": "NumberExpr",
+                          "value": 2
+                        }
+                      }
+                    }
                   }
                 ],
                 "contracts": {
@@ -382,6 +422,51 @@
                         "right": {
                           "kind": "NumberExpr",
                           "value": 0
+                        }
+                      }
+                    },
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 1,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "VarExpr",
+                          "name": "result"
+                        },
+                        "right": {
+                          "kind": "BinaryExpr",
+                          "op": "+",
+                          "left": {
+                            "kind": "BinaryExpr",
+                            "op": "+",
+                            "left": {
+                              "kind": "IndexExpr",
+                              "name": "arr",
+                              "index": {
+                                "kind": "NumberExpr",
+                                "value": 0
+                              }
+                            },
+                            "right": {
+                              "kind": "IndexExpr",
+                              "name": "arr",
+                              "index": {
+                                "kind": "NumberExpr",
+                                "value": 1
+                              }
+                            }
+                          },
+                          "right": {
+                            "kind": "IndexExpr",
+                            "name": "arr",
+                            "index": {
+                              "kind": "NumberExpr",
+                              "value": 2
+                            }
+                          }
                         }
                       }
                     }
@@ -908,6 +993,46 @@
                       "kind": "NumberExpr",
                       "value": 0
                     }
+                  },
+                  {
+                    "kind": "BinaryExpr",
+                    "op": "=",
+                    "left": {
+                      "kind": "VarExpr",
+                      "name": "result"
+                    },
+                    "right": {
+                      "kind": "BinaryExpr",
+                      "op": "+",
+                      "left": {
+                        "kind": "BinaryExpr",
+                        "op": "+",
+                        "left": {
+                          "kind": "IndexExpr",
+                          "name": "arr",
+                          "index": {
+                            "kind": "NumberExpr",
+                            "value": 0
+                          }
+                        },
+                        "right": {
+                          "kind": "IndexExpr",
+                          "name": "arr",
+                          "index": {
+                            "kind": "NumberExpr",
+                            "value": 1
+                          }
+                        }
+                      },
+                      "right": {
+                        "kind": "IndexExpr",
+                        "name": "arr",
+                        "index": {
+                          "kind": "NumberExpr",
+                          "value": 2
+                        }
+                      }
+                    }
                   }
                 ],
                 "contracts": {
@@ -961,6 +1086,51 @@
                         "right": {
                           "kind": "NumberExpr",
                           "value": 0
+                        }
+                      }
+                    },
+                    {
+                      "kind": "ContractClause",
+                      "role": "ensures",
+                      "index": 1,
+                      "condition": {
+                        "kind": "BinaryExpr",
+                        "op": "=",
+                        "left": {
+                          "kind": "VarExpr",
+                          "name": "result"
+                        },
+                        "right": {
+                          "kind": "BinaryExpr",
+                          "op": "+",
+                          "left": {
+                            "kind": "BinaryExpr",
+                            "op": "+",
+                            "left": {
+                              "kind": "IndexExpr",
+                              "name": "arr",
+                              "index": {
+                                "kind": "NumberExpr",
+                                "value": 0
+                              }
+                            },
+                            "right": {
+                              "kind": "IndexExpr",
+                              "name": "arr",
+                              "index": {
+                                "kind": "NumberExpr",
+                                "value": 1
+                              }
+                            }
+                          },
+                          "right": {
+                            "kind": "IndexExpr",
+                            "name": "arr",
+                            "index": {
+                              "kind": "NumberExpr",
+                              "value": 2
+                            }
+                          }
                         }
                       }
                     }
@@ -1104,11 +1274,51 @@
               {
                 "kind": "ProofObligation",
                 "data": {
+                  "kind": "assert",
+                  "location": "line 19:5",
+                  "obligation": "(forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0)))",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (not (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0)))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "assert",
+                  "location": "line 22:5",
+                  "obligation": "(exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10)))",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (not (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10)))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "assert",
+                  "location": "line 25:5",
+                  "obligation": "(= _tmp_call_0 30)",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (>= _tmp_call_0 0))\n(assert (= _tmp_call_0 (+ (+ 5 10) 15)))\n(assert (not (= _tmp_call_0 30)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
                   "kind": "ensures",
                   "location": "line 8:9",
                   "obligation": "(>= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) 0)",
                   "routine": "sum_positive",
                   "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (>= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) 0)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 9:9",
+                  "obligation": "(= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))",
+                  "routine": "sum_positive",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],
@@ -1150,11 +1360,51 @@
                 {
                   "kind": "ProofObligation",
                   "data": {
+                    "kind": "assert",
+                    "location": "line 19:5",
+                    "obligation": "(forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0)))",
+                    "routine": "main",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (not (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0)))))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "assert",
+                    "location": "line 22:5",
+                    "obligation": "(exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10)))",
+                    "routine": "main",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (not (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10)))))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "assert",
+                    "location": "line 25:5",
+                    "obligation": "(= _tmp_call_0 30)",
+                    "routine": "main",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (>= _tmp_call_0 0))\n(assert (= _tmp_call_0 (+ (+ 5 10) 15)))\n(assert (not (= _tmp_call_0 30)))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
                     "kind": "ensures",
                     "location": "line 8:9",
                     "obligation": "(>= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) 0)",
                     "routine": "sum_positive",
                     "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (>= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) 0)))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "ensures",
+                    "location": "line 9:9",
+                    "obligation": "(= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))",
+                    "routine": "sum_positive",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))))\n(check-sat)\n; unsat means proved"
                   }
                 }
               ],
@@ -1502,6 +1752,46 @@
                     "kind": "NumberExpr",
                     "value": 0
                   }
+                },
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "result"
+                  },
+                  "right": {
+                    "kind": "BinaryExpr",
+                    "op": "+",
+                    "left": {
+                      "kind": "BinaryExpr",
+                      "op": "+",
+                      "left": {
+                        "kind": "IndexExpr",
+                        "name": "arr",
+                        "index": {
+                          "kind": "NumberExpr",
+                          "value": 0
+                        }
+                      },
+                      "right": {
+                        "kind": "IndexExpr",
+                        "name": "arr",
+                        "index": {
+                          "kind": "NumberExpr",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "right": {
+                      "kind": "IndexExpr",
+                      "name": "arr",
+                      "index": {
+                        "kind": "NumberExpr",
+                        "value": 2
+                      }
+                    }
+                  }
                 }
               ],
               "contracts": {
@@ -1555,6 +1845,51 @@
                       "right": {
                         "kind": "NumberExpr",
                         "value": 0
+                      }
+                    }
+                  },
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 1,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "result"
+                      },
+                      "right": {
+                        "kind": "BinaryExpr",
+                        "op": "+",
+                        "left": {
+                          "kind": "BinaryExpr",
+                          "op": "+",
+                          "left": {
+                            "kind": "IndexExpr",
+                            "name": "arr",
+                            "index": {
+                              "kind": "NumberExpr",
+                              "value": 0
+                            }
+                          },
+                          "right": {
+                            "kind": "IndexExpr",
+                            "name": "arr",
+                            "index": {
+                              "kind": "NumberExpr",
+                              "value": 1
+                            }
+                          }
+                        },
+                        "right": {
+                          "kind": "IndexExpr",
+                          "name": "arr",
+                          "index": {
+                            "kind": "NumberExpr",
+                            "value": 2
+                          }
+                        }
                       }
                     }
                   }
@@ -2078,6 +2413,46 @@
                     "kind": "NumberExpr",
                     "value": 0
                   }
+                },
+                {
+                  "kind": "BinaryExpr",
+                  "op": "=",
+                  "left": {
+                    "kind": "VarExpr",
+                    "name": "result"
+                  },
+                  "right": {
+                    "kind": "BinaryExpr",
+                    "op": "+",
+                    "left": {
+                      "kind": "BinaryExpr",
+                      "op": "+",
+                      "left": {
+                        "kind": "IndexExpr",
+                        "name": "arr",
+                        "index": {
+                          "kind": "NumberExpr",
+                          "value": 0
+                        }
+                      },
+                      "right": {
+                        "kind": "IndexExpr",
+                        "name": "arr",
+                        "index": {
+                          "kind": "NumberExpr",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "right": {
+                      "kind": "IndexExpr",
+                      "name": "arr",
+                      "index": {
+                        "kind": "NumberExpr",
+                        "value": 2
+                      }
+                    }
+                  }
                 }
               ],
               "contracts": {
@@ -2131,6 +2506,51 @@
                       "right": {
                         "kind": "NumberExpr",
                         "value": 0
+                      }
+                    }
+                  },
+                  {
+                    "kind": "ContractClause",
+                    "role": "ensures",
+                    "index": 1,
+                    "condition": {
+                      "kind": "BinaryExpr",
+                      "op": "=",
+                      "left": {
+                        "kind": "VarExpr",
+                        "name": "result"
+                      },
+                      "right": {
+                        "kind": "BinaryExpr",
+                        "op": "+",
+                        "left": {
+                          "kind": "BinaryExpr",
+                          "op": "+",
+                          "left": {
+                            "kind": "IndexExpr",
+                            "name": "arr",
+                            "index": {
+                              "kind": "NumberExpr",
+                              "value": 0
+                            }
+                          },
+                          "right": {
+                            "kind": "IndexExpr",
+                            "name": "arr",
+                            "index": {
+                              "kind": "NumberExpr",
+                              "value": 1
+                            }
+                          }
+                        },
+                        "right": {
+                          "kind": "IndexExpr",
+                          "name": "arr",
+                          "index": {
+                            "kind": "NumberExpr",
+                            "value": 2
+                          }
+                        }
                       }
                     }
                   }
@@ -2274,11 +2694,51 @@
             {
               "kind": "ProofObligation",
               "data": {
+                "kind": "assert",
+                "location": "line 19:5",
+                "obligation": "(forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0)))",
+                "routine": "main",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (not (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0)))))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "assert",
+                "location": "line 22:5",
+                "obligation": "(exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10)))",
+                "routine": "main",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (not (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10)))))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "assert",
+                "location": "line 25:5",
+                "obligation": "(= _tmp_call_0 30)",
+                "routine": "main",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (>= _tmp_call_0 0))\n(assert (= _tmp_call_0 (+ (+ 5 10) 15)))\n(assert (not (= _tmp_call_0 30)))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
                 "kind": "ensures",
                 "location": "line 8:9",
                 "obligation": "(>= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) 0)",
                 "routine": "sum_positive",
                 "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (>= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) 0)))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "ensures",
+                "location": "line 9:9",
+                "obligation": "(= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))",
+                "routine": "sum_positive",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))))\n(check-sat)\n; unsat means proved"
               }
             }
           ],
@@ -2320,11 +2780,51 @@
               {
                 "kind": "ProofObligation",
                 "data": {
+                  "kind": "assert",
+                  "location": "line 19:5",
+                  "obligation": "(forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0)))",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (not (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0)))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "assert",
+                  "location": "line 22:5",
+                  "obligation": "(exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10)))",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (not (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10)))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "assert",
+                  "location": "line 25:5",
+                  "obligation": "(= _tmp_call_0 30)",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (>= _tmp_call_0 0))\n(assert (= _tmp_call_0 (+ (+ 5 10) 15)))\n(assert (not (= _tmp_call_0 30)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
                   "kind": "ensures",
                   "location": "line 8:9",
                   "obligation": "(>= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) 0)",
                   "routine": "sum_positive",
                   "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (>= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) 0)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "ensures",
+                  "location": "line 9:9",
+                  "obligation": "(= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))",
+                  "routine": "sum_positive",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],

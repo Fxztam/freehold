@@ -69,7 +69,6 @@ SUPPORTED_EXAMPLES = [
 ]
 
 UNSUPPORTED_EXAMPLES = [
-    UnsupportedExample("unsupported_generic_function", "examples/compiler_v1/unsupported/generic_function/App/Main.fh", "FH-GOCODEGEN-0001"),
 ]
 
 OUT_ROOT = ROOT / ".tmp" / "stage3_compiler_examples"

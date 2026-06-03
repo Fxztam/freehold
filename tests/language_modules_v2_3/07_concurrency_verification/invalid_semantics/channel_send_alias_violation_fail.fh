@@ -1,0 +1,14 @@
+module Concurrency.ChannelSendAliasViolationFail
+
+async function verify_send_alias_violation() returns Integer
+is
+    let chan: Channel<Integer> = channel<Integer>(8) with invariant for all X in 0 .. 0 => X >= 0
+    let sender: Sender<Integer> = channel_sender<Integer>(chan)
+    let alias: Sender<Integer> = sender
+    let payload: Integer = -5
+
+    let sent: Boolean = await channel_send<Integer>(alias, payload)
+    return 0
+end verify_send_alias_violation
+
+end Concurrency.ChannelSendAliasViolationFail

@@ -21,8 +21,8 @@ type Person struct {
 }
 
 func Main() {
-	person := Person{Name: "Ada", Age: 37, Active: true}
-	text := freeholdJSONString(person)
+	var person Person = Person{Name: "Ada", Age: 37, Active: true}
+	var text string = freeholdJSONString(person)
 	if !(int64(strings.Index(text, "Ada")) >= 0) {
 		panic("freehold check failed")
 	}

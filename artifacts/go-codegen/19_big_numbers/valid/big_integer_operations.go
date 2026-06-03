@@ -37,11 +37,11 @@ func freeholdBigFloatAbs(value *big.Float) *big.Float {
 type Huge *big.Int
 
 func Main() {
-	a := freeholdBigInt("640320")
-	b := big.NewInt(24)
-	squared := new(big.Int).Mul(a, a)
-	quotient := new(big.Int).Quo(squared, b)
-	text := quotient.String()
+	var a *big.Int = freeholdBigInt("640320")
+	var b *big.Int = big.NewInt(24)
+	var squared *big.Int = new(big.Int).Mul(a, a)
+	var quotient Huge = new(big.Int).Quo(squared, b)
+	var text string = quotient.String()
 	if !(int64(strings.Index(text, "170")) >= 0) {
 		panic("freehold check failed")
 	}

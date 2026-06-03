@@ -232,6 +232,16 @@ class WhyMLGenerator:
                     scope_var = e.name.split(".")[0]
                     handle_arg = self.expr_to_whyml(e.args[0])
                 return f"(scope_join {scope_var} {handle_arg})"
+            if e.name.endswith(".timeout"):
+                return "()"
+            if e.name.endswith(".cancel"):
+                return "()"
+            if e.name.endswith(".is_cancelled"):
+                return "false"
+            if e.name.endswith(".priority"):
+                return "()"
+            if e.name.endswith(".limit"):
+                return "()"
             args = " ".join(self.expr_to_whyml(arg) for arg in e.args)
             return f"({e.name} {args})"
         return "UNSUPPORTED"

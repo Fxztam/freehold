@@ -2,7 +2,7 @@
 package arrayquantifier
 
 func Main() {
-	values := [3]int64{5, 5, 5}
+	var values [3]int64 = [3]int64{5, 5, 5}
 	_ = values
 	if !(func() bool {
 		for i := int64(0); i <= int64(2); i++ {

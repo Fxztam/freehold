@@ -2,11 +2,15 @@
 package commentmarkersinsidestrings
 
 func Text() string {
-	return "not -- a comment and not /* a block */"
+	var freeholdResult string = "not -- a comment and not /* a block */"
+	if !(freeholdResult == "not -- a comment and not /* a block */") {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }
 
 func Main() {
-	textValue := Text()
+	var textValue string = Text()
 	if !(textValue == "not -- a comment and not /* a block */") {
 		panic("freehold check failed")
 	}

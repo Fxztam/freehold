@@ -9,7 +9,9 @@ end record
 
 function find_domestic(seed: Integer) returns Result<DomesticReport, NotFound>
 requires seed > 0
-ensures value.order.address.city_id = 42
+ensures result.ok
+ensures result.value.order.address.city_id = 42
+ensures result.value.depot.city_id = 42
 is
     let depot: Address = make_address(42, "Berlin")
     let order: Order = make_order(seed, depot)
@@ -18,6 +20,8 @@ end find_domestic
 
 function load_domestic(seed: Integer) returns DomesticReport
 requires seed > 0
+ensures result.order.address.city_id = 42
+ensures result.depot.city_id = 42
 is
     let outcome: Result<DomesticReport, NotFound> = find_domestic(seed)
     return outcome.value

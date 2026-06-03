@@ -303,6 +303,62 @@ Die zukünftige Entwicklungsphase eines Go-nativen Control-Flow-Analyzers wurde 
   * Das Bootstrap-Gate verifiziert die Byte-Gleichheit via SHA256-Hashvergleich: `sha256(stage1.fhirb) == sha256(stage2.fhirb)`.
   * Dieser erfolgreiche Abgleich garantiert mathematisch und funktional die Korrektheit des in Freehold geschriebenen, als native EXE laufenden Compilers.
 
+## Asynchrone Concurrency-Migration & Go-Codegen-Härtung
+
+Stand: 2026-06-03
+
+### Concurrency-Migration auf native Go-Konstrukte
+- **Asynchrones Lowering:** Die Übersetzung von `scope`, `spawn`, `join` und channels wurde von synchronisierten Wrappern auf echte, asynchrone Go-Konstrukte umgestellt (`goroutines`, `channels` und native `sync.WaitGroup`).
+- **Scope-Lebenszyklus & Abort-Synchronisation:** Die Go-Codegen-Generierung für vorzeitige Funktionsabbrüche (`abort_return` und `propagate_abort_return`) wurde so erweitert, dass alle aktiven `sync.WaitGroup`-Instanzen des aktuellen Scopes ordnungsgemäß synchronisiert (`Wait()`) werden, bevor die Funktion verlassen wird.
+- **Automatische Import-Verwaltung:** `import_block` wurde so angepasst, dass das Standard-Paket `"sync"` automatisch importiert wird, sobald asynchrone Hilfsfunktionen benötigt werden (z. B. bei der Deklaration von `Channel`, `Sender` oder `Receiver` Typen, selbst wenn kein expliziter block-lokaler `Scope` deklariert ist).
+
+### Go-Codegen-Stabilität & Syntax-Korrekturen
+- **Korrektur der Operator-Präzedenz:** Die Generierung binärer Vergleichsoperationen wurde so korrigiert, dass Ausdrücke in komplexen Zuweisungen oder Verträgen (z. B. `a == (b > c)`) korrekt geklammert werden, um Syntax- und Typfehler im Go-Backend zu verhindern.
+- **Schlüsselwort-Sanitisierung:** Die Funktion `go_local_name` wurde erweitert, um potenzielle Namenskollisionen mit reservierten Go-Schlüsselwörtern (wie `func`, `var`, `range`, `chan`, `select`, etc.) durch Anhängen eines Unterstrichs (`_`) automatisch zu entschärfen.
+
+### Test- & Conformance-Erweiterungen
+- **Promotion in Conformance-Tests:** Die 7 gültigen Concurrency-Testfälle unter `tests/language_modules/23_concurrency` wurden zu `valid_go_codegen`-Fällen befördert. Die generierten Go-Goldens in `expected_go/` wurden erfolgreich aktualisiert.
+- **V2/V3 Concurrency-Verifikations-Demo:** Ein neues Concurrency-Demo-Szenario (`concurrency_abort_sync_pos` und `concurrency_abort_sync_neg`) wurde unter `tests/language_modules_v2_3/07_concurrency_verification/` integriert. Es demonstriert die Integration von WaitGroup-Synchronisation bei vorzeitigem Abort, Go-Keyword-Sanitisierung (`chan`, `select`) und geklammerten binären Vergleichen. Im negativen Fall wird die Verletzung der Worker-Vorbedingung zuverlässig zur Compilezeit (im semantischen Verifikations-Phase) abgefangen.
+- **Vollständige Verifikation:** Alle Conformance-Gates (`verify-go-semantic-projects.cmd`, `verify-go-semantic-diagnostics.cmd`, `verify-go-project-semantic-diagnostics.cmd`, `verify-go-feature-matrix.cmd` und `verify-compiler-examples.cmd`) laufen zu 100% erfolgreich durch.
+
+
+## Formal Verification & Flow Contract Enforcement in Go Frontend
+
+Stand: 2026-06-03
+
+### GNATprove-aligned Semantic Validation & Contract Parity
+- **Formale Datenstrukturen für Verträge:** Erweiterung der Symboltabelle (`SymbolTable` und `BuildSymbolTable` in `analyzer.go`) um die Erfassung und Verwaltung von globalen Kontrakten (`GlobalSpecs`) und Datenfluss-Abhängigkeiten (`DependsSpecs`) für Routinen und Services.
+- **Transitive Taint-Tracking & Mutation-Analyse:**
+  - Implementierung von `analyzeInformationFlow` zur statischen Verfolgung von Datenflüssen und zur Validierung von `depends`-Klauseln.
+  - Implementierung von `collectMutatedVars` zur Rekonstruktion aller in einer Routine (direkt oder über Unterprogramm-Aufrufe) mutierten globalen Variablen und Parameter.
+  - Implementierung von `checkTransitiveGlobals` zur interprozeduralen Ausbreitung und Überprüfung von Zugriffen auf globale Ressourcen mit kompatiblen Modi (`Input`, `Output`, `In_Out`) entlang der Aufrufhierarchie.
+- **Statische Anti-Aliasing-Verifikation:**
+  - Implementierung von `checkAntiAliasing` im Aufrufpfad von `CallStmt` zur statischen Erkennung von:
+    1. **Parameter-Parameter-Aliasing:** Überlappung von veränderlichen Übergabewerten.
+    2. **Parameter-Global-Aliasing:** Übergabe eines veränderlichen Arguments, das auch direkt/transitiv als globales Element im aufgerufenen Kontext referenziert wird.
+    3. **Argument-Global-Aliasing:** Übergabe eines Arguments, das als globales Element durch das aufgerufene Unterprogramm modifiziert wird.
+  - Integration von Auflösungsregeln für Dienstinstanzen (`a.symbols.Services`), um Service-Referenzen korrekt als globale Singleton-Instanzen zu dereferenzieren.
+- **Diagnose- und Test-Infrastruktur:**
+  - Vervollständigung der Diagnose-Fabriken in `catalog.go` (z. B. `UndeclaredMutation`, `TransitiveGlobalMissing`, `AliasingViolation`).
+  - Integration von 17 neuen, dedizierten semantischen Fehlertests für v2.3 Sprachmodule (`tests/language_modules_v2_3/04_flow_contracts`).
+  - Neues Verifikationsskript `verify-go-semantic-diagnostics-v2_3.cmd` samt passendem Tooling (`verify_go_semantic_diagnostics_v2_3.py`) zur automatisierten Validierung der Diagnosen.
+  - **Status:** Alle Go-Tests (`go test ./...`) und die gesamte Verifikationskette sind vollständig grün (`0 Mismatches`).
+
+## Stabilization of Freehold Compiler Verification & Dynamic IR Loader
+
+Stand: 2026-06-03
+
+### Dynamic IR Loader & VM E2E Execution
+- **Dynamic IR Loader (`Loader.fh`)**: Authored a robust JSON parser and IR rehydration engine in Freehold. It parses a module's JSON IR definition, restores instructions/blocks/routines, and resolves the target entry points.
+- **Go Codegen Type Coercion & Shadowing Avoidance**:
+  * Renamed local `len` variables to `manifest_len` and `json_len` to avoid shadowing Go's native `len` function inside compiled slices.
+  * Resolved Go compiler type mismatch errors between `int` and `int64` by coercing variable declarations using expressions (e.g. `let ptr: Integer = json_len - json_len`).
+- **Contract Manifest Sync**: Updated `artifacts/stage3/compiler_core_v1/manifest.json` with the updated file count (21) and registered `compiler/core/loader/loader.go`.
+- **E2E Golden Matching**: Ran VM scheduler execution tests verifying a result of `6` and successfully matched the updated golden stdout expected file (`compiler_core_results.expected.txt`). Passed the entire stage-3 compiler contract suite.
+
+
+
+
 
 
 

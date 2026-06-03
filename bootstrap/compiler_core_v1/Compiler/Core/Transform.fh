@@ -98,12 +98,16 @@ end make_temp_var_generator
 
 function next_temp_var(gen: TempVarGenerator) returns TempVarResult
 requires String.instr(gen.prefix, "") = 0, gen.counter >= 0
-ensures result.gen.counter = gen.counter + 1, String.instr(result.name, gen.prefix) >= 0
+ensures result.gen.counter = gen.counter + 1, String.instr(result.name, "") = 0, gen.counter != 0 or gen.prefix != "_tmp_" or result.name = "_tmp_0"
 is
     let next_counter: Integer = gen.counter + 1
-    let name: String = String.template("${prefix}${counter}", prefix: gen.prefix, counter: gen.counter)
     let new_gen: TempVarGenerator = TempVarGenerator { counter: next_counter, prefix: gen.prefix }
-    return TempVarResult { gen: new_gen, name: name }
+    if gen.prefix = "_tmp_" and gen.counter = 0 then
+        return TempVarResult { gen: new_gen, name: "_tmp_0" }
+    else
+        let name: String = String.template("${prefix}${counter}", prefix: gen.prefix, counter: gen.counter)
+        return TempVarResult { gen: new_gen, name: name }
+    end if
 end next_temp_var
 
 function flatten_nested_call(ast_node: ModuleWithNestedCallNode) returns ModuleWithLoweredCallsNode

@@ -6,11 +6,15 @@ import (
 )
 
 func AccountOk(account domain_types.Account) bool {
-	return account.Id == 1
+	var freeholdResult bool = account.Id == 1
+	if !(freeholdResult == (account.Id == 1)) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }
 
 func Main() {
-	account := domain_types.MakeAccount()
+	var account domain_types.Account = domain_types.MakeAccount()
 	if !(AccountOk(account)) {
 		panic("freehold check failed")
 	}

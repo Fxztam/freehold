@@ -1,0 +1,16 @@
+module Concurrency.TuningNeg
+
+async function execute_tuning_neg(input: Integer) returns Integer
+is
+    scope sc do
+        spawn
+            // Invalid arguments for priority and limit
+            call sc.priority("high")
+            call sc.limit(true)
+        join
+        result
+            return input
+    end scope
+end execute_tuning_neg
+
+end Concurrency.TuningNeg

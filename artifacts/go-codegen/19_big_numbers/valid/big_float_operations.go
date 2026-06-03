@@ -35,10 +35,10 @@ func freeholdBigFloatAbs(value *big.Float) *big.Float {
 }
 
 func Main() {
-	x := freeholdBigFloat("10005", 256)
-	root := new(big.Float).SetPrec(x.Prec()).Sqrt(x)
-	scaled := new(big.Float).SetPrec(freeholdBigFloat("426880", 256).Prec()).Mul(freeholdBigFloat("426880", 256), root)
-	text := scaled.Text('f', int(5))
+	var x *big.Float = freeholdBigFloat("10005", 256)
+	var root *big.Float = new(big.Float).SetPrec(x.Prec()).Sqrt(x)
+	var scaled *big.Float = new(big.Float).SetPrec(freeholdBigFloat("426880", 256).Prec()).Mul(freeholdBigFloat("426880", 256), root)
+	var text string = scaled.Text('f', int(5))
 	if !(int64(strings.Index(text, ".")) > 0) {
 		panic("freehold check failed")
 	}

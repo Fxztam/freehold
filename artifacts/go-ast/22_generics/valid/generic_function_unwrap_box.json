@@ -1,6 +1,6 @@
 {
   "source_file": "..\\tests\\language_modules\\22_generics\\valid\\generic_function_unwrap_box.fh",
-  "source_snippet": "module GenericFunctionUnwrapBox\r\n\r\ntype Box\u003cT\u003e is record\r\n    item: T\r\nend record\r\n\r\nfunction unwrap\u003cT\u003e(box: Box\u003cT\u003e) returns T\r\nis\r\n    return box.item\r\nend unwrap\r\n\r\nprocedure main()\r\nis\r\n    let b: Box\u003cInteger\u003e = Box\u003cInteger\u003e { item: 1 }\r\n    let x: Integer = unwrap\u003cInteger\u003e(b)\r\n    check x = 1\r\nend main\r\n\r\nend GenericFunctionUnwrapBox",
+  "source_snippet": "module GenericFunctionUnwrapBox\r\n\r\ntype Box\u003cT\u003e is record\r\n    item: T\r\nend record\r\n\r\nfunction unwrap\u003cT\u003e(box: Box\u003cT\u003e) returns T\r\n    requires T is Equatable\r\n    ensures result = box.item\r\nis\r\n    return box.item\r\nend unwrap\r\n\r\nprocedure main()\r\nis\r\n    let b: Box\u003cInteger\u003e = Box\u003cInteger\u003e { item: 1 }\r\n    let x: Integer = unwrap\u003cInteger\u003e(b)\r\n    check x = 1\r\nend main\r\n\r\nend GenericFunctionUnwrapBox",
   "module_name": "22_generics",
   "case_kind": "valid",
   "parse_ok": true,
@@ -35,6 +35,38 @@
           }
         ],
         "return_type": "T",
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": "is",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "T"
+            },
+            "right": {
+              "kind": "IdentifierExpr",
+              "name": "Equatable"
+            }
+          }
+        ],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "IdentifierExpr",
+              "name": "result"
+            },
+            "right": {
+              "kind": "FieldAccessExpr",
+              "object": {
+                "kind": "IdentifierExpr",
+                "name": "box"
+              },
+              "field": "item"
+            }
+          }
+        ],
         "body": [
           {
             "kind": "ReturnStmt",

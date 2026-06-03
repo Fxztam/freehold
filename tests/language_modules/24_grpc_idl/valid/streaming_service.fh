@@ -1,0 +1,20 @@
+module GrpcIdl.StreamingService
+
+type StreamRequest is record
+    query: String proto 1
+end record
+
+type StreamResponse is record
+    response_data: String proto 1
+end record
+
+service RouteService is
+    -- Server streaming
+    rpc GetRoute(request: StreamRequest): stream StreamResponse
+    -- Client streaming
+    rpc RecordRoute(request: stream StreamRequest): StreamResponse
+    -- Bidirectional streaming
+    rpc Chat(request: stream StreamRequest): stream StreamResponse
+end RouteService
+
+end GrpcIdl.StreamingService

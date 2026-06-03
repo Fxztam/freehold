@@ -9,7 +9,9 @@ end record
 
 function find_partner(seed: Integer) returns Result<PartnerReport, NotFound>
 requires seed > 0
-ensures value.order.address.city_id = 7
+ensures result.ok
+ensures result.value.order.address.city_id = 7
+ensures result.value.depot.city_id = 7
 is
     let depot: Address = make_address(7, "Hamburg")
     let order: Order = make_order(seed + 100, depot)
@@ -18,6 +20,8 @@ end find_partner
 
 function load_partner(seed: Integer) returns PartnerReport
 requires seed > 0
+ensures result.order.address.city_id = 7
+ensures result.depot.city_id = 7
 is
     let outcome: Result<PartnerReport, NotFound> = find_partner(seed)
     return outcome.value

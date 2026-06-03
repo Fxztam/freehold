@@ -48,26 +48,28 @@ type FunctionDecl struct {
 	IsAsync     bool           `json:"is_async,omitempty"`
 	TypeParams  []string       `json:"type_params,omitempty"`
 	Params      []Param        `json:"params"`
-	ReturnType  string         `json:"return_type"`
-	GlobalSpecs []GlobalSpec   `json:"global_specs,omitempty"`
-	Requires    []Expr         `json:"requires,omitempty"`
-	Aborts      []AbortClause  `json:"aborts,omitempty"`
-	Ensures     []Expr         `json:"ensures,omitempty"`
-	Body        []Stmt         `json:"body"`
-	EndName     string         `json:"end_name"`
+	ReturnType   string         `json:"return_type"`
+	GlobalSpecs  []GlobalSpec   `json:"global_specs,omitempty"`
+	DependsSpecs []DependsSpec  `json:"depends_specs,omitempty"`
+	Requires     []Expr         `json:"requires,omitempty"`
+	Aborts       []AbortClause  `json:"aborts,omitempty"`
+	Ensures      []Expr         `json:"ensures,omitempty"`
+	Body         []Stmt         `json:"body"`
+	EndName      string         `json:"end_name"`
 }
 
 type ProcedureDecl struct {
-	Kind        string         `json:"kind"`
-	Pos         token.Position `json:"-"`
-	Name        string         `json:"name"`
-	Params      []Param        `json:"params"`
-	GlobalSpecs []GlobalSpec   `json:"global_specs,omitempty"`
-	Requires    []Expr         `json:"requires,omitempty"`
-	Aborts      []AbortClause  `json:"aborts,omitempty"`
-	Ensures     []Expr         `json:"ensures,omitempty"`
-	Body        []Stmt         `json:"body"`
-	EndName     string         `json:"end_name"`
+	Kind         string         `json:"kind"`
+	Pos          token.Position `json:"-"`
+	Name         string         `json:"name"`
+	Params       []Param        `json:"params"`
+	GlobalSpecs  []GlobalSpec   `json:"global_specs,omitempty"`
+	DependsSpecs []DependsSpec  `json:"depends_specs,omitempty"`
+	Requires     []Expr         `json:"requires,omitempty"`
+	Aborts       []AbortClause  `json:"aborts,omitempty"`
+	Ensures      []Expr         `json:"ensures,omitempty"`
+	Body         []Stmt         `json:"body"`
+	EndName      string         `json:"end_name"`
 }
 
 type AbortClause struct {
@@ -92,12 +94,14 @@ type ServiceDecl struct {
 }
 
 type RpcDecl struct {
-	Kind         string         `json:"kind"`
-	Pos          token.Position `json:"-"`
-	Name         string         `json:"name"`
-	RequestName  string         `json:"request_name"`
-	RequestType  string         `json:"request_type"`
-	ResponseType string         `json:"response_type"`
+	Kind           string         `json:"kind"`
+	Pos            token.Position `json:"-"`
+	Name           string         `json:"name"`
+	RequestName    string         `json:"request_name"`
+	RequestType    string         `json:"request_type"`
+	ResponseType   string         `json:"response_type"`
+	RequestStream  bool           `json:"request_stream"`
+	ResponseStream bool           `json:"response_stream"`
 }
 
 type Stmt interface{}
@@ -315,4 +319,10 @@ type ExistsExpr struct {
 	Lower   Expr           `json:"lower"`
 	Upper   Expr           `json:"upper"`
 	Expr    Expr           `json:"expr"`
+}
+
+type DependsSpec struct {
+	Pos     token.Position `json:"-"`
+	Target  string         `json:"target"`
+	Sources []string       `json:"sources"`
 }

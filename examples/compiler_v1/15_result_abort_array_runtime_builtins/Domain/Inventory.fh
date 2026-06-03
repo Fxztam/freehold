@@ -5,8 +5,8 @@ import Domain.Types exposing StockItem, Warehouse, make_stock_item, make_warehou
 error StockMissing
 
 function build_item(sku: String, quantity: Integer, warehouse_id: Integer, warehouse_label: String) returns StockItem
-requires String.instr(sku, "SKU") >= 0, quantity >= 0, warehouse_id > 0
-ensures result.quantity = quantity, result.warehouse.id = warehouse_id
+requires String.instr(sku, "SKU") >= 0, quantity >= 0, warehouse_id > 0, String.instr(warehouse_label, "") = 0
+ensures result.sku = sku, result.quantity = quantity, result.warehouse.id = warehouse_id, result.warehouse.label = warehouse_label
 is
     let warehouse: Warehouse = make_warehouse(warehouse_id, warehouse_label)
     let item: StockItem = make_stock_item(sku, quantity, warehouse)
@@ -15,7 +15,7 @@ end build_item
 
 function load_stock(seed: Integer) returns Result<Array<StockItem, 3>, StockMissing>
 requires seed > 0, seed >= 1
-ensures success, value[0].quantity >= seed, value[1].warehouse.id = value[0].warehouse.id, value[2].warehouse.id = 2
+ensures success, value[0].quantity >= seed, value[1].warehouse.id = value[0].warehouse.id, value[2].warehouse.id = 2, String.instr(value[0].sku, "SKU") >= 0, String.instr(value[0].warehouse.label, "north") >= 0
 is
     let primary: StockItem = build_item("SKU-001", seed + 2, 1, "north")
     let secondary: StockItem = build_item("SKU-002", seed + 3, 1, "north")

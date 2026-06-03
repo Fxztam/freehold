@@ -62,6 +62,8 @@ class RpcDecl:
     request_type: str
     response_type: str
     pos: SourcePos
+    request_stream: bool = False
+    response_stream: bool = False
 
 @dataclass(frozen=True)
 class ServiceDecl:

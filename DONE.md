@@ -1,5 +1,65 @@
 # DONE
 
+## 2026-06-03
+
+### Stabilization of Freehold Compiler Verification & Dynamic IR Loader
+- **Dynamic IR Loader Implementation (`Loader.fh`)**: Integrated a complete dynamic JSON/IR rehydration parser and AST/manifest structures in Freehold. Added routines to parse manifests (`parse_manifest`) and load project IR representations (`load_project_ir`).
+- **Go Codegen Shadowing & Type Coercion Resolution**:
+  * Fixed variable shadowing issues by renaming string/JSON length variables from `len` to `manifest_len` (in `parse_manifest`) and `json_len` (in `load_project_ir`) to prevent collision with Go's built-in `len()`.
+  * Forced Go's type-inference engine to infer `int64` rather than standard `int` by initializing pointer offsets via arithmetic expressions on known `int64` string lengths (e.g. `let ptr: Integer = json_len - json_len`).
+- **Manifest Synchronization**: Synchronized the stage-3 compiler verification manifest (`manifest.json`) by raising `total_files` to 21 and registering the structural mapping for the new `Compiler/Core/Loader` module.
+- **E2E Execution Verification**: Updated the test suite `test_vm_dynamic_ir_loader` in `Main.fh` to initialize a heap object, instantiate a VM scheduler, restore the IR graph, and successfully run the VM execution loop to return `6`. Synced the golden baseline output `compiler_core_results.expected.txt` to verify execution output.
+
+### Formal Verification & Flow Contract Enforcement in Go Frontend
+- **Formale Datenstrukturen für Verträge**: Erweiterung der Symboltabelle (`SymbolTable` und `BuildSymbolTable` in `analyzer.go`) um die Erfassung und Verwaltung von globalen Kontrakten (`GlobalSpecs`) und Datenfluss-Abhängigkeiten (`DependsSpecs`) für Routinen und Services.
+- **Transitive Taint-Tracking & Mutation-Analyse**:
+  * Implementierung von `analyzeInformationFlow` zur statischen Verfolgung von Datenflüssen und zur Validierung von `depends`-Klauseln.
+  * Implementierung von `collectMutatedVars` zur Rekonstruktion aller in einer Routine (direkt oder über Unterprogramm-Aufrufe) mutierten globalen Variablen und Parameter.
+  * Implementierung von `checkTransitiveGlobals` zur interprozeduralen Ausbreitung und Überprüfung von Zugriffen auf globale Ressourcen mit kompatiblen Modi (`Input`, `Output`, `In_Out`) entlang der Aufrufhierarchie.
+- **Statische Anti-Aliasing-Verifikation**:
+  * Implementierung von `checkAntiAliasing` im Aufrufpfad von `CallStmt` zur statischen Erkennung von:
+    1. **Parameter-Parameter-Aliasing**: Überlappung von veränderlichen Übergabewerten.
+    2. **Parameter-Global-Aliasing**: Übergabe eines veränderlichen Arguments, das auch direkt/transitiv als globales Element im aufgerufenen Kontext referenziert wird.
+    3. **Argument-Global-Aliasing**: Übergabe eines Arguments, das als globales Element durch das aufgerufene Unterprogramm modifiziert wird.
+  * Integration von Auflösungsregeln für Dienstinstanzen (`a.symbols.Services`), um Service-Referenzen korrekt als globale Singleton-Instanzen zu dereferenzieren.
+- **Diagnose- und Test-Infrastruktur**:
+  * Vervollständigung der Diagnose-Fabriken in `catalog.go` (z. B. `UndeclaredMutation`, `TransitiveGlobalMissing`, `AliasingViolation`).
+  * Integration von 17 neuen, dedizierten semantischen Fehlertests für v2.3 Sprachmodule (`tests/language_modules_v2_3/04_flow_contracts`).
+  * Neues Verifikationsskript `verify-go-semantic-diagnostics-v2_3.cmd` samt passendem Tooling (`verify_go_semantic_diagnostics_v2_3.py`) zur automatisierten Validierung der Diagnosen.
+
+### gRPC Streaming Bindings & Error Mapping
+- **gRPC Streaming Support**: Integrated full support for Client, Server, and Bidirectional streaming (`stream` keyword) in the Freehold compiler parser (both Python-based and Go-frontend), AST definitions, IR comparison, Protobuf schema generator, and Go gRPC bindings generator.
+- **Context-Aware Error Mapping**: Modified generated Go gRPC bindings to automatically propagate the request context (`ctx` or `stream.Context()`) to error mapping helpers.
+- **Custom Error & Metadata Registry**: Introduced `FreeholdGrpcErrorRegistry` and `FreeholdGrpcErrorMapping` structures in the generated Go files. This enables runtime mapping of custom Freehold abort-errors to specific gRPC status codes and key-value metadata headers.
+- **Testing & Verification**: Created conformance tests (`streaming_service.fh` under `24_grpc_idl`), generated golden Protobuf/Go targets, and verified the complete toolchain via Stage-3 example and fuzzing checks.
+
+### Compile-Time Monomorphization (Generics Specialization)
+- **Monomorphization Resolution**: Resolved Go build regressions for generic functions and types by ensuring specialized routines (e.g. `Min_Integer`, `AssertVal_Integer`) and specialized records (e.g. `Box_Integer`) are qualified, named, and exported consistently. Updated name resolution (`callable_name`) and type reference mapping (`go_type_string`) inside `go_codegen.py` to target Go-compatible specialized symbols.
+- **Compile-Time Monomorphization**: Refactored the Go backend's code generation pipeline in `go_codegen.py` to replace dynamic interface dispatch with static compile-time monomorphization.
+- **Scanning & Discovery Phase**: Implemented a recursive two-pass scanning process (`monomorphize()` and `scan_declaration()`) to collect and discover all nested and recursive generic type and routine instantiations across modules.
+- **Specialization Core**: Developed cloning and type substitution mechanisms (`specialize_record()` and `specialize_routine()`) to produce specialized AST representations of generic definitions using concrete type arguments.
+- **Name Specialization & Qualification**: Implemented `go_specialized_name()`, `qualify_type_name()`, `qualify_type_ref()`, and `qualify_routine_name()` to generate unique, Go-compatible specialized symbols and resolve their import namespaces across modules.
+- **Monomorphization Integration**: Updated call-site resolution (`callable_name()`), type generation (`go_type_string()`), and the main `generate()` flow to emit specialized, static non-generic Go types and function symbols.
+- **Language Conformance Suite**: Verified that the entire language suite passes perfectly. Updated the expected Go golden files for all generics conformance tests. All 479/479 base tests are fully passing.
+
+### Concurrency Scheduler Optimization & Work-Stealing
+- **Priority Work-Stealing Scheduler**: Implemented a custom task scheduler in generated Go code using a lock-free/mutex-protected task queue and round-robin work stealing across a pool of CPU-aligned worker threads.
+- **Task Prioritization**: Integrated `scope.priority(val)` method, enabling fine-grained scheduling of tasks based on priority (highest priority tasks are queued first on worker local queues).
+- **Concurrency Rate Limiting & Throttling**: Added `scope.limit(val)` method, restricting concurrent execution of tasks in a scope using a structured semaphore channel to handle heavy loads without resource exhaustion.
+- **WhyML Integration**: Added placeholders for `.priority` and `.limit` to `whyml_codegen.py` to preserve AST compilation to WhyML.
+- **Language Conformance Tests**: Added positive and negative test cases for concurrency tuning (priority and limits) in the language modules test suite under `07_concurrency_verification`. All 69 module tests and 138 regression tests pass.
+
+### Concurrency Cooperative Cancellation & Timeout Propagation
+
+- **Implicit Context Threading**: Upgraded `go_codegen.py` to automatically inject and propagate `context.Context` across asynchronous routine signatures and their corresponding call expressions.
+- **Hierarchical Scope Contexts**: Updated `ScopeStmt` codegen to instantiate nested, cancellation-aware child contexts derived from parent scopes using Go's `context.WithCancel`, alongside deferred cancellation calls on scope block exit.
+- **Scope Methods Implementation**:
+  * `scope.cancel()`: Triggers early cancellation of the scope context.
+  * `scope.timeout(ms)`: Configures a timed context deadline utilizing `context.WithTimeout`.
+  * `scope.is_cancelled()`: Returns a boolean evaluating whether the scope has timed out or been cancelled (`ctx.Err() != nil`).
+- **Compiler Verifier & WhyML Support**: Handled new scope primitives in `verifier.py` to ensure proper static typechecking (returning `TypeName("Void")` for handled void methods), and registered placeholder functions in `whyml_codegen.py` to keep WhyML generation intact.
+- **Verification Tests**: Integrated positive and negative cancellation tests under `tests/language_modules_v2_3/07_concurrency_verification/` with updated expected error diagnostics and compiled Go baselines. The entire 66/66 language module test suite passes successfully.
+
 ## 2026-06-01
 
 ### Transitive Verification Regression Resolution
@@ -1311,6 +1371,25 @@
   - This native compiler executable compiles itself to generate the compiler's binary IR (`stage2.fhirb`).
   - The build pipeline verifies the compiler's correct execution by checking that `sha256(stage1.fhirb) == sha256(stage2.fhirb)`.
   - This byte-identical match guarantees that the compiler written in Freehold, compiled to a native EXE, executes correctly and produces matching outputs.
+
+## Asynchrone Concurrency-Migration & Go-Codegen-Härtung
+
+Stand: 2026-06-03
+
+### Concurrency-Migration auf native Go-Konstrukte
+- **Asynchrones Lowering:** Die Übersetzung von `scope`, `spawn`, `join` und channels wurde von synchronisierten Wrappern auf echte, asynchrone Go-Konstrukte umgestellt (`goroutines`, `channels` und native `sync.WaitGroup`).
+- **Scope-Lebenszyklus & Abort-Synchronisation:** Die Go-Codegen-Generierung für vorzeitige Funktionsabbrüche (`abort_return` und `propagate_abort_return`) wurde so erweitert, dass alle aktiven `sync.WaitGroup`-Instanzen des aktuellen Scopes ordnungsgemäß synchronisiert (`Wait()`) werden, bevor die Funktion verlassen wird.
+- **Automatische Import-Verwaltung:** `import_block` wurde so angepasst, dass das Standard-Paket `"sync"` automatisch importiert wird, sobald asynchrone Hilfsfunktionen benötigt werden (z. B. bei der Deklaration von `Channel`, `Sender` oder `Receiver` Typen, selbst wenn kein expliziter block-lokaler `Scope` deklariert ist).
+
+### Go-Codegen-Stabilität & Syntax-Korrekturen
+- **Korrektur der Operator-Präzedenz:** Die Generierung binärer Vergleichsoperationen wurde so korrigiert, dass Ausdrücke in komplexen Zuweisungen oder Verträgen (z. B. `a == (b > c)`) korrekt geklammert werden, um Syntax- und Typfehler im Go-Backend zu verhindern.
+- **Schlüsselwort-Sanitisierung:** Die Funktion `go_local_name` wurde erweitert, um potenzielle Namenskollisionen mit reservierten Go-Schlüsselwörtern (wie `func`, `var`, `range`, `chan`, `select`, etc.) durch Anhängen eines Unterstrichs (`_`) automatisch zu entschärfen.
+
+### Test- & Conformance-Erweiterungen
+- **Promotion in Conformance-Tests:** Die 7 gültigen Concurrency-Testfälle unter `tests/language_modules/23_concurrency` wurden zu `valid_go_codegen`-Fällen befördert. Die generierten Go-Goldens in `expected_go/` wurden erfolgreich aktualisiert.
+- **V2/V3 Concurrency-Verifikations-Demo:** Ein neues Concurrency-Demo-Szenario (`concurrency_abort_sync_pos` und `concurrency_abort_sync_neg`) wurde unter `tests/language_modules_v2_3/07_concurrency_verification/` integriert. Es demonstriert die Integration von WaitGroup-Synchronisation bei vorzeitigem Abort, Go-Keyword-Sanitisierung (`chan`, `select`) und geklammerten binären Vergleichen. Im negativen Fall wird die Verletzung der Worker-Vorbedingung zuverlässig zur Compilezeit (im semantischen Verifikations-Phase) abgefangen.
+- **Vollständige Verifikation:** Alle Conformance-Gates (`verify-go-semantic-projects.cmd`, `verify-go-semantic-diagnostics.cmd`, `verify-go-project-semantic-diagnostics.cmd`, `verify-go-feature-matrix.cmd` und `verify-compiler-examples.cmd`) laufen zu 100% erfolgreich durch.
+
 
 
 

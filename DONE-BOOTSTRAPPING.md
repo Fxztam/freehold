@@ -293,6 +293,15 @@ This document tracks the milestones, architecture decisions, and implementation 
   * Das Bootstrap-Gate verifiziert die Byte-Gleichheit via SHA256-Hashvergleich: `sha256(stage1.fhirb) == sha256(stage2.fhirb)`.
   * Dieser erfolgreiche Abgleich garantiert mathematisch und funktional die Korrektheit des in Freehold geschriebenen, als native EXE laufenden Compilers.
 
+## Stabilization of Freehold Compiler Verification & Dynamic IR Loader
+
+**Completed on:** 2026-06-03
+
+- **Dynamic IR Loader Integration (`Loader.fh`)**: Integrated JSON IR parsing and manifest ingestion to dynamically rehydrate intermediate representations.
+- **Go Codegen Compatibility**: Fixed shadowing of `len` by renaming variables to `manifest_len`/`json_len`, and forced Go `int64` type inference using expression-based initialization for pointer offsets.
+- **Stage-3 Contract and Baseline Sync**: Updated the stage-3 manifest to verify 21 files, synchronized expected compiler core results, and completed the verification with 100% success.
+
+
 
 
 

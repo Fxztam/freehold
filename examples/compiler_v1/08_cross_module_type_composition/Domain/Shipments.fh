@@ -8,6 +8,9 @@ type Shipment is record
 end record
 
 function make_shipment(id: Integer, name: String, city_id: Integer) returns Shipment
+ensures result.destination.city_id = city_id
+ensures result.customer.address.city_id = city_id
+ensures result.customer.id = id
 is
     let destination: Address = make_address(city_id, "Berlin")
     let customer: Customer = make_customer(id, name, destination)
@@ -15,6 +18,9 @@ is
 end make_shipment
 
 function daily_shipments() returns Array<Shipment, 2>
+ensures result[0].destination.city_id = 42
+ensures result[0].customer.address.city_id = 42
+ensures result[1].customer.id = 1002
 is
     return [make_shipment(1001, "Ada", 42), make_shipment(1002, "Grace", 77)]
 end daily_shipments

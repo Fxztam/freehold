@@ -21,6 +21,8 @@ type RoutineType struct {
 	QualifiedName string
 	Params        []ast.Param
 	ReturnType    string
+	GlobalSpecs   []ast.GlobalSpec
+	DependsSpecs  []ast.DependsSpec
 }
 
 type SymbolTable struct {
@@ -29,6 +31,7 @@ type SymbolTable struct {
 	Types     map[string]bool
 	Errors    map[string]bool
 	TypeBases map[string]string
+	Services  map[string]bool
 }
 
 type Analyzer struct {
@@ -43,6 +46,7 @@ func BuildSymbolTable(module *ast.Module) SymbolTable {
 		Types:     builtinTypes(),
 		Errors:    map[string]bool{},
 		TypeBases: map[string]string{},
+		Services:  map[string]bool{},
 	}
 	for name := range symbols.Types {
 		symbols.TypeBases[name] = name
@@ -72,12 +76,30 @@ func BuildSymbolTable(module *ast.Module) SymbolTable {
 			symbols.Types[qualifiedName(module, value.Name)] = true
 			symbols.Errors[value.Name] = true
 			symbols.Errors[qualifiedName(module, value.Name)] = true
+		case ast.ServiceDecl:
+			symbols.Services[value.Name] = true
+			symbols.Services[qualifiedName(module, value.Name)] = true
+			symbols.Types[value.Name] = true
+			symbols.Types[qualifiedName(module, value.Name)] = true
 		case ast.FunctionDecl:
-			routine := RoutineType{Name: value.Name, QualifiedName: qualifiedName(module, value.Name), Params: value.Params, ReturnType: value.ReturnType}
+			routine := RoutineType{
+				Name:          value.Name,
+				QualifiedName: qualifiedName(module, value.Name),
+				Params:        value.Params,
+				ReturnType:    value.ReturnType,
+				GlobalSpecs:   value.GlobalSpecs,
+				DependsSpecs:  value.DependsSpecs,
+			}
 			symbols.Routines[value.Name] = routine
 			symbols.Routines[routine.QualifiedName] = routine
 		case ast.ProcedureDecl:
-			routine := RoutineType{Name: value.Name, QualifiedName: qualifiedName(module, value.Name), Params: value.Params}
+			routine := RoutineType{
+				Name:          value.Name,
+				QualifiedName: qualifiedName(module, value.Name),
+				Params:        value.Params,
+				GlobalSpecs:   value.GlobalSpecs,
+				DependsSpecs:  value.DependsSpecs,
+			}
 			symbols.Routines[value.Name] = routine
 			symbols.Routines[routine.QualifiedName] = routine
 		}
@@ -140,6 +162,10 @@ func buildSymbolTableWithImports(module *ast.Module, importedByName map[string]*
 				addError(&symbols, exposed)
 				addError(&symbols, qualifiedName(imported, exposed))
 			}
+			if importedSymbols.Services[exposed] {
+				addService(&symbols, exposed)
+				addService(&symbols, qualifiedName(imported, exposed))
+			}
 			routine, ok := importedSymbols.Routines[exposed]
 			if ok {
 				addRoutine(&symbols, routine)
@@ -148,6 +174,13 @@ func buildSymbolTableWithImports(module *ast.Module, importedByName map[string]*
 	}
 
 	return symbols
+}
+
+func addService(target *SymbolTable, name string) {
+	if name != "" {
+		target.Services[name] = true
+		target.Types[name] = true
+	}
 }
 
 func addRoutine(target *SymbolTable, routine RoutineType) {
@@ -270,6 +303,7 @@ func (a *Analyzer) validateModule(module *ast.Module) {
 				a.inferExpr(expr, ensuresEnv)
 			}
 			a.validateBlock(value.Body, env)
+			a.validateRoutineContracts(value.Name, "function", value.Params, value.ReturnType, value.GlobalSpecs, value.DependsSpecs, value.Body, value.Pos)
 		case ast.ProcedureDecl:
 			a.validateRoutineSignature(value.Params, "", locationFromPosition(value.Pos))
 			env := a.envFromParams(value.Params)
@@ -285,6 +319,7 @@ func (a *Analyzer) validateModule(module *ast.Module) {
 				a.inferExpr(expr, env)
 			}
 			a.validateBlock(value.Body, env)
+			a.validateRoutineContracts(value.Name, "procedure", value.Params, "", value.GlobalSpecs, value.DependsSpecs, value.Body, value.Pos)
 		}
 	}
 }
@@ -376,6 +411,7 @@ func (a *Analyzer) validateBlock(body []ast.Stmt, env map[string]string) {
 		case ast.CallStmt:
 			if call, ok := value.Call.(ast.CallExpr); ok {
 				a.validateCall(call, env, locationFromPosition(value.Pos))
+				a.checkAntiAliasing(call, env, value.Pos)
 			} else {
 				a.inferExpr(value.Call, env)
 			}
@@ -877,4 +913,1060 @@ func arrayElementType(typeName string) (string, bool) {
 
 func locationFromPosition(pos token.Position) diagnostic.Location {
 	return diagnostic.Location{Line: pos.Line, Column: pos.Column, Offset: pos.Offset}
+}
+
+func (a *Analyzer) validateRoutineContracts(
+	name string,
+	kind string,
+	params []ast.Param,
+	returnType string,
+	globalSpecs []ast.GlobalSpec,
+	dependsSpecs []ast.DependsSpec,
+	body []ast.Stmt,
+	pos token.Position,
+) {
+	// First, check transitive globals accesses
+	a.checkTransitiveGlobals(body, name, globalSpecs)
+
+	paramNames := map[string]bool{}
+	for _, p := range params {
+		paramNames[p.Name] = true
+	}
+
+	seenGlobals := map[string]bool{}
+	for _, g := range globalSpecs {
+		if seenGlobals[g.Name] {
+			a.diagnostics = append(a.diagnostics, diagnostic.DuplicateGlobal(locationFromPosition(g.Pos), g.Name))
+		}
+		seenGlobals[g.Name] = true
+		isParam := paramNames[g.Name]
+		if !isParam && !a.symbols.Services[g.Name] {
+			a.diagnostics = append(a.diagnostics, diagnostic.InvalidGlobalVariable(locationFromPosition(g.Pos), g.Name))
+		}
+	}
+
+	actualGlobals := map[string]bool{}
+	for gName := range seenGlobals {
+		if !paramNames[gName] {
+			actualGlobals[gName] = true
+		}
+	}
+
+	if len(dependsSpecs) == 0 {
+		return
+	}
+
+	seenTargets := map[string]bool{}
+	validTargets := map[string]bool{}
+	for pName := range paramNames {
+		validTargets[pName] = true
+	}
+	if kind == "function" {
+		validTargets["result"] = true
+	}
+	for name := range actualGlobals {
+		// Find global spec to check mode
+		for _, gSpec := range globalSpecs {
+			if gSpec.Name == name {
+				mode := "Input"
+				if gSpec.Mode != nil {
+					mode = *gSpec.Mode
+				}
+				if mode == "Output" || mode == "In_Out" {
+					validTargets[name] = true
+				}
+				break
+			}
+		}
+	}
+
+	validSources := map[string]bool{}
+	for pName := range paramNames {
+		validSources[pName] = true
+	}
+	for name := range actualGlobals {
+		for _, gSpec := range globalSpecs {
+			if gSpec.Name == name {
+				mode := "Input"
+				if gSpec.Mode != nil {
+					mode = *gSpec.Mode
+				}
+				if mode == "Input" || mode == "In_Out" {
+					validSources[name] = true
+				}
+				break
+			}
+		}
+	}
+
+	env := map[string]string{}
+	for _, p := range params {
+		env[p.Name] = p.Type
+	}
+
+	mutatedVars := a.collectMutatedVars(body, paramNames, actualGlobals)
+	mutatedTargets := map[string]bool{}
+	for mv := range mutatedVars {
+		if paramNames[mv] || actualGlobals[mv] {
+			mutatedTargets[mv] = true
+		}
+	}
+
+	for _, d := range dependsSpecs {
+		if seenTargets[d.Target] {
+			a.diagnostics = append(a.diagnostics, diagnostic.DuplicateDependencyTarget(locationFromPosition(d.Pos), d.Target))
+		}
+		seenTargets[d.Target] = true
+
+		targetRoot := strings.Split(d.Target, ".")[0]
+		if !validTargets[targetRoot] {
+			a.diagnostics = append(a.diagnostics, diagnostic.DependencyTargetNotAllowed(locationFromPosition(d.Pos), d.Target))
+		}
+
+		for _, src := range d.Sources {
+			if src == "+" {
+				if !paramNames[targetRoot] && !actualGlobals[targetRoot] {
+					a.diagnostics = append(a.diagnostics, diagnostic.PlusSourceNotAllowed(locationFromPosition(d.Pos)))
+				}
+			} else {
+				srcRoot := strings.Split(src, ".")[0]
+				if !validSources[srcRoot] {
+					a.diagnostics = append(a.diagnostics, diagnostic.DependencySourceNotAllowed(locationFromPosition(d.Pos), src))
+				}
+			}
+		}
+	}
+
+	seenTargetRoots := map[string]bool{}
+	for t := range seenTargets {
+		seenTargetRoots[strings.Split(t, ".")[0]] = true
+	}
+
+	var sortedMutatedTargets []string
+	for mt := range mutatedTargets {
+		sortedMutatedTargets = append(sortedMutatedTargets, mt)
+	}
+	sort.Strings(sortedMutatedTargets)
+	for _, mt := range sortedMutatedTargets {
+		if !seenTargetRoots[mt] {
+			a.diagnostics = append(a.diagnostics, diagnostic.UndeclaredMutation(locationFromPosition(pos), mt))
+		}
+	}
+
+	var sortedSeenTargets []string
+	for t := range seenTargets {
+		sortedSeenTargets = append(sortedSeenTargets, t)
+	}
+	sort.Strings(sortedSeenTargets)
+	for _, target := range sortedSeenTargets {
+		targetRoot := strings.Split(target, ".")[0]
+		if targetRoot != "result" && !mutatedTargets[targetRoot] {
+			a.diagnostics = append(a.diagnostics, diagnostic.UnusedTarget(locationFromPosition(pos), target))
+		}
+	}
+
+	if kind == "function" && !seenTargets["result"] {
+		a.diagnostics = append(a.diagnostics, diagnostic.FunctionMissingResult(locationFromPosition(pos)))
+	}
+
+	// Information Flow / Dependency Analysis
+	dependencies := a.analyzeInformationFlow(body, paramNames, seenGlobals, validSources, env)
+
+	for _, d := range dependsSpecs {
+		target := d.Target
+		targetRoot := strings.Split(target, ".")[0]
+		actualSources := dependencies[targetRoot]
+		declaredSources := map[string]bool{}
+		for _, s := range d.Sources {
+			if s != "+" {
+				declaredSources[strings.Split(s, ".")[0]] = true
+			}
+		}
+		for _, s := range d.Sources {
+			if s == "+" {
+				declaredSources[targetRoot] = true
+			}
+		}
+
+		var extraSources []string
+		for s := range actualSources {
+			if !declaredSources[s] {
+				if paramNames[s] || seenGlobals[s] {
+					extraSources = append(extraSources, s)
+				}
+			}
+		}
+
+		if len(extraSources) > 0 {
+			sort.Strings(extraSources)
+			a.diagnostics = append(a.diagnostics, diagnostic.DependencyViolation(locationFromPosition(d.Pos), target, strings.Join(extraSources, ", ")))
+		}
+	}
+}
+
+func (a *Analyzer) collectMutatedVars(body []ast.Stmt, paramNames map[string]bool, actualGlobals map[string]bool) map[string]bool {
+	mutated := map[string]bool{}
+	var visitStmt func(stmt ast.Stmt)
+	var visitBody func(stmts []ast.Stmt)
+
+	visitBody = func(stmts []ast.Stmt) {
+		for _, s := range stmts {
+			visitStmt(s)
+		}
+	}
+
+	visitStmt = func(stmt ast.Stmt) {
+		switch val := stmt.(type) {
+		case ast.AssignmentStmt:
+			if root, ok := getRootIdentifier(val.Target); ok {
+				mutated[root] = true
+			}
+		case ast.CallStmt:
+			call, ok := val.Call.(ast.CallExpr)
+			if !ok {
+				return
+			}
+			name, ok := callName(call.Callee)
+			if !ok {
+				return
+			}
+			callee, exists := a.symbols.Routines[name]
+			if !exists {
+				for _, arg := range call.Arguments {
+					if root, ok := getRootIdentifier(arg); ok {
+						mutated[root] = true
+					}
+				}
+				return
+			}
+
+			calleeParams := make([]string, len(callee.Params))
+			calleeParamNames := map[string]bool{}
+			for i, p := range callee.Params {
+				calleeParams[i] = p.Name
+				calleeParamNames[p.Name] = true
+			}
+
+			if len(callee.DependsSpecs) > 0 {
+				for _, dCallee := range callee.DependsSpecs {
+					targetRoot := strings.Split(dCallee.Target, ".")[0]
+					isParam := false
+					paramIdx := -1
+					for i, name := range calleeParams {
+						if name == targetRoot {
+							isParam = true
+							paramIdx = i
+							break
+						}
+					}
+					if isParam {
+						if paramIdx >= 0 && paramIdx < len(call.Arguments) {
+							if root, ok := getRootIdentifier(call.Arguments[paramIdx]); ok {
+								mutated[root] = true
+							}
+						}
+					} else {
+						mutated[targetRoot] = true
+					}
+				}
+			} else {
+				if callee.ReturnType == "" {
+					for _, arg := range call.Arguments {
+						if root, ok := getRootIdentifier(arg); ok {
+							mutated[root] = true
+						}
+					}
+					for _, cg := range callee.GlobalSpecs {
+						mode := ""
+						if cg.Mode != nil {
+							mode = *cg.Mode
+						}
+						if !calleeParamNames[cg.Name] && (mode == "Output" || mode == "In_Out") {
+							mutated[cg.Name] = true
+						}
+					}
+				}
+			}
+		case ast.IfStmt:
+			visitBody(val.ThenBody)
+			visitBody(val.ElseBody)
+		case ast.WhileStmt:
+			visitBody(val.Body)
+		case ast.CaseStmt:
+			for _, branch := range val.When {
+				visitBody(branch.Body)
+			}
+			visitBody(val.Default)
+		case ast.ScopeStmt:
+			visitBody(val.SpawnBody)
+			visitBody(val.JoinBody)
+			visitBody(val.ResultBody)
+		}
+	}
+
+	visitBody(body)
+	return mutated
+}
+
+func (a *Analyzer) dependenciesOf(expr ast.Expr, dependencies map[string]map[string]bool, paramNames map[string]bool, seenGlobals map[string]bool) map[string]bool {
+	deps := map[string]bool{}
+	if expr == nil {
+		return deps
+	}
+
+	var visit func(e ast.Expr)
+	visit = func(e ast.Expr) {
+		if e == nil {
+			return
+		}
+		switch val := e.(type) {
+		case ast.IdentifierExpr:
+			if val.Name == "result" {
+				deps["result"] = true
+				return
+			}
+			if d, ok := dependencies[val.Name]; ok {
+				for k := range d {
+					deps[k] = true
+				}
+			} else if paramNames[val.Name] || seenGlobals[val.Name] {
+				deps[val.Name] = true
+			}
+		case ast.FieldAccessExpr:
+			if root, ok := getRootIdentifier(val); ok {
+				if d, ok := dependencies[root]; ok {
+					for k := range d {
+						deps[k] = true
+					}
+				} else if paramNames[root] || seenGlobals[root] {
+					deps[root] = true
+				}
+			}
+		case ast.IndexExpr:
+			visit(val.Array)
+			visit(val.Index)
+		case ast.UnaryExpr:
+			visit(val.Value)
+		case ast.BinaryExpr:
+			visit(val.Left)
+			visit(val.Right)
+		case ast.CallExpr:
+			for _, arg := range val.Arguments {
+				visit(arg)
+			}
+		case ast.RecordLiteralExpr:
+			for _, field := range val.Fields {
+				visit(field.Value)
+			}
+		case ast.ArrayLiteralExpr:
+			for _, item := range val.Elements {
+				visit(item)
+			}
+		case ast.AwaitExpr:
+			visit(val.Value)
+		case ast.OkExpr:
+			visit(val.Value)
+		}
+	}
+
+	visit(expr)
+	return deps
+}
+
+func (a *Analyzer) analyzeInformationFlow(
+	body []ast.Stmt,
+	paramNames map[string]bool,
+	seenGlobals map[string]bool,
+	validSources map[string]bool,
+	env map[string]string,
+) map[string]map[string]bool {
+	dependencies := map[string]map[string]bool{}
+	for name := range validSources {
+		dependencies[name] = map[string]bool{name: true}
+	}
+
+	var controlDeps []map[string]bool
+	getActiveControlDeps := func() map[string]bool {
+		union := map[string]bool{}
+		for _, s := range controlDeps {
+			for k := range s {
+				union[k] = true
+			}
+		}
+		return union
+	}
+
+	var walkBody func(stmts []ast.Stmt)
+	walkBody = func(stmts []ast.Stmt) {
+		for _, stmt := range stmts {
+			switch val := stmt.(type) {
+			case ast.AssignmentStmt:
+				exprDeps := a.dependenciesOf(val.Value, dependencies, paramNames, seenGlobals)
+				activeCtrl := getActiveControlDeps()
+				for k := range activeCtrl {
+					exprDeps[k] = true
+				}
+				if targetRoot, ok := getRootIdentifier(val.Target); ok {
+					dependencies[targetRoot] = exprDeps
+				}
+			case ast.LetStmt:
+				exprDeps := a.dependenciesOf(val.Value, dependencies, paramNames, seenGlobals)
+				activeCtrl := getActiveControlDeps()
+				for k := range activeCtrl {
+					exprDeps[k] = true
+				}
+				dependencies[val.Name] = exprDeps
+			case ast.CallStmt:
+				call, ok := val.Call.(ast.CallExpr)
+				if !ok {
+					continue
+				}
+				name, ok := callName(call.Callee)
+				if !ok {
+					continue
+				}
+				callee, exists := a.symbols.Routines[name]
+				if !exists {
+					continue
+				}
+
+				calleeParams := make([]string, len(callee.Params))
+				calleeParamNames := map[string]bool{}
+				for i, p := range callee.Params {
+					calleeParams[i] = p.Name
+					calleeParamNames[p.Name] = true
+				}
+
+				if len(callee.DependsSpecs) > 0 {
+					for _, dCallee := range callee.DependsSpecs {
+						targetRoot := strings.Split(dCallee.Target, ".")[0]
+
+						allInputs := map[string]bool{}
+						for _, src := range dCallee.Sources {
+							if src == "+" {
+								allInputs[targetRoot] = true
+							} else {
+								allInputs[strings.Split(src, ".")[0]] = true
+							}
+						}
+
+						allArgsDeps := map[string]bool{}
+						for inputName := range allInputs {
+							isParam := false
+							paramIdx := -1
+							for i, name := range calleeParams {
+								if name == inputName {
+									isParam = true
+									paramIdx = i
+									break
+								}
+							}
+							if isParam {
+								if paramIdx >= 0 && paramIdx < len(call.Arguments) {
+									argDeps := a.dependenciesOf(call.Arguments[paramIdx], dependencies, paramNames, seenGlobals)
+									for k := range argDeps {
+										allArgsDeps[k] = true
+									}
+								}
+							} else {
+								if d, ok := dependencies[inputName]; ok {
+									for k := range d {
+										allArgsDeps[k] = true
+									}
+								} else if paramNames[inputName] || seenGlobals[inputName] {
+									allArgsDeps[inputName] = true
+								}
+							}
+						}
+
+						activeCtrl := getActiveControlDeps()
+						for k := range activeCtrl {
+							allArgsDeps[k] = true
+						}
+
+						isParam := false
+						paramIdx := -1
+						for i, name := range calleeParams {
+							if name == targetRoot {
+								isParam = true
+								paramIdx = i
+								break
+							}
+						}
+
+						if isParam {
+							if paramIdx >= 0 && paramIdx < len(call.Arguments) {
+								if targetVar, ok := getRootIdentifier(call.Arguments[paramIdx]); ok {
+									dependencies[targetVar] = allArgsDeps
+								}
+							}
+						} else {
+							union := map[string]bool{}
+							for k := range allArgsDeps {
+								union[k] = true
+							}
+							if d, ok := dependencies[targetRoot]; ok {
+								for k := range d {
+									union[k] = true
+								}
+							}
+							dependencies[targetRoot] = union
+						}
+					}
+				} else {
+					allArgsDeps := map[string]bool{}
+					for _, arg := range call.Arguments {
+						argDeps := a.dependenciesOf(arg, dependencies, paramNames, seenGlobals)
+						for k := range argDeps {
+							allArgsDeps[k] = true
+						}
+					}
+					activeCtrl := getActiveControlDeps()
+					for k := range activeCtrl {
+						allArgsDeps[k] = true
+					}
+
+					for _, arg := range call.Arguments {
+						if targetVar, ok := getRootIdentifier(arg); ok {
+							dependencies[targetVar] = allArgsDeps
+						}
+					}
+
+					for _, cg := range callee.GlobalSpecs {
+						mode := ""
+						if cg.Mode != nil {
+							mode = *cg.Mode
+						}
+						if !calleeParamNames[cg.Name] && (mode == "Output" || mode == "In_Out") {
+							union := map[string]bool{}
+							for k := range allArgsDeps {
+								union[k] = true
+							}
+							if d, ok := dependencies[cg.Name]; ok {
+								for k := range d {
+									union[k] = true
+								}
+							}
+							dependencies[cg.Name] = union
+						}
+					}
+				}
+			case ast.IfStmt:
+				beforeDeps := cloneDependencies(dependencies)
+				condDeps := a.dependenciesOf(val.Condition, dependencies, paramNames, seenGlobals)
+				controlDeps = append(controlDeps, condDeps)
+
+				walkBody(val.ThenBody)
+				thenDeps := cloneDependencies(dependencies)
+
+				dependencies = cloneDependencies(beforeDeps)
+				walkBody(val.ElseBody)
+				elseDeps := cloneDependencies(dependencies)
+
+				dependencies = map[string]map[string]bool{}
+				allKeys := map[string]bool{}
+				for k := range thenDeps {
+					allKeys[k] = true
+				}
+				for k := range elseDeps {
+					allKeys[k] = true
+				}
+				for k := range beforeDeps {
+					allKeys[k] = true
+				}
+
+				for k := range allKeys {
+					union := map[string]bool{}
+					tD, inThen := thenDeps[k]
+					if !inThen {
+						tD = beforeDeps[k]
+					}
+					eD, inElse := elseDeps[k]
+					if !inElse {
+						eD = beforeDeps[k]
+					}
+					for x := range tD {
+						union[x] = true
+					}
+					for x := range eD {
+						union[x] = true
+					}
+					dependencies[k] = union
+				}
+
+				controlDeps = controlDeps[:len(controlDeps)-1]
+			case ast.CaseStmt:
+				beforeDeps := cloneDependencies(dependencies)
+				condDeps := a.dependenciesOf(val.Value, dependencies, paramNames, seenGlobals)
+				controlDeps = append(controlDeps, condDeps)
+
+				var branchDepsList []map[string]map[string]bool
+				for _, branch := range val.When {
+					dependencies = cloneDependencies(beforeDeps)
+					walkBody(branch.Body)
+					branchDepsList = append(branchDepsList, cloneDependencies(dependencies))
+				}
+
+				if len(val.Default) > 0 {
+					dependencies = cloneDependencies(beforeDeps)
+					walkBody(val.Default)
+					branchDepsList = append(branchDepsList, cloneDependencies(dependencies))
+				} else {
+					branchDepsList = append(branchDepsList, beforeDeps)
+				}
+
+				dependencies = map[string]map[string]bool{}
+				allKeys := map[string]bool{}
+				for k := range beforeDeps {
+					allKeys[k] = true
+				}
+				for _, bd := range branchDepsList {
+					for k := range bd {
+						allKeys[k] = true
+					}
+				}
+
+				for k := range allKeys {
+					union := map[string]bool{}
+					for _, bd := range branchDepsList {
+						d, ok := bd[k]
+						if !ok {
+							d = beforeDeps[k]
+						}
+						for x := range d {
+							union[x] = true
+						}
+					}
+					dependencies[k] = union
+				}
+
+				controlDeps = controlDeps[:len(controlDeps)-1]
+			case ast.WhileStmt:
+				condDeps := a.dependenciesOf(val.Condition, dependencies, paramNames, seenGlobals)
+				controlDeps = append(controlDeps, condDeps)
+
+				loopReads := collectReadVars(val.Condition, val.Body)
+				loopMutated := a.collectMutatedVars(val.Body, paramNames, seenGlobals)
+
+				loopReadDeps := map[string]bool{}
+				for rVar := range loopReads {
+					if d, ok := dependencies[rVar]; ok {
+						for k := range d {
+							loopReadDeps[k] = true
+						}
+					} else if paramNames[rVar] || seenGlobals[rVar] {
+						loopReadDeps[rVar] = true
+					}
+				}
+
+				activeCtrl := getActiveControlDeps()
+				for k := range condDeps {
+					loopReadDeps[k] = true
+				}
+				for k := range activeCtrl {
+					loopReadDeps[k] = true
+				}
+
+				walkBody(val.Body)
+				for v := range loopMutated {
+					union := map[string]bool{}
+					for k := range loopReadDeps {
+						union[k] = true
+					}
+					if d, ok := dependencies[v]; ok {
+						for k := range d {
+							union[k] = true
+						}
+					}
+					dependencies[v] = union
+				}
+
+				controlDeps = controlDeps[:len(controlDeps)-1]
+			case ast.ScopeStmt:
+				walkBody(val.SpawnBody)
+				walkBody(val.JoinBody)
+				walkBody(val.ResultBody)
+			}
+		}
+	}
+
+	walkBody(body)
+	return dependencies
+}
+
+func (a *Analyzer) checkTransitiveGlobals(
+	body []ast.Stmt,
+	routineName string,
+	globalSpecs []ast.GlobalSpec,
+) {
+	rGlobals := map[string]string{}
+	for _, g := range globalSpecs {
+		mode := "Input"
+		if g.Mode != nil {
+			mode = *g.Mode
+		}
+		rGlobals[g.Name] = mode
+	}
+
+	var visitExpr func(expr ast.Expr, pos token.Position)
+	var visitStmt func(stmt ast.Stmt)
+
+	visitExpr = func(expr ast.Expr, pos token.Position) {
+		if expr == nil {
+			return
+		}
+		switch val := expr.(type) {
+		case ast.CallExpr:
+			name, ok := callName(val.Callee)
+			if ok {
+				if callee, exists := a.symbols.Routines[name]; exists {
+					calleeParamNames := map[string]bool{}
+					for _, p := range callee.Params {
+						calleeParamNames[p.Name] = true
+					}
+					for _, cg := range callee.GlobalSpecs {
+						if !calleeParamNames[cg.Name] {
+							cgMode := "Input"
+							if cg.Mode != nil {
+								cgMode = *cg.Mode
+							}
+							rMode, exists := rGlobals[cg.Name]
+							if !exists {
+								a.diagnostics = append(a.diagnostics, diagnostic.TransitiveGlobalMissing(locationFromPosition(pos), cg.Name, name, routineName))
+							} else {
+								if cgMode == "In_Out" && rMode != "In_Out" {
+									a.diagnostics = append(a.diagnostics, diagnostic.TransitiveGlobalModeMismatch(locationFromPosition(pos), cg.Name, cgMode, routineName, rMode))
+								} else if cgMode == "Output" && rMode != "Output" && rMode != "In_Out" {
+									a.diagnostics = append(a.diagnostics, diagnostic.TransitiveGlobalModeMismatch(locationFromPosition(pos), cg.Name, cgMode, routineName, rMode))
+								} else if cgMode == "Input" && rMode != "Input" && rMode != "In_Out" {
+									a.diagnostics = append(a.diagnostics, diagnostic.TransitiveGlobalModeMismatch(locationFromPosition(pos), cg.Name, cgMode, routineName, rMode))
+								}
+							}
+						}
+					}
+				}
+			}
+			for _, arg := range val.Arguments {
+				visitExpr(arg, pos)
+			}
+		case ast.FieldAccessExpr:
+			visitExpr(val.Object, pos)
+		case ast.IndexExpr:
+			visitExpr(val.Array, pos)
+			visitExpr(val.Index, pos)
+		case ast.UnaryExpr:
+			visitExpr(val.Value, pos)
+		case ast.BinaryExpr:
+			visitExpr(val.Left, pos)
+			visitExpr(val.Right, pos)
+		case ast.RecordLiteralExpr:
+			for _, field := range val.Fields {
+				visitExpr(field.Value, pos)
+			}
+		case ast.ArrayLiteralExpr:
+			for _, item := range val.Elements {
+				visitExpr(item, pos)
+			}
+		case ast.AwaitExpr:
+			visitExpr(val.Value, pos)
+		case ast.OkExpr:
+			visitExpr(val.Value, pos)
+		}
+	}
+
+	visitStmt = func(stmt ast.Stmt) {
+		switch val := stmt.(type) {
+		case ast.AssignmentStmt:
+			visitExpr(val.Value, val.Pos)
+		case ast.LetStmt:
+			visitExpr(val.Value, val.Pos)
+		case ast.ReturnStmt:
+			visitExpr(val.Value, val.Pos)
+		case ast.CheckStmt:
+			visitExpr(val.Condition, val.Pos)
+		case ast.CallStmt:
+			if call, ok := val.Call.(ast.CallExpr); ok {
+				visitExpr(call, val.Pos)
+			}
+		case ast.IfStmt:
+			visitExpr(val.Condition, val.Pos)
+			for _, s := range val.ThenBody {
+				visitStmt(s)
+			}
+			for _, s := range val.ElseBody {
+				visitStmt(s)
+			}
+		case ast.WhileStmt:
+			visitExpr(val.Condition, val.Pos)
+			for _, s := range val.Body {
+				visitStmt(s)
+			}
+		case ast.CaseStmt:
+			visitExpr(val.Value, val.Pos)
+			for _, branch := range val.When {
+				visitExpr(branch.Value, val.Pos)
+				for _, s := range branch.Body {
+					visitStmt(s)
+				}
+			}
+			for _, s := range val.Default {
+				visitStmt(s)
+			}
+		case ast.ScopeStmt:
+			for _, s := range val.SpawnBody {
+				visitStmt(s)
+			}
+			for _, s := range val.JoinBody {
+				visitStmt(s)
+			}
+			for _, s := range val.ResultBody {
+				visitStmt(s)
+			}
+		}
+	}
+
+	for _, s := range body {
+		visitStmt(s)
+	}
+}
+
+func (a *Analyzer) checkAntiAliasing(
+	call ast.CallExpr,
+	env map[string]string,
+	pos token.Position,
+) {
+	name, ok := callName(call.Callee)
+	if !ok {
+		return
+	}
+	cal, exists := a.symbols.Routines[name]
+	if !exists {
+		return
+	}
+
+	if len(call.Arguments) == len(cal.Params) {
+		getParamMode := func(paramName string) string {
+			for _, g := range cal.GlobalSpecs {
+				if g.Name == paramName {
+					if g.Mode != nil {
+						return *g.Mode
+					}
+					return "Input"
+				}
+			}
+			return "Input"
+		}
+
+		argRoots := make([]string, len(call.Arguments))
+		for i, arg := range call.Arguments {
+			if root, ok := getRootIdentifier(arg); ok {
+				if t, exists := env[root]; exists && a.symbols.Services[t] {
+					argRoots[i] = t
+				} else {
+					argRoots[i] = root
+				}
+			}
+		}
+
+		var mutableParamIndices []int
+		for idx, param := range cal.Params {
+			if getParamMode(param.Name) == "Output" || getParamMode(param.Name) == "In_Out" {
+				mutableParamIndices = append(mutableParamIndices, idx)
+			}
+		}
+
+		calleeGlobals := map[string]bool{}
+		calleeMutGlobals := map[string]bool{}
+		calleeParamNames := map[string]bool{}
+		for _, p := range cal.Params {
+			calleeParamNames[p.Name] = true
+		}
+
+		for _, cg := range cal.GlobalSpecs {
+			if !calleeParamNames[cg.Name] {
+				calleeGlobals[cg.Name] = true
+				cgMode := "Input"
+				if cg.Mode != nil {
+					cgMode = *cg.Mode
+				}
+				if cgMode == "Output" || cgMode == "In_Out" {
+					calleeMutGlobals[cg.Name] = true
+				}
+			}
+		}
+
+		for i := 0; i < len(call.Arguments); i++ {
+			rootI := argRoots[i]
+			if rootI == "" {
+				continue
+			}
+			isIMutable := false
+			for _, mIdx := range mutableParamIndices {
+				if mIdx == i {
+					isIMutable = true
+					break
+				}
+			}
+
+			for j := i + 1; j < len(call.Arguments); j++ {
+				rootJ := argRoots[j]
+				if rootJ == "" {
+					continue
+				}
+				isJMutable := false
+				for _, mIdx := range mutableParamIndices {
+					if mIdx == j {
+						isJMutable = true
+						break
+					}
+				}
+
+				if (isIMutable || isJMutable) && rootI == rootJ {
+					paramI := cal.Params[i].Name
+					paramJ := cal.Params[j].Name
+					msg := fmt.Sprintf("both '%s' and '%s' resolve to the same variable '%s' (at least one is mutable)", paramI, paramJ, rootI)
+					a.diagnostics = append(a.diagnostics, diagnostic.AliasingViolation(locationFromPosition(pos), msg))
+				}
+			}
+		}
+
+		for _, idx := range mutableParamIndices {
+			rootArg := argRoots[idx]
+			if rootArg != "" && calleeGlobals[rootArg] {
+				paramName := cal.Params[idx].Name
+				msg := fmt.Sprintf("mutable parameter '%s' is passed global variable '%s' which is also accessed directly/transitively by '%s'", paramName, rootArg, name)
+				a.diagnostics = append(a.diagnostics, diagnostic.AliasingViolation(locationFromPosition(pos), msg))
+			}
+		}
+
+		for idx, rootArg := range argRoots {
+			if rootArg != "" && calleeMutGlobals[rootArg] {
+				paramName := cal.Params[idx].Name
+				msg := fmt.Sprintf("argument '%s' resolves to global variable '%s' which is mutated by '%s'", paramName, rootArg, name)
+				a.diagnostics = append(a.diagnostics, diagnostic.AliasingViolation(locationFromPosition(pos), msg))
+			}
+		}
+	}
+}
+
+func getRootIdentifier(expr ast.Expr) (string, bool) {
+	switch val := expr.(type) {
+	case ast.IdentifierExpr:
+		return val.Name, true
+	case ast.FieldAccessExpr:
+		return getRootIdentifier(val.Object)
+	case ast.IndexExpr:
+		return getRootIdentifier(val.Array)
+	}
+	return "", false
+}
+
+func collectReadVars(nodes ...interface{}) map[string]bool {
+	reads := map[string]bool{}
+	var visit func(node interface{})
+
+	visit = func(node interface{}) {
+		if node == nil {
+			return
+		}
+		switch val := node.(type) {
+		case ast.IdentifierExpr:
+			reads[val.Name] = true
+		case ast.FieldAccessExpr:
+			if root, ok := getRootIdentifier(val); ok {
+				reads[root] = true
+			}
+		case ast.IndexExpr:
+			if root, ok := getRootIdentifier(val); ok {
+				reads[root] = true
+			}
+			visit(val.Index)
+		case ast.UnaryExpr:
+			visit(val.Value)
+		case ast.BinaryExpr:
+			visit(val.Left)
+			visit(val.Right)
+		case ast.CallExpr:
+			for _, arg := range val.Arguments {
+				visit(arg)
+			}
+		case ast.RecordLiteralExpr:
+			for _, field := range val.Fields {
+				visit(field.Value)
+			}
+		case ast.ArrayLiteralExpr:
+			for _, item := range val.Elements {
+				visit(item)
+			}
+		case ast.AwaitExpr:
+			visit(val.Value)
+		case ast.OkExpr:
+			visit(val.Value)
+		case ast.AssignmentStmt:
+			visit(val.Value)
+		case ast.LetStmt:
+			visit(val.Value)
+		case ast.ReturnStmt:
+			visit(val.Value)
+		case ast.CheckStmt:
+			visit(val.Condition)
+		case ast.CallStmt:
+			if call, ok := val.Call.(ast.CallExpr); ok {
+				for _, arg := range call.Arguments {
+					visit(arg)
+				}
+			}
+		case ast.IfStmt:
+			visit(val.Condition)
+			for _, s := range val.ThenBody {
+				visit(s)
+			}
+			for _, s := range val.ElseBody {
+				visit(s)
+			}
+		case ast.WhileStmt:
+			visit(val.Condition)
+			for _, s := range val.Body {
+				visit(s)
+			}
+		case ast.CaseStmt:
+			visit(val.Value)
+			for _, branch := range val.When {
+				visit(branch.Value)
+				for _, s := range branch.Body {
+					visit(s)
+				}
+			}
+			for _, s := range val.Default {
+				visit(s)
+			}
+		case ast.ScopeStmt:
+			for _, s := range val.SpawnBody {
+				visit(s)
+			}
+			for _, s := range val.JoinBody {
+				visit(s)
+			}
+			for _, s := range val.ResultBody {
+				visit(s)
+			}
+		}
+	}
+
+	for _, n := range nodes {
+		visit(n)
+	}
+	return reads
+}
+
+func cloneDependencies(d map[string]map[string]bool) map[string]map[string]bool {
+	cloned := map[string]map[string]bool{}
+	for k, v := range d {
+		sub := map[string]bool{}
+		for sk, sv := range v {
+			sub[sk] = sv
+		}
+		cloned[k] = sub
+	}
+	return cloned
 }

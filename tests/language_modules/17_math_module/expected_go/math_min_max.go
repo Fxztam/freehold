@@ -6,9 +6,9 @@ import (
 )
 
 func Main() {
-	smaller := int64(math.Min(float64(2), float64(5)))
-	larger := int64(math.Max(float64(2), float64(5)))
-	decimal := math.Max(float64(2), float64(5.5))
+	var smaller int64 = int64(math.Min(float64(2), float64(5)))
+	var larger int64 = int64(math.Max(float64(2), float64(5)))
+	var decimal float64 = math.Max(float64(2), float64(5.5))
 	if !(smaller == 2) {
 		panic("freehold check failed")
 	}

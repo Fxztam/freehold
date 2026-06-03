@@ -2,7 +2,7 @@
 package test_array_quantifiers
 
 func VerifyQuantifiers(arr [3]int64) bool {
-	allPositive := func() bool {
+	var allPositive bool = func() bool {
 		for i := int64(0); i <= int64(2); i++ {
 			if !(arr[i] >= 0) {
 				return false
@@ -10,7 +10,7 @@ func VerifyQuantifiers(arr [3]int64) bool {
 		}
 		return true
 	}()
-	someNonNegative := func() bool {
+	var someNonNegative bool = func() bool {
 		for i := int64(0); i <= int64(2); i++ {
 			if arr[i] == 0 {
 				return true

@@ -509,6 +509,136 @@ var catalog = map[string]Definition{
 		Message:  "Expected a different token.",
 		Hint:     "Check the syntax around this token.",
 	},
+	"invalid_global_variable": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-CON-3001",
+		Number:   3001,
+		Name:     "invalid_global_variable",
+		Message:  "unknown global variable or service",
+		Hint:     "Ensure the global variable is declared as a service or parameter.",
+	},
+	"duplicate_global": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-CON-3002",
+		Number:   3002,
+		Name:     "duplicate_global",
+		Message:  "duplicate global variable",
+		Hint:     "Declare each global variable at most once in a routine contract.",
+	},
+	"transitive_global_missing": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-CON-3003",
+		Number:   3003,
+		Name:     "transitive_global_missing",
+		Message:  "transitive global variable accessed by callee must be declared in global contract of caller",
+		Hint:     "Add the transitively accessed global to the caller's global contract.",
+	},
+	"transitive_global_mode_mismatch": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-CON-3004",
+		Number:   3004,
+		Name:     "transitive_global_mode_mismatch",
+		Message:  "transitive global variable mode compatibility mismatch",
+		Hint:     "Ensure the caller's global mode is compatible with the callee's required mode.",
+	},
+	"duplicate_dependency_target": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-CON-3005",
+		Number:   3005,
+		Name:     "duplicate_dependency_target",
+		Message:  "duplicate dependency target",
+		Hint:     "Each dependency target may be specified at most once.",
+	},
+	"dependency_target_not_allowed": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-CON-3006",
+		Number:   3006,
+		Name:     "dependency_target_not_allowed",
+		Message:  "dependency target not allowed or not declared as Output/In_Out",
+		Hint:     "Ensure the dependency target is a mutable parameter or global.",
+	},
+	"dependency_source_not_allowed": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-CON-3007",
+		Number:   3007,
+		Name:     "dependency_source_not_allowed",
+		Message:  "dependency source not allowed or not declared as Input/In_Out",
+		Hint:     "Ensure the dependency source is a readable parameter or global.",
+	},
+	"plus_source_not_allowed": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-CON-3008",
+		Number:   3008,
+		Name:     "plus_source_not_allowed",
+		Message:  "'+' source is only allowed for parameter/global targets",
+		Hint:     "Do not use '+' source for non-parameter/global targets.",
+	},
+	"undeclared_mutation": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-CON-3009",
+		Number:   3009,
+		Name:     "undeclared_mutation",
+		Message:  "target is modified in body but missing from depends clause",
+		Hint:     "Add the mutated variable to the depends clause.",
+	},
+	"unused_target": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-CON-3010",
+		Number:   3010,
+		Name:     "unused_target",
+		Message:  "dependency target is not modified in body",
+		Hint:     "Ensure the dependency target is mutated in the routine body.",
+	},
+	"function_missing_result": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-CON-3011",
+		Number:   3011,
+		Name:     "function_missing_result",
+		Message:  "function dependency contract must specify 'result'",
+		Hint:     "Add a dependency target for 'result' in the depends clause.",
+	},
+	"dependency_violation": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-CON-3012",
+		Number:   3012,
+		Name:     "dependency_violation",
+		Message:  "dependency violation",
+		Hint:     "Ensure the variable only depends on declared sources.",
+	},
+	"aliasing_violation": {
+		Severity: "error",
+		Phase:    "semantic",
+		Category: "semantic",
+		Code:     "FH-CON-3013",
+		Number:   3013,
+		Name:     "aliasing_violation",
+		Message:  "aliasing detected in call",
+		Hint:     "Avoid passing overlapping mutable references or globals to procedures.",
+	},
 }
 
 func (d *Diagnostic) Error() string {
@@ -767,4 +897,68 @@ func fromDefinition(name string, location Location, found string, expected []str
 		Found:    found,
 		Hint:     def.Hint,
 	}
+}
+
+func InvalidGlobalVariable(location Location, name string) *Diagnostic {
+	return fromDefinition("invalid_global_variable", location, name, []string{"declared service or parameter"})
+}
+
+func DuplicateGlobal(location Location, name string) *Diagnostic {
+	return fromDefinition("duplicate_global", location, name, []string{"unique global variable"})
+}
+
+func TransitiveGlobalMissing(location Location, name string, callee string, caller string) *Diagnostic {
+	return fromDefinition("transitive_global_missing", location, name, []string{fmt.Sprintf("transitive global variable '%s' accessed by '%s' must be declared in global contract of '%s'", name, callee, caller)})
+}
+
+func TransitiveGlobalModeMismatch(location Location, name string, calleeMode string, caller string, callerMode string) *Diagnostic {
+	return fromDefinition("transitive_global_mode_mismatch", location, name, []string{fmt.Sprintf("transitive global variable '%s' with %s mode requires %s mode in '%s'", name, calleeMode, getCompatibleModeDescription(calleeMode), caller)})
+}
+
+func getCompatibleModeDescription(mode string) string {
+	switch mode {
+	case "In_Out":
+		return "In_Out"
+	case "Output":
+		return "Output or In_Out"
+	case "Input":
+		return "Input or In_Out"
+	}
+	return "compatible"
+}
+
+func DuplicateDependencyTarget(location Location, target string) *Diagnostic {
+	return fromDefinition("duplicate_dependency_target", location, target, []string{"unique dependency target"})
+}
+
+func DependencyTargetNotAllowed(location Location, target string) *Diagnostic {
+	return fromDefinition("dependency_target_not_allowed", location, target, []string{"mutable parameter or global"})
+}
+
+func DependencySourceNotAllowed(location Location, source string) *Diagnostic {
+	return fromDefinition("dependency_source_not_allowed", location, source, []string{"readable parameter or global"})
+}
+
+func PlusSourceNotAllowed(location Location) *Diagnostic {
+	return fromDefinition("plus_source_not_allowed", location, "+", []string{"parameter or global target"})
+}
+
+func UndeclaredMutation(location Location, target string) *Diagnostic {
+	return fromDefinition("undeclared_mutation", location, target, []string{"specified in depends clause"})
+}
+
+func UnusedTarget(location Location, target string) *Diagnostic {
+	return fromDefinition("unused_target", location, target, []string{"mutated in body"})
+}
+
+func FunctionMissingResult(location Location) *Diagnostic {
+	return fromDefinition("function_missing_result", location, "result", []string{"result in function depends clause"})
+}
+
+func DependencyViolation(location Location, target string, extraSources string) *Diagnostic {
+	return fromDefinition("dependency_violation", location, target, []string{fmt.Sprintf("dependency violation: target '%s' depends on undeclared source(s): %s", target, extraSources)})
+}
+
+func AliasingViolation(location Location, msg string) *Diagnostic {
+	return fromDefinition("aliasing_violation", location, "aliasing", []string{msg})
 }

@@ -6,8 +6,8 @@ import (
 )
 
 func Main() {
-	whole := int64(math.Abs(float64(-3)))
-	decimal := math.Abs(float64(-2.5))
+	var whole int64 = int64(math.Abs(float64(-3)))
+	var decimal float64 = math.Abs(float64(-2.5))
 	if !(whole == 3) {
 		panic("freehold check failed")
 	}

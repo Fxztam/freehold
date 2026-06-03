@@ -53,6 +53,9 @@ SUPPORTED_EXAMPLES = [
     SupportedExample("21_concurrent_grpc_channel_demo", "examples/compiler_v1/21_concurrent_grpc_channel_demo/App/Main.fh"),
     SupportedExample("25_quantified_arrays", "examples/compiler_v1/25_quantified_arrays/App/Main.fh"),
 
+    SupportedExample("23_generic_type_inference_and_constraints", "examples/compiler_v1/23_generic_type_inference_and_constraints/App/Main.fh"),
+    SupportedExample("26_generic_function", "examples/compiler_v1/26_generic_function/App/Main.fh"),
+
     SupportedExample("old_BigNumbers", "examples/BigNumbers.fh", "examples/expected_logs/BigNumbers.expected.log"),
     SupportedExample("old_ChudnovskyFeynmanPoint", "examples/ChudnovskyFeynmanPoint.fh", "examples/expected_logs/ChudnovskyFeynmanPoint.expected.log"),
     SupportedExample("old_ChudnovskyPi", "examples/ChudnovskyPi.fh", "examples/expected_logs/ChudnovskyPi.expected.log"),
@@ -67,10 +70,7 @@ SUPPORTED_EXAMPLES = [
 ]
 
 
-UNSUPPORTED_EXAMPLES = [
-    UnsupportedExample("unsupported_generic_function", "examples/compiler_v1/unsupported/generic_function/App/Main.fh", "FH-GOCODEGEN-0001"),
-    UnsupportedExample("23_generic_type_inference_and_constraints", "examples/compiler_v1/23_generic_type_inference_and_constraints/App/Main.fh", "FH-GOCODEGEN-0001"),
-]
+UNSUPPORTED_EXAMPLES: list[UnsupportedExample] = []
 
 
 OUT_ROOT = ROOT / ".tmp" / "compiler_examples"

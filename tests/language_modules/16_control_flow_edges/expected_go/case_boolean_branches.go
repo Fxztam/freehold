@@ -2,7 +2,7 @@
 package control_booleancase
 
 func Main() {
-	active := true
+	var active bool = true
 	switch active {
 	case true:
 		if !(active) {

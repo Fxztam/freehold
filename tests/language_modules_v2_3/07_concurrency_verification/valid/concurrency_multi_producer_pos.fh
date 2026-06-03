@@ -1,0 +1,30 @@
+module Concurrency.ConcurrencyMultiProducerPos
+
+async function producer(sender: Sender<Integer>, val: Integer) returns Boolean
+  requires val >= 10
+is
+    let sent: Boolean = await channel_send<Integer>(sender, val + 5)
+    return sent
+end producer
+
+async function run_multi_producer() returns Integer
+  ensures result >= 15
+is
+    let chan: Channel<Integer> = channel<Integer>(8) with invariant for all X in 0 .. 0 => X >= 15
+    let sender: Sender<Integer> = channel_sender<Integer>(chan)
+    let receiver: Receiver<Integer> = channel_receiver<Integer>(chan)
+
+    scope sc do
+        spawn
+            let h1: JoinHandle<Boolean> = sc.spawn<Boolean>(producer(sender, 10))
+            let h2: JoinHandle<Boolean> = sc.spawn<Boolean>(producer(sender, 20))
+        join
+            let ok1: Boolean = await sc.join<Boolean>(h1)
+            let ok2: Boolean = await sc.join<Boolean>(h2)
+            let val: Integer = await channel_receive<Integer>(receiver)
+        result
+            return val
+    end scope
+end run_multi_producer
+
+end Concurrency.ConcurrencyMultiProducerPos

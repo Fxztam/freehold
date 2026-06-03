@@ -1,0 +1,16 @@
+module Concurrency.ChannelSendLetChainSubstitutionPos
+
+async function verify_send_with_let_chain() returns Integer
+is
+    let chan: Channel<Integer> = channel<Integer>(8) with invariant for all X in 0 .. 0 => X >= 7
+    let sender: Sender<Integer> = channel_sender<Integer>(chan)
+
+    let base: Integer = 3
+    let adjusted: Integer = base + 2
+    let payload: Integer = adjusted + 2
+
+    let sent: Boolean = await channel_send<Integer>(sender, payload)
+    return 0
+end verify_send_with_let_chain
+
+end Concurrency.ChannelSendLetChainSubstitutionPos

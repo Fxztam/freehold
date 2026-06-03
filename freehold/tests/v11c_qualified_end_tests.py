@@ -31,6 +31,7 @@ is
     let i: Integer = 0
     while i < 2
         invariant i >= 0
+        invariant i <= 2
         variant 2 - i
     do
         i := i + 1

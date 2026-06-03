@@ -2,8 +2,8 @@
 package genericfunctionidentity
 
 func Main() {
-	x := IdentityInteger(1)
-	text := IdentityString("ok")
+	var x int64 = GenericFunctionIdentityIdentityInteger(1)
+	var text string = GenericFunctionIdentityIdentityString("ok")
 	if !(x == 1) {
 		panic("freehold check failed")
 	}
@@ -12,10 +12,24 @@ func Main() {
 	}
 }
 
-func IdentityInteger(x int64) int64 {
-	return x
+func GenericFunctionIdentityIdentityInteger(x int64) int64 {
+	if !(true) {
+		panic("freehold requires contract failed")
+	}
+	var freeholdResult int64 = x
+	if !(freeholdResult == x) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }
 
-func IdentityString(x string) string {
-	return x
+func GenericFunctionIdentityIdentityString(x string) string {
+	if !(true) {
+		panic("freehold requires contract failed")
+	}
+	var freeholdResult string = x
+	if !(freeholdResult == x) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }

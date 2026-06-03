@@ -6,8 +6,8 @@ import (
 )
 
 func Main() {
-	greeting := "Vera" + "Flow"
-	index := int64(strings.Index(greeting, "Flow"))
+	var greeting string = "Vera" + "Flow"
+	var index int64 = int64(strings.Index(greeting, "Flow"))
 	if !(index == 4) {
 		panic("freehold check failed")
 	}

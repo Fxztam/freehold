@@ -516,6 +516,8 @@ func (l *Lexer) lexIdentifier(pos token.Position) token.Token {
 		kind = token.Rpc
 	case "proto":
 		kind = token.Proto
+	case "stream":
+		kind = token.Stream
 	case "end":
 		kind = token.End
 	}

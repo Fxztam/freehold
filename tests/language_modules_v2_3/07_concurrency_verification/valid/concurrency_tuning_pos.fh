@@ -1,0 +1,22 @@
+module Concurrency.TuningPos
+
+async function worker(val: Integer) returns Integer
+is
+    return val * 2
+end worker
+
+async function execute_tuning(input: Integer) returns Integer
+is
+    scope sc do
+        spawn
+            call sc.priority(5)
+            call sc.limit(2)
+            let handle: JoinHandle<Integer> = sc.spawn<Integer>(worker(input))
+        join
+            let res: Integer = await sc.join<Integer>(handle)
+        result
+            return res
+    end scope
+end execute_tuning
+
+end Concurrency.TuningPos

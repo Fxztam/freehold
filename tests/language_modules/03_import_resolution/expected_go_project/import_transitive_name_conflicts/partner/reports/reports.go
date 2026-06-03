@@ -20,10 +20,16 @@ func FindPartner(seed int64) ResultPartnerReportNotFound {
 	if !(seed > 0) {
 		panic("freehold requires contract failed")
 	}
-	depot := partner_shared.MakeAddress(7, "Hamburg")
-	order := partner_shared.MakeOrder(seed+100, depot)
+	var depot partner_shared.Address = partner_shared.MakeAddress(7, "Hamburg")
+	var order partner_shared.Order = partner_shared.MakeOrder(seed+100, depot)
 	freeholdResult := ResultPartnerReportNotFound{Ok: true, Value: PartnerReport{Order: order, Depot: depot}}
+	if !(freeholdResult.Ok) {
+		panic("freehold ensures contract failed")
+	}
 	if !(freeholdResult.Value.Order.Address.CityId == 7) {
+		panic("freehold ensures contract failed")
+	}
+	if !(freeholdResult.Value.Depot.CityId == 7) {
 		panic("freehold ensures contract failed")
 	}
 	return freeholdResult
@@ -33,6 +39,13 @@ func LoadPartner(seed int64) PartnerReport {
 	if !(seed > 0) {
 		panic("freehold requires contract failed")
 	}
-	outcome := FindPartner(seed)
-	return outcome.Value
+	var outcome ResultPartnerReportNotFound = FindPartner(seed)
+	var freeholdResult PartnerReport = outcome.Value
+	if !(freeholdResult.Order.Address.CityId == 7) {
+		panic("freehold ensures contract failed")
+	}
+	if !(freeholdResult.Depot.CityId == 7) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }

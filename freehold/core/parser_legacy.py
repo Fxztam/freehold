@@ -90,12 +90,33 @@ class AstBuilder:
         raise TypeCheckError(f"{pos(tree).text()}: unknown declaration {tree.data}")
 
     def rpc_decl(self, tree: Tree) -> RpcDecl:
+        name = str(tree.children[0])
+        req_name = str(tree.children[1])
+        
+        req_stream = False
+        if isinstance(tree.children[2], Tree) and tree.children[2].data == "stream_marker":
+            req_stream = True
+            req_type_node = tree.children[3]
+            next_idx = 4
+        else:
+            req_type_node = tree.children[2]
+            next_idx = 3
+            
+        resp_stream = False
+        if isinstance(tree.children[next_idx], Tree) and tree.children[next_idx].data == "stream_marker":
+            resp_stream = True
+            resp_type_node = tree.children[next_idx + 1]
+        else:
+            resp_type_node = tree.children[next_idx]
+            
         return RpcDecl(
-            str(tree.children[0]),
-            str(tree.children[1]),
-            self.type_ref_name(tree.children[2]),
-            self.type_ref_name(tree.children[3]),
+            name,
+            req_name,
+            self.type_ref_name(req_type_node),
+            self.type_ref_name(resp_type_node),
             pos(tree),
+            request_stream=req_stream,
+            response_stream=resp_stream,
         )
 
     def routine(self, tree: Tree) -> RoutineDecl:
@@ -325,6 +346,8 @@ class AstBuilder:
             return CallExpr(fn_name, self.args(tree.children[arg_index]) if len(tree.children)>arg_index else [], pos(tree), type_args)
         if tree.data == "record_literal": return RecordLiteralExpr(self.type_ref_name(tree.children[0]), self.named_args(tree.children[1]), pos(tree))
         if tree.data == "array_literal": return ArrayLiteralExpr(self.args(tree.children[0]) if len(tree.children)>0 else [], pos(tree))
+        if tree.data == "result_index_expr": return IndexExpr("result", self.expr(tree.children[0]), pos(tree))
+        if tree.data == "result_index_field_access": return IndexedFieldAccessExpr("result", self.expr(tree.children[0]), [str(x) for x in tree.children[1:]], pos(tree))
         if tree.data == "result_value_index_expr": return IndexExpr("value", self.expr(tree.children[0]), pos(tree))
         if tree.data == "result_value_index_field_access": return IndexedFieldAccessExpr("value", self.expr(tree.children[0]), [str(x) for x in tree.children[1:]], pos(tree))
         if tree.data == "index_expr": return IndexExpr(str(tree.children[0]), self.expr(tree.children[1]), pos(tree))

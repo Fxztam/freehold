@@ -4,11 +4,23 @@ package control_casereturn
 func Score(choice int64) int64 {
 	switch choice {
 	case 1:
-		return 10
+		var freeholdResult int64 = 10
+		if !(choice == 1 && freeholdResult == 10 || choice == 2 && freeholdResult == 20 || choice != 1 && choice != 2 && freeholdResult == 0) {
+			panic("freehold ensures contract failed")
+		}
+		return freeholdResult
 	case 2:
-		return 20
+		var freeholdResult int64 = 20
+		if !(choice == 1 && freeholdResult == 10 || choice == 2 && freeholdResult == 20 || choice != 1 && choice != 2 && freeholdResult == 0) {
+			panic("freehold ensures contract failed")
+		}
+		return freeholdResult
 	default:
-		return 0
+		var freeholdResult int64 = 0
+		if !(choice == 1 && freeholdResult == 10 || choice == 2 && freeholdResult == 20 || choice != 1 && choice != 2 && freeholdResult == 0) {
+			panic("freehold ensures contract failed")
+		}
+		return freeholdResult
 	}
 }
 

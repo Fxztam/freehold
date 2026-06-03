@@ -67,7 +67,7 @@ end resolve_ok
 
 function resolve_error(issue: Diagnostic, import_module_full: String, symbol_raw: String) returns ResolveResult
 requires String.instr(issue.code, "FH-") = 0, String.instr(import_module_full, "") = 0, String.instr(symbol_raw, "") = 0
-ensures result.status.name = "error", result.issue.code = issue.code
+ensures result.status.name = "error", result.issue.code = issue.code, result.module_name = import_module_full, result.symbol_name = symbol_raw
 is
     let status: ResolveStatus = make_resolve_status("error")
     return ResolveResult { status: status, module_name: import_module_full, symbol_name: symbol_raw, issue: issue }

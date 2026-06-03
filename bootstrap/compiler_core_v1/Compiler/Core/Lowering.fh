@@ -1228,6 +1228,25 @@ is
                                     }
                                     let b5: IrBuilder = add_instruction(b4, store_inst)
                                     return b5
+                                else
+                                    if stmt.kind = "CHECK" then
+                                        let expr_res: LowerExprResult = lower_expr(stmt.expr_idx, exprs, builder)
+                                        let b1: IrBuilder = expr_res.builder
+                                        let check_inst: IrInstruction = IrInstruction {
+                                            span: stmt.span,
+                                            kind: "CHECK",
+                                            dest_reg: "",
+                                            src_reg_left: expr_res.dest_reg,
+                                            src_reg_right: "",
+                                            op: "",
+                                            literal_value: "",
+                                            type_idx: 0,
+                                            field_name: "",
+                                            index_reg: ""
+                                        }
+                                        let b2: IrBuilder = add_instruction(b1, check_inst)
+                                        return b2
+                                    end if
                                 end if
                             end if
                         end if
@@ -1253,7 +1272,10 @@ is
         kind: "",
         name: "",
         element_type_idx: -1,
-        array_size: 0
+        array_size: 0,
+        has_range: false,
+        min_value: 0,
+        max_value: 0
     }
     
     let empty_inst: IrInstruction = IrInstruction {
@@ -1343,7 +1365,9 @@ is
         name: name,
         entry_block: "entry",
         blocks: final_b.blocks,
-        block_count: final_b.block_count
+        block_count: final_b.block_count,
+        types: final_b.types,
+        type_count: final_b.type_count
     }
     
     return routine

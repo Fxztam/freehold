@@ -20,10 +20,16 @@ func FindDomestic(seed int64) ResultDomesticReportNotFound {
 	if !(seed > 0) {
 		panic("freehold requires contract failed")
 	}
-	depot := domestic_shared.MakeAddress(42, "Berlin")
-	order := domestic_shared.MakeOrder(seed, depot)
+	var depot domestic_shared.Address = domestic_shared.MakeAddress(42, "Berlin")
+	var order domestic_shared.Order = domestic_shared.MakeOrder(seed, depot)
 	freeholdResult := ResultDomesticReportNotFound{Ok: true, Value: DomesticReport{Order: order, Depot: depot}}
+	if !(freeholdResult.Ok) {
+		panic("freehold ensures contract failed")
+	}
 	if !(freeholdResult.Value.Order.Address.CityId == 42) {
+		panic("freehold ensures contract failed")
+	}
+	if !(freeholdResult.Value.Depot.CityId == 42) {
 		panic("freehold ensures contract failed")
 	}
 	return freeholdResult
@@ -33,6 +39,13 @@ func LoadDomestic(seed int64) DomesticReport {
 	if !(seed > 0) {
 		panic("freehold requires contract failed")
 	}
-	outcome := FindDomestic(seed)
-	return outcome.Value
+	var outcome ResultDomesticReportNotFound = FindDomestic(seed)
+	var freeholdResult DomesticReport = outcome.Value
+	if !(freeholdResult.Order.Address.CityId == 42) {
+		panic("freehold ensures contract failed")
+	}
+	if !(freeholdResult.Depot.CityId == 42) {
+		panic("freehold ensures contract failed")
+	}
+	return freeholdResult
 }

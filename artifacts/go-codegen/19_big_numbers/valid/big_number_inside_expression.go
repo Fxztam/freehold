@@ -36,9 +36,9 @@ func freeholdBigFloatAbs(value *big.Float) *big.Float {
 }
 
 func Main() {
-	base := freeholdBigInt("21")
-	doubled := new(big.Int).Mul(base, big.NewInt(2))
-	message := fmt.Sprintf("answer=%v", doubled.String())
+	var base *big.Int = freeholdBigInt("21")
+	var doubled *big.Int = new(big.Int).Mul(base, big.NewInt(2))
+	var message string = fmt.Sprintf("answer=%v", doubled.String())
 	if !(int64(strings.Index(message, "42")) >= 0) {
 		panic("freehold check failed")
 	}

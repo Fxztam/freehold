@@ -12,6 +12,9 @@ end record
 error NotFound
 
 function load() returns Result<Customer, NotFound>
+    ensures result.ok
+    ensures result.value.id = 1
+    ensures result.value.address.city_id = 42
 is
     return ok Customer { id: 1, address: Address { city_id: 42 } }
 end load

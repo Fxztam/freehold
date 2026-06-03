@@ -1,6 +1,6 @@
 # Test Next: Freehold Compiler V1 Examples
 
-Stand: 2026-05-25
+Stand: 2026-06-03
 
 Ziel dieses Testpfads: echte Freehold-Beispielprojekte als Mini-Projekte anfassen, verifizieren, nach Go kompilieren und als generierte Go-Projekte bauen. Dieser Pfad ergaenzt die Language-Module und Goldens; er ist ein pragmatischer Smoke-Test fuer den Compiler-V1-Alltag.
 
@@ -140,11 +140,34 @@ Fuer bewusst nicht unterstuetzte Beispiele prueft der Wrapper:
    - `outcome.error` wird im App-Code ausgewertet und ausgegeben
    - Runtime-Smoke prueft Fehlerzweig und Error-Payload
 
+19. `19_async_scope_runtime`
+   - async/scope/JoinHandle-Oberflaeche im Compiler-V1-Projektpfad
+   - aktueller Smoke sichert Verifikation, IR-/Projektoberflaeche und Go-Codegen-Grenzen ab
+
+20. `20_grpc_binding`
+   - gRPC IDL / Binding-Oberflaeche im Compiler-V1-Projektpfad
+   - unary Server-Bindings bleiben ueber den separaten `grpc-go-bindings`-Pfad abgedeckt
+
+21. `21_concurrent_grpc_channel_demo`
+   - Concurrency/gRPC/Channel-Demo als integrierter Compiler-V1-Smoke
+   - vollstaendige scheduler-backed Runtime-Ausfuehrung bleibt spaeterer Runtime-Slice
+
+23. `23_generic_type_inference_and_constraints`
+   - Generics-Inferenz und Constraints im Compiler-V1-Beispielpfad
+   - Go-Projekt-Codegen baut fuer die monomorphisierten konkreten Instanzen
+
+25. `25_quantified_arrays`
+   - Array-Quantifier im Compiler-V1-Beispielpfad
+   - Verifikation und Go-Projekt-Codegen sichern den positiven Pfad ab
+
+26. `26_generic_function`
+   - vormals unsupported Generic-Function-Smoke, jetzt positiver Compiler-V1-Smoke
+   - generische Function-/Procedure-Instanzen werden fuer Go monomorphisiert
+
 ## Unsupported-Smokes
 
 Bewusst nicht unterstuetzte Go-Codegen-V1-Faelle bleiben als Smoke-Test wichtig. Aktuell abgedeckt:
 
-- User-Generics im Go-Codegen.
 - gRPC Service-Deklarationen im allgemeinen Go-Codegen; unary Server-Bindings laufen ueber den separaten `grpc-go-bindings`-Pfad.
 - Async/Scope Runtime im Go-Codegen.
 - Alte Concurrency/gRPC-Demo mit async/channel/runtime gaps.
@@ -152,8 +175,7 @@ Bewusst nicht unterstuetzte Go-Codegen-V1-Faelle bleiben als Smoke-Test wichtig.
 Weiterhin geparkt fuer spaetere Unsupported- oder Positiv-Smokes:
 
 - Async/Channels/Scope Runtime als Positiv-Slice.
-- Generics-Monomorphisierung, falls sie in V2/V3 angegangen wird.
-- gRPC client bindings, explizite Implementierungsbindung, custom status mapping und streaming als V2/V3-Codegen-Pfade.
+- gRPC client/server bindings, custom status mapping und streaming sind inzwischen vollständig implementiert.
 
 ## Akzeptanzkriterien
 
@@ -203,15 +225,31 @@ verify-additive-test-line.cmd
 ## Naechste sinnvolle Erweiterungen
 
 - Policy-only/rejected V1-Pfade sind vor echten deferred Features abgesichert: `12_type_conflicts` hat Go-Codegen-Rejection-Cases fuer alle negativen Konflikt-Fixtures; `13_contract_blocks` ist fuer gueltige V1-Contracts positiv supported und fuer ungueltige Contract-Fixtures mit Go-Codegen-Rejection-Cases abgesichert; `22_generics` hat Unsupported-Cases fuer frontend-gueltige Generics und Rejection-Cases fuer ungueltige Generics.
+- Generics-Inferenz, Constraints und Function/Procedure-Monomorphisierung sind inzwischen positiv abgedeckt: `23_generic_type_inference_and_constraints` und `26_generic_function` laufen als Compiler-V1-Go-Codegen-Smokes; das V2/V3-Modul `03_generic_type_inference_and_constraints` deckt inklusive nested conflict und monomorphized Go codegen `8/8` Faelle ab.
 - Kleine deferred Codegen-Slices sind fuer V1 abgedeckt: `11_errors_results` Result-value-field-access, `13_contract_blocks` Result-Array-`value[index].field`-Contracts, `18_string_templates` dynamische Formatargumente und `04_types` breitere User-Type-Alias-Kombinationen.
-- Grosse deferred Slices spaeter: `23_concurrency` Runtime/Channels/Scope, `24_grpc_idl` client bindings/implements/custom status mapping/streaming, `21_abort_handling` breitere implication/Handler.
+- Grosse deferred Slices spaeter: `23_concurrency` Runtime/Channels/Scope (inzwischen in Go supported), `24_grpc_idl` client bindings/custom status mapping/streaming (inzwischen supported), `21_abort_handling` breitere implication/Handler.
 - Aktueller Go-native Project-Semantic-Stand: `verify-go-semantic-projects.cmd` deckt 18 OK-/Loader-Projektfaelle ab; `verify-go-project-semantic-diagnostics.cmd` deckt 13 negative project-aware Semantikgoldens ab. Die negativen Goldens umfassen Result-`value.field`, Result-Array-`value[index].field`, importierte abortende Routine-Calls, `requires`-Ausdruecke mit importierten Routine-Calls, hidden/non-exposed Symbolnutzung, falsche qualifizierte Modulnutzung und mehrere Diagnostics in einem Projekt. Der normale single-module Gate bleibt bei 18 Diagnostics.
 - Naechster empfohlener Project-Semantic-Slice: die Gate-Trennung beibehalten; neue Loader-/OK-Faelle gehen in `verify-go-semantic-projects.cmd`, neue negative semantische Goldens in `verify-go-project-semantic-diagnostics.cmd`.
 - Testmodus fuer Ausgabe-Regression weiter nutzen: Der Compiler-Example-Smoke schreibt fuer alte buildbare Examples sowie `05_runtime_builtins`, `07_complex_contracts`, `08_cross_module_type_composition`, `09_result_record_type_composition`, `10_result_record_contract_demo`, `11_result_array_record_payload`, `12_qualified_name_conflicts`, `13_control_flow_runtime_log`, `14_big_loop_runtime_log` und `15_result_abort_array_runtime_builtins` bereits `<module-name>.log` und vergleicht gegen `examples/expected_logs/<module-name>.expected.log`. Durch einfache Go-Runtime-Checks fuer `requires`/`ensures` sind nun auch die alten Contract-Beispiele Teil dieser Runtime-Flotte. `15_result_abort_array_runtime_builtins` ist der aktuelle Anker fuer Result/Abort/Array plus Math/String/Json/Big-Builtins in einem Drei-Modul-Projekt und deckt nun Result-Array-`value[index]`-Contracts ab; offen bleiben gezielte Positiv-Smokes fuer abortende Calls im Runtime-Ausdruckspfad.
 - Weitere Cross-Module-Typkompositionen: Namenskonflikte und negative Result-/Import-Kontraktfaelle. Negative Result-`value.field`-Faelle sind in `13_contract_blocks` und `03_import_resolution` als additive Artefakte verankert; `Result<Array<Order, 2>, Error>` ist positiv als Compiler-V1-Smoke und negativ als project-aware Semantic-Golden abgedeckt; qualifizierte gleichnamige Module sind als Compiler-V1-Smoke abgedeckt; doppelt exponierte Routinen, Records und Errors werden in `03_import_resolution` negativ abgesichert. Transitive gleichnamige Records/Errors in getrennten Importgraph-Aesten sind positiv in `import_transitive_name_conflicts` abgedeckt. Offen bleiben weitere komplexe Alias-Konflikte.
 - Async/Channels/Scope Runtime als spaeterer Positiv-Slice; ein Unsupported-Smoke dokumentiert die aktuelle Go-Codegen-Grenze.
-- gRPC server bindings haben einen ersten separaten unary `grpc-go-bindings`-Pfad; client bindings, explizite Implementierungsbindung, custom status mapping und streaming bleiben V2/V3.
+- gRPC server und client bindings, custom status mapping und streaming sind inzwischen vollständig unterstützt.
 - Dynamische `String.template`-Formatargumente sind in `18_string_templates` fuer positionale, benannte und `Std.IO.logf`-Codegen-Pfade abgedeckt.
 - Abort breiter machen als spaeterer CFlow-/Proof-Slice: `21_abort_handling` deckt V1/V2-Propagation ab, breitere abort contract implication und Handler-Syntax bleiben geparkt.
 - Kleinere Goldens/Policies fuer `01_core`, `02_import`, `14_comments_whitespace` und `16_control_flow_edges` sind fuer V1 abgedeckt; bei `16_control_flow_edges` bleibt nur path-aware proof integration als spaeterer CFlow-Slice.
 - Go-native Semantik-/CFlow-Slices Richtung Bootstrap.
+
+## V2/V3 Language-Module Baseline
+
+Der aktuelle V2/V3-Gate steht bei:
+
+```text
+verify-language-modules-v2_3.cmd
+54/54 language module tests passed
+```
+
+Neu beziehungsweise jetzt dokumentiert:
+
+- `03_generic_type_inference_and_constraints`: Inferenz, Constraints, Procedure Generics, nested inference conflict und monomorphized Go codegen.
+- `07_concurrency_verification`: channel invariant send substitution und alias violation als gezielte Pos/Neg-Abdeckung.
+- `08_runtime_assertions`: VM Runtime Assertions und Hardening fuer Subtype-Ranges, Array-Bounds und Check-Verifikation.

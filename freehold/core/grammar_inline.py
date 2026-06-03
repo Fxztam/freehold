@@ -22,7 +22,8 @@ function_decl: async_marker? "function" NAME type_param_list? "(" param_list? ")
 async_marker: "async"
 procedure_decl: async_marker? "procedure" NAME type_param_list? "(" param_list? ")" contract_block? "is" stmt* "end" NAME
 service_decl: "service" NAME "is" rpc_decl+ "end" NAME
-rpc_decl: "rpc" NAME "(" NAME ":" type_ref ")" ":" type_ref
+rpc_decl: "rpc" NAME "(" NAME ":" stream_marker? type_ref ")" ":" stream_marker? type_ref
+stream_marker: "stream"
 
 param_list: param ("," param)*
 param: NAME ":" param_type
@@ -106,8 +107,12 @@ named_arg: NAME ":" expr
      | "success" -> success
      | "failure" -> failure
      | "result" ("." NAME)+ -> result_field_access
+     | "result" "[" expr "]" ("." NAME)+ -> result_index_field_access
+     | "result" "[" expr "]" -> result_index_expr
      | "result" -> result_var
      | "value" ("." NAME)+ -> result_value_field_access
+     | "value" "[" expr "]" ("." NAME)+ -> result_value_index_field_access
+     | "value" "[" expr "]" -> result_value_index_expr
      | "error" ("." NAME)+ -> result_error_field_access
      | "value" -> result_value
      | "error" -> result_error_value

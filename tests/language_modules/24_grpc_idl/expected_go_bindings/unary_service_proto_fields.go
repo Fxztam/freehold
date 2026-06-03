@@ -8,6 +8,7 @@ import (
 	pb "freehold.local/grpc/grpcidl/unaryserviceprotofieldspb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -34,14 +35,53 @@ func RegisterUserServiceServer(registrar grpc.ServiceRegistrar, handler UserServ
 func (server *UserServiceServer) GetUser(ctx context.Context, request *pb.UserRequest) (*pb.UserReply, error) {
 	response, err := server.handler.GetUser(ctx, request)
 	if err != nil {
-		return nil, freeholdGrpcStatus(err)
+		return nil, freeholdGrpcStatus(ctx, err)
 	}
 	return response, nil
 }
 
-func freeholdGrpcStatus(err error) error {
+type UserServiceClient interface {
+	GetUser(ctx context.Context, request *pb.UserRequest, opts ...grpc.CallOption) (*pb.UserReply, error)
+}
+
+type userServiceClient struct {
+	client pb.UserServiceClient
+}
+
+func NewUserServiceClient(cc grpc.ClientConnInterface) UserServiceClient {
+	return &userServiceClient{client: pb.NewUserServiceClient(cc)}
+}
+
+func (c *userServiceClient) GetUser(ctx context.Context, request *pb.UserRequest, opts ...grpc.CallOption) (*pb.UserReply, error) {
+	resp, err := c.client.GetUser(ctx, request, opts...)
+	if err != nil {
+		return nil, freeholdGrpcStatus(ctx, err)
+	}
+	return resp, nil
+}
+
+type FreeholdGrpcErrorMapping struct {
+	Code     codes.Code
+	Metadata map[string]string
+}
+
+var FreeholdGrpcErrorRegistry = map[string]FreeholdGrpcErrorMapping{}
+
+func freeholdGrpcStatus(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
+	}
+	var unwrappedErr = err
+	for unwrappedErr != nil {
+		msg := unwrappedErr.Error()
+		if mapping, ok := FreeholdGrpcErrorRegistry[msg]; ok {
+			if ctx != nil && len(mapping.Metadata) > 0 {
+				md := metadata.New(mapping.Metadata)
+				_ = grpc.SendHeader(ctx, md)
+			}
+			return status.Error(mapping.Code, msg)
+		}
+		unwrappedErr = errors.Unwrap(unwrappedErr)
 	}
 	if _, ok := status.FromError(err); ok {
 		return err
