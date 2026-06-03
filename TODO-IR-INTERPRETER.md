@@ -43,12 +43,12 @@ Folgende Module und Komponenten müssen aufgebaut werden, um die emittierte IR a
   - Verwaltung einer Task-Queue für über `spawn` erzeugte Routinen.
   - Suspendierung von Tasks bei blockierenden Channel-Operationen (`send`/`receive`) und Fortsetzung durch den Scheduler.
 
-### Phase 4: Zukünftige VM- & Interpreter-Erweiterungen (V2/V3)
-- [ ] **Dynamischer Call-Stack für verschachtelte Funktionsaufrufe:**
+### Phase 4: Zukünftige VM- & Interpreter-Erweiterungen (V2/V3) [ERLEDIGT]
+- [x] **Dynamischer Call-Stack für verschachtelte Funktionsaufrufe:**
   - Implementierung eines frame-basierten Stacks innerhalb jedes `VmTask`.
   - Unterstützung für die Instruktion `CALL` (nicht-Host-Routinen) durch Pushing eines neuen `ActivationFrame`.
   - Abgleich des Registersatzes und Wiederherstellung des aufrufenden Kontexts bei `RETURN`.
-- [ ] **Runtime-Assertions & dynamische Sicherheitsprüfungen:**
+- [x] **Runtime-Assertions & dynamische Sicherheitsprüfungen:**
   - Einbau von dynamischen Wertebereichsprüfungen für Subtypen und Array-Zugehörigkeiten direkt in der Ausführungsschleife.
   - Auslösen kontrollierter VM-Exceptions bei Index-Grenzen-Verletzungen.
 - [x] **Dynamischer IR-Loader für Projektdateien:**
