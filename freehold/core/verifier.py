@@ -1173,6 +1173,11 @@ class Verifier:
                 for field_name, field_type in ctx.records[t.name].fields.items():
                     expect_json_serializable(TypeName(field_type), pos, f"{path}.{field_name}")
                 return
+            if isinstance(t, TypeName):
+                generic = ctx.parse_generic_instance(t.name)
+                if generic is not None and generic[0] == "Array" and len(generic[1]) == 2:
+                    expect_json_serializable(TypeName(generic[1][0]), pos, f"{path}[]")
+                    return
             if top_level:
                 raise TypeCheckError(f"{pos.text()}: Json.stringify argument 1 expected record, got {type_to_string(t)}")
             if isinstance(t, ArrayTypeName):

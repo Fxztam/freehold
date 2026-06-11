@@ -2,33 +2,33 @@
 package monomorphizedinferenceandconstraintspos
 
 func Main() {
-	var x int64 = MinValInteger(10, 20)
+	var x int64 = MonomorphizedInferenceAndConstraintsPosMinValInteger(10, 20)
 	_ = x
-	var y float64 = MinValDouble(3.14, 2.71)
+	var y float64 = MonomorphizedInferenceAndConstraintsPosMinValDouble(3.14, 2.71)
 	_ = y
-	var z int64 = AddValInteger(40, 2)
+	var z int64 = MonomorphizedInferenceAndConstraintsPosAddValInteger(40, 2)
 	_ = z
-	var w float64 = AddValDouble(1.5, 2.5)
+	var w float64 = MonomorphizedInferenceAndConstraintsPosAddValDouble(1.5, 2.5)
 	_ = w
-	LogAndSwapInteger(10, 20)
-	LogAndSwapDouble(3.14, 2.71)
+	MonomorphizedInferenceAndConstraintsPosLogAndSwapInteger(10, 20)
+	MonomorphizedInferenceAndConstraintsPosLogAndSwapDouble(3.14, 2.71)
 }
 
-func AddValDouble(a float64, b float64) float64 {
+func MonomorphizedInferenceAndConstraintsPosAddValDouble(a float64, b float64) float64 {
 	if !(true) {
 		panic("freehold requires contract failed")
 	}
 	return a + b
 }
 
-func AddValInteger(a int64, b int64) int64 {
+func MonomorphizedInferenceAndConstraintsPosAddValInteger(a int64, b int64) int64 {
 	if !(true) {
 		panic("freehold requires contract failed")
 	}
 	return a + b
 }
 
-func LogAndSwapDouble(a float64, b float64) {
+func MonomorphizedInferenceAndConstraintsPosLogAndSwapDouble(a float64, b float64) {
 	if !(true) {
 		panic("freehold requires contract failed")
 	}
@@ -39,7 +39,7 @@ func LogAndSwapDouble(a float64, b float64) {
 	_ = second
 }
 
-func LogAndSwapInteger(a int64, b int64) {
+func MonomorphizedInferenceAndConstraintsPosLogAndSwapInteger(a int64, b int64) {
 	if !(true) {
 		panic("freehold requires contract failed")
 	}
@@ -50,7 +50,7 @@ func LogAndSwapInteger(a int64, b int64) {
 	_ = second
 }
 
-func MinValDouble(a float64, b float64) float64 {
+func MonomorphizedInferenceAndConstraintsPosMinValDouble(a float64, b float64) float64 {
 	if !(true) {
 		panic("freehold requires contract failed")
 	}
@@ -60,7 +60,7 @@ func MinValDouble(a float64, b float64) float64 {
 	return b
 }
 
-func MinValInteger(a int64, b int64) int64 {
+func MonomorphizedInferenceAndConstraintsPosMinValInteger(a int64, b int64) int64 {
 	if !(true) {
 		panic("freehold requires contract failed")
 	}

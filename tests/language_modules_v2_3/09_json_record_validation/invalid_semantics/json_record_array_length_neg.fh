@@ -1,0 +1,20 @@
+module JsonRecordArrayLengthNeg
+
+type Address is record
+    city: String
+    zip: Integer
+end record
+
+type Person is record
+    first_name: String @json("firstName")
+    address: Address
+    tags: Array<String, 2>
+    active: Boolean
+end record
+
+procedure main()
+is
+    let parsed: Result<Person, SchemaError> = Json.parse<Person>("{\"firstName\":\"Ada\",\"address\":{\"city\":\"London\",\"zip\":12345},\"tags\":[\"math\"],\"active\":true}")
+end main
+
+end JsonRecordArrayLengthNeg

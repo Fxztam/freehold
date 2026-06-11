@@ -1,0 +1,27 @@
+module JsonRecordRoundtripValidationPos
+
+type Address is record
+    city: String
+    zip: Integer
+end record
+
+type Person is record
+    first_name: String @json("firstName")
+    address: Address
+    tags: Array<String, 2>
+    active: Boolean
+end record
+
+procedure main()
+is
+    let text: String = "{\"firstName\":\"Ada\",\"address\":{\"city\":\"London\",\"zip\":12345},\"tags\":[\"math\",\"code\"],\"active\":true}"
+    let parsed: Result<Person, SchemaError> = Json.parse<Person>(text)
+    check parsed.ok
+    check parsed.value.first_name = "Ada"
+    check parsed.value.address.city = "London"
+    check parsed.value.address.zip = 12345
+    let encoded: String = Json.stringify(parsed.value)
+    check encoded = text
+end main
+
+end JsonRecordRoundtripValidationPos
