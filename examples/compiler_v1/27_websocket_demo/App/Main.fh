@@ -1,7 +1,7 @@
 module App.Main
 
 import Std.IO
-import WebSocket exposing Connection, Server, WebSocketError, connect, listen, accept, close
+import WebSocket exposing Connection, Server, WebSocketError, connect, listen, accept, close, close_server
 
 async function server_worker(server: Server) returns Integer
 is
@@ -49,6 +49,7 @@ is
             join
                 let server_status: Integer = await demo_scope.join<Integer>(server_handle)
                 let client_status: Integer = await demo_scope.join<Integer>(client_handle)
+                call close_server(server)
             result
                 return server_status + client_status
         end scope

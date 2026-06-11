@@ -347,6 +347,8 @@ def export_record_field(field: Any) -> dict[str, Any]:
     item: dict[str, Any] = {"name": field.name, "type": field.type_name, "type_repr": export_type_name_ref(field.type_name)}
     if getattr(field, "proto_id", None) is not None:
         item["proto_id"] = field.proto_id
+    if getattr(field, "json_name", None) is not None:
+        item["json_name"] = field.json_name
     return item
 
 

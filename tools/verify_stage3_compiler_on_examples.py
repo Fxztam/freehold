@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import socket
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -14,6 +16,11 @@ if str(ROOT) not in sys.path:
 
 from freehold.core.go_codegen import go_executable_name
 from tools.freehold_fuzzer import build_typing_positive, build_typing_negative
+
+
+GO_BACKEND_EXAMPLES = {
+    "29_websocket_go_backend_demo": ("websocket_go_backend.go", 8102),
+}
 
 
 @dataclass(frozen=True)
@@ -55,6 +62,9 @@ SUPPORTED_EXAMPLES = [
     SupportedExample("21_concurrent_grpc_channel_demo", "examples/compiler_v1/21_concurrent_grpc_channel_demo/App/Main.fh"),
     SupportedExample("22_subtype_range", "examples/compiler_v1/22_subtype_range/App/Main.fh"),
     SupportedExample("24_flow_contracts", "examples/compiler_v1/24_flow_contracts/App/Main.fh"),
+    SupportedExample("27_websocket_demo", "examples/compiler_v1/27_websocket_demo/App/Main.fh", "examples/expected_logs/compiler_v1_websocket_demo.expected.log"),
+    SupportedExample("28_websocket_multi_client_demo", "examples/compiler_v1/28_websocket_multi_client_demo/App/Main.fh", "examples/expected_logs/compiler_v1_websocket_multi_client_demo.expected.log"),
+    SupportedExample("29_websocket_go_backend_demo", "examples/compiler_v1/29_websocket_go_backend_demo/App/Main.fh", "examples/expected_logs/compiler_v1_websocket_go_backend_demo.expected.log"),
     SupportedExample("old_BigNumbers", "examples/BigNumbers.fh", "examples/expected_logs/BigNumbers.expected.log"),
     SupportedExample("old_ChudnovskyFeynmanPoint", "examples/ChudnovskyFeynmanPoint.fh", "examples/expected_logs/ChudnovskyFeynmanPoint.expected.log"),
     SupportedExample("old_ChudnovskyPi", "examples/ChudnovskyPi.fh", "examples/expected_logs/ChudnovskyPi.expected.log"),
@@ -146,6 +156,12 @@ def run_supported_with_stage3(example: SupportedExample) -> bool:
         print(f"[FAIL] Go project codegen failed: {example.name}")
         return True
 
+    example_root = entry.parent
+    if entry.parent.name == "App":
+        example_root = entry.parent.parent
+    for go_file in example_root.glob("*.go"):
+        shutil.copy(go_file, project_out)
+
     # Step 3: Run the native bootstrapped compiler binary to compile the project
     stage3_compiler = ROOT / "bin" / "stage3_compiler_core_v1.exe"
     if not stage3_compiler.exists():
@@ -228,9 +244,11 @@ def run_runtime_log_check(example: SupportedExample, project_out: Path, json_pat
     log_path = package_dir / log_name
     expected_path = ROOT / example.expected_log
     test_path = package_dir / "freehold_runtime_log_test.go"
-    test_path.write_text(runtime_log_test_source(package_name, log_name), encoding="utf-8")
+    main_content = go_file.read_text(encoding="utf-8")
+    is_async = "func Main(ctx context.Context)" in main_content
+    test_path.write_text(runtime_log_test_source(package_name, log_name, is_async), encoding="utf-8")
 
-    if run(["go", "test", "./...", "-run", "TestFreeholdMainRuntimeLog", "-count=1"], project_out).returncode != 0:
+    if run_with_optional_go_backend(example, project_out, ["go", "test", "./...", "-run", "TestFreeholdMainRuntimeLog", "-count=1"]).returncode != 0:
         print(f"[FAIL] runtime log test failed: {example.name}")
         return True
     actual = normalize_log(log_path.read_text(encoding="utf-8") if log_path.exists() else "")
@@ -263,7 +281,7 @@ def run_executable_log_check(example: SupportedExample, project_out: Path, expec
             print(f"[FAIL] generated executable missing: {exe_path.name} in {project_out}")
             return True
     
-    result = subprocess.run([str(exe_path)], cwd=project_out, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    result = run_with_optional_go_backend(example, project_out, [str(exe_path)], capture=True)
     if result.returncode != 0:
         print(f"[FAIL] generated executable failed: {example.name}")
         print(result.stdout)
@@ -281,13 +299,15 @@ def run_executable_log_check(example: SupportedExample, project_out: Path, expec
     return False
 
 
-def runtime_log_test_source(package_name: str, log_name: str) -> str:
+def runtime_log_test_source(package_name: str, log_name: str, is_async: bool = False) -> str:
+    ctx_import = '\n\t"context"' if is_async else ''
+    main_call = 'Main(context.Background())' if is_async else 'Main()'
     return f'''package {package_name}
 
 import (
     "bytes"
     "os"
-    "testing"
+    "testing"{ctx_import}
 )
 
 func TestFreeholdMainRuntimeLog(t *testing.T) {{
@@ -297,7 +317,7 @@ func TestFreeholdMainRuntimeLog(t *testing.T) {{
         t.Fatal(err)
     }}
     os.Stdout = writer
-    Main()
+    {main_call}
     if err := writer.Close(); err != nil {{
         t.Fatal(err)
     }}
@@ -315,6 +335,64 @@ func TestFreeholdMainRuntimeLog(t *testing.T) {{
 
 def normalize_log(text: str) -> str:
     return text.replace("\r\n", "\n")
+
+
+def run_with_optional_go_backend(example: SupportedExample, project_out: Path, command: list[str], capture: bool = False) -> subprocess.CompletedProcess[str]:
+    if example.name not in GO_BACKEND_EXAMPLES:
+        if capture:
+            return subprocess.run(command, cwd=project_out, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        return run(command, project_out)
+
+    process = start_go_backend(example, project_out)
+    try:
+        if capture:
+            return subprocess.run(command, cwd=project_out, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        return run(command, project_out)
+    finally:
+        stop_go_backend(process)
+
+
+def start_go_backend(example: SupportedExample, project_out: Path) -> subprocess.Popen[str]:
+    source_name, port = GO_BACKEND_EXAMPLES[example.name]
+    source_path = project_out / source_name
+    exe_path = project_out / "bin" / go_backend_executable_name(example.name)
+    exe_path.parent.mkdir(parents=True, exist_ok=True)
+    if run(["go", "build", "-trimpath", "-o", str(exe_path), source_name], project_out).returncode != 0:
+        raise RuntimeError(f"failed to build Go backend for {example.name}: {source_path}")
+    process = subprocess.Popen([str(exe_path)], cwd=project_out, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    wait_for_port(port)
+    return process
+
+
+def stop_go_backend(process: subprocess.Popen[str]) -> None:
+    if process.poll() is not None:
+        return
+    process.terminate()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
+
+
+def wait_for_port(port: int) -> None:
+    deadline = time.monotonic() + 10
+    last_error: OSError | None = None
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=0.2):
+                return
+        except OSError as exc:
+            last_error = exc
+            time.sleep(0.05)
+    raise RuntimeError(f"Go backend did not open port {port}: {last_error}")
+
+
+def go_backend_executable_name(example_name: str) -> str:
+    base = f"{go_executable_name(example_name)}_backend"
+    if sys.platform == "win32":
+        return f"{base}.exe"
+    return base
 
 
 def run(command: list[str], cwd: Path, quiet: bool = False) -> subprocess.CompletedProcess[str]:

@@ -48,12 +48,14 @@ class RecordField:
     type_name: str
     pos: SourcePos
     proto_id: int | None = None
+    json_name: str | None = None
 
 @dataclass(frozen=True)
 class RecordDef:
     name: str
     fields: dict[str, str]
     proto_fields: dict[str, int] | None = None
+    json_fields: dict[str, str] | None = None
 
 @dataclass(frozen=True)
 class RpcDecl:

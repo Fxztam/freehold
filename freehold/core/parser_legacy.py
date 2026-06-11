@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 from lark import Lark, Tree, Token
 from freehold.core.comment_rules import validate_comments
 from freehold.core.grammar_inline import FREEHOLD_GRAMMAR
@@ -65,9 +66,13 @@ class AstBuilder:
             fields = []
             for f in tree.children[field_start:]:
                 proto_id = None
-                if len(f.children) > 2:
-                    proto_id = int(f.children[2].children[0])
-                fields.append(RecordField(str(f.children[0]), self.type_ref_name(f.children[1]), pos(f), proto_id))
+                json_name = None
+                for attr in f.children[2:]:
+                    if isinstance(attr, Tree) and attr.data == "proto_field_id":
+                        proto_id = int(attr.children[0])
+                    elif isinstance(attr, Tree) and attr.data == "json_field_name":
+                        json_name = json.loads(str(attr.children[0]))
+                fields.append(RecordField(str(f.children[0]), self.type_ref_name(f.children[1]), pos(f), proto_id, json_name))
             return RecordTypeDecl(name, fields, pos(tree), type_params)
         if tree.data == "type_decl":
             base_tree = tree.children[1]

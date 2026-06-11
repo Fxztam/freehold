@@ -15,6 +15,16 @@ def param_type_ref(type_name: str):
             return ArrayTypeName(element_type.strip(), int(size_text.strip()))
     return TypeName(type_name)
 
+def json_loads_strict(text: str):
+    def object_pairs_hook(pairs):
+        obj = {}
+        for key, value in pairs:
+            if key in obj:
+                raise ValueError(f"duplicate object key: {key}")
+            obj[key] = value
+        return obj
+    return json.loads(text, object_pairs_hook=object_pairs_hook)
+
 class Interpreter:
     def __init__(self, verified: VerifiedProgram):
         self.v=verified; self.types=verified.types; self.records=verified.records; self.errors=verified.errors; self.routines=verified.routines
@@ -131,7 +141,8 @@ class Interpreter:
     def json_value(self, value):
         if isinstance(value, RecordValue):
             record = self.records[value.type_name]
-            return {field_name: self.json_value(value.fields[field_name]) for field_name in record.fields}
+            json_fields = record.json_fields or {}
+            return {json_fields.get(field_name, field_name): self.json_value(value.fields[field_name]) for field_name in record.fields}
         if isinstance(value, list):
             return [self.json_value(item) for item in value]
         if value is None or isinstance(value, (str, bool)):
@@ -141,6 +152,64 @@ class Interpreter:
         if isinstance(value, float):
             return value
         raise VerificationError(f"Json.stringify cannot serialize runtime value {type(value).__name__}")
+
+    def json_record_value(self, target_type, value, path):
+        if target_type not in self.records:
+            raise VerificationError(f"Json.parse target is not a record: {target_type}")
+        if not isinstance(value, dict):
+            raise ValueError(f"{path}: expected object")
+        record = self.records[target_type]
+        json_fields = record.json_fields or {}
+        json_to_field = {json_fields.get(field_name, field_name): field_name for field_name in record.fields}
+        expected_fields = set(json_to_field)
+        actual_fields = set(value)
+        missing = sorted(expected_fields - actual_fields)
+        if missing:
+            raise ValueError(f"{path}: missing required field {missing[0]}")
+        unknown = sorted(actual_fields - expected_fields)
+        if unknown:
+            raise ValueError(f"{path}: unknown field {unknown[0]}")
+        fields = {
+            field_name: self.json_typed_value(record.fields[field_name], value[json_name], f"{path}.{json_name}")
+            for json_name, field_name in json_to_field.items()
+        }
+        return RecordValue(target_type, fields)
+
+    def json_typed_value(self, type_name, value, path):
+        type_ref = param_type_ref(type_name)
+        if isinstance(type_ref, ArrayTypeName):
+            if not isinstance(value, list):
+                raise ValueError(f"{path}: expected array")
+            if len(value) != type_ref.size:
+                raise ValueError(f"{path}: expected array length {type_ref.size}, got {len(value)}")
+            return [self.json_typed_value(type_ref.element_type, item, f"{path}[]") for item in value]
+        if type_name in self.records:
+            return self.json_record_value(type_name, value, path)
+        base = self.types[type_name].base if type_name in self.types else type_name
+        if base == "String":
+            if isinstance(value, str):
+                return value
+            raise ValueError(f"{path}: expected String")
+        if base == "Integer":
+            if isinstance(value, int) and not isinstance(value, bool):
+                return value
+            raise ValueError(f"{path}: expected Integer")
+        if base == "Boolean":
+            if isinstance(value, bool):
+                return value
+            raise ValueError(f"{path}: expected Boolean")
+        if base == "Double":
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                return float(value)
+            raise ValueError(f"{path}: expected Double")
+        raise ValueError(f"{path}: unsupported JSON target type {type_name}")
+
+    def json_parse_record(self, target_type, text):
+        try:
+            data = json_loads_strict(text)
+            return ResultValue(True, self.json_record_value(target_type, data, "value"), None)
+        except Exception as exc:
+            return ResultValue(False, None, str(exc))
 
     def assign_field_path(self, path, new_value, env, pos):
         if len(path) < 2:
@@ -221,6 +290,8 @@ class Interpreter:
                 return render_template(args[0], args[1:], named)
             if e.name == "Json.stringify":
                 return json.dumps(self.json_value(args[0]), ensure_ascii=False, separators=(",", ":"))
+            if e.name == "Json.parse":
+                return self.json_parse_record(e.type_args[0], args[0])
             if e.name == "Math.sin":
                 return math.sin(args[0])
             if e.name == "Math.cos":

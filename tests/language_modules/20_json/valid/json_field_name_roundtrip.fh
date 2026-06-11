@@ -1,0 +1,18 @@
+module JsonFieldNameRoundtrip
+
+type Person is record
+    first_name: String @json("firstName")
+    age: Integer
+end record
+
+procedure main()
+is
+    let text: String = "{\"firstName\":\"Ada\",\"age\":37}"
+    let parsed: Result<Person, SchemaError> = Json.parse<Person>(text)
+    check parsed.ok
+    check parsed.value.first_name = "Ada"
+    let encoded: String = Json.stringify(parsed.value)
+    check encoded = text
+end main
+
+end JsonFieldNameRoundtrip

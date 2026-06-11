@@ -142,6 +142,22 @@ BigInteger, BigFloat, Result, parse, schema, optional, nullable, and @json names
 
 Diagnostics for V1 live in `FH-JSON-4201..4203`.
 
+V2 adds typed record parsing without new syntax:
+
+```fh
+let parsed: Result<Person, SchemaError> = Json.parse<Person>(text)
+```
+
+Rules:
+
+```text
+Json.parse accepts exactly one String argument.
+Json.parse requires exactly one record type argument.
+The record type remains the canonical JSON schema.
+Missing fields, unknown fields, wrong primitive types, malformed JSON, and wrong fixed array lengths produce Result failure.
+Successful parsing returns Result<RecordType, SchemaError> with ok=true and the decoded record value.
+```
+
 If JSON becomes a Freehold language feature, records should remain the canonical structure definition.
 
 JSON should be a checked projection of Freehold record types, not a second schema language that duplicates records.

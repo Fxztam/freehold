@@ -1,0 +1,150 @@
+module App.Main
+
+import Std.IO
+import WebSocket exposing Connection, Server, WebSocketError, connect, listen, accept, close, close_server
+
+async function accept_or_fail(server: Server, label: String) returns Result<Connection, WebSocketError>
+is
+    let accepted: Result<Connection, WebSocketError> = await accept(server)
+    if accepted.ok then
+        return accepted
+    else
+        call Std.IO.log(String.concat("Server failed to accept ", label))
+        return accepted
+    end if
+end accept_or_fail
+
+async function server_worker(server: Server, client_b_gate: Sender<Boolean>) returns Integer
+is
+    let first_res: Result<Connection, WebSocketError> = await accept_or_fail(server, "client A")
+    if first_res.ok then
+        let client_a: Connection = first_res.value
+        let opened: Boolean = await channel_send<Boolean>(client_b_gate, true)
+        check opened = true
+
+        let second_res: Result<Connection, WebSocketError> = await accept_or_fail(server, "client B")
+        if second_res.ok then
+            let client_b: Connection = second_res.value
+
+            let welcome_a: Boolean = await channel_send<String>(client_a.outgoing, "server: welcome client A")
+            let welcome_b: Boolean = await channel_send<String>(client_b.outgoing, "server: welcome client B")
+            check welcome_a = true
+            check welcome_b = true
+
+            let msg_a: String = await channel_receive<String>(client_a.incoming)
+            call Std.IO.log(String.concat("Server routed client A to client B: ", msg_a))
+            let routed_to_b: Boolean = await channel_send<String>(client_b.outgoing, String.concat("server relay to B: ", msg_a))
+            check routed_to_b = true
+
+            let msg_b: String = await channel_receive<String>(client_b.incoming)
+            call Std.IO.log(String.concat("Server routed client B to client A: ", msg_b))
+            let routed_to_a: Boolean = await channel_send<String>(client_a.outgoing, String.concat("server relay to A: ", msg_b))
+            check routed_to_a = true
+
+            call close(client_a)
+            call close(client_b)
+            return 0
+        else
+            call close(client_a)
+            return 1
+        end if
+    else
+        return 1
+    end if
+end server_worker
+
+async function client_a_worker(url: String) returns Integer
+is
+    let connected: Result<Connection, WebSocketError> = await connect(url)
+    if connected.ok then
+        let conn: Connection = connected.value
+        let welcome: String = await channel_receive<String>(conn.incoming)
+        if welcome = "" then
+            call Std.IO.log("Client A received empty welcome")
+            call close(conn)
+            return 1
+        end if
+
+        let sent: Boolean = await channel_send<String>(conn.outgoing, "A->B: hello from FH client A")
+        check sent = true
+
+        let reply: String = await channel_receive<String>(conn.incoming)
+        call Std.IO.log(String.concat("Client A received: ", reply))
+        call close(conn)
+        return 0
+    else
+        call Std.IO.log("Client A connect failed: WebSocketError")
+        return 1
+    end if
+end client_a_worker
+
+async function client_b_worker(url: String, start_gate: Receiver<Boolean>) returns Integer
+is
+    let can_start: Boolean = await channel_receive<Boolean>(start_gate)
+    if can_start = false then
+        call Std.IO.log("Client B start gate failed")
+        return 1
+    end if
+
+    let connected: Result<Connection, WebSocketError> = await connect(url)
+    if connected.ok then
+        let conn: Connection = connected.value
+        let welcome: String = await channel_receive<String>(conn.incoming)
+        if welcome = "" then
+            call Std.IO.log("Client B received empty welcome")
+            call close(conn)
+            return 1
+        end if
+
+        let forwarded: String = await channel_receive<String>(conn.incoming)
+        call Std.IO.log(String.concat("Client B received: ", forwarded))
+
+        let sent: Boolean = await channel_send<String>(conn.outgoing, "B->A: ack from FH client B")
+        check sent = true
+        call close(conn)
+        return 0
+    else
+        call Std.IO.log("Client B connect failed: WebSocketError")
+        return 1
+    end if
+end client_b_worker
+
+async function run_demo() returns Integer
+is
+    let server_res: Result<Server, WebSocketError> = listen("127.0.0.1:8101")
+    if server_res.ok then
+        let server: Server = server_res.value
+        let gate_channel: Channel<Boolean> = channel<Boolean>(1)
+        let gate_sender: Sender<Boolean> = channel_sender<Boolean>(gate_channel)
+        let gate_receiver: Receiver<Boolean> = channel_receiver<Boolean>(gate_channel)
+
+        scope demo_scope do
+            spawn
+                let server_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(server_worker(server, gate_sender))
+                let client_a_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_a_worker("ws://127.0.0.1:8101"))
+                let client_b_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_b_worker("ws://127.0.0.1:8101", gate_receiver))
+            join
+                let server_status: Integer = await demo_scope.join<Integer>(server_handle)
+                let client_a_status: Integer = await demo_scope.join<Integer>(client_a_handle)
+                let client_b_status: Integer = await demo_scope.join<Integer>(client_b_handle)
+                call close_server(server)
+            result
+                return server_status + client_a_status + client_b_status
+        end scope
+    else
+        call Std.IO.log("Server listen failed: WebSocketError")
+        return 1
+    end if
+end run_demo
+
+async procedure main()
+is
+    let status: Integer = await run_demo()
+    if status = 0 then
+        call Std.IO.log("Multi-client WebSocket demo finished successfully")
+    else
+        call Std.IO.log("Multi-client WebSocket demo finished with failure")
+    end if
+end main
+
+end App.Main

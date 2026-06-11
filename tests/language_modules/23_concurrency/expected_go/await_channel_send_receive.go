@@ -168,18 +168,6 @@ type FreeholdJoinHandle[T any] struct {
 	ch chan T
 }
 
-type FreeholdChannel[T any] struct {
-	ch chan T
-}
-
-type FreeholdSender[T any] struct {
-	ch chan T
-}
-
-type FreeholdReceiver[T any] struct {
-	ch chan T
-}
-
 func freeholdSpawn[T any](wg *sync.WaitGroup, priority int, sem chan struct{}, f func() T) FreeholdJoinHandle[T] {
 	wg.Add(1)
 	ch := make(chan T, 1)
@@ -195,16 +183,16 @@ func freeholdSpawn[T any](wg *sync.WaitGroup, priority int, sem chan struct{}, f
 	return FreeholdJoinHandle[T]{ch: ch}
 }
 
-func freeholdChannelSend[T any](sender FreeholdSender[T], value T) bool {
-	sender.ch <- value
+func freeholdChannelSend[T any](sender chan<- T, value T) bool {
+	sender <- value
 	return true
 }
 
-func freeholdChannelReceive[T any](receiver FreeholdReceiver[T]) T {
-	return <-receiver.ch
+func freeholdChannelReceive[T any](receiver <-chan T) T {
+	return <-receiver
 }
 
-func Exchange(ctx context.Context, sender FreeholdSender[int64], receiver FreeholdReceiver[int64]) int64 {
+func Exchange(ctx context.Context, sender chan<- int64, receiver <-chan int64) int64 {
 	var sent bool = freeholdChannelSend[int64](sender, 42)
 	if !(sent == true) {
 		panic("freehold check failed")

@@ -34,6 +34,8 @@ def canonical(obj: Any) -> Any:
                 continue
             if name == "invariant" and getattr(obj, name) is None:
                 continue
+            if name == "json_name" and getattr(obj, name) is None:
+                continue
             result[name] = canonical(getattr(obj, name))
         return result
     return repr(obj)

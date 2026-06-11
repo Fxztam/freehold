@@ -10,7 +10,8 @@ declaration: record_type_decl | type_decl | error_decl | service_decl | function
 
 record_type_decl: "type" NAME type_param_list? "is" "record" record_field+ "end" "record"
 type_param_list: TYPE_ARG_START NAME ("," NAME)* ">"
-record_field: NAME ":" type_ref proto_field_id?
+record_field: NAME ":" type_ref json_field_name? proto_field_id?
+json_field_name: "@json" "(" ESCAPED_STRING ")"
 proto_field_id: "proto" INT_NUMBER
 
 type_decl: "type" NAME "is" base_type range_decl?

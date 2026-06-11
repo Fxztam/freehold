@@ -1,0 +1,93 @@
+module App.Main
+
+import Std.IO
+import WebSocket exposing Connection, WebSocketError, connect, close
+
+async function client_a_worker(url: String, client_b_gate: Sender<Boolean>) returns Integer
+is
+    let connected: Result<Connection, WebSocketError> = await connect(url)
+    if connected.ok then
+        let conn: Connection = connected.value
+        let welcome: String = await channel_receive<String>(conn.incoming)
+        if welcome = "" then
+            call Std.IO.log("FH Client A received empty Go backend welcome")
+            call close(conn)
+            return 1
+        end if
+
+        let opened: Boolean = await channel_send<Boolean>(client_b_gate, true)
+        check opened = true
+
+        let sent: Boolean = await channel_send<String>(conn.outgoing, "A->Go->B: hello from FH client A")
+        check sent = true
+
+        let reply: String = await channel_receive<String>(conn.incoming)
+        call Std.IO.log(String.concat("FH Client A received from Go backend: ", reply))
+        call close(conn)
+        return 0
+    else
+        call Std.IO.log("FH Client A connect to Go backend failed: WebSocketError")
+        return 1
+    end if
+end client_a_worker
+
+async function client_b_worker(url: String, start_gate: Receiver<Boolean>) returns Integer
+is
+    let can_start: Boolean = await channel_receive<Boolean>(start_gate)
+    if can_start = false then
+        call Std.IO.log("FH Client B start gate failed")
+        return 1
+    end if
+
+    let connected: Result<Connection, WebSocketError> = await connect(url)
+    if connected.ok then
+        let conn: Connection = connected.value
+        let welcome: String = await channel_receive<String>(conn.incoming)
+        if welcome = "" then
+            call Std.IO.log("FH Client B received empty Go backend welcome")
+            call close(conn)
+            return 1
+        end if
+
+        let forwarded: String = await channel_receive<String>(conn.incoming)
+        call Std.IO.log(String.concat("FH Client B received from Go backend: ", forwarded))
+
+        let sent: Boolean = await channel_send<String>(conn.outgoing, "B->Go->A: ack from FH client B")
+        check sent = true
+        call close(conn)
+        return 0
+    else
+        call Std.IO.log("FH Client B connect to Go backend failed: WebSocketError")
+        return 1
+    end if
+end client_b_worker
+
+async function run_demo() returns Integer
+is
+    let gate_channel: Channel<Boolean> = channel<Boolean>(1)
+    let gate_sender: Sender<Boolean> = channel_sender<Boolean>(gate_channel)
+    let gate_receiver: Receiver<Boolean> = channel_receiver<Boolean>(gate_channel)
+
+    scope demo_scope do
+        spawn
+            let client_a_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_a_worker("ws://127.0.0.1:8102/ws", gate_sender))
+            let client_b_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_b_worker("ws://127.0.0.1:8102/ws", gate_receiver))
+        join
+            let client_a_status: Integer = await demo_scope.join<Integer>(client_a_handle)
+            let client_b_status: Integer = await demo_scope.join<Integer>(client_b_handle)
+        result
+            return client_a_status + client_b_status
+    end scope
+end run_demo
+
+async procedure main()
+is
+    let status: Integer = await run_demo()
+    if status = 0 then
+        call Std.IO.log("FH clients completed Go backend WebSocket demo successfully")
+    else
+        call Std.IO.log("FH clients completed Go backend WebSocket demo with failure")
+    end if
+end main
+
+end App.Main

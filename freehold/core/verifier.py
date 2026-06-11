@@ -14,6 +14,7 @@ BUILTIN_GENERIC_TYPE_ARITY = {
     "Sender": 1,
     "Receiver": 1,
 }
+BUILTIN_ERROR_NAMES = {"SchemaError"}
 
 RESERVED_NAMES = {
     "Array", "BigFloat", "BigInteger", "Boolean", "Double", "Integer", "Result", "String",
@@ -36,13 +37,27 @@ class VerifiedProgram:
     proof_obligations: list[dict[str, str]]
     flow_summaries: dict[str, RoutineFlowSummary]
 
+def json_fields_for_record(declaration: RecordTypeDecl) -> dict[str, str]:
+    json_fields: dict[str, str] = {}
+    seen_names: dict[str, str] = {}
+    for field in declaration.fields:
+        json_name = field.json_name or field.name
+        if json_name == "":
+            raise TypeCheckError(f"{field.pos.text()}: invalid @json field name: empty string")
+        if json_name in seen_names:
+            raise TypeCheckError(f"{field.pos.text()}: duplicate @json field name: {json_name}")
+        seen_names[json_name] = field.name
+        if field.json_name is not None:
+            json_fields[field.name] = field.json_name
+    return json_fields
+
 class Verifier:
     def verify(self, program: Program, imported_modules: dict[str, VerifiedProgram] | None = None, prover: str | None = None, timeout: int | None = None) -> VerifiedProgram:
         imported_modules = imported_modules or {}
         self.validate_imports(program)
         self.validate_qualified_name(program.module_name, program.pos)
         types = {name: TypeDef(name, name) for name in BUILTIN_TYPE_NAMES}
-        records, generic_records, errors, routines, services = {}, {}, set(), {}, {}
+        records, generic_records, errors, routines, services = {}, {}, set(BUILTIN_ERROR_NAMES), {}, {}
         declared_names = {name: "builtin" for name in types}
         for d in program.declarations:
             if isinstance(d, TypeDecl):
@@ -63,7 +78,8 @@ class Verifier:
                     if f.name in seen: raise TypeCheckError(f"{f.pos.text()}: duplicate record field: {f.name}")
                     seen.add(f.name); fields[f.name] = f.type_name
                 proto_fields = self.validate_proto_fields(d)
-                records[d.name] = RecordDef(d.name, fields, proto_fields)
+                json_fields = self.validate_json_fields(d)
+                records[d.name] = RecordDef(d.name, fields, proto_fields, json_fields)
             elif isinstance(d, ErrorDecl):
                 self.validate_declaration_name(d.name, declared_names, d.pos, "error")
                 declared_names[d.name] = "error"
@@ -93,6 +109,7 @@ class Verifier:
         self.services(services, records)
         flow_summaries = ControlFlowAnalyzer(routines, program.module_name).analyze_routines()
         vp = VerifiedProgram(program, types, records, errors, routines, services, obs, flow_summaries)
+        vp.imported_modules = imported_modules
         import os
         prover_env = os.environ.get("FREEHOLD_PROVER", "")
         if prover == "none" or prover_env == "none":
@@ -124,6 +141,9 @@ class Verifier:
             seen_ids[field.proto_id] = field.name
             proto_fields[field.name] = field.proto_id
         return proto_fields
+
+    def validate_json_fields(self, declaration: RecordTypeDecl) -> dict[str, str]:
+        return json_fields_for_record(declaration)
 
     def services(self, services: dict[str, ServiceDecl], records: dict[str, RecordDef]) -> None:
         for service in services.values():
@@ -1161,6 +1181,82 @@ class Verifier:
             if isinstance(t, TypeName) and self.base(t, ctx) in ("String", "Integer", "Boolean", "Double"):
                 return
             raise TypeCheckError(f"{pos.text()}: Json.stringify cannot serialize {type_to_string(t)} at {path}")
+        def expect_json_record_type(type_name, pos):
+            ctx.require_type_or_record(type_name, pos)
+            target_type = TypeName(type_name)
+            if type_name not in ctx.records:
+                raise TypeCheckError(f"{pos.text()}: Json.parse type argument expected record, got {type_to_string(target_type)}")
+            expect_json_serializable(target_type, pos, "value", top_level=True)
+        def json_loads_strict_literal(text):
+            def object_pairs_hook(pairs):
+                obj = {}
+                for key, value in pairs:
+                    if key in obj:
+                        raise ValueError(f"duplicate object key: {key}")
+                    obj[key] = value
+                return obj
+            return json.loads(text, object_pairs_hook=object_pairs_hook)
+        def validate_json_literal_value(type_name, value, path):
+            generic = ctx.parse_generic_instance(type_name)
+            if generic is not None and generic[0] == "Array":
+                args = generic[1]
+                if len(args) != 2 or not args[1].isdigit():
+                    raise ValueError(f"{path}: unsupported JSON array target type {type_name}")
+                if not isinstance(value, list):
+                    raise ValueError(f"{path}: expected array")
+                expected_len = int(args[1])
+                if len(value) != expected_len:
+                    raise ValueError(f"{path}: expected array length {expected_len}, got {len(value)}")
+                for item in value:
+                    validate_json_literal_value(args[0], item, f"{path}[]")
+                return
+            if type_name in ctx.records:
+                validate_json_literal_record(type_name, value, path)
+                return
+            base = ctx.types[type_name].base if type_name in ctx.types else type_name
+            if base == "String":
+                if isinstance(value, str):
+                    return
+                raise ValueError(f"{path}: expected String")
+            if base == "Integer":
+                if isinstance(value, int) and not isinstance(value, bool):
+                    return
+                raise ValueError(f"{path}: expected Integer")
+            if base == "Boolean":
+                if isinstance(value, bool):
+                    return
+                raise ValueError(f"{path}: expected Boolean")
+            if base == "Double":
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    return
+                raise ValueError(f"{path}: expected Double")
+            raise ValueError(f"{path}: unsupported JSON target type {type_name}")
+        def validate_json_literal_record(target_type, value, path):
+            if target_type not in ctx.records:
+                raise ValueError(f"{path}: target is not a record: {target_type}")
+            if not isinstance(value, dict):
+                raise ValueError(f"{path}: expected object")
+            record = ctx.records[target_type]
+            json_fields = record.json_fields or {}
+            json_to_field = {json_fields.get(field_name, field_name): field_name for field_name in record.fields}
+            expected_fields = set(json_to_field)
+            actual_fields = set(value)
+            missing = sorted(expected_fields - actual_fields)
+            if missing:
+                raise ValueError(f"{path}: missing required field {missing[0]}")
+            unknown = sorted(actual_fields - expected_fields)
+            if unknown:
+                raise ValueError(f"{path}: unknown field {unknown[0]}")
+            for json_name, field_name in json_to_field.items():
+                validate_json_literal_value(record.fields[field_name], value[json_name], f"{path}.{json_name}")
+        def validate_json_parse_literal(target_type, arg):
+            if not isinstance(arg, StringExpr):
+                return
+            try:
+                data = json_loads_strict_literal(arg.value)
+                validate_json_literal_record(target_type, data, "value")
+            except Exception as exc:
+                raise TypeCheckError(f"{arg.pos.text()}: Json.parse literal does not match {target_type}: {exc}") from exc
         if e.name == "channel":
             item_type = require_builtin_type_arg()
             expect_count(1)
@@ -1322,9 +1418,19 @@ class Verifier:
         if e.name == "Json.stringify":
             if len(e.args) != 1:
                 raise TypeCheckError(f"{e.pos.text()}: Json.stringify expects 1 arguments")
+            if e.type_args:
+                raise TypeCheckError(f"{e.pos.text()}: non-generic routine used with type arguments: {e.name}")
             actual = infer_arg(0)
             expect_json_serializable(actual, e.args[0].pos, "value", top_level=True)
             return TypeName("String")
+        if e.name == "Json.parse":
+            if len(e.args) != 1:
+                raise TypeCheckError(f"{e.pos.text()}: Json.parse expects 1 arguments")
+            target_type = require_builtin_type_arg()
+            expect_json_record_type(target_type, e.pos)
+            expect_type(0, "String")
+            validate_json_parse_literal(target_type, e.args[0])
+            return ResultTypeName(TypeName(target_type), "SchemaError")
         if e.name in {"Math.sin", "Math.cos", "Math.tan", "Math.sqrt"}:
             if len(e.args) != 1:
                 raise TypeCheckError(f"{e.pos.text()}: {e.name} expects 1 arguments")
@@ -1809,7 +1915,7 @@ class Ctx:
                 field_name: self.imported_type_context_name(field_type, imported, seen)
                 for field_name, field_type in record.fields.items()
             }
-            self.records[record_name] = RecordDef(record_name, fields, record.proto_fields)
+            self.records[record_name] = RecordDef(record_name, fields, record.proto_fields, record.json_fields)
         for field_type in imported.records[name].fields.values():
             self.add_imported_type_dependencies(field_type, imported, seen)
 
@@ -1968,7 +2074,8 @@ class Ctx:
             return
         substitutions = dict(zip(declaration.type_params or [], args))
         fields = {field.name: self.substitute_type(field.type_name, substitutions) for field in declaration.fields}
-        self.records[concrete_name] = RecordDef(concrete_name, fields)
+        json_fields = json_fields_for_record(declaration)
+        self.records[concrete_name] = RecordDef(concrete_name, fields, None, json_fields)
 
     def substitute_type(self, name: str, substitutions: dict[str, str]) -> str:
         if name in substitutions:

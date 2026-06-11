@@ -471,6 +471,38 @@ Example:
     let text: String = Json.stringify(person)
 """
 
+JSON_PARSE_ARGUMENT_COUNT_HINT = """Json.parse accepts exactly one JSON text value.
+
+Example:
+    let parsed: Result<Person, SchemaError> = Json.parse<Person>(text)
+"""
+
+JSON_PARSE_TYPE_ARGUMENT_HINT = """Json.parse is a generic JSON-to-record builtin.
+
+Pass exactly one record type argument and one String value.
+
+Example:
+    Json.parse<Person>(text)
+"""
+
+JSON_PARSE_TARGET_TYPE_HINT = """Json.parse V2 decodes JSON into a Freehold record type.
+
+Records are the canonical schema source. Use a record type as the type argument.
+"""
+
+JSON_FIELD_NAME_HINT = """@json field names define the external JSON object key for a Freehold record field.
+
+Use a non-empty string literal, and make every external JSON field name unique within the record.
+Record constructors still use the Freehold field name.
+"""
+
+JSON_PARSE_LITERAL_SCHEMA_HINT = """Json.parse<Record>(...) validates literal JSON text at compile time.
+
+For string literals, the JSON object must match the target Freehold record schema exactly:
+all required fields present, no unknown fields, and matching JSON-compatible field types.
+Use a dynamic String value when invalid input should be handled only as a runtime Result failure.
+"""
+
 JSON_ARGUMENT_TYPE_HINT = """Json.stringify V1 accepts a record value as its top-level argument.
 
 Construct a record with TypeName { field: value } and pass that record value.
@@ -944,10 +976,12 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         type_name = non_generic_args_match.group(1)
         return Diagnostic("VF-GEN012", "non-generic type used with type arguments", line, column, type_name, "generic type declaration", GENERIC_NON_GENERIC_ARGUMENTS_HINT, phase="semantic")
-    generic_routine_missing_match = re.search(r"generic routine requires (\d+) type argument\(s\): ([A-Za-z_][A-Za-z0-9_]*)", message)
+    generic_routine_missing_match = re.search(r"generic routine requires (\d+) type argument\(s\): ([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)", message)
     if generic_routine_missing_match:
         line, column = _source_position_from_message(message)
         expected_count, routine_name = generic_routine_missing_match.groups()
+        if routine_name == "Json.parse":
+            return Diagnostic("VF-J005", "missing Json parse type argument", line, column, "type argument list", f"{expected_count} record type argument(s) for {routine_name}", JSON_PARSE_TYPE_ARGUMENT_HINT, phase="semantic")
         return Diagnostic("VF-GEN030", "missing routine type argument", line, column, routine_name, f"{expected_count} type argument(s)", GENERIC_ROUTINE_MISSING_ARGUMENT_HINT, phase="semantic")
     generic_routine_arity_match = re.search(r"generic routine ([A-Za-z_][A-Za-z0-9_]*) expects (\d+) type argument\(s\), got (\d+)", message)
     if generic_routine_arity_match:
@@ -988,6 +1022,21 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         field_name = duplicate_record_field_match.group(1)
         return Diagnostic("VF-R001", "duplicate record field", line, column, field_name, "unique field name", RECORD_DUPLICATE_FIELD_HINT, phase="semantic")
+    duplicate_json_field_match = re.search(r"duplicate @json field name: (.+)", message)
+    if duplicate_json_field_match:
+        line, column = _source_position_from_message(message)
+        field_name = duplicate_json_field_match.group(1)
+        return Diagnostic("VF-J007", "duplicate Json field name", line, column, field_name, "unique @json field name", JSON_FIELD_NAME_HINT, phase="semantic")
+    invalid_json_field_match = re.search(r"invalid @json field name: (.+)", message)
+    if invalid_json_field_match:
+        line, column = _source_position_from_message(message)
+        field_name = invalid_json_field_match.group(1)
+        return Diagnostic("VF-J008", "invalid Json field name", line, column, field_name, "non-empty @json field name", JSON_FIELD_NAME_HINT, phase="semantic")
+    json_parse_literal_match = re.search(r"Json\.parse literal does not match ([A-Za-z_][A-Za-z0-9_]*(?:<.+>)?): (.+)", message)
+    if json_parse_literal_match:
+        line, column = _source_position_from_message(message)
+        record_name, details = json_parse_literal_match.groups()
+        return Diagnostic("VF-J009", "Json parse literal schema mismatch", line, column, details, f"JSON matching {record_name}", JSON_PARSE_LITERAL_SCHEMA_HINT, phase="semantic")
     unknown_record_type_match = re.search(r"unknown record type: ([A-Za-z_][A-Za-z0-9_]*)", message)
     if unknown_record_type_match:
         line, column = _source_position_from_message(message)
@@ -1217,6 +1266,21 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         function_name, expected_count = json_arg_count_match.groups()
         return Diagnostic("VF-J001", "wrong Json argument count", line, column, "argument list", f"{expected_count} argument(s) for {function_name}", JSON_ARGUMENT_COUNT_HINT, phase="semantic")
+    json_parse_arg_count_match = re.search(r"(Json\.parse) expects (\d+) arguments", message)
+    if json_parse_arg_count_match:
+        line, column = _source_position_from_message(message)
+        function_name, expected_count = json_parse_arg_count_match.groups()
+        return Diagnostic("VF-J004", "wrong Json parse argument count", line, column, "argument list", f"{expected_count} argument(s) for {function_name}", JSON_PARSE_ARGUMENT_COUNT_HINT, phase="semantic")
+    json_parse_type_arg_match = re.search(r"generic routine requires (\d+) type argument\(s\): (Json\.parse)", message)
+    if json_parse_type_arg_match:
+        line, column = _source_position_from_message(message)
+        expected_count, function_name = json_parse_type_arg_match.groups()
+        return Diagnostic("VF-J005", "missing Json parse type argument", line, column, "type argument list", f"{expected_count} record type argument(s) for {function_name}", JSON_PARSE_TYPE_ARGUMENT_HINT, phase="semantic")
+    json_parse_target_type_match = re.search(r"(Json\.parse) type argument expected record, got (.+)", message)
+    if json_parse_target_type_match:
+        line, column = _source_position_from_message(message)
+        function_name, found_type = json_parse_target_type_match.groups()
+        return Diagnostic("VF-J006", "Json parse target type mismatch", line, column, found_type, f"record type argument for {function_name}", JSON_PARSE_TARGET_TYPE_HINT, phase="semantic")
     json_arg_type_match = re.search(r"(Json\.stringify) argument (\d+) expected record, got (.+)", message)
     if json_arg_type_match:
         line, column = _source_position_from_message(message)

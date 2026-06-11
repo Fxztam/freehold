@@ -168,18 +168,6 @@ type FreeholdJoinHandle[T any] struct {
 	ch chan T
 }
 
-type FreeholdChannel[T any] struct {
-	ch chan T
-}
-
-type FreeholdSender[T any] struct {
-	ch chan T
-}
-
-type FreeholdReceiver[T any] struct {
-	ch chan T
-}
-
 func freeholdSpawn[T any](wg *sync.WaitGroup, priority int, sem chan struct{}, f func() T) FreeholdJoinHandle[T] {
 	wg.Add(1)
 	ch := make(chan T, 1)
@@ -195,28 +183,28 @@ func freeholdSpawn[T any](wg *sync.WaitGroup, priority int, sem chan struct{}, f
 	return FreeholdJoinHandle[T]{ch: ch}
 }
 
-func freeholdChannelSend[T any](sender FreeholdSender[T], value T) bool {
-	sender.ch <- value
+func freeholdChannelSend[T any](sender chan<- T, value T) bool {
+	sender <- value
 	return true
 }
 
-func freeholdChannelReceive[T any](receiver FreeholdReceiver[T]) T {
-	return <-receiver.ch
+func freeholdChannelReceive[T any](receiver <-chan T) T {
+	return <-receiver
 }
 
 type RuntimeBundle struct {
 	Executor    Executor                  `json:"executor"`
 	ActiveScope FreeholdScope             `json:"active_scope"`
 	Handle      FreeholdJoinHandle[int64] `json:"handle"`
-	Channel     FreeholdChannel[string]   `json:"channel"`
-	Sender      FreeholdSender[string]    `json:"sender"`
-	Receiver    FreeholdReceiver[string]  `json:"receiver"`
+	Channel     chan string               `json:"channel"`
+	Sender      chan<- string             `json:"sender"`
+	Receiver    <-chan string             `json:"receiver"`
 }
 
 func PassHandle(handle FreeholdJoinHandle[int64]) FreeholdJoinHandle[int64] {
 	return handle
 }
 
-func PassChannel(channel FreeholdChannel[string]) FreeholdChannel[string] {
+func PassChannel(channel chan string) chan string {
 	return channel
 }

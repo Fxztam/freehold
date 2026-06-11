@@ -132,7 +132,7 @@ def substitute_expr(e: Any, var_name: str, replacement: Any) -> Any:
         if joined_path == var_name:
             return replacement
         if e.path and e.path[0] == var_name:
-            if var_name == "result" and len(e.path) > 1 and e.path[1] == "value":
+            if var_name == "result" and len(e.path) > 1 and e.path[1] == "value" and not isinstance(replacement, RecordLiteralExpr):
                 if len(e.path) > 2:
                     dummy_name = "_tmp_val"
                     nested = FieldAccessExpr([dummy_name] + e.path[2:], e.pos)
@@ -299,11 +299,11 @@ def expr_to_smt(e: Any) -> str:
                 parts = []
                 last_idx = 0
                 pos_counter = 0
-                for match in re.finditer(r"\$\{([a-zA-Z0-9_]*)\}", fmt_str):
+                for match in re.finditer(r"\$\{\s*([a-zA-Z_][a-zA-Z0-9_]*)?\s*\}", fmt_str):
                     lit_part = fmt_str[last_idx:match.start()]
                     if lit_part:
                         parts.append(f'"{lit_part}"')
-                    name = match.group(1)
+                    name = match.group(1) or ""
                     if name == "":
                         if pos_counter < len(positional_vals):
                             val = positional_vals[pos_counter]
@@ -596,6 +596,11 @@ def find_routine(name: str, local_routines: dict[str, RoutineDecl], imports: lis
     if name in local_routines:
         return local_routines[name]
 
+    if "." in name:
+        local_name = name.rsplit(".", 1)[1]
+        if local_name in local_routines:
+            return local_routines[local_name]
+
     if "." in name and imported_modules:
         for mod_name, verified in sorted(imported_modules.items(), key=lambda item: len(item[0]), reverse=True):
             prefix = f"{mod_name}."
@@ -616,6 +621,81 @@ def find_routine(name: str, local_routines: dict[str, RoutineDecl], imports: lis
 
     return None
 
+def routine_imports(routine: RoutineDecl, local_routines: dict[str, RoutineDecl], imports: list[ImportDecl] | None, imported_modules: dict[str, Any] | None) -> list[ImportDecl] | None:
+    if routine.name in local_routines and local_routines[routine.name] is routine:
+        return imports
+    if imported_modules:
+        for verified in imported_modules.values():
+            if routine.name in verified.routines and verified.routines[routine.name] is routine:
+                return verified.ast.imports if hasattr(verified, "ast") and verified.ast else None
+    return imports
+
+def routine_context(routine: RoutineDecl, local_routines: dict[str, RoutineDecl], imports: list[ImportDecl] | None, imported_modules: dict[str, Any] | None) -> tuple[dict[str, RoutineDecl], list[ImportDecl] | None]:
+    if routine.name in local_routines and local_routines[routine.name] is routine:
+        return local_routines, imports
+    if imported_modules:
+        for verified in imported_modules.values():
+            if routine.name in verified.routines and verified.routines[routine.name] is routine:
+                current_imports = verified.ast.imports if hasattr(verified, "ast") and verified.ast else None
+                return verified.routines, current_imports
+    return local_routines, imports
+
+def simple_routine_return_expr(routine: RoutineDecl, args: list[Any], local_routines: dict[str, RoutineDecl], imports: list[ImportDecl] | None, imported_modules: dict[str, Any] | None, counter: list[int], path_conditions: list[str], env: dict[str, str], depth: int = 0) -> Any | None:
+    if routine.kind != "function" or depth > 6:
+        return None
+    current_routines, current_imports = routine_context(routine, local_routines, imports, imported_modules)
+    substs: dict[str, Any] = {}
+    for param, arg in zip(routine.params, args):
+        substs[param.name] = arg.expr if isinstance(arg, NamedArg) else arg
+    for stmt in routine.body:
+        if isinstance(stmt, CheckStmt):
+            continue
+        if isinstance(stmt, LetStmt):
+            expr = apply_subst(stmt.expr, substs)
+            expr = let_bind_calls(expr, env, path_conditions, current_routines, current_imports, imported_modules, counter, depth + 1)
+            substs[stmt.name] = expr
+            continue
+        if isinstance(stmt, ReturnStmt):
+            value = apply_subst(stmt.value, substs)
+            if isinstance(value, ReturnPlain):
+                return let_bind_calls(value.expr, env, path_conditions, current_routines, current_imports, imported_modules, counter, depth + 1)
+            if isinstance(value, ReturnOk):
+                ok_value = let_bind_calls(value.expr, env, path_conditions, current_routines, current_imports, imported_modules, counter, depth + 1)
+                return RecordLiteralExpr("_Result", [NamedArg("ok", BoolExpr(True, value.pos), value.pos), NamedArg("value", ok_value, value.pos)], value.pos)
+            return None
+        return None
+    return None
+
+def merge_imported_records(records: dict[str, Any], imported_modules: dict[str, Any] | None) -> dict[str, Any]:
+    merged = dict(records)
+    for verified in collect_imported_modules(imported_modules).values():
+        for name, record_def in verified.records.items():
+            merged.setdefault(name, record_def)
+    return merged
+
+def collect_imported_modules(imported_modules: dict[str, Any] | None) -> dict[str, Any]:
+    collected: dict[str, Any] = {}
+    if not imported_modules:
+        return collected
+    pending = list(imported_modules.items())
+    while pending:
+        name, verified = pending.pop(0)
+        if name in collected:
+            continue
+        collected[name] = verified
+        for child_name, child_verified in getattr(verified, "imported_modules", {}).items():
+            if child_name not in collected:
+                pending.append((child_name, child_verified))
+    return collected
+
+def has_symbolic_standalone_obligations(routine: RoutineDecl) -> bool:
+    if routine.name == "main" or routine.requires or routine.ensures or routine.aborts or routine.kind == "function":
+        return True
+    for stmt in routine.body:
+        if isinstance(stmt, (LetStmt, AssignStmt, FieldAssignStmt, WhileStmt, ScopeStmt, ReturnStmt, AbortStmt)):
+            return True
+    return False
+
 def apply_subst(e: Any, substs: dict[str, Any]) -> Any:
     if not substs:
         return e
@@ -628,8 +708,12 @@ def apply_subst(e: Any, substs: dict[str, Any]) -> Any:
     if isinstance(e, ReturnOk):
         return ReturnOk(apply_subst(e.expr, substs), e.pos)
     res = e
-    for var_name, replacement in substs.items():
-        res = substitute_expr(res, var_name, replacement)
+    for _ in range(len(substs) + 1):
+        before = repr(res)
+        for var_name, replacement in substs.items():
+            res = substitute_expr(res, var_name, replacement)
+        if repr(res) == before:
+            break
     return res
 def apply_subst_to_stmt(stmt: Any, substs: dict[str, Any]) -> Any:
     if not substs:
@@ -689,12 +773,15 @@ def apply_subst_to_stmt(stmt: Any, substs: dict[str, Any]) -> Any:
 def is_smt_builtin(name: str) -> bool:
     return name.startswith("Big.") or name.startswith("String.") or name.startswith("Math.") or name == "Json.stringify" or name == "compute_pi"
 
-def let_bind_calls(expr: Any, env: dict[str, str], path_conditions: list[str], routines: dict[str, Any], imports: list[Any], imported_modules: dict[str, Any], counter: list[int]) -> Any:
+def let_bind_calls(expr: Any, env: dict[str, str], path_conditions: list[str], routines: dict[str, Any], imports: list[Any], imported_modules: dict[str, Any], counter: list[int], depth: int = 0) -> Any:
     if isinstance(expr, CallExpr):
         if is_smt_builtin(expr.name):
             return expr
         target_routine = find_routine(expr.name, routines, imports, imported_modules)
         if target_routine is not None and not (expr.name == "scope_spawn" or expr.name.endswith(".spawn") or expr.name == "scope_join" or expr.name.endswith(".join")):
+            derived_return = simple_routine_return_expr(target_routine, expr.args, routines, imports, imported_modules, counter, path_conditions, env, depth + 1)
+            if derived_return is not None:
+                return derived_return
             tmp_name = f"_tmp_call_{counter[0]}"
             counter[0] += 1
             ret_type_str = ast_type_to_str(target_routine.return_type)
@@ -714,20 +801,20 @@ def let_bind_calls(expr: Any, env: dict[str, str], path_conditions: list[str], r
             return VarExpr(tmp_name, expr.pos)
         return expr
     if isinstance(expr, list):
-        return [let_bind_calls(x, env, path_conditions, routines, imports, imported_modules, counter) for x in expr]
+        return [let_bind_calls(x, env, path_conditions, routines, imports, imported_modules, counter, depth) for x in expr]
     if isinstance(expr, ReturnPlain):
-        return ReturnPlain(let_bind_calls(expr.expr, env, path_conditions, routines, imports, imported_modules, counter), expr.pos)
+        return ReturnPlain(let_bind_calls(expr.expr, env, path_conditions, routines, imports, imported_modules, counter, depth), expr.pos)
     if isinstance(expr, ReturnOk):
-        return ReturnOk(let_bind_calls(expr.expr, env, path_conditions, routines, imports, imported_modules, counter), expr.pos)
+        return ReturnOk(let_bind_calls(expr.expr, env, path_conditions, routines, imports, imported_modules, counter, depth), expr.pos)
     if isinstance(expr, ReturnError):
         return expr
     if hasattr(expr, "__dict__"):
         kwargs = {}
         for k, v in expr.__dict__.items():
             if isinstance(v, list):
-                kwargs[k] = [let_bind_calls(item, env, path_conditions, routines, imports, imported_modules, counter) for item in v]
+                kwargs[k] = [let_bind_calls(item, env, path_conditions, routines, imports, imported_modules, counter, depth) for item in v]
             elif hasattr(v, "__dict__") and not isinstance(v, (SourcePos, str)):
-                kwargs[k] = let_bind_calls(v, env, path_conditions, routines, imports, imported_modules, counter)
+                kwargs[k] = let_bind_calls(v, env, path_conditions, routines, imports, imported_modules, counter, depth)
             else:
                 kwargs[k] = v
         return type(expr)(**kwargs)
@@ -1314,6 +1401,8 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
                             ens_subst = substitute_expr(ens_subst, "error", VarExpr(err_name, stmt.pos))
 
                     if ret_expr is not None:
+                        if is_ok:
+                            ens_subst = substitute_expr(ens_subst, "result", RecordLiteralExpr("_Result", [NamedArg("ok", BoolExpr(True, stmt.pos), stmt.pos), NamedArg("value", ret_expr, stmt.pos)], stmt.pos))
                         ens_subst = substitute_expr(ens_subst, "result", ret_expr)
                         ens_subst = substitute_expr(ens_subst, "value", ret_expr)
 
@@ -1408,9 +1497,12 @@ def symbolic_obligations(vp: VerifiedProgram, imported_modules: dict[str, Any] |
     obs: list[dict[str, str]] = []
     types = vp.types
     routines = vp.routines
-    records = vp.records
+    imported_modules = collect_imported_modules(imported_modules)
+    records = merge_imported_records(vp.records, imported_modules)
     imports = vp.ast.imports if hasattr(vp, "ast") and vp.ast else None
     for r in routines.values():
+        if not has_symbolic_standalone_obligations(r):
+            continue
         env = {}
         for p in r.params:
             env[p.name] = ast_type_to_str(p.type_name)

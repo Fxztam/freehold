@@ -1,0 +1,24 @@
+module JsonParseRecordRoundtrip
+
+type Person is record
+    name: String
+    age: Integer
+    active: Boolean
+end record
+
+procedure main()
+is
+    let text: String = "{\"name\":\"Ada\",\"age\":37,\"active\":true}"
+    let parsed: Result<Person, SchemaError> = Json.parse<Person>(text)
+    check parsed.ok
+    check parsed.value.name = "Ada"
+    check parsed.value.age = 37
+    check parsed.value.active = true
+    let encoded: String = Json.stringify(parsed.value)
+    check encoded = text
+    let bad_text: String = "{\"name\":\"Ada\",\"age\":\"old\",\"active\":true}"
+    let bad: Result<Person, SchemaError> = Json.parse<Person>(bad_text)
+    check bad.ok = false
+end main
+
+end JsonParseRecordRoundtrip
