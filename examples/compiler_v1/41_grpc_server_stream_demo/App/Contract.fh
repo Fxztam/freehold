@@ -1,0 +1,16 @@
+module App.Contract
+
+type WatchRequest is record
+    topic: String proto 1
+end record
+
+type WatchEvent is record
+    sequence: Integer proto 1
+    message: String proto 2
+end record
+
+service WatchService is
+    rpc Watch(request: WatchRequest): stream WatchEvent
+end WatchService
+
+end App.Contract

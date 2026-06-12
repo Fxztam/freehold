@@ -1,0 +1,144 @@
+module App.Main
+
+import Std.IO
+import Std.Env exposing getenv
+import Std.Crypto exposing CryptoError, KeePassXCCredential, aes256_gcm_decrypt_hex, aes256_gcm_encrypt_hex, hmac_sha256_hex, keepassxc_cli_path, keepassxc_entry_credential, keepassxc_generate_password, keepassxc_list_entries, keepassxc_version, keyring_has_keepassxc_master_key, random_hex, sha256_hex, sha512_hex
+
+function run_demo() returns Integer
+is
+    let sha256: String = sha256_hex("freehold")
+    call Std.IO.logf("sha256(freehold) = ${}", sha256)
+
+    let sha512: String = sha512_hex("freehold")
+    call Std.IO.logf("sha512(freehold) = ${}", sha512)
+
+    let signature: String = hmac_sha256_hex("secret", "freehold")
+    call Std.IO.logf("hmac-sha256(secret, freehold) = ${}", signature)
+
+    let token: Result<String, CryptoError> = random_hex(16)
+    if token.ok = false then
+        call Std.IO.logf("random_hex failed: ${}", String.error_text(token.error))
+        return 1
+    end if
+    call Std.IO.logf("random token hex = ${}", token.value)
+
+    let bad_random: Result<String, CryptoError> = random_hex(-1)
+    if bad_random.ok then
+        call Std.IO.log("random_hex accepted a negative size")
+        return 1
+    end if
+    call Std.IO.log("random_hex rejected a negative size")
+
+    let aes_key: Result<String, CryptoError> = random_hex(32)
+    if aes_key.ok = false then
+        call Std.IO.logf("AES-256 key generation failed: ${}", String.error_text(aes_key.error))
+        return 1
+    end if
+
+    let encrypted: Result<String, CryptoError> = aes256_gcm_encrypt_hex(aes_key.value, "freehold secret payload", "demo-aad")
+    if encrypted.ok = false then
+        call Std.IO.logf("aes256_gcm_encrypt_hex failed: ${}", String.error_text(encrypted.error))
+        return 1
+    end if
+    call Std.IO.logf("aes256-gcm envelope hex = ${}", encrypted.value)
+
+    let decrypted: Result<String, CryptoError> = aes256_gcm_decrypt_hex(aes_key.value, encrypted.value, "demo-aad")
+    if decrypted.ok = false then
+        call Std.IO.logf("aes256_gcm_decrypt_hex failed: ${}", String.error_text(decrypted.error))
+        return 1
+    end if
+    if decrypted.value != "freehold secret payload" then
+        call Std.IO.log("aes256_gcm_decrypt_hex returned unexpected plaintext")
+        return 1
+    end if
+    call Std.IO.logf("aes256-gcm plaintext = ${}", decrypted.value)
+
+    let tampered_aad: Result<String, CryptoError> = aes256_gcm_decrypt_hex(aes_key.value, encrypted.value, "wrong-aad")
+    if tampered_aad.ok then
+        call Std.IO.log("aes256_gcm_decrypt_hex accepted wrong AAD")
+        return 1
+    end if
+    call Std.IO.log("aes256_gcm_decrypt_hex rejected wrong AAD")
+
+    let keepassxc_path: Result<String, CryptoError> = keepassxc_cli_path()
+    if keepassxc_path.ok = false then
+        call Std.IO.logf("keepassxc-cli not available, skipping KeePassXC demo: ${}", String.error_text(keepassxc_path.error))
+        return 0
+    end if
+    call Std.IO.logf("keepassxc-cli path = ${}", keepassxc_path.value)
+
+    let keepassxc_ver: Result<String, CryptoError> = keepassxc_version()
+    if keepassxc_ver.ok = false then
+        call Std.IO.logf("keepassxc-cli version failed: ${}", String.error_text(keepassxc_ver.error))
+        return 1
+    end if
+    call Std.IO.logf("keepassxc-cli version = ${}", keepassxc_ver.value)
+
+    let keepassxc_password: Result<String, CryptoError> = keepassxc_generate_password(24)
+    if keepassxc_password.ok = false then
+        call Std.IO.logf("keepassxc password generation failed: ${}", String.error_text(keepassxc_password.error))
+        return 1
+    end if
+    call Std.IO.logf("keepassxc generated password = ${}", keepassxc_password.value)
+
+    let keepassxc_bad_password: Result<String, CryptoError> = keepassxc_generate_password(4)
+    if keepassxc_bad_password.ok then
+        call Std.IO.log("keepassxc accepted a too-short password length")
+        return 1
+    end if
+    call Std.IO.log("keepassxc rejected a too-short password length")
+
+    let keyring_has: Result<Boolean, CryptoError> = keyring_has_keepassxc_master_key("freehold-demo")
+    if keyring_has.ok = false then
+        call Std.IO.logf("keyring has check failed: ${}", String.error_text(keyring_has.error))
+        return 1
+    end if
+    call Std.IO.log("keyring read-only has-check succeeded")
+
+    let oracle_demo_credential: Result<KeePassXCCredential, CryptoError> = keepassxc_entry_credential("OracleAccounts", "./OracleAccounts.dbx", "TEST_DEMO")
+    if oracle_demo_credential.ok = false then
+        call Std.IO.logf("OracleAccounts TEST_DEMO credential lookup failed: ${}", String.error_text(oracle_demo_credential.error))
+        return 1
+    end if
+    if oracle_demo_credential.value.username = "" then
+        call Std.IO.log("OracleAccounts TEST_DEMO credential has empty username")
+        return 1
+    end if
+    if oracle_demo_credential.value.password = "" then
+        call Std.IO.log("OracleAccounts TEST_DEMO credential has empty password")
+        return 1
+    end if
+    if oracle_demo_credential.value.wallet_location = "" then
+        call Std.IO.log("OracleAccounts TEST_DEMO credential has empty Wallet_Location")
+        return 1
+    end if
+    call Std.IO.logf("OracleAccounts TEST_DEMO username = ${}", oracle_demo_credential.value.username)
+    call Std.IO.log("OracleAccounts TEST_DEMO password and wallet location loaded for DB connect")
+
+    let keepassxc_demo_db: String = getenv("KEEPASSXC_DEMO_DB")
+    if keepassxc_demo_db = "" then
+        call Std.IO.log("KEEPASSXC_DEMO_DB is missing, skipping KeePassXC list demo")
+        return 0
+    end if
+
+    let keepassxc_entries: Result<String, CryptoError> = keepassxc_list_entries(keepassxc_demo_db, 200)
+    if keepassxc_entries.ok = false then
+        call Std.IO.logf("keepassxc list entries failed: ${}", String.error_text(keepassxc_entries.error))
+        return 1
+    end if
+    call Std.IO.logf("${}", keepassxc_entries.value)
+
+    return 0
+end run_demo
+
+procedure main()
+is
+    let status: Integer = run_demo()
+    if status = 0 then
+        call Std.IO.log("Std.Crypto FFI demo finished successfully")
+    else
+        call Std.IO.log("Std.Crypto FFI demo finished with failure")
+    end if
+end main
+
+end App.Main

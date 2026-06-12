@@ -1,0 +1,102 @@
+module Std.Connect.Common
+
+/**
+@std
+Shared connection primitives for Std.Connect transports.
+*/
+
+error ConnectError
+
+type Endpoint is record
+    scheme: String
+    host: String
+    port: Integer
+    path_prefix: String
+end record
+
+type Header is record
+    name: String
+    header_value: String
+end record
+
+type Headers is record
+    accept: String
+    content_type: String
+    authorization: String
+    request_id: String
+end record
+
+type Timeout is record
+    milliseconds: Integer
+end record
+
+type Deadline is record
+    epoch_millis: Integer
+end record
+
+type Body is record
+    text: String
+    content_type: String
+end record
+
+function new_endpoint(scheme: String, host: String, port: Integer, path_prefix: String) returns Endpoint
+is
+    return Endpoint { scheme: scheme, host: host, port: port, path_prefix: path_prefix }
+end new_endpoint
+
+function localhost_http(port: Integer, path_prefix: String) returns Endpoint
+is
+    return new_endpoint("http", "127.0.0.1", port, path_prefix)
+end localhost_http
+
+function new_header(name: String, header_value: String) returns Header
+is
+    return Header { name: name, header_value: header_value }
+end new_header
+
+function empty_headers() returns Headers
+is
+    return Headers { accept: "", content_type: "", authorization: "", request_id: "" }
+end empty_headers
+
+function json_headers() returns Headers
+is
+    return Headers { accept: "application/json", content_type: "application/json", authorization: "", request_id: "" }
+end json_headers
+
+function with_request_id(headers: Headers, request_id: String) returns Headers
+is
+    return Headers { accept: headers.accept, content_type: headers.content_type, authorization: headers.authorization, request_id: request_id }
+end with_request_id
+
+function with_authorization(headers: Headers, authorization: String) returns Headers
+is
+    return Headers { accept: headers.accept, content_type: headers.content_type, authorization: authorization, request_id: headers.request_id }
+end with_authorization
+
+function empty_body() returns Body
+is
+    return Body { text: "", content_type: "" }
+end empty_body
+
+function text_body(text: String) returns Body
+is
+    return Body { text: text, content_type: "text/plain" }
+end text_body
+
+function json_body(text: String) returns Body
+is
+    return Body { text: text, content_type: "application/json" }
+end json_body
+
+function timeout_millis(milliseconds: Integer) returns Timeout
+is
+    return Timeout { milliseconds: milliseconds }
+end timeout_millis
+
+function no_deadline() returns Deadline
+is
+    return Deadline { epoch_millis: 0 }
+end no_deadline
+
+end Std.Connect.Common

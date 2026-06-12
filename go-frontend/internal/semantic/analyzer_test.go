@@ -387,6 +387,30 @@ end UnknownReturnType`)
 	assertSingleDiagnostic(t, diagnostics, "FH-TYP-2003", "unknown_type_reference", "MissingType")
 }
 
+func TestValidateModuleAcceptsGenericFunctionTypeParam(t *testing.T) {
+	module := parseModule(t, `module GenericFunctionTypeParam
+
+function identity<T>(item: T) returns T
+requires T is Equatable
+ensures result = item
+is
+    return item
+end identity
+
+procedure main()
+is
+    let item: Integer = identity<Integer>(1)
+    check item = 1
+end main
+
+end GenericFunctionTypeParam`)
+
+	diagnostics := ValidateModule(module)
+	if len(diagnostics) != 0 {
+		t.Fatalf("ValidateModule() diagnostics = %#v, want none", diagnostics)
+	}
+}
+
 func TestValidateModuleRejectsUnknownRecordFieldType(t *testing.T) {
 	module := parseModule(t, `module UnknownRecordFieldType
 
@@ -733,4 +757,3 @@ end ValidationCFG`)
 		t.Error("Expected GuaranteedExit to be true")
 	}
 }
-

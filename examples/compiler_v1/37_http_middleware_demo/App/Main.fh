@@ -1,0 +1,158 @@
+module App.Main
+
+import Std.IO
+import Std.Connect.Common exposing Endpoint, Headers, ConnectError, localhost_http, empty_headers, with_authorization
+import Std.Connect.Http exposing Client, Request, Response, ServerHandle, RequestContext, MiddlewareContext, new_client, new_request, with_headers, json_response, text_response, not_found, new_middleware_context, context_with_trace, context_short_circuit, with_trace_header, serve, accept_request, respond, stop_server, send
+
+type UserDto is record
+    id: String
+    name: String
+    email: String
+end record
+
+function route_request(request: Request) returns Response
+is
+    if request.method = "GET" and request.path = "/users/42" then
+        let user: UserDto = UserDto { id: "42", name: "Ada", email: "ada@example.test" }
+        return json_response(200, Json.stringify(user))
+    else
+        return not_found(request.path)
+    end if
+end route_request
+
+function logging_before(context: MiddlewareContext) returns MiddlewareContext
+is
+    return context_with_trace(context, "log:before")
+end logging_before
+
+function auth_before(context: MiddlewareContext) returns MiddlewareContext
+is
+    if context.request.headers.authorization = "" then
+        let rejected: MiddlewareContext = context_with_trace(context, "auth:reject")
+        return context_short_circuit(rejected, text_response(401, "unauthorized"))
+    else
+        return context_with_trace(context, "auth:ok")
+    end if
+end auth_before
+
+function auth_after(context: MiddlewareContext) returns MiddlewareContext
+is
+    return context_with_trace(context, "auth:after")
+end auth_after
+
+function logging_after(context: MiddlewareContext) returns MiddlewareContext
+is
+    return context_with_trace(context, "log:after")
+end logging_after
+
+function run_pipeline(request: Request) returns Response
+is
+    let entered: MiddlewareContext = logging_before(new_middleware_context(request))
+    let authed: MiddlewareContext = auth_before(entered)
+    if authed.short_circuit then
+        let closed: MiddlewareContext = logging_after(authed)
+        return with_trace_header(closed.response, closed.trace)
+    else
+        let handled: Response = route_request(authed.request)
+        let after_handler: MiddlewareContext = context_with_trace(authed, "handler")
+        let after_auth: MiddlewareContext = auth_after(after_handler)
+        let after_logging: MiddlewareContext = logging_after(after_auth)
+        return with_trace_header(handled, after_logging.trace)
+    end if
+end run_pipeline
+
+async function handle_one(server: ServerHandle) returns Integer
+is
+    let accepted: Result<RequestContext, ConnectError> = await accept_request(server)
+    if accepted.ok then
+        let response: Response = run_pipeline(accepted.value.request)
+        let sent: Boolean = await respond(accepted.value, response)
+        if sent then
+            return 0
+        else
+            return 1
+        end if
+    else
+        return 1
+    end if
+end handle_one
+
+async function server_worker(server: ServerHandle) returns Integer
+is
+    let first: Integer = await handle_one(server)
+    let second: Integer = await handle_one(server)
+    return first + second
+end server_worker
+
+async function client_worker(client: Client) returns Integer
+is
+    let authorized_headers: Headers = with_authorization(empty_headers(), "token-abc")
+    let authorized_request: Request = with_headers(new_request("GET", "/users/42"), authorized_headers)
+    let authorized: Result<Response, ConnectError> = await send(client, authorized_request)
+    if authorized.ok = false then
+        call Std.IO.log("Middleware authorized request failed")
+        return 1
+    end if
+    if authorized.value.status_code != 200 then
+        call Std.IO.log("Middleware authorized request returned wrong status")
+        return 1
+    end if
+    let user: Result<UserDto, SchemaError> = Json.parse<UserDto>(authorized.value.body.text)
+    if user.ok = false or user.value.name != "Ada" then
+        call Std.IO.log("Middleware handler did not run for authorized request")
+        return 1
+    end if
+    call Std.IO.log(String.concat("authorized 200 onion: ", authorized.value.headers.request_id))
+
+    let anonymous_request: Request = new_request("GET", "/users/42")
+    let anonymous: Result<Response, ConnectError> = await send(client, anonymous_request)
+    if anonymous.ok = false then
+        call Std.IO.log("Middleware anonymous request failed")
+        return 1
+    end if
+    if anonymous.value.status_code != 401 then
+        call Std.IO.log("Middleware anonymous request returned wrong status")
+        return 1
+    end if
+    call Std.IO.log(String.concat("anonymous 401 onion: ", anonymous.value.headers.request_id))
+    return 0
+end client_worker
+
+async function run_demo() returns Integer
+is
+    let endpoint: Endpoint = localhost_http(8107, "")
+    let serve_result: Result<ServerHandle, ConnectError> = serve(endpoint)
+    if serve_result.ok = false then
+        call Std.IO.log("HTTP middleware server failed to bind")
+        return 1
+    end if
+    let server: ServerHandle = serve_result.value
+    let client: Client = new_client(endpoint)
+
+    scope demo_scope do
+        spawn
+            let server_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(server_worker(server))
+            let client_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_worker(client))
+        join
+            let server_status: Integer = await demo_scope.join<Integer>(server_handle)
+            let client_status: Integer = await demo_scope.join<Integer>(client_handle)
+            call stop_server(server)
+            if client_status = 0 and server_status = 0 then
+                call Std.IO.log("Native HTTP middleware pipeline handled authorized and anonymous requests")
+            end if
+        result
+            return server_status + client_status
+    end scope
+end run_demo
+
+async procedure main()
+is
+    let status: Integer = await run_demo()
+    if status = 0 then
+        call Std.IO.log("Native HTTP middleware demo finished successfully")
+    else
+        call Std.IO.log("Native HTTP middleware demo finished with failure")
+    end if
+end main
+
+end App.Main

@@ -86,6 +86,32 @@ end main
 end StringConcatTypeFail
 """, False),
 
+    ("v11f", "string error text OK", """
+module StringErrorText
+error E
+function fail() returns Result<String, E>
+is
+    return error E
+end fail
+procedure main()
+is
+    let r: Result<String, E> = fail()
+    if r.ok = false then
+        let text: String = String.error_text(r.error)
+    end if
+end main
+end StringErrorText
+""", True),
+
+    ("v11f", "string error text non error fail", """
+module StringErrorTextNonErrorFail
+procedure main()
+is
+    let text: String = String.error_text("not an error")
+end main
+end StringErrorTextNonErrorFail
+""", False),
+
     ("v11f", "string substr bounds fail", """
 module StringSubstrBoundsFail
 procedure main()

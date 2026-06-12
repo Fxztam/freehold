@@ -1,5 +1,43 @@
 # DONE
 
+## Source-Map Compiler V1 Closeout
+
+- Closed the `fh-source-map-v0` Python-vs-Go parity gate for Compiler V1 with a Source-Map-specific manifest:
+  - `artifacts/source-map/compiler_v1/manifest.json`.
+  - active samples: 18.
+  - skipped samples: 0.
+- Kept the frozen Compare-IR Stage-1 manifest unchanged; Source-Map coverage now expands independently from that old 15-active/3-skipped policy.
+- Activated the former Source-Map skip edges:
+  - `19_async_scope_runtime`.
+  - `20_grpc_binding`.
+  - `26_generic_function` as the current supported path replacing the old `unsupported_generic_function` manifest entry.
+- Closed the Go-Frontend parser support needed by the broader Source-Map surface:
+  - Result field selectors `.ok`, `.value`, `.error` after `.`.
+  - structural skipping for `@ffi(...)`, `@std`, and record-field `@json(...)` annotations.
+- Updated the default Source-Map tooling and gate to use the Source-Map manifest:
+  - `compare-source-map-compiler-v1.cmd`.
+  - `tools/generate_source_map_samples.py`.
+  - `tools/compare_source_maps.py`.
+- Validation:
+  - `compare-source-map-compiler-v1.cmd` -> exit 0; generated 18, skipped 0, Python export failures 0, Go export failures 0, contract parity 18/18.
+  - `go test .\internal\parser .\internal\lexer .\internal\semantic .\cmd\go-source-map` under `go-frontend` -> exit 0.
+
+## Source-Map Compiler V1 Stage 2 Gate
+
+- Added a baseline-free check-only Stage-2 Source-Map parity gate:
+  - `compare-source-map-compiler-v1-stage2.cmd`.
+  - `artifacts/source-map/compiler_v1_stage2/manifest.json`.
+- Mirrored the Compare-IR Stage-2 enrichment sample selection for Source-Map coverage:
+  - `16_abort_propagation_runtime_log`.
+  - `17_record_mutation_runtime_log`.
+  - `18_result_error_branch_runtime_log`.
+  - `19_async_scope_runtime`.
+  - `20_grpc_binding`.
+  - `21_concurrent_grpc_channel_demo`.
+- The gate generates Python and Go `fh-source-map-v0` JSON into `%TEMP%`, compares the stable Source-Map contract projection, and deletes temporary artifacts on success.
+- Validation:
+  - `compare-source-map-compiler-v1-stage2.cmd` -> exit 0; generated 6, skipped 0, Python export failures 0, Go export failures 0, contract parity 6/6.
+
 ## 2026-06-03
 
 ### Stabilization of Freehold Compiler Verification & Dynamic IR Loader

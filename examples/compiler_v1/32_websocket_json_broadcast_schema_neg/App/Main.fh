@@ -1,0 +1,80 @@
+module App.Main
+
+import Std.IO
+
+type ChatPayload is record
+    room: String
+    text: String
+end record
+
+type ChatMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: ChatPayload
+end record
+
+type ErrorPayload is record
+    code: String
+    message: String
+end record
+
+type ErrorMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: ErrorPayload
+end record
+
+type SchemaStatus is record
+    accepted: Boolean
+    runtime_result_error: Boolean
+    error_message: ErrorMessage
+end record
+
+function dynamic_invalid_json() returns String
+is
+    return String.concat("{", "not-json")
+end dynamic_invalid_json
+
+function dynamic_schema_mismatch() returns String
+is
+    return String.concat("{\"kind\":\"chat\",\"clientId\":\"client-a\",\"payload\":{\"room\":\"main\"}", "}")
+end dynamic_schema_mismatch
+
+function reject_payload(code: String, message: String) returns SchemaStatus
+is
+    let error_message: ErrorMessage = ErrorMessage {
+        kind: "error",
+        client_id: "server",
+        payload: ErrorPayload { code: code, message: message }
+    }
+    return SchemaStatus { accepted: false, runtime_result_error: true, error_message: error_message }
+end reject_payload
+
+procedure main()
+is
+    let invalid_json: Result<ChatMessage, SchemaError> = Json.parse<ChatMessage>(dynamic_invalid_json())
+    if invalid_json.ok then
+        call Std.IO.log("Unexpected invalid JSON success")
+    else
+        let invalid_status: SchemaStatus = reject_payload("INVALID_JSON", "client payload was not JSON")
+        if invalid_status.runtime_result_error then
+            call Std.IO.log("Runtime invalid JSON returned Result error")
+        end if
+    end if
+
+    let wrong_schema: Result<ChatMessage, SchemaError> = Json.parse<ChatMessage>(dynamic_schema_mismatch())
+    if wrong_schema.ok then
+        call Std.IO.log("Unexpected schema mismatch success")
+    else
+        let schema_status: SchemaStatus = reject_payload("SCHEMA_MISMATCH", "client payload did not match ChatMessage")
+        if schema_status.runtime_result_error then
+            call Std.IO.log("Runtime schema mismatch returned Result error")
+            call Std.IO.log("Typed ErrorMessage emitted for invalid client payload")
+        end if
+    end if
+
+    call Std.IO.log("Compile-time JSON literal schema failures covered by VF-J009 tests")
+    call Std.IO.log("WebSocket JSON schema negative demo finished successfully")
+end main
+
+end App.Main

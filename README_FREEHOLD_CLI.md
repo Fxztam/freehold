@@ -231,7 +231,7 @@ Positive feature-matrix coverage is tracked in:
 tests/language_modules/positive_feature_matrix.json
 ```
 
-The current matrix includes valid interaction cases for while invariants plus variants, case branches with record values, record-field contracts, qualified calls in contracts, comma-separated `requires`/`ensures`, declared abort paths, abort call propagation, explicit top-level main aborts, positional and named string templates, string templates inside `Std.IO.logf`, string templates inside record literals, Big number calls inside expressions, `Json.stringify` on record values, `Result<Array<...>, E>` ok payloads, and `value.field` contracts over record ok payloads.
+The current matrix includes valid interaction cases for while invariants plus variants, case branches with record values, record-field contracts, qualified calls in contracts, comma-separated `requires`/`ensures`, declared abort paths, abort call propagation, explicit top-level main aborts, positional and named string templates, string templates inside `Std.IO.logf`, string templates inside record literals, Big number calls inside expressions, `Json.stringify` on record values, typed `Json.parse<Record>(text)` Result flows, `@json("externalName")` record-field mapping, compile-time JSON literal schema diagnostics, `Result<Array<...>, E>` ok payloads, and `value.field` contracts over record ok payloads.
 
 Compare normalized AST shape for the files that both parsers accept with:
 

@@ -1,0 +1,91 @@
+module Std.Connect.Rest
+
+import Std.Connect.Http exposing Request, Response, RequestScope, json_request, json_response, not_found, new_request_scope
+
+/**
+@std
+REST helpers layered on Std.Connect.Http. REST owns resource semantics, not transport scope rules.
+*/
+
+error RestError
+
+type ResourceRoute is record
+    method: String
+    path_template: String
+end record
+
+type ResourceRequest is record
+    route: ResourceRoute
+    http_request: Request
+    resource_id: String
+    body_json: String
+end record
+
+type ResourceResponse is record
+    http_response: Response
+    body_json: String
+end record
+
+type ProblemDetails is record
+    status_code: Integer
+    code: String
+    message: String
+end record
+
+function route(method: String, path_template: String) returns ResourceRoute
+is
+    return ResourceRoute { method: method, path_template: path_template }
+end route
+
+function get_resource(path: String, resource_id: String) returns ResourceRequest
+is
+    let http_request: Request = json_request("GET", path, "")
+    return ResourceRequest { route: route("GET", path), http_request: http_request, resource_id: resource_id, body_json: "" }
+end get_resource
+
+function post_resource(path: String, body_json: String) returns ResourceRequest
+is
+    let http_request: Request = json_request("POST", path, body_json)
+    return ResourceRequest { route: route("POST", path), http_request: http_request, resource_id: "", body_json: body_json }
+end post_resource
+
+function ok_json(body_json: String) returns ResourceResponse
+is
+    let http_response: Response = json_response(200, body_json)
+    return ResourceResponse { http_response: http_response, body_json: body_json }
+end ok_json
+
+function created_json(body_json: String) returns ResourceResponse
+is
+    let http_response: Response = json_response(201, body_json)
+    return ResourceResponse { http_response: http_response, body_json: body_json }
+end created_json
+
+function problem(status_code: Integer, code: String, message: String) returns ProblemDetails
+is
+    return ProblemDetails { status_code: status_code, code: code, message: message }
+end problem
+
+function problem_json(details_json: String, status_code: Integer) returns ResourceResponse
+is
+    let http_response: Response = json_response(status_code, details_json)
+    return ResourceResponse { http_response: http_response, body_json: details_json }
+end problem_json
+
+function missing_resource(path: String) returns ResourceResponse
+is
+    let http_response: Response = not_found(path)
+    return ResourceResponse { http_response: http_response, body_json: "" }
+end missing_resource
+
+function to_http_response(response: ResourceResponse) returns Response
+is
+    return response.http_response
+end to_http_response
+
+function new_resource_scope(request: ResourceRequest) returns RequestScope
+is
+    return new_request_scope(request.http_request)
+end new_resource_scope
+
+end Std.Connect.Rest

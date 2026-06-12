@@ -1,0 +1,12 @@
+module Concurrency.ChannelTrySendPos
+
+async function execute_try_send() returns Boolean
+is
+    let chan: Channel<Integer> = channel<Integer>(1)
+    let sender: Sender<Integer> = channel_sender<Integer>(chan)
+    let first: Boolean = await channel_try_send<Integer>(sender, 10)
+    let second: Boolean = await channel_try_send<Integer>(sender, 20)
+    return first or second
+end execute_try_send
+
+end Concurrency.ChannelTrySendPos

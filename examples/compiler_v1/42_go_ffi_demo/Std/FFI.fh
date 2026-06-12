@@ -1,0 +1,36 @@
+module Std.FFI
+
+/**
+@std
+@ffi
+Native Go foreign-function interface bindings.
+
+Each routine is bound to an existing Go function via @ffi("import/path", "Symbol").
+The routine body stays empty: the Go codegen emits a thin wrapper that calls the
+bound Go symbol, marshalling Freehold values to and from their Go ABI equivalents
+(String <-> string, Integer <-> int64, Double <-> float64, Boolean <-> bool).
+
+A Freehold routine returning Result<T, E> binds to a Go function returning
+(T, error): a non-nil error becomes the error branch, otherwise the value becomes
+the ok branch. These routines are trusted runtime bindings; their contracts are
+treated as assumptions and their bodies are not verified.
+*/
+
+error FfiError
+
+@ffi("strings", "ToUpper")
+function to_upper(text: String) returns String
+is
+end to_upper
+
+@ffi("strings", "Contains")
+function contains(haystack: String, needle: String) returns Boolean
+is
+end contains
+
+@ffi("strconv", "ParseBool")
+function parse_bool(text: String) returns Result<Boolean, FfiError>
+is
+end parse_bool
+
+end Std.FFI

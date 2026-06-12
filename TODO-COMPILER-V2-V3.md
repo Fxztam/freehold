@@ -58,5 +58,6 @@ Diese Features ermöglichen die native Interoperabilität von Freehold in vertei
    - *Details*: Unterstützung für bidirektionales, serverseitiges und clientseitiges gRPC-Streaming.
 2. **Custom Error- & Metadata-Mapping [ERLEDIGT]**
    - *Ziel*: Flexible, deklarative Abbildung von Freehold-Aborts auf gRPC-Header und spezifische Status-Codes.
-3. **REST- & WebSocket-Verbindungsbibliotheken**
-   - *Ziel*: Bereitstellung standardisierter Modulbibliotheken für Web-Verbindungen (SSE, WebSockets und klassische HTTP-REST-APIs).
+3. **REST-, SSE- & WebSocket-Verbindungsbibliotheken [TEILWEISE ERLEDIGT]**
+   - *Status*: WebSocket V1 Runtime und typed JSON Broadcast-Smokes sind umgesetzt (`27`, `28`, `29`, `30`, `32`, `33`).
+   - *Ziel*: Bereitstellung standardisierter Modulbibliotheken für Web-Verbindungen (SSE, WebSockets und klassische HTTP-REST-APIs), inklusive ergonomischer langlebiger Connection-/Request-Scopes.

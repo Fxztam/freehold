@@ -1,0 +1,242 @@
+module Std.Connect.Http
+
+import Std.Connect.Common exposing Endpoint, Headers, Body, Deadline, ConnectError, empty_headers, json_headers, empty_body, text_body, json_body, no_deadline, with_request_id
+
+/**
+@std
+HTTP request/response primitives plus a native Go client and server-handler runtime.
+*/
+
+type Client is record
+    endpoint: Endpoint
+end record
+
+type Server is record
+    endpoint: Endpoint
+end record
+
+type Request is record
+    method: String
+    path: String
+    query: String
+    headers: Headers
+    body: Body
+end record
+
+type Response is record
+    status_code: Integer
+    headers: Headers
+    body: Body
+end record
+
+type ResponseBuilder is record
+    status_code: Integer
+    headers: Headers
+    body: Body
+end record
+
+type RequestScope is record
+    runtime_scope: Scope
+    request: Request
+    response: ResponseBuilder
+    deadline: Deadline
+end record
+
+type ServerHandle is record
+    id: String
+end record
+
+type RequestContext is record
+    id: String
+    request: Request
+end record
+
+type MiddlewareContext is record
+    request: Request
+    trace: String
+    short_circuit: Boolean
+    response: Response
+end record
+
+type StreamResponse is record
+    status_code: Integer
+    chunk_count: Integer
+    chunks: Receiver<String>
+end record
+
+type SseEvent is record
+    event_type: String
+    data: String
+end record
+
+type SseStream is record
+    status_code: Integer
+    event_count: Integer
+    events: Receiver<SseEvent>
+end record
+
+function new_client(endpoint: Endpoint) returns Client
+is
+    return Client { endpoint: endpoint }
+end new_client
+
+function new_server(endpoint: Endpoint) returns Server
+is
+    return Server { endpoint: endpoint }
+end new_server
+
+function new_request(method: String, path: String) returns Request
+is
+    return Request { method: method, path: path, query: "", headers: empty_headers(), body: empty_body() }
+end new_request
+
+function text_request(method: String, path: String, text: String) returns Request
+is
+    return Request { method: method, path: path, query: "", headers: empty_headers(), body: text_body(text) }
+end text_request
+
+function json_request(method: String, path: String, text: String) returns Request
+is
+    return Request { method: method, path: path, query: "", headers: json_headers(), body: json_body(text) }
+end json_request
+
+function with_headers(request: Request, headers: Headers) returns Request
+is
+    return Request { method: request.method, path: request.path, query: request.query, headers: headers, body: request.body }
+end with_headers
+
+function new_response_builder() returns ResponseBuilder
+is
+    return ResponseBuilder { status_code: 200, headers: empty_headers(), body: empty_body() }
+end new_response_builder
+
+function new_request_scope(request: Request) returns RequestScope
+is
+    let active: Scope = scope()
+    return RequestScope { runtime_scope: active, request: request, response: new_response_builder(), deadline: no_deadline() }
+end new_request_scope
+
+function with_status(builder: ResponseBuilder, status_code: Integer) returns ResponseBuilder
+is
+    return ResponseBuilder { status_code: status_code, headers: builder.headers, body: builder.body }
+end with_status
+
+function with_body(builder: ResponseBuilder, body: Body) returns ResponseBuilder
+is
+    return ResponseBuilder { status_code: builder.status_code, headers: builder.headers, body: body }
+end with_body
+
+function build_response(builder: ResponseBuilder) returns Response
+is
+    return Response { status_code: builder.status_code, headers: builder.headers, body: builder.body }
+end build_response
+
+function text_response(status_code: Integer, text: String) returns Response
+is
+    return Response { status_code: status_code, headers: empty_headers(), body: text_body(text) }
+end text_response
+
+function json_response(status_code: Integer, text: String) returns Response
+is
+    return Response { status_code: status_code, headers: json_headers(), body: json_body(text) }
+end json_response
+
+function not_found(path: String) returns Response
+is
+    return text_response(404, path)
+end not_found
+
+async function send(client: Client, request: Request) returns Result<Response, ConnectError>
+is
+    return ok(Response { status_code: 200, headers: request.headers, body: request.body })
+end send
+
+async function get(client: Client, path: String) returns Result<Response, ConnectError>
+is
+    let request: Request = new_request("GET", path)
+    let response: Result<Response, ConnectError> = await send(client, request)
+    return response
+end get
+
+async function post_json(client: Client, path: String, text: String) returns Result<Response, ConnectError>
+is
+    let request: Request = json_request("POST", path, text)
+    let response: Result<Response, ConnectError> = await send(client, request)
+    return response
+end post_json
+
+function serve(endpoint: Endpoint) returns Result<ServerHandle, ConnectError>
+is
+    return ok(ServerHandle { id: "server" })
+end serve
+
+async function accept_request(server: ServerHandle) returns Result<RequestContext, ConnectError>
+is
+    return ok(RequestContext { id: "ctx", request: new_request("GET", "/") })
+end accept_request
+
+async function respond(request_context: RequestContext, response: Response) returns Boolean
+is
+    return true
+end respond
+
+procedure stop_server(server: ServerHandle)
+is
+end stop_server
+
+function new_middleware_context(request: Request) returns MiddlewareContext
+is
+    return MiddlewareContext { request: request, trace: "", short_circuit: false, response: text_response(200, "") }
+end new_middleware_context
+
+function context_with_trace(context: MiddlewareContext, entry: String) returns MiddlewareContext
+is
+    if context.trace = "" then
+        return MiddlewareContext { request: context.request, trace: entry, short_circuit: context.short_circuit, response: context.response }
+    else
+        let joined: String = String.concat(context.trace, String.concat(" > ", entry))
+        return MiddlewareContext { request: context.request, trace: joined, short_circuit: context.short_circuit, response: context.response }
+    end if
+end context_with_trace
+
+function context_short_circuit(context: MiddlewareContext, response: Response) returns MiddlewareContext
+is
+    return MiddlewareContext { request: context.request, trace: context.trace, short_circuit: true, response: response }
+end context_short_circuit
+
+function with_trace_header(response: Response, trace: String) returns Response
+is
+    let traced: Headers = with_request_id(response.headers, trace)
+    return Response { status_code: response.status_code, headers: traced, body: response.body }
+end with_trace_header
+
+async function respond_stream(request_context: RequestContext, status_code: Integer, content_type: String, chunk_count: Integer, chunks: Receiver<String>) returns Boolean
+is
+    return true
+end respond_stream
+
+async function open_stream(client: Client, request: Request) returns Result<StreamResponse, ConnectError>
+is
+    let ch: Channel<String> = channel<String>(1)
+    let rx: Receiver<String> = channel_receiver<String>(ch)
+    return ok(StreamResponse { status_code: 200, chunk_count: 0, chunks: rx })
+end open_stream
+
+function new_sse_event(event_type: String, data: String) returns SseEvent
+is
+    return SseEvent { event_type: event_type, data: data }
+end new_sse_event
+
+async function respond_sse(request_context: RequestContext, event_count: Integer, events: Receiver<SseEvent>) returns Boolean
+is
+    return true
+end respond_sse
+
+async function open_sse(client: Client, request: Request) returns Result<SseStream, ConnectError>
+is
+    let ch: Channel<SseEvent> = channel<SseEvent>(1)
+    let rx: Receiver<SseEvent> = channel_receiver<SseEvent>(ch)
+    return ok(SseStream { status_code: 200, event_count: 0, events: rx })
+end open_sse
+
+end Std.Connect.Http

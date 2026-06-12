@@ -1,19 +1,20 @@
 # Open JSON Handlings
 
-This document captures open decisions around JSON handling in Freehold and its tooling.
+This document captures decisions and the current implementation status around JSON handling in Freehold and its tooling.
 
-JSON appears in two places: existing toolchain/conformance artifacts, and the V1 `Json.stringify(record_value)` library builtin for Freehold programs.
+Stand: 2026-06-11
 
-Current V1 verification baseline:
+JSON appears in two places: existing toolchain/conformance artifacts, and the language/runtime JSON builtins for Freehold programs.
+
+Current verified implementation slice:
 
 ```text
-Json language module: 4/4
-compare-semantic-diagnostics: 62/62, 0 mismatches
-verify-spec-diagnostics: 87 specs, 87 emits, 0 failures
-verify-parser-conformance: passed
-Parser cases: 270 total, 227 OK, 43 expected FAIL
-AST shape: 227/227
-Semantic AST: 227/227
+Json.stringify(record_value) emits deterministic compact JSON.
+Json.parse<RecordType>(text) returns Result<RecordType, SchemaError>.
+@json("externalName") maps record fields to external JSON object names.
+String-literal Json.parse<RecordType>("...") calls are schema-checked by the verifier.
+Dynamic JSON strings remain runtime Result failures instead of runtime panics.
+The compiler examples include typed JSON WebSocket broadcast and runtime negative Result demos.
 ```
 
 ## Current Status
@@ -68,13 +69,21 @@ round-trip-friendly data
 
 Language JSON starts as a library/builtin feature, not as new Freehold syntax.
 
-V1 target:
+Implemented serialization target:
 
 ```fh
 let text: String = Json.stringify(record_value)
 ```
 
 This uses the existing qualified call syntax. No EBNF or parser grammar extension is required for V1.
+
+Implemented typed parsing target:
+
+```fh
+let parsed: Result<Person, SchemaError> = Json.parse<Person>(text)
+```
+
+The record type argument is the schema. JSON parse and schema errors are returned as `Result` values.
 
 ## Tooling JSON Rules
 
@@ -121,7 +130,7 @@ Recommended diagnostic shape:
 
 ## JSON As Language Feature
 
-V1 ships only deterministic record serialization:
+The current implementation ships deterministic record serialization:
 
 ```text
 Json.stringify(record_value) -> String
@@ -134,15 +143,16 @@ Json.stringify accepts exactly one argument.
 The top-level argument must be a record value.
 Output is compact deterministic JSON.
 Record fields are emitted in record declaration order.
-String, Integer, Boolean, and Double field values are supported.
+String, Integer, Boolean, and Double field values are supported for JSON projection.
 Nested record values are supported.
 Arrays of supported values are supported where array values are available.
-BigInteger, BigFloat, Result, parse, schema, optional, nullable, and @json names are Post-V1.
+@json field-name mappings are honored.
+BigInteger, BigFloat, Result values, schema artifact generation, and nullable values remain outside this slice.
 ```
 
-Diagnostics for V1 live in `FH-JSON-4201..4203`.
+JSON builtin diagnostics use the `FH-JSON-4201..4203` range where applicable. Semantic checks for constant typed JSON literals currently surface through `VF-J009`.
 
-V2 adds typed record parsing without new syntax:
+Typed record parsing is implemented without new syntax:
 
 ```fh
 let parsed: Result<Person, SchemaError> = Json.parse<Person>(text)
@@ -156,6 +166,25 @@ Json.parse requires exactly one record type argument.
 The record type remains the canonical JSON schema.
 Missing fields, unknown fields, wrong primitive types, malformed JSON, and wrong fixed array lengths produce Result failure.
 Successful parsing returns Result<RecordType, SchemaError> with ok=true and the decoded record value.
+```
+
+Verifier behavior for string literals:
+
+```text
+Json.parse<RecordType>("literal-json") is parsed and schema-checked during semantic verification.
+Malformed literal JSON or literal schema mismatches produce a compile-time diagnostic such as VF-J009.
+Json.parse<RecordType>(dynamic_text) cannot be fully checked statically and therefore remains a runtime Result.
+Supported executable examples use dynamic invalid JSON to demonstrate Result failure paths without failing verification.
+```
+
+Concrete coverage:
+
+```text
+tests/language_modules_v2_3/10_websocket_json_broadcast_validation/invalid_semantics
+  covers compile-time invalid JSON literal/schema cases.
+
+examples/compiler_v1/32_websocket_json_broadcast_schema_neg
+  covers runtime invalid JSON/schema strings as Result failures and typed ErrorMessage emission.
 ```
 
 If JSON becomes a Freehold language feature, records should remain the canonical structure definition.
@@ -187,6 +216,8 @@ Json.getInteger(value: Json.Value, key: String) returns Result<Integer, Json.Typ
 
 This keeps JSON errors as value-level `Result<T, E>` returns rather than aborts.
 
+`Json.Value`, `Json.Object`, `Json.Array`, and dynamic accessors such as `Json.getString` and `Json.getInteger` remain future APIs. The implemented hard-schema path is typed record parsing.
+
 For hard schema-checked JSON, prefer typed record parsing:
 
 ```fh
@@ -199,13 +230,13 @@ This makes the Freehold record the source of truth and lets JSON parsing validat
 
 ## JSON And Records
 
-Decision direction:
+Implemented direction:
 
 ```text
 Records define JSON schemas.
 Json.parse<RecordType>(text) validates JSON hard against the record type.
 Json.stringify(record_value) emits deterministic JSON for the record value.
-Json.schema<RecordType>() can generate a JSON schema artifact from the record type.
+Json.schema<RecordType>() can later generate a JSON schema artifact from the record type.
 ```
 
 Example:
@@ -307,11 +338,11 @@ optional nullable String
   field may be absent; if present, value may be String or null
 ```
 
-`nullable` is not implemented yet and should remain an open language design item until the type system supports it cleanly.
+`optional` and `nullable` are not implemented in the current stable JSON parse slice. `nullable` should remain an open language design item until the type system supports it cleanly.
 
 ## JSON Strictness
 
-Recommended default:
+Implemented default:
 
 ```text
 Json.parse<RecordType>(text) is strict by default.
@@ -561,34 +592,36 @@ comparison tools should fail on unsupported schema versions
 Should JSON be a standard module or a built-in type family?
 Should Json.Value be opaque or structurally inspectable?
 Should record <=> JSON conversion be generated for every record or opt-in per record/module?
-Should JSON parse errors be Result values only?
-Should strict parsing be the only first implementation mode?
+Should untyped Json.Value parsing be added beside typed record parsing?
+Should strict parsing remain the only implementation mode?
 Should nullable be introduced as a general type modifier or only for JSON projections?
 Should tooling artifact schemas be versioned now or after one more stabilization pass?
 ```
 
 ## Positive Matrix Targets
 
-Future language-level targets:
+Implemented language-level targets:
 
 ```text
-json_parse_valid_object
-json_parse_invalid_returns_result_error
+json_stringify_record_deterministic
 json_parse_record_strict_success
-json_parse_record_missing_required_field
+json_parse_invalid_dynamic_text_returns_result_error
+json_parse_literal_schema_mismatch_rejected_by_verifier
+json_parse_record_missing_required_field_rejected
+json_parse_record_wrong_type_rejected
 json_parse_record_unknown_field_rejected
 json_parse_record_field_name_annotation
 json_parse_record_duplicate_json_name_rejected
+```
+
+Future language-level targets:
+
+```text
 json_get_string_field
 json_get_integer_field
 json_schema_generated_from_record
 json_template_requires_explicit_escape
-```
-
-Implemented V1 target:
-
-```text
-json_stringify_record_deterministic
+Json.Value/Object/Array dynamic model
 ```
 
 Tooling-level targets:
@@ -604,12 +637,13 @@ artifact_output_is_deterministic
 
 ```text
 Tooling JSON is already part of Freehold conformance.
-Language JSON V1 implements Json.stringify(record_value) as a library builtin.
+Language JSON implements Json.stringify(record_value) and typed Json.parse<RecordType>(text) as library builtins.
 Records are the canonical JSON schema source.
 Prefer Json.parse<RecordType>(text) for hard schema validation.
 Use @json("externalName") for external JSON field names.
 Strict record parsing rejects missing, unknown, and wrong-typed fields.
-Prefer Result<T, E> for JSON parse/type errors.
+String-literal Json.parse calls are checked semantically; dynamic text returns Result failures at runtime.
+JSON parse/type errors are Result<T, E> values, not runtime panics.
 Keep JSON artifact schemas stable and eventually versioned.
 ```
 

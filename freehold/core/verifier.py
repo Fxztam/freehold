@@ -15,6 +15,8 @@ BUILTIN_GENERIC_TYPE_ARITY = {
     "Receiver": 1,
 }
 BUILTIN_ERROR_NAMES = {"SchemaError"}
+JSON_INTEGER_MIN = -(2 ** 63)
+JSON_INTEGER_MAX = 2 ** 63 - 1
 
 RESERVED_NAMES = {
     "Array", "BigFloat", "BigInteger", "Boolean", "Double", "Integer", "Result", "String",
@@ -343,9 +345,13 @@ class Verifier:
                     self.contract_bool("aborts", clause.condition, env, ctx, False, None)
             for e in r.ensures: self.contract_bool("ensures", e, env, ctx, True, r.return_type)
             self.validate_flow_contracts(r, env, ctx)
-            ret = self.block(r.body, r, env, ctx, list(r.requires))
-            ctx.require_no_unjoined_scope_handles(r.pos)
-            if r.kind == "function" and not ret: raise TypeCheckError(f"{r.pos.text()}: function {r.name} has no guaranteed return")
+            if getattr(r, "ffi_binding", None) is not None:
+                if r.body:
+                    raise TypeCheckError(f"{r.pos.text()}: @ffi routine {r.name} must have an empty body")
+            else:
+                ret = self.block(r.body, r, env, ctx, list(r.requires))
+                ctx.require_no_unjoined_scope_handles(r.pos)
+                if r.kind == "function" and not ret: raise TypeCheckError(f"{r.pos.text()}: function {r.name} has no guaranteed return")
         finally:
             ctx.current_type_params = previous_type_params
             ctx.current_async = previous_async
@@ -1218,23 +1224,32 @@ class Verifier:
             if type_name in ctx.records:
                 validate_json_literal_record(type_name, value, path)
                 return
-            base = ctx.types[type_name].base if type_name in ctx.types else type_name
+            type_def = ctx.types[type_name] if type_name in ctx.types else None
+            base = type_def.base if type_def is not None else type_name
             if base == "String":
                 if isinstance(value, str):
                     return
                 raise ValueError(f"{path}: expected String")
             if base == "Integer":
-                if isinstance(value, int) and not isinstance(value, bool):
-                    return
-                raise ValueError(f"{path}: expected Integer")
+                if not isinstance(value, int) or isinstance(value, bool):
+                    raise ValueError(f"{path}: expected Integer")
+                if value < JSON_INTEGER_MIN or value > JSON_INTEGER_MAX:
+                    raise ValueError(f"{path}: Integer outside supported range")
+                if type_def is not None and type_def.min_value is not None:
+                    if value < type_def.min_value or value > type_def.max_value:
+                        raise ValueError(f"{path}: value {value} out of range for type {type_name} ({type_def.min_value}..{type_def.max_value})")
+                return
             if base == "Boolean":
                 if isinstance(value, bool):
                     return
                 raise ValueError(f"{path}: expected Boolean")
             if base == "Double":
-                if isinstance(value, (int, float)) and not isinstance(value, bool):
-                    return
-                raise ValueError(f"{path}: expected Double")
+                if not isinstance(value, (int, float)) or isinstance(value, bool):
+                    raise ValueError(f"{path}: expected Double")
+                if type_def is not None and type_def.min_value is not None:
+                    if value < type_def.min_value or value > type_def.max_value:
+                        raise ValueError(f"{path}: value {value} out of range for type {type_name} ({type_def.min_value}..{type_def.max_value})")
+                return
             raise ValueError(f"{path}: unsupported JSON target type {type_name}")
         def validate_json_literal_record(target_type, value, path):
             if target_type not in ctx.records:
@@ -1282,6 +1297,12 @@ class Verifier:
             expect_exact_type(0, f"Channel<{item_type}>")
             return TypeName(f"Receiver<{item_type}>")
         if e.name == "channel_send":
+            item_type = require_builtin_type_arg()
+            expect_count(2)
+            expect_exact_type(0, f"Sender<{item_type}>")
+            expect_exact_type(1, item_type)
+            return AwaitableType(TypeName("Boolean"))
+        if e.name == "channel_try_send":
             item_type = require_builtin_type_arg()
             expect_count(2)
             expect_exact_type(0, f"Sender<{item_type}>")
@@ -1387,6 +1408,13 @@ class Verifier:
                 raise TypeCheckError(f"{e.pos.text()}: String.length expects 1 arguments")
             expect_arg(0, "String")
             return TypeName("Integer")
+        if e.name == "String.error_text":
+            if len(e.args) != 1:
+                raise TypeCheckError(f"{e.pos.text()}: String.error_text expects 1 arguments")
+            actual = infer_arg(0)
+            if not isinstance(actual, TypeName) or actual.name not in ctx.errors:
+                raise TypeCheckError(f"{e.args[0].pos.text()}: String.error_text argument 1 expected error, got {type_to_string(actual)}")
+            return TypeName("String")
         if e.name == "String.template":
             if len(e.args) < 1:
                 raise TypeCheckError(f"{e.pos.text()}: String.template expects at least 1 argument")

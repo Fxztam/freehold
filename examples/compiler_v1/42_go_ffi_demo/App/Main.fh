@@ -1,0 +1,53 @@
+module App.Main
+
+import Std.IO
+import Std.FFI exposing FfiError, to_upper, contains, parse_bool
+
+function run_demo() returns Integer
+is
+    let shout: String = to_upper("veraflow")
+    if shout != "VERAFLOW" then
+        call Std.IO.log("FFI strings.ToUpper returned an unexpected value")
+        return 1
+    end if
+    call Std.IO.log("FFI strings.ToUpper produced VERAFLOW")
+
+    let has_hold: Boolean = contains("freehold", "hold")
+    if has_hold = false then
+        call Std.IO.log("FFI strings.Contains returned an unexpected value")
+        return 1
+    end if
+    call Std.IO.log("FFI strings.Contains found hold in freehold")
+
+    let parsed_true: Result<Boolean, FfiError> = parse_bool("true")
+    if parsed_true.ok = false then
+        call Std.IO.log("FFI strconv.ParseBool rejected a valid bool")
+        return 1
+    end if
+    if parsed_true.value = false then
+        call Std.IO.log("FFI strconv.ParseBool returned the wrong value")
+        return 1
+    end if
+    call Std.IO.log("FFI strconv.ParseBool parsed true")
+
+    let parsed_bad: Result<Boolean, FfiError> = parse_bool("not-a-bool")
+    if parsed_bad.ok then
+        call Std.IO.log("FFI strconv.ParseBool accepted an invalid bool")
+        return 1
+    end if
+    call Std.IO.log("FFI strconv.ParseBool rejected not-a-bool")
+
+    return 0
+end run_demo
+
+procedure main()
+is
+    let status: Integer = run_demo()
+    if status = 0 then
+        call Std.IO.log("Native Go FFI demo finished successfully")
+    else
+        call Std.IO.log("Native Go FFI demo finished with failure")
+    end if
+end main
+
+end App.Main

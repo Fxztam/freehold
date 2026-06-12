@@ -1,0 +1,25 @@
+module WebSocketJsonBroadcastWrongSenderNameNeg
+
+type ChatPayload is record
+    room: String
+    text: String
+end record
+
+type ChatMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: ChatPayload
+end record
+
+type BroadcastEnvelope is record
+    event: String
+    recipients: Array<String, 2>
+    message: ChatMessage
+end record
+
+procedure main()
+is
+    let parsed: Result<BroadcastEnvelope, SchemaError> = Json.parse<BroadcastEnvelope>("{\"event\":\"broadcast\",\"recipients\":[\"client-a\",\"client-b\"],\"message\":{\"kind\":\"chat\",\"client_id\":\"client-a\",\"payload\":{\"room\":\"main\",\"text\":\"hello broadcast\"}}}")
+end main
+
+end WebSocketJsonBroadcastWrongSenderNameNeg

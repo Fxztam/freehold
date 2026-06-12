@@ -1,0 +1,82 @@
+module Std.Crypto
+
+/**
+@std
+@ffi
+Native cryptographic helpers backed by Go's standard crypto packages through
+freehold.local/cryptoshim.
+
+This first slice exposes digest/HMAC helpers as deterministic String -> String
+functions and secure random bytes as Result<String, CryptoError> because the
+operating-system random source may fail.
+*/
+
+error CryptoError
+
+type KeePassXCCredential is record
+	username: String
+	password: String
+	wallet_location: String
+end record
+
+@ffi("freehold.local/cryptoshim", "SHA256Hex")
+function sha256_hex(text: String) returns String
+is
+end sha256_hex
+
+@ffi("freehold.local/cryptoshim", "SHA512Hex")
+function sha512_hex(text: String) returns String
+is
+end sha512_hex
+
+@ffi("freehold.local/cryptoshim", "HMACSHA256Hex")
+function hmac_sha256_hex(key: String, message: String) returns String
+is
+end hmac_sha256_hex
+
+@ffi("freehold.local/cryptoshim", "RandomHex")
+function random_hex(byte_count: Integer) returns Result<String, CryptoError>
+is
+end random_hex
+
+@ffi("freehold.local/cryptoshim", "AES256GCMEncryptHex")
+function aes256_gcm_encrypt_hex(key_hex: String, plaintext: String, aad: String) returns Result<String, CryptoError>
+is
+end aes256_gcm_encrypt_hex
+
+@ffi("freehold.local/cryptoshim", "AES256GCMDecryptHex")
+function aes256_gcm_decrypt_hex(key_hex: String, envelope_hex: String, aad: String) returns Result<String, CryptoError>
+is
+end aes256_gcm_decrypt_hex
+
+@ffi("freehold.local/cryptoshim", "KeePassXCCLIPath")
+function keepassxc_cli_path() returns Result<String, CryptoError>
+is
+end keepassxc_cli_path
+
+@ffi("freehold.local/cryptoshim", "KeePassXCVersion")
+function keepassxc_version() returns Result<String, CryptoError>
+is
+end keepassxc_version
+
+@ffi("freehold.local/cryptoshim", "KeePassXCGeneratePassword")
+function keepassxc_generate_password(length: Integer) returns Result<String, CryptoError>
+is
+end keepassxc_generate_password
+
+@ffi("freehold.local/cryptoshim", "KeePassXCListEntries")
+function keepassxc_list_entries(db_name: String, max_entries: Integer) returns Result<String, CryptoError>
+is
+end keepassxc_list_entries
+
+@ffi("freehold.local/cryptoshim", "KeePassXCEntryCredential")
+function keepassxc_entry_credential(keyring_name: String, db_file_name: String, title: String) returns Result<KeePassXCCredential, CryptoError>
+is
+end keepassxc_entry_credential
+
+@ffi("freehold.local/cryptoshim", "KeyringHasKeePassXCMasterKey")
+function keyring_has_keepassxc_master_key(label: String) returns Result<Boolean, CryptoError>
+is
+end keyring_has_keepassxc_master_key
+
+end Std.Crypto

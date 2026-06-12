@@ -1,0 +1,507 @@
+module App.Main
+
+import Std.IO
+import Std.Connect.WebSocket exposing Connection, ConnectionScope, MessageScope, TextMessage, FramePolicy, CloseStatus, Server, WebSocketError, connect, listen, accept, new_connection_scope, new_message_scope, default_frame_policy, receive_text, send_text, try_send_text, close_with_status, close, close_server
+
+type JoinPayload is record
+    room: String
+    display_name: String @json("displayName")
+end record
+
+type JoinMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: JoinPayload
+end record
+
+type ChatPayload is record
+    room: String
+    text: String
+end record
+
+type ChatMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: ChatPayload
+end record
+
+type StatePatchPayload is record
+    room: String
+    revision: Integer
+    patch: String
+end record
+
+type StatePatchMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: StatePatchPayload
+end record
+
+type ErrorPayload is record
+    code: String
+    message: String
+end record
+
+type ErrorMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: ErrorPayload
+end record
+
+type PingPayload is record
+    nonce: String
+end record
+
+type PingMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: PingPayload
+end record
+
+type PongPayload is record
+    nonce: String
+end record
+
+type PongMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: PongPayload
+end record
+
+type BroadcastResult is record
+    queued_a: Boolean
+    queued_b: Boolean
+end record
+
+type DeliveryStatus is record
+    accepted: Boolean
+    error_sent: Boolean
+    disconnect_client: Boolean
+    disconnect_room: Boolean
+end record
+
+type KeepaliveStatus is record
+    ping_sent: Boolean
+    pong_received: Boolean
+    timed_out: Boolean
+    should_close: Boolean
+end record
+
+type ClientSession is record
+    client_id: String
+    room: String
+    conn: ConnectionScope
+end record
+
+type ConnectionRegistry is record
+    client_a: ClientSession
+    client_b: ClientSession
+end record
+
+async function accept_or_fail(server: Server, label: String) returns Result<Connection, WebSocketError>
+is
+    let accepted: Result<Connection, WebSocketError> = await accept(server)
+    if accepted.ok then
+        return accepted
+    else
+        call Std.IO.log(String.concat("Server failed to accept ", label))
+        return accepted
+    end if
+end accept_or_fail
+
+async function outgoing_worker(conn: ConnectionScope, queue: Receiver<String>) returns Integer
+is
+    let text: String = await channel_receive<String>(queue)
+    let sent: Boolean = await send_text(conn, text)
+    if sent then
+        return 0
+    else
+        return 1
+    end if
+end outgoing_worker
+
+async function reject_invalid_message(conn: ConnectionScope, code: String, message: String) returns DeliveryStatus
+is
+    let error_message: ErrorMessage = ErrorMessage {
+        kind: "error",
+        client_id: "server",
+        payload: ErrorPayload {
+            code: code,
+            message: message
+        }
+    }
+    let encoded: String = Json.stringify(error_message)
+    let sent: Boolean = await send_text(conn, encoded)
+    return DeliveryStatus {
+        accepted: false,
+        error_sent: sent,
+        disconnect_client: true,
+        disconnect_room: true
+    }
+end reject_invalid_message
+
+async function perform_keepalive(conn: ConnectionScope, client_id: String, nonce: String) returns KeepaliveStatus
+is
+    let ping: PingMessage = PingMessage {
+        kind: "ping",
+        client_id: "server",
+        payload: PingPayload { nonce: nonce }
+    }
+    let sent: Boolean = await send_text(conn, Json.stringify(ping))
+    if sent = false then
+        return KeepaliveStatus { ping_sent: false, pong_received: false, timed_out: false, should_close: true }
+    else
+        let text_message: TextMessage = await receive_text(conn)
+        let msg_scope: MessageScope = new_message_scope(conn, "keepalive-pong", text_message.text)
+        let parsed: Result<PongMessage, SchemaError> = Json.parse<PongMessage>(msg_scope.raw)
+        if parsed.ok and parsed.value.kind = "pong" and parsed.value.client_id = client_id and parsed.value.payload.nonce = nonce then
+            return KeepaliveStatus { ping_sent: true, pong_received: true, timed_out: false, should_close: false }
+        else
+            return KeepaliveStatus { ping_sent: true, pong_received: false, timed_out: false, should_close: true }
+        end if
+    end if
+end perform_keepalive
+
+async function answer_keepalive(conn: ConnectionScope, client_id: String) returns Boolean
+is
+    let text_message: TextMessage = await receive_text(conn)
+    let msg_scope: MessageScope = new_message_scope(conn, "keepalive-ping", text_message.text)
+    let parsed: Result<PingMessage, SchemaError> = Json.parse<PingMessage>(msg_scope.raw)
+    if parsed.ok and parsed.value.kind = "ping" then
+        let pong: PongMessage = PongMessage {
+            kind: "pong",
+            client_id: client_id,
+            payload: PongPayload { nonce: parsed.value.payload.nonce }
+        }
+        return await send_text(conn, Json.stringify(pong))
+    else
+        return false
+    end if
+end answer_keepalive
+
+function websocket_frame_policy() returns FramePolicy
+is
+    return default_frame_policy()
+end websocket_frame_policy
+
+function classify_frame_policy(frame_kind: String, fragmented: Boolean) returns DeliveryStatus
+is
+    let policy: FramePolicy = websocket_frame_policy()
+    if fragmented then
+        return DeliveryStatus { accepted: false, error_sent: false, disconnect_client: policy.close_on_unsupported, disconnect_room: false }
+    else
+        if frame_kind = "text" then
+            return DeliveryStatus { accepted: policy.text_json_only, error_sent: false, disconnect_client: false, disconnect_room: false }
+        else
+            return DeliveryStatus { accepted: false, error_sent: false, disconnect_client: policy.close_on_unsupported, disconnect_room: false }
+        end if
+    end if
+end classify_frame_policy
+
+async function broadcast(client_a: ConnectionScope, queue_a: Sender<String>, client_b: ConnectionScope, queue_b: Sender<String>, text: String) returns BroadcastResult
+is
+    let queued_a: Boolean = await channel_try_send<String>(queue_a, text)
+    let queued_b: Boolean = await channel_try_send<String>(queue_b, text)
+    if queued_a = false then
+        call close(client_a.connection)
+    end if
+    if queued_b = false then
+        call close(client_b.connection)
+    end if
+    return BroadcastResult { queued_a: queued_a, queued_b: queued_b }
+end broadcast
+
+async function broadcast_to_room(registry: ConnectionRegistry, room: String, text: String) returns BroadcastResult
+is
+    if registry.client_a.room = room and registry.client_b.room = room then
+        return await broadcast(registry.client_a.conn, registry.client_a.conn.outgoing, registry.client_b.conn, registry.client_b.conn.outgoing, text)
+    else
+        if registry.client_a.room = room then
+            let queued_a: Boolean = await try_send_text(registry.client_a.conn, text)
+            if queued_a = false then
+                call close(registry.client_a.conn.connection)
+            end if
+            return BroadcastResult { queued_a: queued_a, queued_b: false }
+        else
+            if registry.client_b.room = room then
+                let queued_b: Boolean = await try_send_text(registry.client_b.conn, text)
+                if queued_b = false then
+                    call close(registry.client_b.conn.connection)
+                end if
+                return BroadcastResult { queued_a: false, queued_b: queued_b }
+            else
+                return BroadcastResult { queued_a: false, queued_b: false }
+            end if
+        end if
+    end if
+end broadcast_to_room
+
+async function backpressure_probe() returns Boolean
+is
+    let queue_channel: Channel<String> = channel<String>(1)
+    let queue_sender: Sender<String> = channel_sender<String>(queue_channel)
+    let first: Boolean = await channel_try_send<String>(queue_sender, "queued")
+    let second: Boolean = await channel_try_send<String>(queue_sender, "dropped")
+    return first and second = false
+end backpressure_probe
+
+async function server_worker(server: Server, client_b_gate: Sender<Boolean>) returns Integer
+is
+    let first_res: Result<Connection, WebSocketError> = await accept_or_fail(server, "client A")
+    if first_res.ok then
+        let client_a: ConnectionScope = new_connection_scope(first_res.value)
+        let opened: Boolean = await channel_send<Boolean>(client_b_gate, true)
+        check opened = true
+
+        let second_res: Result<Connection, WebSocketError> = await accept_or_fail(server, "client B")
+        if second_res.ok then
+            let client_b: ConnectionScope = new_connection_scope(second_res.value)
+            let queue_a_channel: Channel<String> = channel<String>(1)
+            let queue_b_channel: Channel<String> = channel<String>(1)
+            let queue_a_sender: Sender<String> = channel_sender<String>(queue_a_channel)
+            let queue_b_sender: Sender<String> = channel_sender<String>(queue_b_channel)
+            let queue_a_receiver: Receiver<String> = channel_receiver<String>(queue_a_channel)
+            let queue_b_receiver: Receiver<String> = channel_receiver<String>(queue_b_channel)
+            let session_a: ClientSession = ClientSession {
+                client_id: "client-a",
+                room: "main",
+                conn: client_a
+            }
+            let session_b: ClientSession = ClientSession {
+                client_id: "client-b",
+                room: "main",
+                conn: client_b
+            }
+            let registry: ConnectionRegistry = ConnectionRegistry {
+                client_a: session_a,
+                client_b: session_b
+            }
+
+            let welcome_a: Boolean = await send_text(client_a, "server: broadcast ready")
+            let welcome_b: Boolean = await send_text(client_b, "server: broadcast ready")
+            check welcome_a = true
+            check welcome_b = true
+
+            let frame_policy: FramePolicy = websocket_frame_policy()
+            check frame_policy.text_json_only
+            check frame_policy.fragmented_supported = false
+            check frame_policy.binary_supported = false
+            let binary_policy: DeliveryStatus = classify_frame_policy("binary", false)
+            let fragmented_policy: DeliveryStatus = classify_frame_policy("text", true)
+            check binary_policy.accepted = false
+            check binary_policy.disconnect_client
+            check fragmented_policy.accepted = false
+            check fragmented_policy.disconnect_client
+            call Std.IO.log("WebSocket frame policy is text JSON only")
+            call Std.IO.log("Fragmented and binary frames are rejected by policy")
+
+            scope keepalive_scope do
+                spawn
+                    call keepalive_scope.timeout(250)
+                    let keepalive_a_handle: JoinHandle<KeepaliveStatus> = keepalive_scope.spawn<KeepaliveStatus>(perform_keepalive(client_a, "client-a", "ka-a-1"))
+                    let keepalive_b_handle: JoinHandle<KeepaliveStatus> = keepalive_scope.spawn<KeepaliveStatus>(perform_keepalive(client_b, "client-b", "ka-b-1"))
+                join
+                    let keepalive_a: KeepaliveStatus = await keepalive_scope.join<KeepaliveStatus>(keepalive_a_handle)
+                    let keepalive_b: KeepaliveStatus = await keepalive_scope.join<KeepaliveStatus>(keepalive_b_handle)
+                    if keepalive_a.pong_received = false or keepalive_b.pong_received = false then
+                        let closed_a: CloseStatus = close_with_status(client_a, "keepalive failed")
+                        let closed_b: CloseStatus = close_with_status(client_b, "keepalive failed")
+                        check closed_a.closed
+                        check closed_b.closed
+                        return 1
+                    end if
+                    call Std.IO.log("Keepalive ping/pong completed for room main")
+                    call Std.IO.log("Idle timeout policy armed for keepalive checks")
+                result
+            end scope
+
+            let inbound: TextMessage = await receive_text(client_a)
+            let inbound_scope: MessageScope = new_message_scope(client_a, "chat-1", inbound.text)
+            let parsed: Result<ChatMessage, SchemaError> = Json.parse<ChatMessage>(inbound_scope.raw)
+            if parsed.ok then
+                scope delivery_scope do
+                    spawn
+                        call delivery_scope.timeout(500)
+                        let sender_a_handle: JoinHandle<Integer> = delivery_scope.spawn<Integer>(outgoing_worker(client_a, queue_a_receiver))
+                        let sender_b_handle: JoinHandle<Integer> = delivery_scope.spawn<Integer>(outgoing_worker(client_b, queue_b_receiver))
+                    join
+                        let message: ChatMessage = parsed.value
+                        check message.kind = "chat"
+                        check message.client_id = "client-a"
+                        check message.payload.room = "main"
+                        let encoded: String = Json.stringify(message)
+                        let delivered: BroadcastResult = await broadcast_to_room(registry, message.payload.room, encoded)
+                        check delivered.queued_a = true
+                        check delivered.queued_b = true
+                        let drop_policy_ok: Boolean = await backpressure_probe()
+                        let sender_a_status: Integer = await delivery_scope.join<Integer>(sender_a_handle)
+                        let sender_b_status: Integer = await delivery_scope.join<Integer>(sender_b_handle)
+                        if drop_policy_ok = false then
+                            call Std.IO.log("Backpressure drop policy failed")
+                            call close(client_a.connection)
+                            call close(client_b.connection)
+                            return 1
+                        end if
+                        check sender_a_status = 0
+                        check sender_b_status = 0
+                        call Std.IO.log("Connection registry assigned clients to room main")
+                        call Std.IO.log(String.concat("Server broadcast JSON from ", message.client_id))
+                        call Std.IO.log("Room main broadcast reached registered clients")
+                        call Std.IO.log("Delivery scope timeout armed for outgoing workers")
+                        call Std.IO.log("Backpressure drop policy rejected full queue")
+                        let close_a: CloseStatus = close_with_status(client_a, "broadcast complete")
+                        let close_b: CloseStatus = close_with_status(client_b, "broadcast complete")
+                        check close_a.closed
+                        check close_b.closed
+                        call Std.IO.log("Close status recorded for broadcast clients")
+                    result
+                        return 0
+                end scope
+            else
+                let rejection: DeliveryStatus = await reject_invalid_message(client_a, "INVALID_JSON", "invalid chat message envelope")
+                if rejection.error_sent then
+                    call Std.IO.log("Server sent typed error message before disconnect")
+                else
+                    call Std.IO.log("Server could not send typed error message before disconnect")
+                end if
+                if rejection.disconnect_client then
+                    call close(client_a.connection)
+                end if
+                if rejection.disconnect_room then
+                    call close(client_b.connection)
+                end if
+                return 1
+            end if
+        else
+            call close(client_a.connection)
+            return 1
+        end if
+    else
+        return 1
+    end if
+end server_worker
+
+async function client_a_worker(url: String) returns Integer
+is
+    let connected: Result<Connection, WebSocketError> = await connect(url)
+    if connected.ok then
+        let conn: Connection = connected.value
+        let client_scope: ConnectionScope = new_connection_scope(conn)
+        let welcome: TextMessage = await receive_text(client_scope)
+        if welcome.text = "" then
+            call Std.IO.log("Client A received empty welcome")
+            call close(conn)
+            return 1
+        end if
+
+        let heartbeat_ok: Boolean = await answer_keepalive(client_scope, "client-a")
+        if heartbeat_ok = false then
+            call Std.IO.log("Client A keepalive failed")
+            call close(conn)
+            return 1
+        end if
+
+        let message: ChatMessage = ChatMessage {
+            kind: "chat",
+            client_id: "client-a",
+            payload: ChatPayload {
+                room: "main",
+                text: "hello broadcast"
+            }
+        }
+        let payload: String = Json.stringify(message)
+        let sent: Boolean = await send_text(client_scope, payload)
+        check sent = true
+
+        let broadcast_json: TextMessage = await receive_text(client_scope)
+        let parsed: Result<ChatMessage, SchemaError> = Json.parse<ChatMessage>(broadcast_json.text)
+        check parsed.ok
+        check parsed.value.payload.text = "hello broadcast"
+        call close(conn)
+        return 0
+    else
+        call Std.IO.log("Client A connect failed: WebSocketError")
+        return 1
+    end if
+end client_a_worker
+
+async function client_b_worker(url: String, start_gate: Receiver<Boolean>) returns Integer
+is
+    let can_start: Boolean = await channel_receive<Boolean>(start_gate)
+    if can_start = false then
+        call Std.IO.log("Client B start gate failed")
+        return 1
+    end if
+
+    let connected: Result<Connection, WebSocketError> = await connect(url)
+    if connected.ok then
+        let conn: Connection = connected.value
+        let client_scope: ConnectionScope = new_connection_scope(conn)
+        let welcome: TextMessage = await receive_text(client_scope)
+        if welcome.text = "" then
+            call Std.IO.log("Client B received empty welcome")
+            call close(conn)
+            return 1
+        end if
+
+        let heartbeat_ok: Boolean = await answer_keepalive(client_scope, "client-b")
+        if heartbeat_ok = false then
+            call Std.IO.log("Client B keepalive failed")
+            call close(conn)
+            return 1
+        end if
+
+        let broadcast_json: TextMessage = await receive_text(client_scope)
+        let parsed: Result<ChatMessage, SchemaError> = Json.parse<ChatMessage>(broadcast_json.text)
+        check parsed.ok
+        check parsed.value.payload.text = "hello broadcast"
+        call close(conn)
+        return 0
+    else
+        call Std.IO.log("Client B connect failed: WebSocketError")
+        return 1
+    end if
+end client_b_worker
+
+async function run_demo() returns Integer
+is
+    let server_res: Result<Server, WebSocketError> = listen("127.0.0.1:8103")
+    if server_res.ok then
+        let server: Server = server_res.value
+        let gate_channel: Channel<Boolean> = channel<Boolean>(1)
+        let gate_sender: Sender<Boolean> = channel_sender<Boolean>(gate_channel)
+        let gate_receiver: Receiver<Boolean> = channel_receiver<Boolean>(gate_channel)
+
+        scope demo_scope do
+            spawn
+                let server_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(server_worker(server, gate_sender))
+                let client_a_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_a_worker("ws://127.0.0.1:8103"))
+                let client_b_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_b_worker("ws://127.0.0.1:8103", gate_receiver))
+            join
+                let server_status: Integer = await demo_scope.join<Integer>(server_handle)
+                let client_a_status: Integer = await demo_scope.join<Integer>(client_a_handle)
+                let client_b_status: Integer = await demo_scope.join<Integer>(client_b_handle)
+                call close_server(server)
+                if client_a_status = 0 and client_b_status = 0 then
+                    call Std.IO.log("Both clients received typed JSON broadcast")
+                end if
+            result
+                return server_status + client_a_status + client_b_status
+        end scope
+    else
+        call Std.IO.log("Server listen failed: WebSocketError")
+        return 1
+    end if
+end run_demo
+
+async procedure main()
+is
+    let status: Integer = await run_demo()
+    if status = 0 then
+        call Std.IO.log("JSON broadcast WebSocket demo finished successfully")
+    else
+        call Std.IO.log("JSON broadcast WebSocket demo finished with failure")
+    end if
+end main
+
+end App.Main

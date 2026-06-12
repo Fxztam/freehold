@@ -1,0 +1,99 @@
+module App.Main
+
+import Std.IO
+import Std.Connect.Common exposing Endpoint, ConnectError, localhost_http
+import Std.Connect.Http exposing Client, Response, new_client, get, post_json
+
+type UserDto is record
+    id: String
+    name: String
+    email: String
+end record
+
+type CreateUserRequest is record
+    name: String
+    email: String
+end record
+
+type ProblemDetails is record
+    status_code: Integer @json("statusCode")
+    code: String
+    message: String
+end record
+
+async function run_demo() returns Integer
+is
+    let endpoint: Endpoint = localhost_http(8104, "")
+    let client: Client = new_client(endpoint)
+
+    let get_result: Result<Response, ConnectError> = await get(client, "/users/42")
+    if get_result.ok then
+        if get_result.value.status_code = 200 then
+            let parsed_user: Result<UserDto, SchemaError> = Json.parse<UserDto>(get_result.value.body.text)
+            if parsed_user.ok and parsed_user.value.name = "Ada" then
+                call Std.IO.log("HTTP GET /users/42 returned Ada")
+            else
+                call Std.IO.log("HTTP GET /users/42 returned invalid JSON")
+                return 1
+            end if
+        else
+            call Std.IO.log("HTTP GET /users/42 returned wrong status")
+            return 1
+        end if
+    else
+        call Std.IO.log("HTTP GET /users/42 failed")
+        return 1
+    end if
+
+    let create_payload: CreateUserRequest = CreateUserRequest { name: "Grace", email: "grace@example.test" }
+    let post_result: Result<Response, ConnectError> = await post_json(client, "/users", Json.stringify(create_payload))
+    if post_result.ok then
+        if post_result.value.status_code = 201 then
+            let parsed_created: Result<UserDto, SchemaError> = Json.parse<UserDto>(post_result.value.body.text)
+            if parsed_created.ok and parsed_created.value.name = "Grace" then
+                call Std.IO.log("HTTP POST /users created Grace")
+            else
+                call Std.IO.log("HTTP POST /users returned invalid JSON")
+                return 1
+            end if
+        else
+            call Std.IO.log("HTTP POST /users returned wrong status")
+            return 1
+        end if
+    else
+        call Std.IO.log("HTTP POST /users failed")
+        return 1
+    end if
+
+    let missing_result: Result<Response, ConnectError> = await get(client, "/users/missing")
+    if missing_result.ok then
+        if missing_result.value.status_code = 404 then
+            let parsed_problem: Result<ProblemDetails, SchemaError> = Json.parse<ProblemDetails>(missing_result.value.body.text)
+            if parsed_problem.ok and parsed_problem.value.code = "USER_NOT_FOUND" then
+                call Std.IO.log("HTTP GET /users/missing returned ProblemDetails")
+            else
+                call Std.IO.log("HTTP GET /users/missing returned invalid problem JSON")
+                return 1
+            end if
+        else
+            call Std.IO.log("HTTP GET /users/missing returned wrong status")
+            return 1
+        end if
+    else
+        call Std.IO.log("HTTP GET /users/missing failed")
+        return 1
+    end if
+
+    call Std.IO.log("Native HTTP client GET/POST demo finished successfully")
+    return 0
+end run_demo
+
+async procedure main()
+is
+    let status: Integer = await run_demo()
+    if status != 0 then
+        call Std.IO.log("Native HTTP client GET/POST demo failed")
+    end if
+end main
+
+end App.Main

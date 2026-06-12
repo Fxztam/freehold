@@ -128,9 +128,18 @@ class AstBuilder:
         kind = "function" if tree.data == "function_decl" else "procedure"
         is_async = False
         idx = 0
-        if tree.children and isinstance(tree.children[0], Tree) and tree.children[0].data == "async_marker":
-            is_async = True
+        ffi_binding = None
+        if tree.children and isinstance(tree.children[0], Tree) and tree.children[0].data == "ffi_binding":
+            ffi_node = tree.children[0]
+            ffi_binding = FfiBinding(
+                json.loads(str(ffi_node.children[0])),
+                json.loads(str(ffi_node.children[1])),
+                pos(ffi_node),
+            )
             idx = 1
+        if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "async_marker":
+            is_async = True
+            idx += 1
         name = str(tree.children[idx]); idx += 1
         type_params = None
         if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "type_param_list":
@@ -161,7 +170,7 @@ class AstBuilder:
         if end_name != name:
             raise TypeCheckError(f"{pos(tree).text()}: {kind} end name mismatch: expected {name}, got {end_name}")
         body = [self.stmt(s.children[0] if s.data == "stmt" else s) for s in tree.children[idx:] if isinstance(s, Tree)]
-        return RoutineDecl(kind, name, params, ret, requires, aborts, ensures, body, pos(tree), type_params, is_async, global_specs, depends_specs)
+        return RoutineDecl(kind, name, params, ret, requires, aborts, ensures, body, pos(tree), type_params, is_async, global_specs, depends_specs, ffi_binding)
 
     def global_clause(self, tree: Tree) -> list[GlobalSpec]:
         specs = []

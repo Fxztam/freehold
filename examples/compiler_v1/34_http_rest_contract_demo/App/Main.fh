@@ -1,0 +1,89 @@
+module App.Main
+
+import Std.IO
+import Std.Connect.Common exposing Endpoint, localhost_http
+import Std.Connect.Http exposing Client, Response, RequestScope, new_client
+import Std.Connect.Rest exposing ResourceRequest, ResourceResponse, ProblemDetails, get_resource, post_resource, ok_json, created_json, problem, problem_json, to_http_response, new_resource_scope
+
+type UserDto is record
+    id: String
+    name: String
+    email: String
+end record
+
+type CreateUserRequest is record
+    name: String
+    email: String
+end record
+
+function user_not_found() returns ProblemDetails
+is
+    return problem(404, "USER_NOT_FOUND", "user resource was not found")
+end user_not_found
+
+function load_user(request: ResourceRequest) returns ResourceResponse
+is
+    if request.route.method = "GET" and request.resource_id = "42" then
+        let user: UserDto = UserDto { id: "42", name: "Ada", email: "ada@example.test" }
+        return ok_json(Json.stringify(user))
+    else
+        let details: ProblemDetails = user_not_found()
+        return problem_json(Json.stringify(details), details.status_code)
+    end if
+end load_user
+
+function create_user(request: ResourceRequest) returns ResourceResponse
+is
+    let parsed: Result<CreateUserRequest, SchemaError> = Json.parse<CreateUserRequest>(request.body_json)
+    if parsed.ok then
+        let user: UserDto = UserDto { id: "43", name: parsed.value.name, email: parsed.value.email }
+        return created_json(Json.stringify(user))
+    else
+        let details: ProblemDetails = problem(400, "INVALID_CREATE_USER", "request body did not match CreateUserRequest")
+        return problem_json(Json.stringify(details), details.status_code)
+    end if
+end create_user
+
+procedure main()
+is
+    let endpoint: Endpoint = localhost_http(8080, "/api")
+    let client: Client = new_client(endpoint)
+    check client.endpoint.scheme = "http"
+    check client.endpoint.path_prefix = "/api"
+    call Std.IO.log("HTTP endpoint resolved for REST client")
+
+    let get_request: ResourceRequest = get_resource("/users/42", "42")
+    let get_scope: RequestScope = new_resource_scope(get_request)
+    check get_scope.request.method = "GET"
+    check get_scope.request.headers.content_type = "application/json"
+    let get_response: ResourceResponse = load_user(get_request)
+    let get_http: Response = to_http_response(get_response)
+    let parsed_user: Result<UserDto, SchemaError> = Json.parse<UserDto>(get_response.body_json)
+    if get_http.status_code = 200 and parsed_user.ok and parsed_user.value.name = "Ada" then
+        call Std.IO.log("REST GET /users/42 returned typed JSON")
+    end if
+
+    let create_payload: CreateUserRequest = CreateUserRequest { name: "Grace", email: "grace@example.test" }
+    let post_request: ResourceRequest = post_resource("/users", Json.stringify(create_payload))
+    let post_scope: RequestScope = new_resource_scope(post_request)
+    check post_scope.request.method = "POST"
+    check post_scope.request.body.content_type = "application/json"
+    let create_response: ResourceResponse = create_user(post_request)
+    let create_http: Response = to_http_response(create_response)
+    let parsed_created: Result<UserDto, SchemaError> = Json.parse<UserDto>(create_response.body_json)
+    if create_http.status_code = 201 and parsed_created.ok and parsed_created.value.name = "Grace" then
+        call Std.IO.log("REST POST /users created typed resource")
+    end if
+
+    let missing_request: ResourceRequest = get_resource("/users/missing", "missing")
+    let missing_response: ResourceResponse = load_user(missing_request)
+    let missing_http: Response = to_http_response(missing_response)
+    let parsed_problem: Result<ProblemDetails, SchemaError> = Json.parse<ProblemDetails>(missing_response.body_json)
+    if missing_http.status_code = 404 and parsed_problem.ok and parsed_problem.value.code = "USER_NOT_FOUND" then
+        call Std.IO.log("REST missing user returned ProblemDetails")
+    end if
+
+    call Std.IO.log("HTTP and REST stdlib slice finished successfully")
+end main
+
+end App.Main

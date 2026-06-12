@@ -1,0 +1,57 @@
+module WebSocketFramePolicyPos
+
+type FramePolicy is record
+    text_json_only: Boolean
+    fragmented_supported: Boolean
+    binary_supported: Boolean
+    close_on_unsupported: Boolean
+end record
+
+type DeliveryStatus is record
+    accepted: Boolean
+    error_sent: Boolean
+    disconnect_client: Boolean
+    disconnect_room: Boolean
+end record
+
+function websocket_frame_policy() returns FramePolicy
+is
+    return FramePolicy {
+        text_json_only: true,
+        fragmented_supported: false,
+        binary_supported: false,
+        close_on_unsupported: true
+    }
+end websocket_frame_policy
+
+function classify_frame_policy(frame_kind: String, fragmented: Boolean) returns DeliveryStatus
+is
+    let policy: FramePolicy = websocket_frame_policy()
+    if fragmented then
+        return DeliveryStatus { accepted: false, error_sent: false, disconnect_client: policy.close_on_unsupported, disconnect_room: false }
+    else
+        if frame_kind = "text" then
+            return DeliveryStatus { accepted: policy.text_json_only, error_sent: false, disconnect_client: false, disconnect_room: false }
+        else
+            return DeliveryStatus { accepted: false, error_sent: false, disconnect_client: policy.close_on_unsupported, disconnect_room: false }
+        end if
+    end if
+end classify_frame_policy
+
+procedure main()
+is
+    let policy: FramePolicy = websocket_frame_policy()
+    check policy.text_json_only
+    check policy.fragmented_supported = false
+    check policy.binary_supported = false
+    let text_status: DeliveryStatus = DeliveryStatus { accepted: true, error_sent: false, disconnect_client: false, disconnect_room: false }
+    let binary_status: DeliveryStatus = DeliveryStatus { accepted: false, error_sent: false, disconnect_client: policy.close_on_unsupported, disconnect_room: false }
+    let fragmented_status: DeliveryStatus = DeliveryStatus { accepted: false, error_sent: false, disconnect_client: policy.close_on_unsupported, disconnect_room: false }
+    check text_status.accepted
+    check binary_status.accepted = false
+    check binary_status.disconnect_client
+    check fragmented_status.accepted = false
+    check fragmented_status.disconnect_client
+end main
+
+end WebSocketFramePolicyPos

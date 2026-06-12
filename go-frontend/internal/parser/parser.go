@@ -79,6 +79,8 @@ func (p *Parser) parseDeclarationRecovering() (decl ast.Decl, ok bool) {
 }
 
 func (p *Parser) parseDeclaration() ast.Decl {
+	p.skipAnnotations()
+
 	if p.at(token.Type) {
 		return p.parseTypeDecl()
 	}
@@ -159,6 +161,9 @@ func (p *Parser) parseRecordTypeDecl(name string, typeParams []string, pos token
 
 func (p *Parser) parseRecordField() ast.Param {
 	field := p.parseParam()
+	for p.at(token.At) {
+		p.skipAnnotation()
+	}
 	if p.at(token.Proto) {
 		p.expect(token.Proto)
 		protoID := p.parseIntLiteral()
@@ -298,9 +303,40 @@ func (p *Parser) parseNameToken() token.Token {
 	panic(diagnostic.ExpectedIdentifier(tok))
 }
 
+func (p *Parser) skipAnnotations() {
+	for p.at(token.At) {
+		p.skipAnnotation()
+	}
+}
+
+func (p *Parser) skipAnnotation() {
+	p.expect(token.At)
+	p.parseName()
+
+	if !p.at(token.LParen) {
+		return
+	}
+
+	depth := 0
+	for !p.at(token.EOF) {
+		tok := p.peek()
+		p.pos++
+
+		switch tok.Kind {
+		case token.LParen:
+			depth++
+		case token.RParen:
+			depth--
+			if depth == 0 {
+				return
+			}
+		}
+	}
+}
+
 func (p *Parser) parseFieldMemberName() string {
 	tok := p.peek()
-	if tok.Kind == token.Value || tok.Kind == token.Error {
+	if tok.Kind == token.Ok || tok.Kind == token.Value || tok.Kind == token.Error {
 		p.pos++
 		return tok.Lexeme
 	}
@@ -1568,7 +1604,7 @@ func (p *Parser) synchronizeStatement(stop func() bool) {
 }
 
 func (p *Parser) atDeclarationBoundary() bool {
-	return p.at(token.Import) || p.at(token.Type) || p.at(token.Error) || p.at(token.Service) || p.at(token.Function) || p.at(token.Procedure) || p.atModuleEndBoundary()
+	return p.at(token.At) || p.at(token.Import) || p.at(token.Type) || p.at(token.Error) || p.at(token.Service) || p.at(token.Function) || p.at(token.Procedure) || p.atModuleEndBoundary()
 }
 
 func (p *Parser) atStatementBoundary() bool {

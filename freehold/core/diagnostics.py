@@ -1007,7 +1007,12 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
     if integer_range_match:
         line, column = _source_position_from_message(message)
         return Diagnostic("VF-T006", "integer range bounds must be integers", line, column, "fractional bound", "integer bounds", TYPE_INTEGER_RANGE_HINT, phase="semantic")
-    out_of_range_match = re.search(r"value (-?\d+(?:\.\d+)?) out of range for type ([A-Za-z_][A-Za-z0-9_]*) \((-?\d+(?:\.\d+)?)\.\.(-?\d+(?:\.\d+)?)\)", message)
+    json_parse_literal_match = re.search(r"Json\.parse literal does not match ([A-Za-z_][A-Za-z0-9_]*(?:<.+>)?): (.+)", message)
+    if json_parse_literal_match:
+        line, column = _source_position_from_message(message)
+        record_name, details = json_parse_literal_match.groups()
+        return Diagnostic("VF-J009", "Json parse literal schema mismatch", line, column, details, f"JSON matching {record_name}", JSON_PARSE_LITERAL_SCHEMA_HINT, phase="semantic")
+    out_of_range_match = re.search(r"^line \d+:\d+: value (-?\d+(?:\.\d+)?) out of range for type ([A-Za-z_][A-Za-z0-9_]*) \((-?\d+(?:\.\d+)?)\.\.(-?\d+(?:\.\d+)?)\)$", message)
     if out_of_range_match:
         line, column = _source_position_from_message(message)
         val, type_name, min_val, max_val = out_of_range_match.groups()
@@ -1032,11 +1037,6 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         field_name = invalid_json_field_match.group(1)
         return Diagnostic("VF-J008", "invalid Json field name", line, column, field_name, "non-empty @json field name", JSON_FIELD_NAME_HINT, phase="semantic")
-    json_parse_literal_match = re.search(r"Json\.parse literal does not match ([A-Za-z_][A-Za-z0-9_]*(?:<.+>)?): (.+)", message)
-    if json_parse_literal_match:
-        line, column = _source_position_from_message(message)
-        record_name, details = json_parse_literal_match.groups()
-        return Diagnostic("VF-J009", "Json parse literal schema mismatch", line, column, details, f"JSON matching {record_name}", JSON_PARSE_LITERAL_SCHEMA_HINT, phase="semantic")
     unknown_record_type_match = re.search(r"unknown record type: ([A-Za-z_][A-Za-z0-9_]*)", message)
     if unknown_record_type_match:
         line, column = _source_position_from_message(message)
@@ -1407,12 +1407,12 @@ def diagnose_exception(source: str, exc: Exception) -> Diagnostic:
         line, column = _source_position_from_message(message)
         found_type = awaitable_match.group(1)
         return Diagnostic("VF-ASY002", "await requires awaitable expression", line, column, found_type, "awaitable expression", ASYNC_AWAITABLE_HINT, phase="semantic")
-    channel_arg_count_match = re.search(r"(channel|channel_sender|channel_receiver|channel_send|channel_receive) expects (\d+) arguments", message)
+    channel_arg_count_match = re.search(r"(channel|channel_sender|channel_receiver|channel_send|channel_try_send|channel_receive) expects (\d+) arguments", message)
     if channel_arg_count_match:
         line, column = _source_position_from_message(message)
         function_name, expected_count = channel_arg_count_match.groups()
         return Diagnostic("VF-CH001", "wrong Channel argument count", line, column, "argument list", f"{expected_count} argument(s) for {function_name}", CHANNEL_ARGUMENT_COUNT_HINT, phase="semantic")
-    channel_arg_type_match = re.search(r"(channel|channel_sender|channel_receiver|channel_send|channel_receive) argument (\d+) expected (.+), got (.+)", message)
+    channel_arg_type_match = re.search(r"(channel|channel_sender|channel_receiver|channel_send|channel_try_send|channel_receive) argument (\d+) expected (.+), got (.+)", message)
     if channel_arg_type_match:
         line, column = _source_position_from_message(message)
         function_name, argument_index, expected_type, found_type = channel_arg_type_match.groups()

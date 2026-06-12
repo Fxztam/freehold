@@ -164,6 +164,59 @@ Fuer bewusst nicht unterstuetzte Beispiele prueft der Wrapper:
    - vormals unsupported Generic-Function-Smoke, jetzt positiver Compiler-V1-Smoke
    - generische Function-/Procedure-Instanzen werden fuer Go monomorphisiert
 
+27. `27_websocket_demo`
+   - einfacher WebSocket-Transport-Smoke ueber `Std.Connect.WebSocket`
+   - Go-native WebSocket-Runtime und Runtime-Log werden im Example-Gate geprueft
+
+28. `28_websocket_multi_client_demo`
+   - Multi-Client-WebSocket-Smoke ueber `Std.Connect.WebSocket`
+   - prueft mehrere Verbindungen und Runtime-Log-Ausgabe
+
+29. `29_websocket_go_backend_demo`
+   - WebSocket-Client gegen externen Go-Backend-Smoke
+   - prueft `Std.Connect.WebSocket.connect` und Backend-Integration
+
+30. `30_websocket_json_broadcast_demo`
+   - typed JSON Broadcast ueber `Std.Connect.WebSocket`
+   - nutzt `ConnectionScope`, `MessageScope`, Keepalive, Backpressure und Close-Status
+
+32. `32_websocket_json_broadcast_schema_neg`
+   - WebSocket-naher JSON-Negativslice ohne eigene Transportverbindung
+   - prueft runtime-invalid JSON-/Schema-Faelle als `Result`-Fehler
+
+33. `33_websocket_room_broadcast_demo`
+   - WebSocket-naher Room-/Topic-Broadcast-Slice ueber Channels
+   - prueft, dass nur Clients im Ziel-Room queued werden
+
+34. `34_http_rest_contract_demo`
+   - erster HTTP/REST-Stdlib-Smoke ueber `Std.Connect.Common`, `Std.Connect.Http` und `Std.Connect.Rest`
+   - prueft Endpoint, RequestScope, typed JSON GET/POST und `ProblemDetails` ohne native Netzwerk-Runtime
+
+35. `35_http_client_go_backend_demo`
+   - Go-native HTTP-Client-Smoke ueber `Std.Connect.Http.send`, `get` und `post_json`
+   - prueft echte GET-/POST-/404-Roundtrips gegen ein kleines Go-Backend auf Port 8104
+   - verifiziert Statuscodes, Response-Body-JSON, `Json.parse<Record>` und Expected-Log im Example-Gate
+
+36. `36_http_server_demo`
+   - Go-native HTTP-Server-Smoke ueber `Std.Connect.Http.serve`, `accept_request`, `respond` und `stop_server`
+   - ein Freehold-Server bedient GET-/POST-Requests des nativen HTTP-Clients im selben Prozess auf Port 8106
+   - verifiziert Routing nach Methode/Pfad, Response-JSON und Expected-Log im Example-Gate
+
+37. `37_http_middleware_demo`
+   - datengetriebene Middleware-Onion (Logging + Auth) ueber `Std.Connect.Http.MiddlewareContext`, `context_with_trace`, `context_short_circuit` und `with_trace_header`
+   - autorisierter Request durchlaeuft alle Schichten inkl. Handler, anonymer Request wird von der Auth-Schicht mit 401 kurzgeschlossen (Port 8107)
+   - der Onion-Trace wird ueber den Response-Header zurueckgespiegelt und im Expected-Log verifiziert
+
+38. `38_http_streaming_demo`
+   - Go-native HTTP-Streaming-Smoke ueber `Std.Connect.Http.respond_stream` und `open_stream` (HTTP/1.1 `Transfer-Encoding: chunked`)
+   - der Server sendet drei Chunks ueber einen `Channel<String>`/`Receiver<String>`; der native Client liest sie via `StreamResponse.chunks` wieder ein (Port 8108)
+   - verifiziert Chunk-Reihenfolge, Reassembly und Expected-Log im Example-Gate
+
+39. `39_http_sse_demo`
+   - Go-native SSE-Smoke ueber `Std.Connect.Http.respond_sse` und `open_sse` (`text/event-stream`, `event:`/`data:`-Frames)
+   - der Server sendet drei `SseEvent`-Werte ueber einen `Channel<SseEvent>`/`Receiver<SseEvent>`; der native Client liest sie via `SseStream.events` wieder ein (Port 8109)
+   - verifiziert Event-Reihenfolge, Event-Typ/Daten und Expected-Log im Example-Gate
+
 ## Unsupported-Smokes
 
 Bewusst nicht unterstuetzte Go-Codegen-V1-Faelle bleiben als Smoke-Test wichtig. Aktuell abgedeckt:

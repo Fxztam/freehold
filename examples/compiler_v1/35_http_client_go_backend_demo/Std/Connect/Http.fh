@@ -1,0 +1,130 @@
+module Std.Connect.Http
+
+import Std.Connect.Common exposing Endpoint, Headers, Body, Deadline, ConnectError, empty_headers, json_headers, empty_body, text_body, json_body, no_deadline
+
+/**
+@std
+HTTP request/response primitives. send/get/post_json are backed by native Go client runtime.
+*/
+
+type Client is record
+    endpoint: Endpoint
+end record
+
+type Server is record
+    endpoint: Endpoint
+end record
+
+type Request is record
+    method: String
+    path: String
+    query: String
+    headers: Headers
+    body: Body
+end record
+
+type Response is record
+    status_code: Integer
+    headers: Headers
+    body: Body
+end record
+
+type ResponseBuilder is record
+    status_code: Integer
+    headers: Headers
+    body: Body
+end record
+
+type RequestScope is record
+    runtime_scope: Scope
+    request: Request
+    response: ResponseBuilder
+    deadline: Deadline
+end record
+
+function new_client(endpoint: Endpoint) returns Client
+is
+    return Client { endpoint: endpoint }
+end new_client
+
+function new_server(endpoint: Endpoint) returns Server
+is
+    return Server { endpoint: endpoint }
+end new_server
+
+function new_request(method: String, path: String) returns Request
+is
+    return Request { method: method, path: path, query: "", headers: empty_headers(), body: empty_body() }
+end new_request
+
+function text_request(method: String, path: String, text: String) returns Request
+is
+    return Request { method: method, path: path, query: "", headers: empty_headers(), body: text_body(text) }
+end text_request
+
+function json_request(method: String, path: String, text: String) returns Request
+is
+    return Request { method: method, path: path, query: "", headers: json_headers(), body: json_body(text) }
+end json_request
+
+function new_response_builder() returns ResponseBuilder
+is
+    return ResponseBuilder { status_code: 200, headers: empty_headers(), body: empty_body() }
+end new_response_builder
+
+function new_request_scope(request: Request) returns RequestScope
+is
+    let active: Scope = scope()
+    return RequestScope { runtime_scope: active, request: request, response: new_response_builder(), deadline: no_deadline() }
+end new_request_scope
+
+function with_status(builder: ResponseBuilder, status_code: Integer) returns ResponseBuilder
+is
+    return ResponseBuilder { status_code: status_code, headers: builder.headers, body: builder.body }
+end with_status
+
+function with_body(builder: ResponseBuilder, body: Body) returns ResponseBuilder
+is
+    return ResponseBuilder { status_code: builder.status_code, headers: builder.headers, body: body }
+end with_body
+
+function build_response(builder: ResponseBuilder) returns Response
+is
+    return Response { status_code: builder.status_code, headers: builder.headers, body: builder.body }
+end build_response
+
+function text_response(status_code: Integer, text: String) returns Response
+is
+    return Response { status_code: status_code, headers: empty_headers(), body: text_body(text) }
+end text_response
+
+function json_response(status_code: Integer, text: String) returns Response
+is
+    return Response { status_code: status_code, headers: json_headers(), body: json_body(text) }
+end json_response
+
+function not_found(path: String) returns Response
+is
+    return text_response(404, path)
+end not_found
+
+async function send(client: Client, request: Request) returns Result<Response, ConnectError>
+is
+    return ok(Response { status_code: 200, headers: request.headers, body: request.body })
+end send
+
+async function get(client: Client, path: String) returns Result<Response, ConnectError>
+is
+    let request: Request = new_request("GET", path)
+    let response: Result<Response, ConnectError> = await send(client, request)
+    return response
+end get
+
+async function post_json(client: Client, path: String, text: String) returns Result<Response, ConnectError>
+is
+    let request: Request = json_request("POST", path, text)
+    let response: Result<Response, ConnectError> = await send(client, request)
+    return response
+end post_json
+
+end Std.Connect.Http

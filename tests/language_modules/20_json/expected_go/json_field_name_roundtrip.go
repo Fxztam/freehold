@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -23,33 +24,116 @@ func freeholdJSONString(value interface{}) string {
 	return string(data)
 }
 
+type freeholdJSONFieldSpec struct {
+	typ reflect.Type
+	min string
+	max string
+}
+
+func freeholdRejectDuplicateJSONKeys(raw json.RawMessage, path string) error {
+	decoder := json.NewDecoder(strings.NewReader(string(raw)))
+	decoder.UseNumber()
+	if err := freeholdRejectDuplicateJSONKeysValue(decoder, path); err != nil {
+		return err
+	}
+	if _, err := decoder.Token(); err != io.EOF {
+		if err == nil {
+			err = fmt.Errorf("unexpected trailing JSON value")
+		}
+		return err
+	}
+	return nil
+}
+
+func freeholdRejectDuplicateJSONKeysValue(decoder *json.Decoder, path string) error {
+	token, err := decoder.Token()
+	if err != nil {
+		return err
+	}
+	delim, ok := token.(json.Delim)
+	if !ok {
+		return nil
+	}
+	switch delim {
+	case '{':
+		seen := map[string]bool{}
+		for decoder.More() {
+			keyToken, err := decoder.Token()
+			if err != nil {
+				return err
+			}
+			key, ok := keyToken.(string)
+			if !ok {
+				return fmt.Errorf("%s: expected object key", path)
+			}
+			if seen[key] {
+				return fmt.Errorf("%s: duplicate object key %s", path, key)
+			}
+			seen[key] = true
+			if err := freeholdRejectDuplicateJSONKeysValue(decoder, path+"."+key); err != nil {
+				return err
+			}
+		}
+		endToken, err := decoder.Token()
+		if err != nil {
+			return err
+		}
+		if end, ok := endToken.(json.Delim); !ok || end != '}' {
+			return fmt.Errorf("%s: expected object end", path)
+		}
+	case '[':
+		for decoder.More() {
+			if err := freeholdRejectDuplicateJSONKeysValue(decoder, path+"[]"); err != nil {
+				return err
+			}
+		}
+		endToken, err := decoder.Token()
+		if err != nil {
+			return err
+		}
+		if end, ok := endToken.(json.Delim); !ok || end != ']' {
+			return fmt.Errorf("%s: expected array end", path)
+		}
+	default:
+		return fmt.Errorf("%s: unexpected JSON delimiter", path)
+	}
+	return nil
+}
+
 func freeholdValidateJSONValue(raw json.RawMessage, target reflect.Type, path string) error {
+	return freeholdValidateJSONValueWithRange(raw, target, path, "", "")
+}
+
+func freeholdValidateJSONValueWithRange(raw json.RawMessage, target reflect.Type, path string, minValue string, maxValue string) error {
+	if strings.TrimSpace(string(raw)) == "null" {
+		return fmt.Errorf("%s: null not allowed", path)
+	}
 	switch target.Kind() {
 	case reflect.Struct:
 		var object map[string]json.RawMessage
 		if err := json.Unmarshal(raw, &object); err != nil {
 			return fmt.Errorf("%s: expected object", path)
 		}
-		fields := map[string]reflect.Type{}
+		fields := map[string]freeholdJSONFieldSpec{}
 		for index := 0; index < target.NumField(); index++ {
 			field := target.Field(index)
 			name := field.Tag.Get("json")
 			if name == "" {
 				name = field.Name
 			}
-			fields[name] = field.Type
+			fields[name] = freeholdJSONFieldSpec{typ: field.Type, min: field.Tag.Get("fh_min"), max: field.Tag.Get("fh_max")}
 		}
 		for name := range object {
 			if _, ok := fields[name]; !ok {
 				return fmt.Errorf("%s: unknown field %s", path, name)
 			}
 		}
-		for name, fieldType := range fields {
+		for name, fieldSpec := range fields {
 			fieldRaw, ok := object[name]
 			if !ok {
 				return fmt.Errorf("%s: missing required field %s", path, name)
 			}
-			if err := freeholdValidateJSONValue(fieldRaw, fieldType, path+"."+name); err != nil {
+			if err := freeholdValidateJSONValueWithRange(fieldRaw, fieldSpec.typ, path+"."+name, fieldSpec.min, fieldSpec.max); err != nil {
 				return err
 			}
 		}
@@ -63,7 +147,7 @@ func freeholdValidateJSONValue(raw json.RawMessage, target reflect.Type, path st
 			return fmt.Errorf("%s: expected array length %d, got %d", path, target.Len(), len(items))
 		}
 		for _, item := range items {
-			if err := freeholdValidateJSONValue(item, target.Elem(), path+"[]"); err != nil {
+			if err := freeholdValidateJSONValueWithRange(item, target.Elem(), path+"[]", minValue, maxValue); err != nil {
 				return err
 			}
 		}
@@ -88,11 +172,38 @@ func freeholdValidateJSONValue(raw json.RawMessage, target reflect.Type, path st
 		if _, err := value.Int64(); err != nil {
 			return fmt.Errorf("%s: expected Integer", path)
 		}
+		if minValue != "" {
+			parsed, _ := value.Int64()
+			minInt, err := strconv.ParseInt(minValue, 10, 64)
+			if err != nil {
+				return err
+			}
+			maxInt, err := strconv.ParseInt(maxValue, 10, 64)
+			if err != nil {
+				return err
+			}
+			if parsed < minInt || parsed > maxInt {
+				return fmt.Errorf("%s: value %d out of range (%s..%s)", path, parsed, minValue, maxValue)
+			}
+		}
 		return nil
 	case reflect.Float32, reflect.Float64:
 		var value float64
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return fmt.Errorf("%s: expected Double", path)
+		}
+		if minValue != "" {
+			minFloat, err := strconv.ParseFloat(minValue, 64)
+			if err != nil {
+				return err
+			}
+			maxFloat, err := strconv.ParseFloat(maxValue, 64)
+			if err != nil {
+				return err
+			}
+			if value < minFloat || value > maxFloat {
+				return fmt.Errorf("%s: value %v out of range (%s..%s)", path, value, minValue, maxValue)
+			}
 		}
 		return nil
 	default:
@@ -110,6 +221,9 @@ func Main() {
 	var parsed ResultPersonSchemaError = func() ResultPersonSchemaError {
 		var value Person
 		raw := []byte(text)
+		if err := freeholdRejectDuplicateJSONKeys(json.RawMessage(raw), "value"); err != nil {
+			return ResultPersonSchemaError{Ok: false, Error: err.Error()}
+		}
 		if err := freeholdValidateJSONValue(json.RawMessage(raw), reflect.TypeOf(value), "value"); err != nil {
 			return ResultPersonSchemaError{Ok: false, Error: err.Error()}
 		}

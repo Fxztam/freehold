@@ -32,12 +32,13 @@ Verbesserung der Developer Experience (DX) und Portabilität beim Kompilieren vo
 2. **Cross-Platform Build-Skripte**
    - *Aufgabe*: Erstellung und Pflege von plattformübergreifenden Skripten (z. B. Linux/macOS Shell-Skripte), um den Build-Prozess außerhalb von Windows abzusichern.
 3. **Erweiterte Verifikations-Gates**
-   - *Aufgabe*: Einbindung der neu hinzugefügten Go-Executable-Runtime-Smokes (z. B. `27_websocket_demo`) in den Standard-Integrations-Build-Pipeline.
+   - *Status*: Die WebSocket-Smokes `27_websocket_demo`, `28_websocket_multi_client_demo`, `29_websocket_go_backend_demo`, `30_websocket_json_broadcast_demo`, `32_websocket_json_broadcast_schema_neg` und `33_websocket_room_broadcast_demo` sind in den Compiler-/Stage3-Example-Gates registriert.
+   - *Naechste Aufgabe*: Den Komfort um gezielte Example-Filter im Runner erweitern, damit neue Runtime-Smokes ohne Vollsuite lokal schneller pruefbar sind.
 
 ---
 
 ## └── Priorität 3: REST- & Web-Verbindungsbibliotheken (V2/V3)
-Ergonomischer Ausbau des Netzwerk-Stacks auf Basis des WebSocket-Erfolgs.
+Ergonomischer Ausbau des Netzwerk-Stacks auf Basis des WebSocket-Erfolgs. Die aktuelle WebSocket-V1-Schicht deckt Verbindung, Multi-Client, Go-Backend, typed JSON Broadcast, Runtime-Schemafehler als `Result`, Room/Topic-Broadcast, Keepalive, Backpressure und Frame-Policy-Smokes ab.
 
 1. **HTTP-REST-Bibliotheken**
    - *Aufgabe*: Bereitstellung standardisierter Modulbibliotheken für klassische HTTP-REST-APIs, die das strukturierte `Concurrent.Scope`-Modell nutzen.

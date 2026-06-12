@@ -17,6 +17,40 @@ type Server is record
     id: String
 end record
 
+type ConnectionScope is record
+    runtime_scope: Scope
+    connection: Connection
+    incoming: Receiver<String>
+    outgoing: Sender<String>
+end record
+
+type MessageScope is record
+    runtime_scope: Scope
+    connection: ConnectionScope
+    message_id: String
+    raw: String
+end record
+
+type TextMessage is record
+    text: String
+end record
+
+type BinaryMessage is record
+    payload: String
+end record
+
+type FramePolicy is record
+    text_json_only: Boolean
+    fragmented_supported: Boolean
+    binary_supported: Boolean
+    close_on_unsupported: Boolean
+end record
+
+type CloseStatus is record
+    closed: Boolean
+    reason: String
+end record
+
 async function connect(url: String) returns Result<Connection, WebSocketError>
 is
     -- Dummy implementation for verification
@@ -50,6 +84,60 @@ is
         outgoing: tx
     })
 end accept
+
+function new_connection_scope(conn: Connection) returns ConnectionScope
+is
+    let active: Scope = scope()
+    return ConnectionScope {
+        runtime_scope: active,
+        connection: conn,
+        incoming: conn.incoming,
+        outgoing: conn.outgoing
+    }
+end new_connection_scope
+
+function new_message_scope(conn_scope: ConnectionScope, message_id: String, raw: String) returns MessageScope
+is
+    let active: Scope = scope()
+    return MessageScope {
+        runtime_scope: active,
+        connection: conn_scope,
+        message_id: message_id,
+        raw: raw
+    }
+end new_message_scope
+
+function default_frame_policy() returns FramePolicy
+is
+    return FramePolicy {
+        text_json_only: true,
+        fragmented_supported: false,
+        binary_supported: false,
+        close_on_unsupported: true
+    }
+end default_frame_policy
+
+async function receive_text(conn_scope: ConnectionScope) returns TextMessage
+is
+    let text: String = await channel_receive<String>(conn_scope.incoming)
+    return TextMessage { text: text }
+end receive_text
+
+async function send_text(conn_scope: ConnectionScope, text: String) returns Boolean
+is
+    return await channel_send<String>(conn_scope.outgoing, text)
+end send_text
+
+async function try_send_text(conn_scope: ConnectionScope, text: String) returns Boolean
+is
+    return await channel_try_send<String>(conn_scope.outgoing, text)
+end try_send_text
+
+function close_with_status(conn_scope: ConnectionScope, reason: String) returns CloseStatus
+is
+    call close(conn_scope.connection)
+    return CloseStatus { closed: true, reason: reason }
+end close_with_status
 
 procedure close(conn: Connection)
 is

@@ -1,0 +1,60 @@
+module WebSocketKeepaliveStatusPos
+
+type PingPayload is record
+    nonce: String
+end record
+
+type PingMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: PingPayload
+end record
+
+type PongPayload is record
+    nonce: String
+end record
+
+type PongMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: PongPayload
+end record
+
+type KeepaliveStatus is record
+    ping_sent: Boolean
+    pong_received: Boolean
+    timed_out: Boolean
+    should_close: Boolean
+end record
+
+type CloseStatus is record
+    closed: Boolean
+    reason: String
+end record
+
+function classify_pong(raw: String, expected_client: String, expected_nonce: String) returns KeepaliveStatus
+is
+    let parsed: Result<PongMessage, SchemaError> = Json.parse<PongMessage>(raw)
+    if parsed.ok and parsed.value.kind = "pong" and parsed.value.client_id = expected_client and parsed.value.payload.nonce = expected_nonce then
+        return KeepaliveStatus { ping_sent: true, pong_received: true, timed_out: false, should_close: false }
+    else
+        return KeepaliveStatus { ping_sent: true, pong_received: false, timed_out: false, should_close: true }
+    end if
+end classify_pong
+
+procedure main()
+is
+    let ping: PingMessage = PingMessage { kind: "ping", client_id: "server", payload: PingPayload { nonce: "ka-a-1" } }
+    let ping_json: String = Json.stringify(ping)
+    let parsed_ping: Result<PingMessage, SchemaError> = Json.parse<PingMessage>(ping_json)
+    check parsed_ping.ok
+
+    let pong: PongMessage = PongMessage { kind: "pong", client_id: "client-a", payload: PongPayload { nonce: "ka-a-1" } }
+    let status: KeepaliveStatus = classify_pong(Json.stringify(pong), "client-a", "ka-a-1")
+    check status.pong_received
+
+    let close_status: CloseStatus = CloseStatus { closed: true, reason: "idle timeout" }
+    check close_status.closed
+end main
+
+end WebSocketKeepaliveStatusPos

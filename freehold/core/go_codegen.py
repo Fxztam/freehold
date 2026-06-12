@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 from dataclasses import dataclass
@@ -80,6 +81,51 @@ GO_RUNTIME_MODULE_EXPORTS: dict[str, set[str]] = {
 }
 
 GO_PROJECT_MODULE_PATH = "freehold.local"
+
+WEBSOCKET_RUNTIME_MODULES = {"WebSocket", "Std.Connect.WebSocket"}
+HTTP_RUNTIME_MODULES = {"Std.Connect.Http"}
+GRPC_RUNTIME_MODULES = {"Std.Connect.Grpc"}
+
+FFI_GO_MODULE_MAPPINGS = {
+    "freehold.local/cryptoshim": {
+        "requires": [
+            ("freehold.local/cryptoshim", "v0.0.0"),
+        ],
+        "replaces": [
+            ("freehold.local/cryptoshim", Path("vendor-go/crypto-shim")),
+        ],
+    },
+    "freehold.local/fileshim": {
+        "requires": [
+            ("freehold.local/fileshim", "v0.0.0"),
+        ],
+        "replaces": [
+            ("freehold.local/fileshim", Path("vendor-go/file-shim")),
+        ],
+    },
+    "freehold.local/oracleshim": {
+        "requires": [
+            ("freehold.local/oracleshim", "v0.0.0"),
+            ("github.com/sijms/go-ora/v2", "v2.9.0"),
+        ],
+        "replaces": [
+            ("freehold.local/oracleshim", Path("vendor-go/oracle-shim")),
+            ("github.com/sijms/go-ora/v2", Path("vendor-go/go-ora")),
+        ],
+    },
+}
+
+
+def is_websocket_runtime_module(module_name: str) -> bool:
+    return module_name in WEBSOCKET_RUNTIME_MODULES
+
+
+def is_http_runtime_module(module_name: str) -> bool:
+    return module_name in HTTP_RUNTIME_MODULES
+
+
+def is_grpc_runtime_module(module_name: str) -> bool:
+    return module_name in GRPC_RUNTIME_MODULES
 
 
 @dataclass(frozen=True)
@@ -201,8 +247,9 @@ def generate_go_project(entry_file: str | Path) -> list[GoProjectFile]:
 
 
 def generate_go_project_extra_files(files: list[GoProjectFile]) -> list[GoProjectExtraFile]:
-    from freehold.core.grpc_go_codegen import generate_grpc_go_bindings
+    from freehold.core.grpc_go_codegen import generate_grpc_go_bindings, generate_grpc_runtime_glue
 
+    has_grpc_runtime = any(is_grpc_runtime_module(file.module_name) for file in files)
     extras: list[GoProjectExtraFile] = []
     for file in files:
         if not any(isinstance(declaration, ServiceDecl) for declaration in file.result_program.declarations):
@@ -221,14 +268,40 @@ def generate_go_project_extra_files(files: list[GoProjectFile]) -> list[GoProjec
                 content=generate_grpc_go_bindings(file.result_program),
             )
         )
+        if has_grpc_runtime:
+            extras.append(
+                GoProjectExtraFile(
+                    output_path=go_grpc_runtime_glue_output_path(file.module_name).as_posix(),
+                    kind="grpc_go_runtime_glue",
+                    content=generate_grpc_runtime_glue(file.result_program),
+                )
+            )
     return extras
 
 
-def generate_go_project_build_files(files: list[GoProjectFile], executable_name: str | None = None, entry_module_name: str | None = None) -> list[GoProjectBuildFile]:
+def generate_go_project_build_files(files: list[GoProjectFile], executable_name: str | None = None, entry_module_name: str | None = None, output_dir: str | Path | None = None) -> list[GoProjectBuildFile]:
     grpc_required = any(any(isinstance(declaration, ServiceDecl) for declaration in file.result_program.declarations) for file in files)
     go_mod = f"module {GO_PROJECT_MODULE_PATH}\n\ngo 1.22\n"
+    requirements: dict[str, str] = {}
+    replacements: dict[str, str] = {}
     if grpc_required:
-        go_mod += "\nrequire google.golang.org/grpc v1.64.0\n"
+        requirements["google.golang.org/grpc"] = "v1.64.0"
+    for ffi_import_path in project_ffi_import_paths(files):
+        mapping = FFI_GO_MODULE_MAPPINGS.get(ffi_import_path)
+        if mapping is None:
+            continue
+        for module_path, version in mapping["requires"]:
+            requirements.setdefault(module_path, version)
+        for module_path, repo_relative_path in mapping["replaces"]:
+            replacements.setdefault(module_path, go_mod_replace_path(repo_relative_path, output_dir))
+    if requirements:
+        go_mod += "\nrequire (\n"
+        for module_path, version in sorted(requirements.items()):
+            go_mod += f"\t{module_path} {version}\n"
+        go_mod += ")\n"
+    if replacements:
+        for module_path, local_path in sorted(replacements.items()):
+            go_mod += f"\nreplace {module_path} => {local_path}\n"
     build_files = [
         GoProjectBuildFile(
             output_path="go.mod",
@@ -254,6 +327,13 @@ def generate_go_project_build_files(files: list[GoProjectFile], executable_name:
         imports = [f'\t{import_alias} "{go_import_path(entry.module_name)}"\n']
         if has_ctx:
             imports.insert(0, '\t"context"\n')
+        # Blank-import generated gRPC binding/glue packages so their init() hooks
+        # register the per-service runtime registrars and client dispatchers.
+        if any(is_grpc_runtime_module(file.module_name) for file in files):
+            for file in files:
+                if any(isinstance(declaration, ServiceDecl) for declaration in file.result_program.declarations):
+                    binding_import = f"{GO_PROJECT_MODULE_PATH}/grpc/{go_package_path(file.module_name)}"
+                    imports.append(f'\t_ "{binding_import}"\n')
         imports_str = "".join(imports)
         build_files.append(
             GoProjectBuildFile(
@@ -314,6 +394,24 @@ def generate_go_project_build_files(files: list[GoProjectFile], executable_name:
         ),
     )
     return build_files
+
+
+def project_ffi_import_paths(files: list[GoProjectFile]) -> set[str]:
+    imports: set[str] = set()
+    for file in files:
+        for declaration in file.result_program.declarations:
+            if isinstance(declaration, RoutineDecl) and declaration.ffi_binding is not None:
+                imports.add(declaration.ffi_binding.import_path)
+    return imports
+
+
+def go_mod_replace_path(repo_relative_path: Path, output_dir: str | Path | None) -> str:
+    repo_root = Path(__file__).resolve().parents[2]
+    target = (repo_root / repo_relative_path).resolve()
+    if output_dir is None:
+        return target.as_posix()
+    out_root = Path(output_dir).resolve()
+    return Path(os.path.relpath(target, out_root)).as_posix()
 
 
 def result_json(result: GoCodegenResult, **metadata: str) -> str:
@@ -649,7 +747,7 @@ class GoGenerator:
         return type_ref
 
     def qualify_routine_name(self, name: str, context_module: str) -> str:
-        builtins = {"channel", "channel_sender", "channel_receiver", "channel_send", "channel_receive"}
+        builtins = {"channel", "channel_sender", "channel_receiver", "channel_send", "channel_try_send", "channel_receive"}
         if name in builtins or name.endswith(".spawn") or name.endswith(".join") or name == "scope_spawn" or name == "scope_join":
             return name
 
@@ -1207,6 +1305,12 @@ class GoGenerator:
     def type_decl(self, declaration: TypeDecl) -> list[str]:
         return [f"type {go_exported_name(declaration.name)} {self.go_type_string(declaration.base)}", ""]
 
+    def find_type_decl(self, name: str) -> TypeDecl | None:
+        for declaration in self.program.declarations:
+            if isinstance(declaration, TypeDecl) and declaration.name == name:
+                return declaration
+        return None
+
     def error_decl(self, declaration: ErrorDecl) -> list[str]:
         return [f"const {go_exported_name(declaration.name)} = {json.dumps(declaration.name)}", ""]
 
@@ -1409,6 +1513,15 @@ class GoGenerator:
                 "\treturn true",
                 "}",
                 "",
+                "func freeholdChannelTrySend[T any](sender chan<- T, value T) bool {",
+                "\tselect {",
+                "\tcase sender <- value:",
+                "\t\treturn true",
+                "\tdefault:",
+                "\t\treturn false",
+                "\t}",
+                "}",
+                "",
                 "func freeholdChannelReceive[T any](receiver <-chan T) T {",
                 "\treturn <-receiver",
                 "}",
@@ -1427,34 +1540,118 @@ class GoGenerator:
             ])
         if self.needs_json_parse_helper:
             self.std_imports.add("reflect")
+            self.std_imports.add("strconv")
             lines.extend([
+                "type freeholdJSONFieldSpec struct {",
+                "\ttyp reflect.Type",
+                "\tmin string",
+                "\tmax string",
+                "}",
+                "",
+                "func freeholdRejectDuplicateJSONKeys(raw json.RawMessage, path string) error {",
+                "\tdecoder := json.NewDecoder(strings.NewReader(string(raw)))",
+                "\tdecoder.UseNumber()",
+                "\tif err := freeholdRejectDuplicateJSONKeysValue(decoder, path); err != nil {",
+                "\t\treturn err",
+                "\t}",
+                "\tif _, err := decoder.Token(); err != io.EOF {",
+                "\t\tif err == nil {",
+                "\t\t\terr = fmt.Errorf(\"unexpected trailing JSON value\")",
+                "\t\t}",
+                "\t\treturn err",
+                "\t}",
+                "\treturn nil",
+                "}",
+                "",
+                "func freeholdRejectDuplicateJSONKeysValue(decoder *json.Decoder, path string) error {",
+                "\ttoken, err := decoder.Token()",
+                "\tif err != nil {",
+                "\t\treturn err",
+                "\t}",
+                "\tdelim, ok := token.(json.Delim)",
+                "\tif !ok {",
+                "\t\treturn nil",
+                "\t}",
+                "\tswitch delim {",
+                "\tcase '{':",
+                "\t\tseen := map[string]bool{}",
+                "\t\tfor decoder.More() {",
+                "\t\t\tkeyToken, err := decoder.Token()",
+                "\t\t\tif err != nil {",
+                "\t\t\t\treturn err",
+                "\t\t\t}",
+                "\t\t\tkey, ok := keyToken.(string)",
+                "\t\t\tif !ok {",
+                "\t\t\t\treturn fmt.Errorf(\"%s: expected object key\", path)",
+                "\t\t\t}",
+                "\t\t\tif seen[key] {",
+                "\t\t\t\treturn fmt.Errorf(\"%s: duplicate object key %s\", path, key)",
+                "\t\t\t}",
+                "\t\t\tseen[key] = true",
+                "\t\t\tif err := freeholdRejectDuplicateJSONKeysValue(decoder, path+\".\"+key); err != nil {",
+                "\t\t\t\treturn err",
+                "\t\t\t}",
+                "\t\t}",
+                "\t\tendToken, err := decoder.Token()",
+                "\t\tif err != nil {",
+                "\t\t\treturn err",
+                "\t\t}",
+                "\t\tif end, ok := endToken.(json.Delim); !ok || end != '}' {",
+                "\t\t\treturn fmt.Errorf(\"%s: expected object end\", path)",
+                "\t\t}",
+                "\tcase '[':",
+                "\t\tfor decoder.More() {",
+                "\t\t\tif err := freeholdRejectDuplicateJSONKeysValue(decoder, path+\"[]\"); err != nil {",
+                "\t\t\t\treturn err",
+                "\t\t\t}",
+                "\t\t}",
+                "\t\tendToken, err := decoder.Token()",
+                "\t\tif err != nil {",
+                "\t\t\treturn err",
+                "\t\t}",
+                "\t\tif end, ok := endToken.(json.Delim); !ok || end != ']' {",
+                "\t\t\treturn fmt.Errorf(\"%s: expected array end\", path)",
+                "\t\t}",
+                "\tdefault:",
+                "\t\treturn fmt.Errorf(\"%s: unexpected JSON delimiter\", path)",
+                "\t}",
+                "\treturn nil",
+                "}",
+                "",
                 "func freeholdValidateJSONValue(raw json.RawMessage, target reflect.Type, path string) error {",
+                "\treturn freeholdValidateJSONValueWithRange(raw, target, path, \"\", \"\")",
+                "}",
+                "",
+                "func freeholdValidateJSONValueWithRange(raw json.RawMessage, target reflect.Type, path string, minValue string, maxValue string) error {",
+                "\tif strings.TrimSpace(string(raw)) == \"null\" {",
+                "\t\treturn fmt.Errorf(\"%s: null not allowed\", path)",
+                "\t}",
                 "\tswitch target.Kind() {",
                 "\tcase reflect.Struct:",
                 "\t\tvar object map[string]json.RawMessage",
                 "\t\tif err := json.Unmarshal(raw, &object); err != nil {",
                 "\t\t\treturn fmt.Errorf(\"%s: expected object\", path)",
                 "\t\t}",
-                "\t\tfields := map[string]reflect.Type{}",
+                "\t\tfields := map[string]freeholdJSONFieldSpec{}",
                 "\t\tfor index := 0; index < target.NumField(); index++ {",
                 "\t\t\tfield := target.Field(index)",
                 "\t\t\tname := field.Tag.Get(\"json\")",
                 "\t\t\tif name == \"\" {",
                 "\t\t\t\tname = field.Name",
                 "\t\t\t}",
-                "\t\t\tfields[name] = field.Type",
+                "\t\t\tfields[name] = freeholdJSONFieldSpec{typ: field.Type, min: field.Tag.Get(\"fh_min\"), max: field.Tag.Get(\"fh_max\")}",
                 "\t\t}",
                 "\t\tfor name := range object {",
                 "\t\t\tif _, ok := fields[name]; !ok {",
                 "\t\t\t\treturn fmt.Errorf(\"%s: unknown field %s\", path, name)",
                 "\t\t\t}",
                 "\t\t}",
-                "\t\tfor name, fieldType := range fields {",
+                "\t\tfor name, fieldSpec := range fields {",
                 "\t\t\tfieldRaw, ok := object[name]",
                 "\t\t\tif !ok {",
                 "\t\t\t\treturn fmt.Errorf(\"%s: missing required field %s\", path, name)",
                 "\t\t\t}",
-                "\t\t\tif err := freeholdValidateJSONValue(fieldRaw, fieldType, path+\".\"+name); err != nil {",
+                "\t\t\tif err := freeholdValidateJSONValueWithRange(fieldRaw, fieldSpec.typ, path+\".\"+name, fieldSpec.min, fieldSpec.max); err != nil {",
                 "\t\t\t\treturn err",
                 "\t\t\t}",
                 "\t\t}",
@@ -1468,7 +1665,7 @@ class GoGenerator:
                 "\t\t\treturn fmt.Errorf(\"%s: expected array length %d, got %d\", path, target.Len(), len(items))",
                 "\t\t}",
                 "\t\tfor _, item := range items {",
-                "\t\t\tif err := freeholdValidateJSONValue(item, target.Elem(), path+\"[]\"); err != nil {",
+                "\t\t\tif err := freeholdValidateJSONValueWithRange(item, target.Elem(), path+\"[]\", minValue, maxValue); err != nil {",
                 "\t\t\t\treturn err",
                 "\t\t\t}",
                 "\t\t}",
@@ -1493,11 +1690,38 @@ class GoGenerator:
                 "\t\tif _, err := value.Int64(); err != nil {",
                 "\t\t\treturn fmt.Errorf(\"%s: expected Integer\", path)",
                 "\t\t}",
+                "\t\tif minValue != \"\" {",
+                "\t\t\tparsed, _ := value.Int64()",
+                "\t\t\tminInt, err := strconv.ParseInt(minValue, 10, 64)",
+                "\t\t\tif err != nil {",
+                "\t\t\t\treturn err",
+                "\t\t\t}",
+                "\t\t\tmaxInt, err := strconv.ParseInt(maxValue, 10, 64)",
+                "\t\t\tif err != nil {",
+                "\t\t\t\treturn err",
+                "\t\t\t}",
+                "\t\t\tif parsed < minInt || parsed > maxInt {",
+                "\t\t\t\treturn fmt.Errorf(\"%s: value %d out of range (%s..%s)\", path, parsed, minValue, maxValue)",
+                "\t\t\t}",
+                "\t\t}",
                 "\t\treturn nil",
                 "\tcase reflect.Float32, reflect.Float64:",
                 "\t\tvar value float64",
                 "\t\tif err := json.Unmarshal(raw, &value); err != nil {",
                 "\t\t\treturn fmt.Errorf(\"%s: expected Double\", path)",
+                "\t\t}",
+                "\t\tif minValue != \"\" {",
+                "\t\t\tminFloat, err := strconv.ParseFloat(minValue, 64)",
+                "\t\t\tif err != nil {",
+                "\t\t\t\treturn err",
+                "\t\t\t}",
+                "\t\t\tmaxFloat, err := strconv.ParseFloat(maxValue, 64)",
+                "\t\t\tif err != nil {",
+                "\t\t\t\treturn err",
+                "\t\t\t}",
+                "\t\t\tif value < minFloat || value > maxFloat {",
+                "\t\t\t\treturn fmt.Errorf(\"%s: value %v out of range (%s..%s)\", path, value, minValue, maxValue)",
+                "\t\t\t}",
                 "\t\t}",
                 "\t\treturn nil",
                 "\tdefault:",
@@ -1629,9 +1853,227 @@ class GoGenerator:
                 "}",
                 "",
             ])
-        if self.program.module_name == "WebSocket":
+        if is_websocket_runtime_module(self.program.module_name):
             lines.extend(self.websocket_helpers())
+        if is_http_runtime_module(self.program.module_name):
+            lines.extend(self.http_helpers())
+        if is_grpc_runtime_module(self.program.module_name):
+            lines.extend(self.grpc_helpers())
         return lines
+
+    def http_helpers(self) -> list[str]:
+        self.std_imports.update({"context", "fmt", "net", "sync", "time"})
+        return [
+            "type httpRuntimeConn struct {",
+            "\tid   string",
+            "\tconn net.Conn",
+            "}",
+            "",
+            "var (",
+            "\thttpListeners     = make(map[string]net.Listener)",
+            "\thttpListenersMu   sync.Mutex",
+            "\thttpServerCounter int64",
+            "\thttpConns         = make(map[string]*httpRuntimeConn)",
+            "\thttpConnsMu       sync.Mutex",
+            "\thttpConnCounter   int64",
+            ")",
+            "",
+            "func registerHTTPListener(l net.Listener) string {",
+            "\thttpListenersMu.Lock()",
+            "\tdefer httpListenersMu.Unlock()",
+            "\thttpServerCounter++",
+            "\tid := fmt.Sprintf(\"http-server-%d\", httpServerCounter)",
+            "\thttpListeners[id] = l",
+            "\treturn id",
+            "}",
+            "",
+            "func getHTTPListener(id string) net.Listener {",
+            "\thttpListenersMu.Lock()",
+            "\tdefer httpListenersMu.Unlock()",
+            "\treturn httpListeners[id]",
+            "}",
+            "",
+            "func closeHTTPListener(id string) {",
+            "\thttpListenersMu.Lock()",
+            "\tl := httpListeners[id]",
+            "\tdelete(httpListeners, id)",
+            "\thttpListenersMu.Unlock()",
+            "\tif l != nil {",
+            "\t\t_ = l.Close()",
+            "\t}",
+            "}",
+            "",
+            "func registerHTTPConn(conn net.Conn) *httpRuntimeConn {",
+            "\thttpConnsMu.Lock()",
+            "\tdefer httpConnsMu.Unlock()",
+            "\thttpConnCounter++",
+            "\tid := fmt.Sprintf(\"http-conn-%d\", httpConnCounter)",
+            "\truntimeConn := &httpRuntimeConn{id: id, conn: conn}",
+            "\thttpConns[id] = runtimeConn",
+            "\treturn runtimeConn",
+            "}",
+            "",
+            "func getHTTPConn(id string) *httpRuntimeConn {",
+            "\thttpConnsMu.Lock()",
+            "\tdefer httpConnsMu.Unlock()",
+            "\treturn httpConns[id]",
+            "}",
+            "",
+            "func removeHTTPConn(id string) {",
+            "\thttpConnsMu.Lock()",
+            "\tdelete(httpConns, id)",
+            "\thttpConnsMu.Unlock()",
+            "}",
+            "",
+            "func httpAcceptWithContext(ctx context.Context, l net.Listener) (net.Conn, error) {",
+            "\tfor {",
+            "\t\tselect {",
+            "\t\tcase <-ctx.Done():",
+            "\t\t\treturn nil, ctx.Err()",
+            "\t\tdefault:",
+            "\t\t}",
+            "\t\tif deadlineListener, ok := l.(interface{ SetDeadline(time.Time) error }); ok {",
+            "\t\t\t_ = deadlineListener.SetDeadline(time.Now().Add(200 * time.Millisecond))",
+            "\t\t}",
+            "\t\tconn, err := l.Accept()",
+            "\t\tif err == nil {",
+            "\t\t\treturn conn, nil",
+            "\t\t}",
+            "\t\tif netErr, ok := err.(net.Error); ok && netErr.Timeout() {",
+            "\t\t\tcontinue",
+            "\t\t}",
+            "\t\treturn nil, err",
+            "\t}",
+            "}",
+        ]
+
+    def grpc_helpers(self) -> list[str]:
+        self.std_imports.update({"context", "net", "strconv", "sync", "google.golang.org/grpc"})
+        return [
+            "type GrpcUnaryCall struct {",
+            "\tMethod  string",
+            "\tPayload string",
+            "\tReply   chan string",
+            "}",
+            "",
+            "type GrpcStreamCall struct {",
+            "\tMethod  string",
+            "\tPayload string",
+            "\tOut     chan string",
+            "\tDone    chan struct{}",
+            "}",
+            "",
+            "type grpcServerEntry struct {",
+            "\tserver   *grpc.Server",
+            "\tlistener net.Listener",
+            "}",
+            "",
+            "var (",
+            "\tGrpcUnaryQueue        = make(chan *GrpcUnaryCall, 64)",
+            "\tGrpcStreamQueue       = make(chan *GrpcStreamCall, 64)",
+            "\tgrpcRegistrarsMu      sync.Mutex",
+            "\tgrpcServiceRegistrars []func(*grpc.Server)",
+            "\tgrpcDispatchersMu     sync.Mutex",
+            "\tgrpcClientDispatchers = make(map[string]func(context.Context, grpc.ClientConnInterface, string) (string, error))",
+            "\tgrpcStreamDispatchers = make(map[string]func(context.Context, grpc.ClientConnInterface, string) ([]string, error))",
+            "\tgrpcServersMu         sync.Mutex",
+            "\tgrpcServers           = make(map[string]*grpcServerEntry)",
+            "\tgrpcServerCounter     int64",
+            "\tgrpcCallsMu           sync.Mutex",
+            "\tgrpcUnaryCalls        = make(map[string]*GrpcUnaryCall)",
+            "\tgrpcStreamCalls       = make(map[string]*GrpcStreamCall)",
+            "\tgrpcCallCounter       int64",
+            ")",
+            "",
+            "func RegisterServiceRegistrar(register func(*grpc.Server)) {",
+            "\tgrpcRegistrarsMu.Lock()",
+            "\tdefer grpcRegistrarsMu.Unlock()",
+            "\tgrpcServiceRegistrars = append(grpcServiceRegistrars, register)",
+            "}",
+            "",
+            "func RegisterClientDispatcher(method string, dispatch func(context.Context, grpc.ClientConnInterface, string) (string, error)) {",
+            "\tgrpcDispatchersMu.Lock()",
+            "\tdefer grpcDispatchersMu.Unlock()",
+            "\tgrpcClientDispatchers[method] = dispatch",
+            "}",
+            "",
+            "func RegisterStreamDispatcher(method string, dispatch func(context.Context, grpc.ClientConnInterface, string) ([]string, error)) {",
+            "\tgrpcDispatchersMu.Lock()",
+            "\tdefer grpcDispatchersMu.Unlock()",
+            "\tgrpcStreamDispatchers[method] = dispatch",
+            "}",
+            "",
+            "func EnqueueUnaryCall(call *GrpcUnaryCall) {",
+            "\tGrpcUnaryQueue <- call",
+            "}",
+            "",
+            "func EnqueueStreamCall(call *GrpcStreamCall) {",
+            "\tGrpcStreamQueue <- call",
+            "}",
+            "",
+            "func grpcLookupClientDispatcher(method string) func(context.Context, grpc.ClientConnInterface, string) (string, error) {",
+            "\tgrpcDispatchersMu.Lock()",
+            "\tdefer grpcDispatchersMu.Unlock()",
+            "\treturn grpcClientDispatchers[method]",
+            "}",
+            "",
+            "func grpcLookupStreamDispatcher(method string) func(context.Context, grpc.ClientConnInterface, string) ([]string, error) {",
+            "\tgrpcDispatchersMu.Lock()",
+            "\tdefer grpcDispatchersMu.Unlock()",
+            "\treturn grpcStreamDispatchers[method]",
+            "}",
+            "",
+            "func registerGrpcServer(server *grpc.Server, listener net.Listener) string {",
+            "\tgrpcServersMu.Lock()",
+            "\tdefer grpcServersMu.Unlock()",
+            "\tgrpcServerCounter++",
+            "\tid := \"grpc-server-\" + strconv.FormatInt(grpcServerCounter, 10)",
+            "\tgrpcServers[id] = &grpcServerEntry{server: server, listener: listener}",
+            "\treturn id",
+            "}",
+            "",
+            "func takeGrpcServer(id string) *grpcServerEntry {",
+            "\tgrpcServersMu.Lock()",
+            "\tdefer grpcServersMu.Unlock()",
+            "\tentry := grpcServers[id]",
+            "\tdelete(grpcServers, id)",
+            "\treturn entry",
+            "}",
+            "",
+            "func registerUnaryCall(call *GrpcUnaryCall) string {",
+            "\tgrpcCallsMu.Lock()",
+            "\tdefer grpcCallsMu.Unlock()",
+            "\tgrpcCallCounter++",
+            "\tid := \"grpc-call-\" + strconv.FormatInt(grpcCallCounter, 10)",
+            "\tgrpcUnaryCalls[id] = call",
+            "\treturn id",
+            "}",
+            "",
+            "func takeUnaryCall(id string) *GrpcUnaryCall {",
+            "\tgrpcCallsMu.Lock()",
+            "\tdefer grpcCallsMu.Unlock()",
+            "\tcall := grpcUnaryCalls[id]",
+            "\tdelete(grpcUnaryCalls, id)",
+            "\treturn call",
+            "}",
+            "",
+            "func registerStreamCall(call *GrpcStreamCall) string {",
+            "\tgrpcCallsMu.Lock()",
+            "\tdefer grpcCallsMu.Unlock()",
+            "\tgrpcCallCounter++",
+            "\tid := \"grpc-stream-\" + strconv.FormatInt(grpcCallCounter, 10)",
+            "\tgrpcStreamCalls[id] = call",
+            "\treturn id",
+            "}",
+            "",
+            "func takeStreamCall(id string) *GrpcStreamCall {",
+            "\tgrpcCallsMu.Lock()",
+            "\tdefer grpcCallsMu.Unlock()",
+            "\tcall := grpcStreamCalls[id]",
+            "\tdelete(grpcStreamCalls, id)",
+            "\treturn call",
+            "}",
+        ]
 
     def websocket_helpers(self) -> list[str]:
         self.std_imports.update({"bufio", "context", "crypto/rand", "crypto/sha1", "crypto/tls", "encoding/base64", "errors", "fmt", "io", "net", "net/http", "net/url", "strings", "sync", "time"})
@@ -1936,7 +2378,12 @@ class GoGenerator:
         lines = [f"type {go_exported_name(declaration.name)} struct {{"]
         for field in declaration.fields:
             json_name = field.json_name or field.name
-            lines.append(f"\t{go_exported_name(field.name)} {self.go_type_string(field.type_name)} `json:\"{json_name}\"`")
+            tag_parts = [f"json:\"{json_name}\""]
+            type_decl = self.find_type_decl(field.type_name)
+            if type_decl is not None and type_decl.min_value is not None:
+                tag_parts.append(f"fh_min:\"{type_decl.min_value}\"")
+                tag_parts.append(f"fh_max:\"{type_decl.max_value}\"")
+            lines.append(f"\t{go_exported_name(field.name)} {self.go_type_string(field.type_name)} `{' '.join(tag_parts)}`")
         lines.extend(["}", ""])
         return lines
 
@@ -1947,7 +2394,9 @@ class GoGenerator:
         if routine.type_params:
             self.unsupported(routine, "generic routines are not supported by Go codegen V1")
             return []
-        if self.program.module_name == "WebSocket":
+        if routine.ffi_binding is not None:
+            return self.ffi_routine_decl(routine)
+        if is_websocket_runtime_module(self.program.module_name):
             if routine.name == "connect":
                 return [
                     "func Connect(ctx context.Context, urlStr string) ResultConnectionWebSocketError {",
@@ -2105,6 +2554,739 @@ class GoGenerator:
                     "}",
                     ""
                 ]
+        if is_http_runtime_module(self.program.module_name) and routine.name == "send":
+            self.std_imports.update({"context", "io", "net/http", "net/url", "strconv", "strings", "time"})
+            self.used_import_modules.add("Std.Connect.Common")
+            common_alias = go_import_alias("Std.Connect.Common")
+            res_type = ResultTypeName(TypeName("Response"), "ConnectError")
+            self.result_types.setdefault(type_to_string(res_type), res_type)
+            return [
+                "func Send(ctx context.Context, client Client, request Request) ResultResponseConnectError {",
+                "\tscheme := client.Endpoint.Scheme",
+                "\tif scheme == \"\" {",
+                "\t\tscheme = \"http\"",
+                "\t}",
+                "\thost := client.Endpoint.Host",
+                "\tif host == \"\" {",
+                "\t\treturn ResultResponseConnectError{Ok: false, Error: \"missing http endpoint host\"}",
+                "\t}",
+                "\tif client.Endpoint.Port > 0 {",
+                "\t\thost = host + \":\" + strconv.FormatInt(client.Endpoint.Port, 10)",
+                "\t}",
+                "\tbasePath := client.Endpoint.PathPrefix",
+                "\tif basePath == \"\" {",
+                "\t\tbasePath = \"/\"",
+                "\t}",
+                "\trequestPath := request.Path",
+                "\tif requestPath == \"\" {",
+                "\t\trequestPath = \"/\"",
+                "\t}",
+                "\tfullPath := strings.TrimRight(basePath, \"/\") + \"/\" + strings.TrimLeft(requestPath, \"/\")",
+                "\tif fullPath == \"\" {",
+                "\t\tfullPath = \"/\"",
+                "\t}",
+                "\tu := url.URL{Scheme: scheme, Host: host, Path: fullPath}",
+                "\tif request.Query != \"\" {",
+                "\t\tu.RawQuery = request.Query",
+                "\t}",
+                "\tmethod := request.Method",
+                "\tif method == \"\" {",
+                "\t\tmethod = http.MethodGet",
+                "\t}",
+                "\treq, err := http.NewRequestWithContext(ctx, method, u.String(), strings.NewReader(request.Body.Text))",
+                "\tif err != nil {",
+                "\t\treturn ResultResponseConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\tif request.Headers.Accept != \"\" {",
+                "\t\treq.Header.Set(\"Accept\", request.Headers.Accept)",
+                "\t}",
+                "\tif request.Headers.ContentType != \"\" {",
+                "\t\treq.Header.Set(\"Content-Type\", request.Headers.ContentType)",
+                "\t}",
+                "\tif request.Headers.Authorization != \"\" {",
+                "\t\treq.Header.Set(\"Authorization\", request.Headers.Authorization)",
+                "\t}",
+                "\tif request.Headers.RequestId != \"\" {",
+                "\t\treq.Header.Set(\"X-Request-Id\", request.Headers.RequestId)",
+                "\t}",
+                "\thttpClient := &http.Client{Timeout: 30 * time.Second}",
+                "\tresp, err := httpClient.Do(req)",
+                "\tif err != nil {",
+                "\t\treturn ResultResponseConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\tdefer resp.Body.Close()",
+                "\tbodyBytes, err := io.ReadAll(resp.Body)",
+                "\tif err != nil {",
+                "\t\treturn ResultResponseConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                f"\tresponseHeaders := {common_alias}.Headers{{",
+                "\t\tAccept: resp.Header.Get(\"Accept\"),",
+                "\t\tContentType: resp.Header.Get(\"Content-Type\"),",
+                "\t\tAuthorization: resp.Header.Get(\"Authorization\"),",
+                "\t\tRequestId: resp.Header.Get(\"X-Request-Id\"),",
+                "\t}",
+                "\treturn ResultResponseConnectError{",
+                "\t\tOk: true,",
+                "\t\tValue: Response{",
+                "\t\t\tStatusCode: int64(resp.StatusCode),",
+                "\t\t\tHeaders: responseHeaders,",
+                f"\t\t\tBody: {common_alias}.Body{{Text: string(bodyBytes), ContentType: resp.Header.Get(\"Content-Type\")}},",
+                "\t\t},",
+                "\t}",
+                "}",
+                "",
+            ]
+        if is_http_runtime_module(self.program.module_name) and routine.name == "serve":
+            self.std_imports.update({"net", "strconv"})
+            self.used_import_modules.add("Std.Connect.Common")
+            common_alias = go_import_alias("Std.Connect.Common")
+            res_type = ResultTypeName(TypeName("ServerHandle"), "ConnectError")
+            self.result_types.setdefault(type_to_string(res_type), res_type)
+            return [
+                f"func Serve(endpoint {common_alias}.Endpoint) ResultServerHandleConnectError {{",
+                "\thost := endpoint.Host",
+                "\tif host == \"\" {",
+                "\t\thost = \"127.0.0.1\"",
+                "\t}",
+                "\taddr := host",
+                "\tif endpoint.Port > 0 {",
+                "\t\taddr = host + \":\" + strconv.FormatInt(endpoint.Port, 10)",
+                "\t}",
+                "\tl, err := net.Listen(\"tcp\", addr)",
+                "\tif err != nil {",
+                "\t\treturn ResultServerHandleConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\tid := registerHTTPListener(l)",
+                "\treturn ResultServerHandleConnectError{Ok: true, Value: ServerHandle{Id: id}}",
+                "}",
+                "",
+            ]
+        if is_http_runtime_module(self.program.module_name) and routine.name == "accept_request":
+            self.std_imports.update({"bufio", "context", "io", "net/http"})
+            self.used_import_modules.add("Std.Connect.Common")
+            common_alias = go_import_alias("Std.Connect.Common")
+            res_type = ResultTypeName(TypeName("RequestContext"), "ConnectError")
+            self.result_types.setdefault(type_to_string(res_type), res_type)
+            return [
+                "func AcceptRequest(ctx context.Context, server ServerHandle) ResultRequestContextConnectError {",
+                "\tl := getHTTPListener(server.Id)",
+                "\tif l == nil {",
+                "\t\treturn ResultRequestContextConnectError{Ok: false, Error: \"server listener not found\"}",
+                "\t}",
+                "\tconn, err := httpAcceptWithContext(ctx, l)",
+                "\tif err != nil {",
+                "\t\treturn ResultRequestContextConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\treader := bufio.NewReader(conn)",
+                "\treq, err := http.ReadRequest(reader)",
+                "\tif err != nil {",
+                "\t\t_ = conn.Close()",
+                "\t\treturn ResultRequestContextConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\tvar bodyText string",
+                "\tif req.Body != nil {",
+                "\t\tbodyBytes, readErr := io.ReadAll(req.Body)",
+                "\t\tif readErr != nil {",
+                "\t\t\t_ = conn.Close()",
+                "\t\t\treturn ResultRequestContextConnectError{Ok: false, Error: readErr.Error()}",
+                "\t\t}",
+                "\t\tbodyText = string(bodyBytes)",
+                "\t}",
+                "\truntimeConn := registerHTTPConn(conn)",
+                f"\trequestHeaders := {common_alias}.Headers{{",
+                "\t\tAccept: req.Header.Get(\"Accept\"),",
+                "\t\tContentType: req.Header.Get(\"Content-Type\"),",
+                "\t\tAuthorization: req.Header.Get(\"Authorization\"),",
+                "\t\tRequestId: req.Header.Get(\"X-Request-Id\"),",
+                "\t}",
+                "\trequestValue := Request{",
+                "\t\tMethod: req.Method,",
+                "\t\tPath: req.URL.Path,",
+                "\t\tQuery: req.URL.RawQuery,",
+                "\t\tHeaders: requestHeaders,",
+                f"\t\tBody: {common_alias}.Body{{Text: bodyText, ContentType: req.Header.Get(\"Content-Type\")}},",
+                "\t}",
+                "\treturn ResultRequestContextConnectError{Ok: true, Value: RequestContext{Id: runtimeConn.id, Request: requestValue}}",
+                "}",
+                "",
+            ]
+        if is_http_runtime_module(self.program.module_name) and routine.name == "respond":
+            self.std_imports.update({"context", "net/http", "strconv", "strings"})
+            return [
+                "func Respond(ctx context.Context, requestContext RequestContext, response Response) bool {",
+                "\truntimeConn := getHTTPConn(requestContext.Id)",
+                "\tif runtimeConn == nil {",
+                "\t\treturn false",
+                "\t}",
+                "\tdefer func() {",
+                "\t\t_ = runtimeConn.conn.Close()",
+                "\t\tremoveHTTPConn(runtimeConn.id)",
+                "\t}()",
+                "\tstatus := response.StatusCode",
+                "\tif status == 0 {",
+                "\t\tstatus = 200",
+                "\t}",
+                "\tstatusText := http.StatusText(int(status))",
+                "\tif statusText == \"\" {",
+                "\t\tstatusText = \"OK\"",
+                "\t}",
+                "\tbody := response.Body.Text",
+                "\tvar builder strings.Builder",
+                "\tbuilder.WriteString(\"HTTP/1.1 \" + strconv.FormatInt(status, 10) + \" \" + statusText + \"\\r\\n\")",
+                "\tcontentType := response.Body.ContentType",
+                "\tif contentType == \"\" {",
+                "\t\tcontentType = response.Headers.ContentType",
+                "\t}",
+                "\tif contentType != \"\" {",
+                "\t\tbuilder.WriteString(\"Content-Type: \" + contentType + \"\\r\\n\")",
+                "\t}",
+                "\tif response.Headers.RequestId != \"\" {",
+                "\t\tbuilder.WriteString(\"X-Request-Id: \" + response.Headers.RequestId + \"\\r\\n\")",
+                "\t}",
+                "\tbuilder.WriteString(\"Content-Length: \" + strconv.Itoa(len(body)) + \"\\r\\n\")",
+                "\tbuilder.WriteString(\"Connection: close\\r\\n\\r\\n\")",
+                "\tbuilder.WriteString(body)",
+                "\t_, err := runtimeConn.conn.Write([]byte(builder.String()))",
+                "\treturn err == nil",
+                "}",
+                "",
+            ]
+        if is_http_runtime_module(self.program.module_name) and routine.name == "stop_server":
+            return [
+                "func StopServer(server ServerHandle) {",
+                "\tcloseHTTPListener(server.Id)",
+                "}",
+                "",
+            ]
+        if is_http_runtime_module(self.program.module_name) and routine.name == "respond_stream":
+            self.std_imports.update({"context", "net/http", "strconv", "strings"})
+            return [
+                "func RespondStream(ctx context.Context, requestContext RequestContext, statusCode int64, contentType string, chunkCount int64, chunks <-chan string) bool {",
+                "\truntimeConn := getHTTPConn(requestContext.Id)",
+                "\tif runtimeConn == nil {",
+                "\t\treturn false",
+                "\t}",
+                "\tdefer func() {",
+                "\t\t_ = runtimeConn.conn.Close()",
+                "\t\tremoveHTTPConn(runtimeConn.id)",
+                "\t}()",
+                "\tstatus := statusCode",
+                "\tif status == 0 {",
+                "\t\tstatus = 200",
+                "\t}",
+                "\tstatusText := http.StatusText(int(status))",
+                "\tif statusText == \"\" {",
+                "\t\tstatusText = \"OK\"",
+                "\t}",
+                "\tvar head strings.Builder",
+                "\thead.WriteString(\"HTTP/1.1 \" + strconv.FormatInt(status, 10) + \" \" + statusText + \"\\r\\n\")",
+                "\tif contentType != \"\" {",
+                "\t\thead.WriteString(\"Content-Type: \" + contentType + \"\\r\\n\")",
+                "\t}",
+                "\thead.WriteString(\"X-Chunk-Count: \" + strconv.FormatInt(chunkCount, 10) + \"\\r\\n\")",
+                "\thead.WriteString(\"Transfer-Encoding: chunked\\r\\n\")",
+                "\thead.WriteString(\"Connection: close\\r\\n\\r\\n\")",
+                "\tif _, err := runtimeConn.conn.Write([]byte(head.String())); err != nil {",
+                "\t\treturn false",
+                "\t}",
+                "\tfor i := int64(0); i < chunkCount; i++ {",
+                "\t\tvar chunk string",
+                "\t\tselect {",
+                "\t\tcase <-ctx.Done():",
+                "\t\t\treturn false",
+                "\t\tcase chunk = <-chunks:",
+                "\t\t}",
+                "\t\tframe := strconv.FormatInt(int64(len(chunk)), 16) + \"\\r\\n\" + chunk + \"\\r\\n\"",
+                "\t\tif _, err := runtimeConn.conn.Write([]byte(frame)); err != nil {",
+                "\t\t\treturn false",
+                "\t\t}",
+                "\t}",
+                "\tif _, err := runtimeConn.conn.Write([]byte(\"0\\r\\n\\r\\n\")); err != nil {",
+                "\t\treturn false",
+                "\t}",
+                "\treturn true",
+                "}",
+                "",
+            ]
+        if is_http_runtime_module(self.program.module_name) and routine.name == "open_stream":
+            self.std_imports.update({"bufio", "context", "io", "net", "strconv", "strings"})
+            res_type = ResultTypeName(TypeName("StreamResponse"), "ConnectError")
+            self.result_types.setdefault(type_to_string(res_type), res_type)
+            return [
+                "func OpenStream(ctx context.Context, client Client, request Request) ResultStreamResponseConnectError {",
+                "\thost := client.Endpoint.Host",
+                "\tif host == \"\" {",
+                "\t\treturn ResultStreamResponseConnectError{Ok: false, Error: \"missing http endpoint host\"}",
+                "\t}",
+                "\taddr := host",
+                "\tif client.Endpoint.Port > 0 {",
+                "\t\taddr = host + \":\" + strconv.FormatInt(client.Endpoint.Port, 10)",
+                "\t}",
+                "\tbasePath := client.Endpoint.PathPrefix",
+                "\tif basePath == \"\" {",
+                "\t\tbasePath = \"/\"",
+                "\t}",
+                "\trequestPath := request.Path",
+                "\tif requestPath == \"\" {",
+                "\t\trequestPath = \"/\"",
+                "\t}",
+                "\tfullPath := strings.TrimRight(basePath, \"/\") + \"/\" + strings.TrimLeft(requestPath, \"/\")",
+                "\tif fullPath == \"\" {",
+                "\t\tfullPath = \"/\"",
+                "\t}",
+                "\tif request.Query != \"\" {",
+                "\t\tfullPath = fullPath + \"?\" + request.Query",
+                "\t}",
+                "\tmethod := request.Method",
+                "\tif method == \"\" {",
+                "\t\tmethod = \"GET\"",
+                "\t}",
+                "\tdialer := net.Dialer{}",
+                "\tconn, err := dialer.DialContext(ctx, \"tcp\", addr)",
+                "\tif err != nil {",
+                "\t\treturn ResultStreamResponseConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\tvar reqBuilder strings.Builder",
+                "\treqBuilder.WriteString(method + \" \" + fullPath + \" HTTP/1.1\\r\\n\")",
+                "\treqBuilder.WriteString(\"Host: \" + host + \"\\r\\n\")",
+                "\tif request.Headers.Accept != \"\" {",
+                "\t\treqBuilder.WriteString(\"Accept: \" + request.Headers.Accept + \"\\r\\n\")",
+                "\t}",
+                "\tif request.Headers.Authorization != \"\" {",
+                "\t\treqBuilder.WriteString(\"Authorization: \" + request.Headers.Authorization + \"\\r\\n\")",
+                "\t}",
+                "\treqBuilder.WriteString(\"Connection: close\\r\\n\\r\\n\")",
+                "\tif _, err := conn.Write([]byte(reqBuilder.String())); err != nil {",
+                "\t\tconn.Close()",
+                "\t\treturn ResultStreamResponseConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\treader := bufio.NewReader(conn)",
+                "\tstatusLine, err := reader.ReadString('\\n')",
+                "\tif err != nil {",
+                "\t\tconn.Close()",
+                "\t\treturn ResultStreamResponseConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\tstatusLine = strings.TrimRight(statusLine, \"\\r\\n\")",
+                "\tstatusCode := int64(0)",
+                "\tparts := strings.SplitN(statusLine, \" \", 3)",
+                "\tif len(parts) >= 2 {",
+                "\t\tif code, convErr := strconv.ParseInt(parts[1], 10, 64); convErr == nil {",
+                "\t\t\tstatusCode = code",
+                "\t\t}",
+                "\t}",
+                "\tchunkCount := int64(0)",
+                "\tfor {",
+                "\t\tline, readErr := reader.ReadString('\\n')",
+                "\t\tif readErr != nil {",
+                "\t\t\tconn.Close()",
+                "\t\t\treturn ResultStreamResponseConnectError{Ok: false, Error: readErr.Error()}",
+                "\t\t}",
+                "\t\tline = strings.TrimRight(line, \"\\r\\n\")",
+                "\t\tif line == \"\" {",
+                "\t\t\tbreak",
+                "\t\t}",
+                "\t\tif strings.HasPrefix(strings.ToLower(line), \"x-chunk-count:\") {",
+                "\t\t\tvalue := strings.TrimSpace(line[len(\"x-chunk-count:\"):])",
+                "\t\t\tif parsed, convErr := strconv.ParseInt(value, 10, 64); convErr == nil {",
+                "\t\t\t\tchunkCount = parsed",
+                "\t\t\t}",
+                "\t\t}",
+                "\t}",
+                "\tchunks := make(chan string, chunkCount+1)",
+                "\tfor {",
+                "\t\tsizeLine, readErr := reader.ReadString('\\n')",
+                "\t\tif readErr != nil {",
+                "\t\t\tbreak",
+                "\t\t}",
+                "\t\tsizeLine = strings.TrimRight(sizeLine, \"\\r\\n\")",
+                "\t\tif sizeLine == \"\" {",
+                "\t\t\tcontinue",
+                "\t\t}",
+                "\t\tsize, convErr := strconv.ParseInt(sizeLine, 16, 64)",
+                "\t\tif convErr != nil {",
+                "\t\t\tbreak",
+                "\t\t}",
+                "\t\tif size == 0 {",
+                "\t\t\tbreak",
+                "\t\t}",
+                "\t\tbuf := make([]byte, size)",
+                "\t\tif _, readErr := io.ReadFull(reader, buf); readErr != nil {",
+                "\t\t\tbreak",
+                "\t\t}",
+                "\t\t_, _ = reader.Discard(2)",
+                "\t\tchunks <- string(buf)",
+                "\t}",
+                "\tconn.Close()",
+                "\tclose(chunks)",
+                "\treturn ResultStreamResponseConnectError{",
+                "\t\tOk: true,",
+                "\t\tValue: StreamResponse{",
+                "\t\t\tStatusCode: statusCode,",
+                "\t\t\tChunkCount: chunkCount,",
+                "\t\t\tChunks: chunks,",
+                "\t\t},",
+                "\t}",
+                "}",
+                "",
+            ]
+        if is_http_runtime_module(self.program.module_name) and routine.name == "respond_sse":
+            self.std_imports.update({"context", "strconv", "strings"})
+            return [
+                "func RespondSse(ctx context.Context, requestContext RequestContext, eventCount int64, events <-chan SseEvent) bool {",
+                "\truntimeConn := getHTTPConn(requestContext.Id)",
+                "\tif runtimeConn == nil {",
+                "\t\treturn false",
+                "\t}",
+                "\tdefer func() {",
+                "\t\t_ = runtimeConn.conn.Close()",
+                "\t\tremoveHTTPConn(runtimeConn.id)",
+                "\t}()",
+                "\tvar head strings.Builder",
+                "\thead.WriteString(\"HTTP/1.1 200 OK\\r\\n\")",
+                "\thead.WriteString(\"Content-Type: text/event-stream\\r\\n\")",
+                "\thead.WriteString(\"Cache-Control: no-cache\\r\\n\")",
+                "\thead.WriteString(\"X-Event-Count: \" + strconv.FormatInt(eventCount, 10) + \"\\r\\n\")",
+                "\thead.WriteString(\"Connection: close\\r\\n\\r\\n\")",
+                "\tif _, err := runtimeConn.conn.Write([]byte(head.String())); err != nil {",
+                "\t\treturn false",
+                "\t}",
+                "\tfor i := int64(0); i < eventCount; i++ {",
+                "\t\tvar event SseEvent",
+                "\t\tselect {",
+                "\t\tcase <-ctx.Done():",
+                "\t\t\treturn false",
+                "\t\tcase event = <-events:",
+                "\t\t}",
+                "\t\tvar frame strings.Builder",
+                "\t\tif event.EventType != \"\" {",
+                "\t\t\tframe.WriteString(\"event: \" + event.EventType + \"\\n\")",
+                "\t\t}",
+                "\t\tframe.WriteString(\"data: \" + event.Data + \"\\n\\n\")",
+                "\t\tif _, err := runtimeConn.conn.Write([]byte(frame.String())); err != nil {",
+                "\t\t\treturn false",
+                "\t\t}",
+                "\t}",
+                "\treturn true",
+                "}",
+                "",
+            ]
+        if is_http_runtime_module(self.program.module_name) and routine.name == "open_sse":
+            self.std_imports.update({"bufio", "context", "net", "strconv", "strings"})
+            res_type = ResultTypeName(TypeName("SseStream"), "ConnectError")
+            self.result_types.setdefault(type_to_string(res_type), res_type)
+            return [
+                "func OpenSse(ctx context.Context, client Client, request Request) ResultSseStreamConnectError {",
+                "\thost := client.Endpoint.Host",
+                "\tif host == \"\" {",
+                "\t\treturn ResultSseStreamConnectError{Ok: false, Error: \"missing http endpoint host\"}",
+                "\t}",
+                "\taddr := host",
+                "\tif client.Endpoint.Port > 0 {",
+                "\t\taddr = host + \":\" + strconv.FormatInt(client.Endpoint.Port, 10)",
+                "\t}",
+                "\tbasePath := client.Endpoint.PathPrefix",
+                "\tif basePath == \"\" {",
+                "\t\tbasePath = \"/\"",
+                "\t}",
+                "\trequestPath := request.Path",
+                "\tif requestPath == \"\" {",
+                "\t\trequestPath = \"/\"",
+                "\t}",
+                "\tfullPath := strings.TrimRight(basePath, \"/\") + \"/\" + strings.TrimLeft(requestPath, \"/\")",
+                "\tif fullPath == \"\" {",
+                "\t\tfullPath = \"/\"",
+                "\t}",
+                "\tif request.Query != \"\" {",
+                "\t\tfullPath = fullPath + \"?\" + request.Query",
+                "\t}",
+                "\tmethod := request.Method",
+                "\tif method == \"\" {",
+                "\t\tmethod = \"GET\"",
+                "\t}",
+                "\tdialer := net.Dialer{}",
+                "\tconn, err := dialer.DialContext(ctx, \"tcp\", addr)",
+                "\tif err != nil {",
+                "\t\treturn ResultSseStreamConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\tvar reqBuilder strings.Builder",
+                "\treqBuilder.WriteString(method + \" \" + fullPath + \" HTTP/1.1\\r\\n\")",
+                "\treqBuilder.WriteString(\"Host: \" + host + \"\\r\\n\")",
+                "\treqBuilder.WriteString(\"Accept: text/event-stream\\r\\n\")",
+                "\tif request.Headers.Authorization != \"\" {",
+                "\t\treqBuilder.WriteString(\"Authorization: \" + request.Headers.Authorization + \"\\r\\n\")",
+                "\t}",
+                "\treqBuilder.WriteString(\"Connection: close\\r\\n\\r\\n\")",
+                "\tif _, err := conn.Write([]byte(reqBuilder.String())); err != nil {",
+                "\t\tconn.Close()",
+                "\t\treturn ResultSseStreamConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\treader := bufio.NewReader(conn)",
+                "\tstatusLine, err := reader.ReadString('\\n')",
+                "\tif err != nil {",
+                "\t\tconn.Close()",
+                "\t\treturn ResultSseStreamConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\tstatusLine = strings.TrimRight(statusLine, \"\\r\\n\")",
+                "\tstatusCode := int64(0)",
+                "\tparts := strings.SplitN(statusLine, \" \", 3)",
+                "\tif len(parts) >= 2 {",
+                "\t\tif code, convErr := strconv.ParseInt(parts[1], 10, 64); convErr == nil {",
+                "\t\t\tstatusCode = code",
+                "\t\t}",
+                "\t}",
+                "\teventCount := int64(0)",
+                "\tfor {",
+                "\t\tline, readErr := reader.ReadString('\\n')",
+                "\t\tif readErr != nil {",
+                "\t\t\tconn.Close()",
+                "\t\t\treturn ResultSseStreamConnectError{Ok: false, Error: readErr.Error()}",
+                "\t\t}",
+                "\t\tline = strings.TrimRight(line, \"\\r\\n\")",
+                "\t\tif line == \"\" {",
+                "\t\t\tbreak",
+                "\t\t}",
+                "\t\tif strings.HasPrefix(strings.ToLower(line), \"x-event-count:\") {",
+                "\t\t\tvalue := strings.TrimSpace(line[len(\"x-event-count:\"):])",
+                "\t\t\tif parsed, convErr := strconv.ParseInt(value, 10, 64); convErr == nil {",
+                "\t\t\t\teventCount = parsed",
+                "\t\t\t}",
+                "\t\t}",
+                "\t}",
+                "\tevents := make(chan SseEvent, eventCount+1)",
+                "\tcurrentType := \"\"",
+                "\tcurrentData := \"\"",
+                "\thaveData := false",
+                "\tfor {",
+                "\t\tline, readErr := reader.ReadString('\\n')",
+                "\t\ttrimmed := strings.TrimRight(line, \"\\r\\n\")",
+                "\t\tif trimmed == \"\" {",
+                "\t\t\tif haveData {",
+                "\t\t\t\tevents <- SseEvent{EventType: currentType, Data: currentData}",
+                "\t\t\t\tcurrentType = \"\"",
+                "\t\t\t\tcurrentData = \"\"",
+                "\t\t\t\thaveData = false",
+                "\t\t\t}",
+                "\t\t\tif readErr != nil {",
+                "\t\t\t\tbreak",
+                "\t\t\t}",
+                "\t\t\tcontinue",
+                "\t\t}",
+                "\t\tif strings.HasPrefix(trimmed, \"event:\") {",
+                "\t\t\tcurrentType = strings.TrimSpace(trimmed[len(\"event:\"):])",
+                "\t\t} else if strings.HasPrefix(trimmed, \"data:\") {",
+                "\t\t\tcurrentData = strings.TrimSpace(trimmed[len(\"data:\"):])",
+                "\t\t\thaveData = true",
+                "\t\t}",
+                "\t\tif readErr != nil {",
+                "\t\t\tif haveData {",
+                "\t\t\t\tevents <- SseEvent{EventType: currentType, Data: currentData}",
+                "\t\t\t}",
+                "\t\t\tbreak",
+                "\t\t}",
+                "\t}",
+                "\tconn.Close()",
+                "\tclose(events)",
+                "\treturn ResultSseStreamConnectError{",
+                "\t\tOk: true,",
+                "\t\tValue: SseStream{",
+                "\t\t\tStatusCode: statusCode,",
+                "\t\t\tEventCount: eventCount,",
+                "\t\t\tEvents: events,",
+                "\t\t},",
+                "\t}",
+                "}",
+                "",
+            ]
+        if is_grpc_runtime_module(self.program.module_name) and routine.name == "serve":
+            self.std_imports.update({"net", "strconv", "google.golang.org/grpc"})
+            self.used_import_modules.add("Std.Connect.Common")
+            common_alias = go_import_alias("Std.Connect.Common")
+            res_type = ResultTypeName(TypeName("ServerHandle"), "ConnectError")
+            self.result_types.setdefault(type_to_string(res_type), res_type)
+            return [
+                f"func Serve(endpoint {common_alias}.Endpoint) ResultServerHandleConnectError {{",
+                "\thost := endpoint.Host",
+                "\tif host == \"\" {",
+                "\t\thost = \"127.0.0.1\"",
+                "\t}",
+                "\taddr := host",
+                "\tif endpoint.Port > 0 {",
+                "\t\taddr = host + \":\" + strconv.FormatInt(endpoint.Port, 10)",
+                "\t}",
+                "\tlistener, err := net.Listen(\"tcp\", addr)",
+                "\tif err != nil {",
+                "\t\treturn ResultServerHandleConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\tserver := grpc.NewServer()",
+                "\tgrpcRegistrarsMu.Lock()",
+                "\tfor _, register := range grpcServiceRegistrars {",
+                "\t\tregister(server)",
+                "\t}",
+                "\tgrpcRegistrarsMu.Unlock()",
+                "\tid := registerGrpcServer(server, listener)",
+                "\tgo func() {",
+                "\t\t_ = server.Serve(listener)",
+                "\t}()",
+                "\treturn ResultServerHandleConnectError{Ok: true, Value: ServerHandle{Id: id}}",
+                "}",
+                "",
+            ]
+        if is_grpc_runtime_module(self.program.module_name) and routine.name == "accept_call":
+            self.std_imports.add("context")
+            res_type = ResultTypeName(TypeName("Call"), "ConnectError")
+            self.result_types.setdefault(type_to_string(res_type), res_type)
+            return [
+                "func AcceptCall(ctx context.Context, server ServerHandle) ResultCallConnectError {",
+                "\tselect {",
+                "\tcase <-ctx.Done():",
+                "\t\treturn ResultCallConnectError{Ok: false, Error: ctx.Err().Error()}",
+                "\tcase call := <-GrpcUnaryQueue:",
+                "\t\tid := registerUnaryCall(call)",
+                "\t\treturn ResultCallConnectError{Ok: true, Value: Call{Id: id, Method: call.Method, Payload: call.Payload}}",
+                "\t}",
+                "}",
+                "",
+            ]
+        if is_grpc_runtime_module(self.program.module_name) and routine.name == "respond":
+            self.std_imports.add("context")
+            return [
+                "func Respond(ctx context.Context, pending Call, payload string) bool {",
+                "\tcall := takeUnaryCall(pending.Id)",
+                "\tif call == nil {",
+                "\t\treturn false",
+                "\t}",
+                "\tselect {",
+                "\tcase call.Reply <- payload:",
+                "\t\treturn true",
+                "\tcase <-ctx.Done():",
+                "\t\treturn false",
+                "\t}",
+                "}",
+                "",
+            ]
+        if is_grpc_runtime_module(self.program.module_name) and routine.name == "unary":
+            self.std_imports.update({"context", "strconv", "google.golang.org/grpc", "google.golang.org/grpc/credentials/insecure"})
+            res_type = ResultTypeName(TypeName("UnaryReply"), "ConnectError")
+            self.result_types.setdefault(type_to_string(res_type), res_type)
+            return [
+                "func Unary(ctx context.Context, client Client, method string, payload string) ResultUnaryReplyConnectError {",
+                "\thost := client.Endpoint.Host",
+                "\tif host == \"\" {",
+                "\t\thost = \"127.0.0.1\"",
+                "\t}",
+                "\taddr := host",
+                "\tif client.Endpoint.Port > 0 {",
+                "\t\taddr = host + \":\" + strconv.FormatInt(client.Endpoint.Port, 10)",
+                "\t}",
+                "\tconn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))",
+                "\tif err != nil {",
+                "\t\treturn ResultUnaryReplyConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\tdefer conn.Close()",
+                "\tdispatch := grpcLookupClientDispatcher(method)",
+                "\tif dispatch == nil {",
+                "\t\treturn ResultUnaryReplyConnectError{Ok: false, Error: \"no client dispatcher for method \" + method}",
+                "\t}",
+                "\tresponse, err := dispatch(ctx, conn, payload)",
+                "\tif err != nil {",
+                "\t\treturn ResultUnaryReplyConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\treturn ResultUnaryReplyConnectError{Ok: true, Value: UnaryReply{Payload: response}}",
+                "}",
+                "",
+            ]
+        if is_grpc_runtime_module(self.program.module_name) and routine.name == "stop_server":
+            return [
+                "func StopServer(server ServerHandle) {",
+                "\tentry := takeGrpcServer(server.Id)",
+                "\tif entry != nil {",
+                "\t\tentry.server.Stop()",
+                "\t}",
+                "}",
+                "",
+            ]
+        if is_grpc_runtime_module(self.program.module_name) and routine.name == "accept_stream":
+            self.std_imports.add("context")
+            res_type = ResultTypeName(TypeName("Call"), "ConnectError")
+            self.result_types.setdefault(type_to_string(res_type), res_type)
+            return [
+                "func AcceptStream(ctx context.Context, server ServerHandle) ResultCallConnectError {",
+                "\tselect {",
+                "\tcase <-ctx.Done():",
+                "\t\treturn ResultCallConnectError{Ok: false, Error: ctx.Err().Error()}",
+                "\tcase call := <-GrpcStreamQueue:",
+                "\t\tid := registerStreamCall(call)",
+                "\t\treturn ResultCallConnectError{Ok: true, Value: Call{Id: id, Method: call.Method, Payload: call.Payload}}",
+                "\t}",
+                "}",
+                "",
+            ]
+        if is_grpc_runtime_module(self.program.module_name) and routine.name == "respond_stream":
+            self.std_imports.add("context")
+            return [
+                "func RespondStream(ctx context.Context, pending Call, count int64, messages <-chan string) bool {",
+                "\tcall := takeStreamCall(pending.Id)",
+                "\tif call == nil {",
+                "\t\treturn false",
+                "\t}",
+                "\tfor i := int64(0); i < count; i++ {",
+                "\t\tvar message string",
+                "\t\tselect {",
+                "\t\tcase <-ctx.Done():",
+                "\t\t\tclose(call.Out)",
+                "\t\t\treturn false",
+                "\t\tcase message = <-messages:",
+                "\t\t}",
+                "\t\tselect {",
+                "\t\tcase call.Out <- message:",
+                "\t\tcase <-call.Done:",
+                "\t\t\treturn false",
+                "\t\tcase <-ctx.Done():",
+                "\t\t\tclose(call.Out)",
+                "\t\t\treturn false",
+                "\t\t}",
+                "\t}",
+                "\tclose(call.Out)",
+                "\treturn true",
+                "}",
+                "",
+            ]
+        if is_grpc_runtime_module(self.program.module_name) and routine.name == "open_stream":
+            self.std_imports.update({"context", "strconv", "google.golang.org/grpc", "google.golang.org/grpc/credentials/insecure"})
+            res_type = ResultTypeName(TypeName("StreamHandle"), "ConnectError")
+            self.result_types.setdefault(type_to_string(res_type), res_type)
+            return [
+                "func OpenStream(ctx context.Context, client Client, method string, payload string) ResultStreamHandleConnectError {",
+                "\thost := client.Endpoint.Host",
+                "\tif host == \"\" {",
+                "\t\thost = \"127.0.0.1\"",
+                "\t}",
+                "\taddr := host",
+                "\tif client.Endpoint.Port > 0 {",
+                "\t\taddr = host + \":\" + strconv.FormatInt(client.Endpoint.Port, 10)",
+                "\t}",
+                "\tconn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))",
+                "\tif err != nil {",
+                "\t\treturn ResultStreamHandleConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\tdefer conn.Close()",
+                "\tdispatch := grpcLookupStreamDispatcher(method)",
+                "\tif dispatch == nil {",
+                "\t\treturn ResultStreamHandleConnectError{Ok: false, Error: \"no stream dispatcher for method \" + method}",
+                "\t}",
+                "\tmessages, err := dispatch(ctx, conn, payload)",
+                "\tif err != nil {",
+                "\t\treturn ResultStreamHandleConnectError{Ok: false, Error: err.Error()}",
+                "\t}",
+                "\tbuffer := make(chan string, len(messages)+1)",
+                "\tfor _, message := range messages {",
+                "\t\tbuffer <- message",
+                "\t}",
+                "\tclose(buffer)",
+                "\treturn ResultStreamHandleConnectError{Ok: true, Value: StreamHandle{StatusCode: 200, MessageCount: int64(len(messages)), Messages: buffer}}",
+                "}",
+                "",
+            ]
         params_list = []
         if routine.is_async:
             self.std_imports.add("context")
@@ -2142,6 +3324,58 @@ class GoGenerator:
         lines.extend(["}", ""])
         return lines
 
+    def ffi_routine_decl(self, routine: RoutineDecl) -> list[str]:
+        binding = routine.ffi_binding
+        package_alias = binding.import_path.rsplit("/", 1)[-1]
+        self.std_imports.add(binding.import_path)
+        params = ", ".join(self.param(param) for param in routine.params)
+        arg_names = ", ".join(go_local_name(param.name) for param in routine.params)
+        call_expr = f"{package_alias}.{binding.symbol}({arg_names})"
+        name = go_exported_name(routine.name)
+        if isinstance(routine.return_type, ResultTypeName):
+            result_go_type = self.go_type_ref(routine.return_type)
+            success_lines = self.ffi_result_success_lines(result_go_type, routine.return_type.ok_type)
+            return [
+                f"func {name}({params}) {result_go_type} {{",
+                f"\tffiResult, ffiErr := {call_expr}",
+                "\tif ffiErr != nil {",
+                f"\t\treturn {result_go_type}{{Ok: false, Error: ffiErr.Error()}}",
+                "\t}",
+                *success_lines,
+                "}",
+                "",
+            ]
+        if routine.return_type is None:
+            return [
+                f"func {name}({params}) {{",
+                f"\t{call_expr}",
+                "}",
+                "",
+            ]
+        result_go_type = self.go_type_ref(routine.return_type)
+        return [
+            f"func {name}({params}) {result_go_type} {{",
+            f"\treturn {call_expr}",
+            "}",
+            "",
+        ]
+
+    def ffi_result_success_lines(self, result_go_type: str, ok_type: Any) -> list[str]:
+        if isinstance(ok_type, ArrayTypeName) and self.find_record_decl(ok_type.element_type) is not None:
+            array_go_type = self.go_type_ref(ok_type)
+            element_go_type = self.go_type_string(ok_type.element_type)
+            return [
+                f"\tffiValue := {array_go_type}{{}}",
+                "\tfor ffiIndex := range ffiValue {",
+                f"\t\tffiValue[ffiIndex] = {element_go_type}(ffiResult[ffiIndex])",
+                "\t}",
+                f"\treturn {result_go_type}{{Ok: true, Value: ffiValue}}",
+            ]
+        record_type_name = ok_type.name if isinstance(ok_type, TypeName) else ok_type
+        if isinstance(record_type_name, str) and self.find_record_decl(record_type_name) is not None:
+            return [f"\treturn {result_go_type}{{Ok: true, Value: {self.go_type_ref(ok_type)}(ffiResult)}}"]
+        return [f"\treturn {result_go_type}{{Ok: true, Value: ffiResult}}"]
+
     def routine_result_type(self, routine: RoutineDecl) -> str:
         has_aborts = bool(routine.aborts)
         if routine.return_type is None:
@@ -2170,7 +3404,7 @@ class GoGenerator:
                 if is_inferred_int:
                     lines = [f"{go_local_name(stmt.name)} := {self.expr_with_type(stmt.expr, None)}"]
                 else:
-                    lines = [f"var {go_local_name(stmt.name)} {self.go_type_ref(stmt.type_ref)} = {self.expr_with_type(stmt.expr, stmt.type_ref)}"]
+                    lines = [f"var {go_local_name(stmt.name)} {self.go_decl_type_ref(stmt.type_ref, stmt.expr)} = {self.expr_with_type(stmt.expr, stmt.type_ref)}"]
             if stmt.name not in self.current_routine_read_names:
                 lines.append(f"_ = {go_local_name(stmt.name)}")
             return lines
@@ -2553,6 +3787,14 @@ class GoGenerator:
             self.result_types.setdefault(type_to_string(type_ref), type_ref)
         return self.go_type_ref_text(type_ref)
 
+    def go_decl_type_ref(self, type_ref: Any, initializer: Any) -> str:
+        if isinstance(type_ref, ResultTypeName):
+            imported_module = self.imported_result_initializer_module(type_ref, initializer)
+            if imported_module is not None:
+                self.used_import_modules.add(imported_module)
+                return f"{go_import_alias(imported_module)}.{go_result_type_name(type_ref)}"
+        return self.go_type_ref(type_ref)
+
     def go_type_ref_text(self, type_ref: Any) -> str:
         if isinstance(type_ref, TypeName):
             return self.go_type_string(type_ref.name)
@@ -2677,6 +3919,26 @@ class GoGenerator:
         if self.type_ref_has_local_type(type_ref.ok_type):
             return None
         return error_module
+
+    def imported_result_initializer_module(self, type_ref: ResultTypeName, initializer: Any) -> str | None:
+        expr = initializer.expr if isinstance(initializer, AwaitExpr) else initializer
+        if not isinstance(expr, CallExpr):
+            return None
+        routine = self.called_routine(expr.name)
+        if routine is None or not isinstance(routine.return_type, ResultTypeName):
+            return None
+        if go_result_type_name(routine.return_type) != go_result_type_name(type_ref):
+            return None
+        return self.imported_call_module(expr.name)
+
+    def imported_call_module(self, name: str) -> str | None:
+        for module_name in sorted(self.imports_by_module, key=len, reverse=True):
+            if name.startswith(f"{module_name}."):
+                return module_name
+        exposed_module = self.exposed_symbols.get(name)
+        if exposed_module is not None and name not in self.local_routines:
+            return exposed_module
+        return None
 
     def type_ref_has_local_type(self, type_ref: Any) -> bool:
         if isinstance(type_ref, TypeName):
@@ -2861,6 +4123,10 @@ class GoGenerator:
         if exposed_module is not None and expr.name not in self.local_routines:
             resolved_name = f"{exposed_module}.{expr.name}"
 
+        routine = self.called_routine(expr.name)
+        if routine is not None and routine.ffi_binding is not None:
+            return None
+
         if resolved_name == "System.args":
             self.std_imports.add("os")
             res_type = ArrayTypeName("String", 10)
@@ -2878,16 +4144,16 @@ class GoGenerator:
 
         if resolved_name == "File.read_to_string":
             self.std_imports.add("os")
-            res_type = ResultTypeName(TypeName("String"), "String")
-            self.result_types.setdefault(type_to_string(res_type), res_type)
-            return f"func() ResultStringString {{ content, err := os.ReadFile({self.expr(expr.args[0])}); if err != nil {{ return ResultStringString{{Ok: false, Error: err.Error()}} }}; return ResultStringString{{Ok: true, Value: string(content)}} }}()"
+            self.used_import_modules.add("File")
+            result_type = f"{go_import_alias('File')}.ResultStringString"
+            return f"func() {result_type} {{ content, err := os.ReadFile({self.expr(expr.args[0])}); if err != nil {{ return {result_type}{{Ok: false, Error: err.Error()}} }}; return {result_type}{{Ok: true, Value: string(content)}} }}()"
 
         if resolved_name == "File.write_string":
             self.std_imports.add("os")
             self.std_imports.add("path/filepath")
-            res_type = ResultTypeName(TypeName("Boolean"), "String")
-            self.result_types.setdefault(type_to_string(res_type), res_type)
-            return f"func() ResultBooleanString {{ dir := filepath.Dir({self.expr(expr.args[0])}); if err := os.MkdirAll(dir, 0755); err != nil {{ return ResultBooleanString{{Ok: false, Error: err.Error()}} }}; err := os.WriteFile({self.expr(expr.args[0])}, []byte({self.expr(expr.args[1])}), 0644); if err != nil {{ return ResultBooleanString{{Ok: false, Error: err.Error()}} }}; return ResultBooleanString{{Ok: true, Value: true}} }}()"
+            self.used_import_modules.add("File")
+            result_type = f"{go_import_alias('File')}.ResultBooleanString"
+            return f"func() {result_type} {{ dir := filepath.Dir({self.expr(expr.args[0])}); if err := os.MkdirAll(dir, 0755); err != nil {{ return {result_type}{{Ok: false, Error: err.Error()}} }}; err := os.WriteFile({self.expr(expr.args[0])}, []byte({self.expr(expr.args[1])}), 0644); if err != nil {{ return {result_type}{{Ok: false, Error: err.Error()}} }}; return {result_type}{{Ok: true, Value: true}} }}()"
 
         async_call = self.async_runtime_call_expr(expr)
         if async_call is not None:
@@ -2908,7 +4174,7 @@ class GoGenerator:
             result_name = self.go_result_type_name(res_type)
             value_type = self.go_type_string(target_type)
             source = self.expr(expr.args[0])
-            return f"func() {result_name} {{ var value {value_type}; raw := []byte({source}); if err := freeholdValidateJSONValue(json.RawMessage(raw), reflect.TypeOf(value), \"value\"); err != nil {{ return {result_name}{{Ok: false, Error: err.Error()}} }}; decoder := json.NewDecoder(strings.NewReader(string(raw))); decoder.DisallowUnknownFields(); if err := decoder.Decode(&value); err != nil {{ return {result_name}{{Ok: false, Error: err.Error()}} }}; var extra interface{{}}; if err := decoder.Decode(&extra); err != io.EOF {{ if err == nil {{ err = fmt.Errorf(\"unexpected trailing JSON value\") }}; return {result_name}{{Ok: false, Error: err.Error()}} }}; return {result_name}{{Ok: true, Value: value}} }}()"
+            return f"func() {result_name} {{ var value {value_type}; raw := []byte({source}); if err := freeholdRejectDuplicateJSONKeys(json.RawMessage(raw), \"value\"); err != nil {{ return {result_name}{{Ok: false, Error: err.Error()}} }}; if err := freeholdValidateJSONValue(json.RawMessage(raw), reflect.TypeOf(value), \"value\"); err != nil {{ return {result_name}{{Ok: false, Error: err.Error()}} }}; decoder := json.NewDecoder(strings.NewReader(string(raw))); decoder.DisallowUnknownFields(); if err := decoder.Decode(&value); err != nil {{ return {result_name}{{Ok: false, Error: err.Error()}} }}; var extra interface{{}}; if err := decoder.Decode(&extra); err != io.EOF {{ if err == nil {{ err = fmt.Errorf(\"unexpected trailing JSON value\") }}; return {result_name}{{Ok: false, Error: err.Error()}} }}; return {result_name}{{Ok: true, Value: value}} }}()"
         string_call = self.string_runtime_call_expr(expr)
         if string_call is not None:
             return string_call
@@ -2953,6 +4219,8 @@ class GoGenerator:
             return self.render_channel_endpoint_call(expr, "FreeholdReceiver")
         if expr.name == "channel_send":
             return self.render_channel_send_call(expr)
+        if expr.name == "channel_try_send":
+            return self.render_channel_try_send_call(expr)
         if expr.name == "channel_receive":
             return self.render_channel_receive_call(expr)
         if expr.name == "scope_spawn":
@@ -3004,6 +4272,14 @@ class GoGenerator:
             return "false"
         value_type = self.go_type_string(expr.type_args[0])
         return f"freeholdChannelSend[{value_type}]({self.expr(expr.args[0])}, {self.expr(expr.args[1])})"
+
+    def render_channel_try_send_call(self, expr: CallExpr) -> str:
+        self.needs_async_helpers = True
+        if not expr.type_args or len(expr.type_args) != 1 or len(expr.args) != 2:
+            self.unsupported(expr, "channel_try_send requires one type argument, a Sender, and a value")
+            return "false"
+        value_type = self.go_type_string(expr.type_args[0])
+        return f"freeholdChannelTrySend[{value_type}]({self.expr(expr.args[0])}, {self.expr(expr.args[1])})"
 
     def render_channel_receive_call(self, expr: CallExpr) -> str:
         self.needs_async_helpers = True
@@ -3108,6 +4384,8 @@ class GoGenerator:
             return f"int64(strings.Index({args[0]}, {args[1]}))"
         if expr.name == "String.length":
             return f"int64(len({self.expr(expr.args[0])}))"
+        if expr.name == "String.error_text":
+            return self.expr(expr.args[0])
         return None
 
     def render_call_args(self, args: list[Any], routine: RoutineDecl | None) -> str:
@@ -3447,18 +4725,62 @@ def generate_grpc_pb_stub(program: Program) -> str:
         ])
     for service in service_decls:
         service_name = go_exported_name(service.name)
+
+        def is_server_stream(rpc) -> bool:
+            return not getattr(rpc, "request_stream", False) and getattr(rpc, "response_stream", False)
+
+        stream_rpcs = [rpc for rpc in service.rpcs if is_server_stream(rpc)]
+
         lines.append(f"type {service_name}Server interface {{")
         for rpc in service.rpcs:
-            lines.append(f"\t{go_exported_name(rpc.name)}(context.Context, *{go_exported_name(rpc.request_type)}) (*{go_exported_name(rpc.response_type)}, error)")
+            method_name = go_exported_name(rpc.name)
+            req_type = go_exported_name(rpc.request_type)
+            resp_type = go_exported_name(rpc.response_type)
+            if is_server_stream(rpc):
+                lines.append(f"\t{method_name}(*{req_type}, {service_name}_{method_name}Server) error")
+            else:
+                lines.append(f"\t{method_name}(context.Context, *{req_type}) (*{resp_type}, error)")
         lines.extend(["}", ""])
         lines.extend([
             f"type Unimplemented{service_name}Server struct{{}}",
             "",
         ])
         for rpc in service.rpcs:
+            method_name = go_exported_name(rpc.name)
+            req_type = go_exported_name(rpc.request_type)
+            resp_type = go_exported_name(rpc.response_type)
+            if is_server_stream(rpc):
+                lines.extend([
+                    f"func (Unimplemented{service_name}Server) {method_name}(*{req_type}, {service_name}_{method_name}Server) error {{",
+                    f"\treturn status.Error(codes.Unimplemented, \"method {method_name} not implemented\")",
+                    "}",
+                    "",
+                ])
+            else:
+                lines.extend([
+                    f"func (Unimplemented{service_name}Server) {method_name}(context.Context, *{req_type}) (*{resp_type}, error) {{",
+                    f"\treturn nil, status.Error(codes.Unimplemented, \"method {method_name} not implemented\")",
+                    "}",
+                    "",
+                ])
+
+        # Server stream interfaces and concrete types
+        for rpc in stream_rpcs:
+            method_name = go_exported_name(rpc.name)
+            resp_type = go_exported_name(rpc.response_type)
+            stream_server_struct = go_package_name(service.name) + method_name + "Server"
             lines.extend([
-                f"func (Unimplemented{service_name}Server) {go_exported_name(rpc.name)}(context.Context, *{go_exported_name(rpc.request_type)}) (*{go_exported_name(rpc.response_type)}, error) {{",
-                f"\treturn nil, status.Error(codes.Unimplemented, \"method {go_exported_name(rpc.name)} not implemented\")",
+                f"type {service_name}_{method_name}Server interface {{",
+                f"\tSend(*{resp_type}) error",
+                "\tgrpc.ServerStream",
+                "}",
+                "",
+                f"type {stream_server_struct} struct {{",
+                "\tgrpc.ServerStream",
+                "}",
+                "",
+                f"func (x *{stream_server_struct}) Send(m *{resp_type}) error {{",
+                "\treturn x.ServerStream.SendMsg(m)",
                 "}",
                 "",
             ])
@@ -3468,7 +4790,13 @@ def generate_grpc_pb_stub(program: Program) -> str:
             f"type {service_name}Client interface {{",
         ])
         for rpc in service.rpcs:
-            lines.append(f"\t{go_exported_name(rpc.name)}(ctx context.Context, in *{go_exported_name(rpc.request_type)}, opts ...grpc.CallOption) (*{go_exported_name(rpc.response_type)}, error)")
+            method_name = go_exported_name(rpc.name)
+            req_type = go_exported_name(rpc.request_type)
+            resp_type = go_exported_name(rpc.response_type)
+            if is_server_stream(rpc):
+                lines.append(f"\t{method_name}(ctx context.Context, in *{req_type}, opts ...grpc.CallOption) ({service_name}_{method_name}Client, error)")
+            else:
+                lines.append(f"\t{method_name}(ctx context.Context, in *{req_type}, opts ...grpc.CallOption) (*{resp_type}, error)")
         lines.extend([
             "}",
             "",
@@ -3481,48 +4809,107 @@ def generate_grpc_pb_stub(program: Program) -> str:
             "}",
             "",
         ])
+        # Client stream interfaces and concrete types
+        for rpc in stream_rpcs:
+            method_name = go_exported_name(rpc.name)
+            resp_type = go_exported_name(rpc.response_type)
+            stream_client_struct = go_package_name(service.name) + method_name + "Client"
+            lines.extend([
+                f"type {service_name}_{method_name}Client interface {{",
+                f"\tRecv() (*{resp_type}, error)",
+                "\tgrpc.ClientStream",
+                "}",
+                "",
+                f"type {stream_client_struct} struct {{",
+                "\tgrpc.ClientStream",
+                "}",
+                "",
+                f"func (x *{stream_client_struct}) Recv() (*{resp_type}, error) {{",
+                f"\tm := new({resp_type})",
+                "\tif err := x.ClientStream.RecvMsg(m); err != nil {",
+                "\t\treturn nil, err",
+                "\t}",
+                "\treturn m, nil",
+                "}",
+                "",
+            ])
         for rpc in service.rpcs:
             method_name = go_exported_name(rpc.name)
             req_type = go_exported_name(rpc.request_type)
             resp_type = go_exported_name(rpc.response_type)
-            lines.extend([
-                f"func (c *{go_package_name(service.name)}Client) {method_name}(ctx context.Context, in *{req_type}, opts ...grpc.CallOption) (*{resp_type}, error) {{",
-                f"\tout := new({resp_type})",
-                f"\topts = append(opts, grpc.CallContentSubtype(\"json\"))",
-                f"\terr := c.cc.Invoke(ctx, \"/{proto_pkg}.{service_name}/{method_name}\", in, out, opts...)",
-                "\tif err != nil {",
-                "\t\treturn nil, err",
-                "\t}",
-                "\treturn out, nil",
-                "}",
-                "",
-            ])
+            if is_server_stream(rpc):
+                stream_idx = stream_rpcs.index(rpc)
+                stream_client_struct = go_package_name(service.name) + method_name + "Client"
+                lines.extend([
+                    f"func (c *{go_package_name(service.name)}Client) {method_name}(ctx context.Context, in *{req_type}, opts ...grpc.CallOption) ({service_name}_{method_name}Client, error) {{",
+                    f"\topts = append(opts, grpc.CallContentSubtype(\"json\"))",
+                    f"\tstream, err := c.cc.NewStream(ctx, &{service_name}_ServiceDesc.Streams[{stream_idx}], \"/{proto_pkg}.{service_name}/{method_name}\", opts...)",
+                    "\tif err != nil {",
+                    "\t\treturn nil, err",
+                    "\t}",
+                    f"\tx := &{stream_client_struct}{{stream}}",
+                    "\tif err := x.ClientStream.SendMsg(in); err != nil {",
+                    "\t\treturn nil, err",
+                    "\t}",
+                    "\tif err := x.ClientStream.CloseSend(); err != nil {",
+                    "\t\treturn nil, err",
+                    "\t}",
+                    "\treturn x, nil",
+                    "}",
+                    "",
+                ])
+            else:
+                lines.extend([
+                    f"func (c *{go_package_name(service.name)}Client) {method_name}(ctx context.Context, in *{req_type}, opts ...grpc.CallOption) (*{resp_type}, error) {{",
+                    f"\tout := new({resp_type})",
+                    f"\topts = append(opts, grpc.CallContentSubtype(\"json\"))",
+                    f"\terr := c.cc.Invoke(ctx, \"/{proto_pkg}.{service_name}/{method_name}\", in, out, opts...)",
+                    "\tif err != nil {",
+                    "\t\treturn nil, err",
+                    "\t}",
+                    "\treturn out, nil",
+                    "}",
+                    "",
+                ])
 
         # Server Handlers and ServiceDesc
         for rpc in service.rpcs:
             method_name = go_exported_name(rpc.name)
             req_type = go_exported_name(rpc.request_type)
             resp_type = go_exported_name(rpc.response_type)
-            lines.extend([
-                f"func _{service_name}_{method_name}_Handler(srv interface{{}}, ctx context.Context, dec func(interface{{}}) error, interceptor grpc.UnaryServerInterceptor) (interface{{}}, error) {{",
-                f"\tin := new({req_type})",
-                "\tif err := dec(in); err != nil {",
-                "\t\treturn nil, err",
-                "\t}",
-                "\tif interceptor == nil {",
-                f"\t\treturn srv.({service_name}Server).{method_name}(ctx, in)",
-                "\t}",
-                "\tinfo := &grpc.UnaryServerInfo{",
-                "\t\tServer: srv,",
-                f"\t\tFullMethod: \"/{proto_pkg}.{service_name}/{method_name}\",",
-                "\t}",
-                "\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {",
-                f"\t\treturn srv.({service_name}Server).{method_name}(ctx, req.(*{req_type}))",
-                "\t}",
-                "\treturn interceptor(ctx, in, info, handler)",
-                "}",
-                "",
-            ])
+            if is_server_stream(rpc):
+                stream_server_struct = go_package_name(service.name) + method_name + "Server"
+                lines.extend([
+                    f"func _{service_name}_{method_name}_Handler(srv interface{{}}, stream grpc.ServerStream) error {{",
+                    f"\tm := new({req_type})",
+                    "\tif err := stream.RecvMsg(m); err != nil {",
+                    "\t\treturn err",
+                    "\t}",
+                    f"\treturn srv.({service_name}Server).{method_name}(m, &{stream_server_struct}{{stream}})",
+                    "}",
+                    "",
+                ])
+            else:
+                lines.extend([
+                    f"func _{service_name}_{method_name}_Handler(srv interface{{}}, ctx context.Context, dec func(interface{{}}) error, interceptor grpc.UnaryServerInterceptor) (interface{{}}, error) {{",
+                    f"\tin := new({req_type})",
+                    "\tif err := dec(in); err != nil {",
+                    "\t\treturn nil, err",
+                    "\t}",
+                    "\tif interceptor == nil {",
+                    f"\t\treturn srv.({service_name}Server).{method_name}(ctx, in)",
+                    "\t}",
+                    "\tinfo := &grpc.UnaryServerInfo{",
+                    "\t\tServer: srv,",
+                    f"\t\tFullMethod: \"/{proto_pkg}.{service_name}/{method_name}\",",
+                    "\t}",
+                    "\thandler := func(ctx context.Context, req interface{}) (interface{}, error) {",
+                    f"\t\treturn srv.({service_name}Server).{method_name}(ctx, req.(*{req_type}))",
+                    "\t}",
+                    "\treturn interceptor(ctx, in, info, handler)",
+                    "}",
+                    "",
+                ])
 
         lines.extend([
             f"func Register{service_name}Server(registrar grpc.ServiceRegistrar, server {service_name}Server) {{",
@@ -3535,6 +4922,8 @@ def generate_grpc_pb_stub(program: Program) -> str:
             "\tMethods: []grpc.MethodDesc{",
         ])
         for rpc in service.rpcs:
+            if is_server_stream(rpc):
+                continue
             method_name = go_exported_name(rpc.name)
             lines.extend([
                 "\t\t{",
@@ -3542,9 +4931,22 @@ def generate_grpc_pb_stub(program: Program) -> str:
                 f"\t\t\tHandler: _{service_name}_{method_name}_Handler,",
                 "\t\t},",
             ])
+        lines.append("\t},")
+        if stream_rpcs:
+            lines.append("\tStreams: []grpc.StreamDesc{")
+            for rpc in stream_rpcs:
+                method_name = go_exported_name(rpc.name)
+                lines.extend([
+                    "\t\t{",
+                    f"\t\t\tStreamName: \"{method_name}\",",
+                    f"\t\t\tHandler: _{service_name}_{method_name}_Handler,",
+                    "\t\t\tServerStreams: true,",
+                    "\t\t},",
+                ])
+            lines.append("\t},")
+        else:
+            lines.append("\tStreams: []grpc.StreamDesc{},")
         lines.extend([
-            "\t},",
-            "\tStreams: []grpc.StreamDesc{},",
             "\tMetadata: \"\",",
             "}",
             "",
@@ -3598,6 +5000,11 @@ def go_grpc_binding_output_path(module_name: str) -> Path:
 
 def go_grpc_pb_stub_output_path(module_name: str) -> Path:
     return Path("grpc") / f"{go_package_path(module_name)}pb" / f"{go_package_path_part(module_name.split('.')[-1])}pb.go"
+
+
+def go_grpc_runtime_glue_output_path(module_name: str) -> Path:
+    parts = module_name.split(".")
+    return Path("grpc") / go_package_path(module_name) / f"{go_package_path_part(parts[-1])}_runtime.go"
 
 
 def go_import_path(module_name: str) -> str:

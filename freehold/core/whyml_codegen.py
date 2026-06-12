@@ -76,6 +76,14 @@ class WhyMLGenerator:
         lines.append("    c.history <- snoc c.history x;")
         lines.append("    { value = true }")
         lines.append("")
+        lines.append("  let channel_try_send (c: channel 'a) (x: 'a) : joinHandle bool")
+        lines.append("    writes { c.history }")
+        lines.append("    ensures { result.value = true -> c.history = snoc (old c.history) x }")
+        lines.append("    ensures { result.value = false -> c.history = old c.history }")
+        lines.append("  =")
+        lines.append("    c.history <- snoc c.history x;")
+        lines.append("    { value = true }")
+        lines.append("")
         lines.append("  let channel_receive (c: channel 'a) : joinHandle 'a")
         lines.append("    requires { c.read_cursor < length c.history }")
         lines.append("    writes { c.read_cursor }")
@@ -212,7 +220,7 @@ class WhyMLGenerator:
             return f"(exists {e.var_name}: int. {l} <= {e.var_name} <= {u} && {body})"
         if isinstance(e, AwaitExpr):
             inner = self.expr_to_whyml(e.expr)
-            if isinstance(e.expr, CallExpr) and e.expr.name not in ("channel_receive", "channel_send", "scope_spawn", "scope_join") and not e.expr.name.endswith(".spawn") and not e.expr.name.endswith(".join"):
+            if isinstance(e.expr, CallExpr) and e.expr.name not in ("channel_receive", "channel_send", "channel_try_send", "scope_spawn", "scope_join") and not e.expr.name.endswith(".spawn") and not e.expr.name.endswith(".join"):
                 return inner
             return f"(await {inner})"
         if isinstance(e, CallExpr):
@@ -277,7 +285,7 @@ class WhyMLGenerator:
             expr_val = self.expr_to_whyml(stmt.expr)
             return f"assert {{ {expr_val} }}"
         elif isinstance(stmt, CallStmt):
-            if stmt.name in ("channel_send", "channel_receive") or stmt.name.endswith(".spawn") or stmt.name.endswith(".join") or stmt.name in ("scope_spawn", "scope_join"):
+            if stmt.name in ("channel_send", "channel_try_send", "channel_receive") or stmt.name.endswith(".spawn") or stmt.name.endswith(".join") or stmt.name in ("scope_spawn", "scope_join"):
                 expr = CallExpr(stmt.name, stmt.args, stmt.pos, stmt.type_args)
                 return self.expr_to_whyml(expr)
             callee = self.routines.get(stmt.name)

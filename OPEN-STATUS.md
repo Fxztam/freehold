@@ -1,6 +1,6 @@
 # OPEN Status
 
-Stand: 2026-06-03
+Stand: 2026-06-11
 
 Diese Uebersicht trennt abgeschlossene V1-Arbeitsbloecke von bewusst geparkten V2/V3-Themen. Die ehemals offenen `OPEN-*.md`-Dateien, die vollständig für V1 gelöst sind, wurden mit `=== CLOSED ===` versehen und in den neuen Ordner `CLOSED-OPENS/` verschoben. 
 
@@ -13,14 +13,14 @@ Die folgenden Dokumente wurden erfolgreich gelöst, geschlossen und nach `CLOSED
 | Return Results | `CLOSED-OPENS/OPEN-RETURN_RESULTS.md` | V1 accepted and conformance-checked. |
 | Requires/Ensures | `CLOSED-OPENS/OPEN-REQIRE_ENSURE.md` | V1 notation and diagnostic behavior documented. |
 | String Templates | `CLOSED-OPENS/OPEN-STRING_TEMPLATES.md` | V1 implemented and covered by language-module tests. |
-| JSON Stringify | `CLOSED-OPENS/OPEN-JSON_HANDLINGS.md` | V1 stringify semantics implemented for supported record shapes. |
+| JSON Handling | `CLOSED-OPENS/OPEN-JSON_HANDLINGS.md` | `Json.stringify(record)`, typed `Json.parse<Record>(text)`, `@json` field names, compile-time literal schema checks and runtime Result failures are implemented for the current slice. |
 | Record Initialisierung | `CLOSED-OPENS/OPEN-RECORD_INITIAL.md` | V1 record literals/field initialization implemented. |
 | Semantic Rules | `CLOSED-OPENS/OPEN-SEAMNTIC_RULES.md` | spec/freehold.diag, spec/freehold.rules, and verify-spec-diagnostics.cmd are active. |
 | Abort Handling | `CLOSED-OPENS/OPEN-ABORT_HANDLING.md` | V1/V2/V3 implemented for declared aborts, propagation, and main rules. |
 | Control Flow Analyzer | `CLOSED-OPENS/OPEN-CONTROL-FLOW-ANALISE.md` | V0 routine summaries plus abort/main formalization implemented; path-aware analysis parked. |
 | Structured Concurrency | `CLOSED-OPENS/OPEN-CONCURRENT.md` | V1 async/await core, runtime types, channels, structured scope, and formal concurrency verification implemented. |
 | gRPC IDL | `CLOSED-OPENS/OPEN-GRPC.md` | V1 parser/AST/semantics, diagnostics, proto3 codegen, and unary Go server binding generation implemented. |
-| Transport Scope Architecture | `CLOSED-OPENS/OPEN-CONRURRENT-GRPC-WEBSOCKET-REST.md` | V1 architecture decision recorded: transport libs reuse common Concurrent.Scope. |
+| Transport Scope Architecture | `CLOSED-OPENS/OPEN-CONRURRENT-GRPC-WEBSOCKET-REST.md` | V1 architecture decision recorded; WebSocket runtime and typed JSON broadcast examples 27/28/29/30/32/33 are covered by compiler/example gates. |
 | Generics | `CLOSED-OPENS/OPEN-GENERICS.md` | V1b record and function generics implemented; V2/V3 inference, constraints, procedure generics and Go codegen monomorphization are now covered by language-module and compiler-example tests. |
 | Stage 3 Compiler Core | `CLOSED-OPENS/OPEN-STAGE3-COMPILER-CORE.md` | Mini-Compilerkern in Freehold implementiert, Go-transpiliert und verifiziert. |
 | Stage 1 Bootstrapping | `CLOSED-OPENS/OPEN-STAGE1-BOOTSTRAPPING.md` | Alle Meilensteine 1-5 (Lexer, Parser, Resolver, Lowering und Selbstübersetzung) erfolgreich abgeschlossen und per bytegleichem IR-Vergleich verifiziert. Post-Self-Hosting Roadmap gestartet. |
@@ -45,7 +45,7 @@ Diese Themen sind absichtlich nicht Teil des aktuellen V1-Abschlusses:
 Die folgenden komplexen Sprach- und Runtime-Features sind bewusst geparkt und blockieren das V1-Self-Hosting nicht:
 - **gRPC-Client-Bindings, Streaming, Deadlines und Metadaten-Annotationen.**
 - **Async-Runtime-Executor (Scheduling, Cancellation Tokens).**
-- **REST/WebSocket-Verbindungsbibliotheken.**
+- **REST/SSE-Verbindungsbibliotheken und weitere ergonomische Transport-APIs.** WebSocket V1 Runtime plus typed JSON Broadcast-Smokes sind umgesetzt; eine standardisierte langlebige WebSocket-Stdlib-API bleibt V2/V3-Design.
 - **Pfadsensitive Kontrollfluss-Analyse (Path-aware analysis) und Abort-Implikationsprüfung.**
 
 Weitere Details:
@@ -53,13 +53,26 @@ Weitere Details:
 - gRPC custom error/status-code mapping and schema-evolution rules such as `reserved proto`.
 - gRPC streaming, cancellation, deadlines, metadata, and auth annotations.
 - Runtime execution for async tasks, executor scheduling, cancellation tokens, and channel runtime behavior.
-- Transport libraries for REST, WebSocket, SSE, and their ergonomic request/connection scopes.
+- Transport libraries for REST and SSE, plus broader ergonomic request/connection scopes. The current WebSocket V1 binding and compiler examples cover runtime communication, typed JSON broadcast, rooms/topics, backpressure policy, keepalive status, and frame-policy modeling.
 - Remaining generics expansion beyond the current V2/V3 slice, especially qualified generic calls in broader module contexts and generic IDL monomorphization.
 - Path-aware control-flow analysis, abort condition implication, handler syntax, reachability, and proof-obligation integration.
 - Broad Go compiler feature coverage beyond the modular Compiler V1 start slice.
 - AST-based VS Code formatter and semantic editor completion; pragmatic completion V1 comes first.
 
 ## Current Gate Baseline
+
+Recent WebSocket/JSON compiler-example slice:
+
+```text
+30_websocket_json_broadcast_demo
+   typed JSON envelope broadcast, @json("clientId"), keepalive, registry, room broadcast, timeout, backpressure, frame policy, typed error status
+
+32_websocket_json_broadcast_schema_neg
+   dynamic invalid JSON/schema cases return Result failures; compile-time invalid literals remain covered by VF-J009 language-module invalid tests
+
+33_websocket_room_broadcast_demo
+   broadcast is queued only for the target room/topic
+```
 
 Latest verified baseline after the compiler runtime breadth, V2/V3 generics, channel-verification, and runtime-assertion updates:
 
@@ -99,6 +112,18 @@ verify-stage3-loader-v1.cmd
 Total contracts:    1
 Matching contracts: 1
 Failing contracts:  0
+
+compare-source-map-compiler-v1.cmd
+Total samples:       18
+Matching samples:    18
+Mismatching samples: 0
+Skipped samples:     0
+
+compare-source-map-compiler-v1-stage2.cmd
+Total samples:       6
+Matching samples:    6
+Mismatching samples: 0
+Skipped samples:     0
 
 verify-language-modules-v2_3.cmd
 Passed language module tests: 60/60

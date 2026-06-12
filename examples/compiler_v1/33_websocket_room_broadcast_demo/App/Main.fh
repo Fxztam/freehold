@@ -1,0 +1,101 @@
+module App.Main
+
+import Std.IO
+
+type ChatPayload is record
+    room: String
+    text: String
+end record
+
+type ChatMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: ChatPayload
+end record
+
+type ClientSession is record
+    client_id: String
+    room: String
+    outgoing: Sender<String>
+end record
+
+type RoomRegistry is record
+    client_a: ClientSession
+    client_b: ClientSession
+    client_c: ClientSession
+end record
+
+type RoomBroadcastResult is record
+    queued_a: Boolean
+    queued_b: Boolean
+    queued_c: Boolean
+end record
+
+async function queue_if_room(session: ClientSession, room: String, payload: String) returns Boolean
+is
+    if session.room = room then
+        return await channel_try_send<String>(session.outgoing, payload)
+    else
+        return false
+    end if
+end queue_if_room
+
+async function broadcast_room(registry: RoomRegistry, room: String, payload: String) returns RoomBroadcastResult
+is
+    let queued_a: Boolean = await queue_if_room(registry.client_a, room, payload)
+    let queued_b: Boolean = await queue_if_room(registry.client_b, room, payload)
+    let queued_c: Boolean = await queue_if_room(registry.client_c, room, payload)
+    return RoomBroadcastResult { queued_a: queued_a, queued_b: queued_b, queued_c: queued_c }
+end broadcast_room
+
+async function run_demo() returns Integer
+is
+    let channel_a: Channel<String> = channel<String>(1)
+    let channel_b: Channel<String> = channel<String>(1)
+    let channel_c: Channel<String> = channel<String>(1)
+    let sender_a: Sender<String> = channel_sender<String>(channel_a)
+    let sender_b: Sender<String> = channel_sender<String>(channel_b)
+    let sender_c: Sender<String> = channel_sender<String>(channel_c)
+    let receiver_a: Receiver<String> = channel_receiver<String>(channel_a)
+    let receiver_b: Receiver<String> = channel_receiver<String>(channel_b)
+    let session_a: ClientSession = ClientSession { client_id: "client-a", room: "main", outgoing: sender_a }
+    let session_b: ClientSession = ClientSession { client_id: "client-b", room: "main", outgoing: sender_b }
+    let session_c: ClientSession = ClientSession { client_id: "client-c", room: "ops", outgoing: sender_c }
+    let registry: RoomRegistry = RoomRegistry { client_a: session_a, client_b: session_b, client_c: session_c }
+    let message: ChatMessage = ChatMessage {
+        kind: "chat",
+        client_id: "client-a",
+        payload: ChatPayload { room: "main", text: "hello main room" }
+    }
+    let encoded: String = Json.stringify(message)
+    let broadcast_result: RoomBroadcastResult = await broadcast_room(registry, message.payload.room, encoded)
+    check broadcast_result.queued_a
+    check broadcast_result.queued_b
+    check broadcast_result.queued_c = false
+
+    let delivered_a: String = await channel_receive<String>(receiver_a)
+    let delivered_b: String = await channel_receive<String>(receiver_b)
+    let parsed_a: Result<ChatMessage, SchemaError> = Json.parse<ChatMessage>(delivered_a)
+    let parsed_b: Result<ChatMessage, SchemaError> = Json.parse<ChatMessage>(delivered_b)
+    check parsed_a.ok
+    check parsed_b.ok
+    check parsed_a.value.payload.room = "main"
+    check parsed_b.value.payload.room = "main"
+    call Std.IO.log("Room registry contains main and ops topics")
+    call Std.IO.log("Room main broadcast queued client-a and client-b")
+    call Std.IO.log("Room ops client-c was not queued")
+    call Std.IO.log("WebSocket room broadcast demo finished successfully")
+    return 0
+end run_demo
+
+async procedure main()
+is
+    let status: Integer = await run_demo()
+    if status = 0 then
+        call Std.IO.log("Room broadcast status ok")
+    else
+        call Std.IO.log("Room broadcast status failed")
+    end if
+end main
+
+end App.Main

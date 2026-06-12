@@ -1,0 +1,1 @@
+SELECT systimestamp FROM dual

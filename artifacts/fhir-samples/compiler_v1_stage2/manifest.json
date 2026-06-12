@@ -2,12 +2,12 @@
   "schema": "fhir-samples-v1",
   "policy": {
     "stage": "compare-ir-compiler-v1-stage-2",
-    "active_samples": 6,
+    "active_samples": 7,
     "skipped_samples": [],
     "sample_growth": "opt-in only; Stage 2 expands independently from the frozen Stage 1 manifest",
     "selection": "deliberate enrichment samples selected for new IR surface, not automatic demo growth",
-    "comparison": "semantic compiler-contract projection plus parallel full JSON hash: import closure, routine signatures, contracts and bindings, abort effects, result payload/error shape, control-flow skeleton, mutation targets",
-    "go_project_contracts": 3
+    "comparison": "semantic compiler-contract projection plus parallel full JSON hash: import closure, routine signatures, generic type parameters and type-arg calls, contracts and bindings, abort effects, result payload/error shape, control-flow skeleton, mutation targets",
+    "go_project_contracts": 4
   },
   "samples": [
     {
@@ -57,6 +57,14 @@
       "source_file": "examples/compiler_v1/21_concurrent_grpc_channel_demo/App/Main.fh",
       "python_ir_file": "21_concurrent_grpc_channel_demo.json",
       "go_ir_file": "21_concurrent_grpc_channel_demo.json"
+    },
+    {
+      "name": "26_generic_function",
+      "stage_role": "enrichment",
+      "selection_reason": "generic function type parameter, type constraint, explicit type-arg call, and monomorphized Go backend surface",
+      "source_file": "examples/compiler_v1/26_generic_function/App/Main.fh",
+      "python_ir_file": "26_generic_function.json",
+      "go_ir_file": "26_generic_function.json"
     }
   ],
   "go_project_contracts": [
@@ -68,7 +76,7 @@
       "expected": {
         "module_path": "freehold.local",
         "total_files": 1,
-        "total_build_files": 2,
+        "total_build_files": 3,
         "total_extra_files": 0,
         "supported": true
       },
@@ -78,11 +86,11 @@
           "module": "App.Main",
           "supported": true,
           "must_contain": [
-            "type FreeholdScope struct{}",
+            "type FreeholdScope struct",
             "type FreeholdJoinHandle[T any] struct",
             "requestScope := FreeholdScope{}",
-            "FreeholdJoinHandle[Invoice]{value: LoadInvoice(id)}",
-            "FreeholdJoinHandle[Customer]{value: LoadCustomer(id)}"
+            "freeholdSpawn[Invoice](&requestScope.wg, requestScope.priority, requestScope.sem, func() Invoice { return LoadInvoice(requestScope.ctx, id) })",
+            "freeholdSpawn[Customer](&requestScope.wg, requestScope.priority, requestScope.sem, func() Customer { return LoadCustomer(requestScope.ctx, id) })"
           ]
         }
       ],
@@ -108,7 +116,7 @@
       "expected": {
         "module_path": "freehold.local",
         "total_files": 1,
-        "total_build_files": 2,
+        "total_build_files": 3,
         "total_extra_files": 2,
         "supported": true
       },
@@ -124,7 +132,7 @@
         {
           "output_path": "go.mod",
           "kind": "go_mod",
-          "must_contain": ["module freehold.local", "require google.golang.org/grpc v1.64.0"]
+          "must_contain": ["module freehold.local", "google.golang.org/grpc v1.64.0"]
         },
         {
           "output_path": "build.cmd",
@@ -153,7 +161,7 @@
       "expected": {
         "module_path": "freehold.local",
         "total_files": 1,
-        "total_build_files": 2,
+        "total_build_files": 3,
         "total_extra_files": 2,
         "supported": true
       },
@@ -163,19 +171,16 @@
           "module": "App.Main",
           "supported": true,
           "must_contain": [
-            "type FreeholdScope struct{}",
+            "type FreeholdScope struct",
             "type FreeholdJoinHandle[T any] struct",
-            "type FreeholdChannel[T any] struct",
-            "type FreeholdSender[T any] struct",
-            "type FreeholdReceiver[T any] struct",
-            "func freeholdChannelSend[T any](sender FreeholdSender[T], value T) bool",
-            "func freeholdChannelReceive[T any](receiver FreeholdReceiver[T]) T",
+            "func freeholdChannelSend[T any](sender chan<- T, value T) bool",
+            "func freeholdChannelReceive[T any](receiver <-chan T) T",
             "quoteScope := FreeholdScope{}",
-            "FreeholdJoinHandle[int64]{value: LoadUnitPrice(request.Sku)}",
-            "FreeholdJoinHandle[AuditEvent]{value: AuditRoundtrip(sender, receiver, request.TraceId)}",
-            "FreeholdChannel[AuditEvent]{ch: make(chan AuditEvent, int(8))}",
-            "sender := FreeholdSender[AuditEvent]{ch: auditChannel.ch}",
-            "receiver := FreeholdReceiver[AuditEvent]{ch: auditChannel.ch}",
+            "freeholdSpawn[int64](&quoteScope.wg, quoteScope.priority, quoteScope.sem, func() int64 { return LoadUnitPrice(quoteScope.ctx, request.Sku) })",
+            "freeholdSpawn[AuditEvent](&quoteScope.wg, quoteScope.priority, quoteScope.sem, func() AuditEvent { return AuditRoundtrip(quoteScope.ctx, sender, receiver, request.TraceId) })",
+            "var auditChannel chan AuditEvent = make(chan AuditEvent, int(8))",
+            "var sender chan<- AuditEvent = auditChannel",
+            "var receiver <-chan AuditEvent = auditChannel",
             "// Service PricingService is emitted through the generated gRPC binding file."
           ]
         }
@@ -184,7 +189,7 @@
         {
           "output_path": "go.mod",
           "kind": "go_mod",
-          "must_contain": ["module freehold.local", "require google.golang.org/grpc v1.64.0"]
+          "must_contain": ["module freehold.local", "google.golang.org/grpc v1.64.0"]
         },
         {
           "output_path": "build.cmd",
@@ -204,6 +209,45 @@
           "must_contain": ["type PricingServiceHandler interface", "func RegisterPricingServiceServer(registrar grpc.ServiceRegistrar, handler PricingServiceHandler)"]
         }
       ]
+    },
+    {
+      "name": "26_generic_function_project",
+      "stage_role": "go-project-contract",
+      "selection_reason": "generic function monomorphization and explicit type-argument call lowering",
+      "source_file": "examples/compiler_v1/26_generic_function/App/Main.fh",
+      "expected": {
+        "module_path": "freehold.local",
+        "total_files": 1,
+        "total_build_files": 3,
+        "total_extra_files": 0,
+        "supported": true
+      },
+      "files": [
+        {
+          "output_path": "app/main/main.go",
+          "module": "App.Main",
+          "supported": true,
+          "must_contain": [
+            "var item int64 = AppMainIdentityInteger(1)",
+            "func AppMainIdentityInteger(item int64) int64",
+            "var freeholdResult int64 = item",
+            "panic(\"freehold ensures contract failed\")"
+          ]
+        }
+      ],
+      "build_files": [
+        {
+          "output_path": "go.mod",
+          "kind": "go_mod",
+          "must_contain": ["module freehold.local", "go 1.22"]
+        },
+        {
+          "output_path": "build.cmd",
+          "kind": "build_cmd",
+          "must_contain": ["go mod tidy", "go test ./..."]
+        }
+      ],
+      "extra_files": []
     }
   ]
 }

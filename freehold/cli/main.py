@@ -15,6 +15,7 @@ from freehold.core.grpc_go_codegen import generate_grpc_go_bindings_file
 from freehold.core.module_resolver import ModuleResolver
 from freehold.core.pipeline import verify_file, run_file, print_ast
 from freehold.core.go_codegen import GO_RUNTIME_MODULE_EXPORTS
+from freehold.core.source_map import export_source_map_json
 
 DIAGNOSTIC_ERROR_NAMES = {"UnexpectedToken", "UnexpectedCharacters", "UnexpectedEOF", "TypeCheckError"}
 
@@ -66,6 +67,17 @@ def cmd_compare_ir(args):
         print(f"[OK] Compare-IR JSON written: {out}")
     else:
         print(compare_ir_json, end="")
+    return 0
+
+def cmd_source_map(args):
+    source_map_json = export_source_map_json(args.file)
+    if args.output:
+        out = Path(args.output)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(source_map_json, encoding="utf-8", newline="\n")
+        print(f"[OK] Source-map JSON written: {out}")
+    else:
+        print(source_map_json, end="")
     return 0
 
 def cmd_grpc_proto(args):
@@ -125,12 +137,13 @@ def cmd_go_codegen_project(args):
     entry_module_name = project_entry_module_name(files, args.file)
     executable_name = args.executable_name or Path(args.file).stem
     emit_executable = args.emit_executable and project_has_entry_main(files, entry_module_name)
+    out_root = Path(args.output_dir)
     build_files = generate_go_project_build_files(
         files,
         executable_name=executable_name if emit_executable else None,
         entry_module_name=entry_module_name,
+        output_dir=out_root,
     )
-    out_root = Path(args.output_dir)
     for file in files:
         out_path = out_root / file.output_path
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -203,6 +216,7 @@ def cmd_build_exe(args):
         files,
         executable_name=exe_name,
         entry_module_name=entry_module_name,
+        output_dir=out_dir,
     )
     for file in build_files:
         out_path = out_dir / file.output_path
@@ -335,6 +349,10 @@ def build_parser():
     p.add_argument("--output", "-o", default=None)
     p.add_argument("--profile", choices=["v0", "v1"], default="v1", help="compare-ir export profile (default: v1)")
     p.set_defaults(func=cmd_compare_ir)
+    p = sub.add_parser("source-map", help="Export source reconstruction sidecar JSON for FH-IR")
+    p.add_argument("file")
+    p.add_argument("--output", "-o", default=None)
+    p.set_defaults(func=cmd_source_map)
     p = sub.add_parser("grpc-proto", help="Generate a proto3 file from Freehold gRPC IDL")
     p.add_argument("file")
     p.add_argument("--output", "-o", default=None)
@@ -382,7 +400,7 @@ def main(argv=None):
     parser = build_parser(); args = parser.parse_args(argv)
     if args.version:
         print("Freehold CLI: toolchain frontend")
-        print("Commands: run, verify, test, ebnf, ast, ir/fhir, compare-ir, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project, build-exe, whyml")
+        print("Commands: run, verify, test, ebnf, ast, ir/fhir, compare-ir, source-map, grpc-proto, grpc-go-bindings, go-codegen, go-codegen-project, build-exe, whyml")
         print("FH-IR schemas: fh-ir-v1 (project-wide default), fh-ir-v0 (--module-only)")
         return 0
     if not args.command:

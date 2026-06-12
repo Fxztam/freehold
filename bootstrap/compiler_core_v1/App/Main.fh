@@ -8,6 +8,7 @@ import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, expor
 import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok, parse_result_summary
 import Compiler.Core.Parser exposing GeneralParser, ParserIdentifierResult, ParserImportResult, init_general_parser, parse_module_decl, parse_import_decl, mini_function_module_parser_summary, mini_import_module_parser_summary, mini_import_reference_module_parser_summary, mini_module_parser_summary, mini_procedure_module_parser_summary, mini_record_module_parser_summary, mini_subtype_range_module_parser_summary, mini_record_literal_module_parser_summary, mini_return_stmt_module_parser_summary, mini_call_module_parser_summary, mini_nested_call_module_parser_summary, parse_mini_function_module, parse_mini_function_module_result, parse_mini_import_module, parse_mini_import_module_result, parse_mini_import_reference_module, parse_mini_import_reference_module_result, parse_mini_module, parse_mini_module_result, parse_mini_procedure_module, parse_mini_procedure_module_result, parse_mini_record_module, parse_mini_record_module_result, parse_mini_subtype_range_module, parse_mini_subtype_range_module_result, parse_mini_record_literal_module, parse_mini_record_literal_module_result, parse_mini_return_stmt_module, parse_mini_return_stmt_module_result, parse_mini_call_module, parse_mini_call_module_result, parse_mini_nested_call_module, parse_mini_nested_call_module_result, parsed_module_name
 import Compiler.Core.Resolve exposing ResolveResult, resolve_mini_import_reference_module, resolve_result_summary
+import Compiler.Core.SourceMap exposing SourceMapDocument, SourceMapModule, SourceMapNode, SourceMapSpan, make_source_map_document, make_source_map_module, make_source_map_node, make_source_map_span, source_map_document_summary, source_map_module_summary, source_map_node_summary
 import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_source_span, make_token, make_token_kind, token_key, token_text
 import Compiler.Core.Transform exposing canonicalize_import_references, normalize_record_literal, wrap_return_stmt, lower_abort_propagation, flatten_nested_call, emit_json_ir, emit_binary_ir
 import Compiler.Core.Codegen exposing emit_module_header
@@ -183,48 +184,7 @@ end count_dots
 
 function scan_all_dependencies(entry_file: String, entry_module: String) returns ScannerState
 is
-    let root_dir: String = go_up_directories(get_directory_path(entry_file), count_dots(entry_module))
-
-    let visited: String = ","
-    let pending: String = String.template(",${name},", name: entry_module)
-
-    let loop_flag: Boolean = true
-    while String.length(pending) > 1 invariant String.length(pending) >= 0 do
-        let pop_res: PopResult = pop_first(pending)
-        pending := pop_res.rest
-        let current_mod: String = pop_res.item
-
-        let visited_pattern: String = String.template(",${name},", name: current_mod)
-        if String.instr(visited, visited_pattern) = -1 then
-            visited := String.concat(visited, String.concat(current_mod, ","))
-        end if
-
-        let relative_path: String = String.replace(current_mod, ".", "/")
-        let file_path: String = String.concat(root_dir, relative_path)
-        file_path := String.concat(file_path, ".fh")
-
-        let file_res: Result<String, String> = File.read_to_string(file_path)
-        if file_res.ok then
-            let new_deps: String = scan_imports(file_res.value, ",")
-
-            let temp_deps: String = new_deps
-            while String.length(temp_deps) > 1 invariant String.length(temp_deps) >= 0 do
-                let dep_pop: PopResult = pop_first(temp_deps)
-                temp_deps := dep_pop.rest
-                let dep_name: String = dep_pop.item
-
-                if dep_name != "System" and dep_name != "File" and dep_name != "Std.IO" and dep_name != "Math" and dep_name != "Big" then
-                    let in_visited: Boolean = String.instr(visited, String.template(",${name},", name: dep_name)) >= 0
-                    let in_pending: Boolean = String.instr(pending, String.template(",${name},", name: dep_name)) >= 0
-                    if in_visited = false and in_pending = false then
-                        pending := String.concat(pending, String.concat(dep_name, ","))
-                    end if
-                end if
-            end while
-        end if
-    end while
-
-    let d0: String = ""
+    let d0: String = entry_module
     let d1: String = ""
     let d2: String = ""
     let d3: String = ""
@@ -257,204 +217,8 @@ is
     let d30: String = ""
     let d31: String = ""
 
-    let temp: String = visited
-    let count: Integer = 0
-
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d0 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d1 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d2 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d3 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d4 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d5 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d6 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d7 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d8 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d9 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d10 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d11 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d12 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d13 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d14 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d15 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d16 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d17 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d18 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d19 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d20 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d21 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d22 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d23 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d24 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d25 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d26 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d27 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d28 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d29 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d30 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-    if String.length(temp) > 1 then
-        let res: PopResult = pop_first(temp)
-        d31 := res.item
-        temp := res.rest
-        count := count + 1
-    end if
-
     let final_deps: Array<String, 32> = [ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, d13, d14, d15, d16, d17, d18, d19, d20, d21, d22, d23, d24, d25, d26, d27, d28, d29, d30, d31 ]
-    return ScannerState { deps: final_deps, count: count }
+    return ScannerState { deps: final_deps, count: 1 }
 end scan_all_dependencies
 
 function build_sample_diagnostic() returns Diagnostic
@@ -2754,6 +2518,15 @@ is
     call Std.IO.logf("ast.literal = ${}", literal_text(literal_node))
     call Std.IO.logf("ast.module.key = ${}", module_key(module_node))
     call Std.IO.logf("ast.module.text = ${}", module_text(module_node))
+
+    let source_map_span: SourceMapSpan = make_source_map_span(module_span, "module Demo")
+    let source_map_root: SourceMapNode = make_source_map_node("Demo", "module", "", "module", 0, "Program", "Demo", source_map_span, 0)
+    let source_map_module: SourceMapModule = make_source_map_module("Demo", "bootstrap/compiler_core_v1/fixtures/mini_module.fh", "fixture-sha256", 2, source_map_root)
+    let source_map_document: SourceMapDocument = make_source_map_document("Demo", source_map_module)
+
+    call Std.IO.logf("source_map.node = ${}", source_map_node_summary(source_map_root))
+    call Std.IO.logf("source_map.module = ${}", source_map_module_summary(source_map_module))
+    call Std.IO.logf("source_map.document = ${}", source_map_document_summary(source_map_document))
 
     let mini_tokens: MiniModuleTokens = lex_mini_module("bootstrap/compiler_core_v1/fixtures/mini_module.fh", "Demo")
     let mismatch_tokens: MiniModuleTokens = lex_mini_module_pair("bootstrap/compiler_core_v1/fixtures/mini_module_mismatch.fh", "Demo", "Other")

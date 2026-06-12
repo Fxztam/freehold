@@ -6,6 +6,8 @@ pushd "%~dp0" || exit /b 1
 set "PYTHON=python"
 if exist .\.venv\Scripts\python.exe set "PYTHON=.\.venv\Scripts\python.exe"
 
+if not defined FREEHOLD_PROVER set "FREEHOLD_PROVER=none"
+
 %PYTHON% .\tools\verify_stage3_compiler_core_contracts.py --manifest .\artifacts\stage3\compiler_core_v1\manifest.json --out .\artifacts\stage3\compiler_core_v1\report
 if errorlevel 1 goto :fail
 

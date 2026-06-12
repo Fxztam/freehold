@@ -1,0 +1,53 @@
+module Std.Oracle
+
+/**
+@std
+@ffi
+Native Oracle database bindings backed by the vendored go-ora driver through
+freehold.local/oracleshim.
+*/
+
+type OracleDemoRow is record
+    id: Integer
+    name: String
+    amount: Integer
+end record
+
+error OracleError
+
+@ffi("freehold.local/oracleshim", "ConnWithCredentials")
+function conn_with_credentials(conn_target: String, username: String, password: String) returns Result<String, OracleError>
+is
+end conn_with_credentials
+
+@ffi("freehold.local/oracleshim", "ConnFromWalletTNS")
+function conn_from_wallet_tns(wallet_path: String, username: String, password: String) returns Result<String, OracleError>
+is
+end conn_from_wallet_tns
+
+@ffi("freehold.local/oracleshim", "PingWalletTimeout")
+function ping_wallet_timeout(conn_str: String, wallet_path: String, timeout_seconds: Integer) returns String
+is
+end ping_wallet_timeout
+
+@ffi("freehold.local/oracleshim", "QueryScalarWalletTimeout")
+function query_scalar_wallet_timeout(conn_str: String, wallet_path: String, query: String, timeout_seconds: Integer) returns Result<String, OracleError>
+is
+end query_scalar_wallet_timeout
+
+@ffi("freehold.local/oracleshim", "QueryRowsWalletTimeout")
+function query_rows_wallet_timeout(conn_str: String, wallet_path: String, query: String, max_rows: Integer, timeout_seconds: Integer) returns Result<String, OracleError>
+is
+end query_rows_wallet_timeout
+
+@ffi("freehold.local/oracleshim", "QueryDemoRowsWalletTimeout")
+function query_demo_rows_wallet_timeout(conn_str: String, wallet_path: String, query: String, timeout_seconds: Integer) returns Result<Array<OracleDemoRow, 2>, OracleError>
+is
+end query_demo_rows_wallet_timeout
+
+@ffi("freehold.local/oracleshim", "ExecWalletTimeout")
+function exec_sql_wallet_timeout(conn_str: String, wallet_path: String, statement: String, timeout_seconds: Integer) returns Result<String, OracleError>
+is
+end exec_sql_wallet_timeout
+
+end Std.Oracle

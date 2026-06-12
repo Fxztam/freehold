@@ -1,0 +1,85 @@
+module Std.Connect.Grpc
+
+import Std.Connect.Common exposing Endpoint, ConnectError
+
+/**
+@std
+Native gRPC client/server runtime over google.golang.org/grpc.
+
+The transport routes through the generated per-service bindings and protobuf stubs
+using a pull-based accept/respond model that mirrors Std.Connect.Http. Payloads are
+carried as JSON text and converted to the generated protobuf message structs by the
+per-service binding glue. Supports unary and server-streaming round trips.
+*/
+
+type Client is record
+    endpoint: Endpoint
+end record
+
+type ServerHandle is record
+    id: String
+end record
+
+type Call is record
+    id: String
+    method: String
+    payload: String
+end record
+
+type StreamHandle is record
+    status_code: Integer
+    message_count: Integer
+    messages: Receiver<String>
+end record
+
+type UnaryReply is record
+    payload: String
+end record
+
+function new_client(endpoint: Endpoint) returns Client
+is
+    return Client { endpoint: endpoint }
+end new_client
+
+function serve(endpoint: Endpoint) returns Result<ServerHandle, ConnectError>
+is
+    return ok(ServerHandle { id: "server" })
+end serve
+
+async function accept_call(server: ServerHandle) returns Result<Call, ConnectError>
+is
+    return ok(Call { id: "call", method: "", payload: "" })
+end accept_call
+
+async function respond(pending: Call, payload: String) returns Boolean
+is
+    return true
+end respond
+
+async function unary(client: Client, method: String, payload: String) returns Result<UnaryReply, ConnectError>
+is
+    return ok(UnaryReply { payload: payload })
+end unary
+
+procedure stop_server(server: ServerHandle)
+is
+end stop_server
+
+async function accept_stream(server: ServerHandle) returns Result<Call, ConnectError>
+is
+    return ok(Call { id: "stream", method: "", payload: "" })
+end accept_stream
+
+async function respond_stream(pending: Call, count: Integer, messages: Receiver<String>) returns Boolean
+is
+    return true
+end respond_stream
+
+async function open_stream(client: Client, method: String, payload: String) returns Result<StreamHandle, ConnectError>
+is
+    let ch: Channel<String> = channel<String>(1)
+    let rx: Receiver<String> = channel_receiver<String>(ch)
+    return ok(StreamHandle { status_code: 200, message_count: 0, messages: rx })
+end open_stream
+
+end Std.Connect.Grpc

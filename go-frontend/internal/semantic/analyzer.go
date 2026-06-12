@@ -19,6 +19,7 @@ type RecordType struct {
 type RoutineType struct {
 	Name          string
 	QualifiedName string
+	TypeParams    []string
 	Params        []ast.Param
 	ReturnType    string
 	GlobalSpecs   []ast.GlobalSpec
@@ -36,6 +37,7 @@ type SymbolTable struct {
 
 type Analyzer struct {
 	symbols     SymbolTable
+	typeParams  map[string]bool
 	diagnostics []*diagnostic.Diagnostic
 }
 
@@ -85,6 +87,7 @@ func BuildSymbolTable(module *ast.Module) SymbolTable {
 			routine := RoutineType{
 				Name:          value.Name,
 				QualifiedName: qualifiedName(module, value.Name),
+				TypeParams:    append([]string(nil), value.TypeParams...),
 				Params:        value.Params,
 				ReturnType:    value.ReturnType,
 				GlobalSpecs:   value.GlobalSpecs,
@@ -288,22 +291,24 @@ func (a *Analyzer) validateModule(module *ast.Module) {
 				a.validateTypeReference(value.Base, locationFromPosition(value.Pos))
 			}
 		case ast.FunctionDecl:
-			a.validateRoutineSignature(value.Params, value.ReturnType, locationFromPosition(value.Pos))
-			env := a.envFromParams(value.Params)
-			for _, expr := range value.Requires {
-				a.inferExpr(expr, env)
-			}
-			for _, clause := range value.Aborts {
-				if clause.Condition != nil {
-					a.inferExpr(clause.Condition, env)
+			a.withTypeParams(value.TypeParams, func() {
+				a.validateRoutineSignature(value.Params, value.ReturnType, locationFromPosition(value.Pos))
+				env := a.envFromParams(value.Params)
+				for _, expr := range value.Requires {
+					a.inferExpr(expr, env)
 				}
-			}
-			ensuresEnv := contractEnv(env, value.ReturnType)
-			for _, expr := range value.Ensures {
-				a.inferExpr(expr, ensuresEnv)
-			}
-			a.validateBlock(value.Body, env)
-			a.validateRoutineContracts(value.Name, "function", value.Params, value.ReturnType, value.GlobalSpecs, value.DependsSpecs, value.Body, value.Pos)
+				for _, clause := range value.Aborts {
+					if clause.Condition != nil {
+						a.inferExpr(clause.Condition, env)
+					}
+				}
+				ensuresEnv := contractEnv(env, value.ReturnType)
+				for _, expr := range value.Ensures {
+					a.inferExpr(expr, ensuresEnv)
+				}
+				a.validateBlock(value.Body, env)
+				a.validateRoutineContracts(value.Name, "function", value.Params, value.ReturnType, value.GlobalSpecs, value.DependsSpecs, value.Body, value.Pos)
+			})
 		case ast.ProcedureDecl:
 			a.validateRoutineSignature(value.Params, "", locationFromPosition(value.Pos))
 			env := a.envFromParams(value.Params)
@@ -322,6 +327,24 @@ func (a *Analyzer) validateModule(module *ast.Module) {
 			a.validateRoutineContracts(value.Name, "procedure", value.Params, "", value.GlobalSpecs, value.DependsSpecs, value.Body, value.Pos)
 		}
 	}
+}
+
+func (a *Analyzer) withTypeParams(typeParams []string, validate func()) {
+	if len(typeParams) == 0 {
+		validate()
+		return
+	}
+	previous := a.typeParams
+	scoped := map[string]bool{}
+	for name, ok := range previous {
+		scoped[name] = ok
+	}
+	for _, param := range typeParams {
+		scoped[param] = true
+	}
+	a.typeParams = scoped
+	defer func() { a.typeParams = previous }()
+	validate()
 }
 
 func (a *Analyzer) envFromParams(params []ast.Param) map[string]string {
@@ -492,6 +515,9 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 		a.validateRecordLiteral(value, env)
 		return value.Type, true
 	case ast.BinaryExpr:
+		if value.Op == "is" && a.isTypeParamConstraint(value) {
+			return "Boolean", true
+		}
 		leftType, leftOK := a.inferExpr(value.Left, env)
 		rightType, rightOK := a.inferExpr(value.Right, env)
 		if isBooleanOperator(value.Op) || isComparisonOperator(value.Op) {
@@ -558,6 +584,12 @@ func (a *Analyzer) inferExpr(expr ast.Expr, env map[string]string) (string, bool
 	return "", false
 }
 
+func (a *Analyzer) isTypeParamConstraint(expr ast.BinaryExpr) bool {
+	left, leftOK := expr.Left.(ast.IdentifierExpr)
+	right, rightOK := expr.Right.(ast.IdentifierExpr)
+	return leftOK && rightOK && a.typeParams[left.Name] && right.Name != ""
+}
+
 func (a *Analyzer) inferAssignmentTarget(expr ast.Expr, env map[string]string) (string, bool) {
 	switch value := expr.(type) {
 	case ast.IdentifierExpr:
@@ -581,6 +613,9 @@ func (a *Analyzer) validateTypeReference(typeName string, location diagnostic.Lo
 func (a *Analyzer) knownType(typeName string) bool {
 	typeName = strings.TrimSpace(typeName)
 	if typeName == "" {
+		return true
+	}
+	if a.typeParams[typeName] {
 		return true
 	}
 	if a.symbols.Types[typeName] {
@@ -724,19 +759,66 @@ func (a *Analyzer) validateCall(call ast.CallExpr, env map[string]string, locati
 		}
 		return "", false
 	}
+	for _, typeArg := range call.TypeArgs {
+		a.validateTypeReference(typeArg, location)
+	}
+	typeSubstitutions := routineTypeSubstitutions(routine.TypeParams, call.TypeArgs)
+
 	if len(call.Arguments) != len(routine.Params) {
 		a.diagnostics = append(a.diagnostics, diagnostic.RoutineArgumentCountMismatch(location, routine.Name, len(routine.Params), len(call.Arguments)))
-		return routine.ReturnType, routine.ReturnType != ""
+		return substituteTypeParams(routine.ReturnType, typeSubstitutions), routine.ReturnType != ""
 	}
 	for index, param := range routine.Params {
 		if !argOK[index] {
 			continue
 		}
-		if !a.sameType(param.Type, argTypes[index]) {
-			a.diagnostics = append(a.diagnostics, diagnostic.RoutineArgumentTypeMismatch(locationFromExpr(call.Arguments[index]), routine.Name, index+1, param.Type, argTypes[index]))
+		expectedType := substituteTypeParams(param.Type, typeSubstitutions)
+		if !a.sameType(expectedType, argTypes[index]) {
+			a.diagnostics = append(a.diagnostics, diagnostic.RoutineArgumentTypeMismatch(locationFromExpr(call.Arguments[index]), routine.Name, index+1, expectedType, argTypes[index]))
 		}
 	}
-	return routine.ReturnType, routine.ReturnType != ""
+	return substituteTypeParams(routine.ReturnType, typeSubstitutions), routine.ReturnType != ""
+}
+
+func routineTypeSubstitutions(typeParams []string, typeArgs []string) map[string]string {
+	substitutions := map[string]string{}
+	if len(typeParams) != len(typeArgs) {
+		return substitutions
+	}
+	for index, param := range typeParams {
+		substitutions[param] = typeArgs[index]
+	}
+	return substitutions
+}
+
+func substituteTypeParams(typeName string, substitutions map[string]string) string {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" || len(substitutions) == 0 {
+		return typeName
+	}
+	if replacement, ok := substitutions[typeName]; ok {
+		return replacement
+	}
+	if strings.HasPrefix(typeName, "Result<") && strings.HasSuffix(typeName, ">") {
+		parts := splitTopLevel(typeName[len("Result<") : len(typeName)-1])
+		if len(parts) == 2 {
+			return fmt.Sprintf("Result<%s, %s>", substituteTypeParams(parts[0], substitutions), substituteTypeParams(parts[1], substitutions))
+		}
+	}
+	if strings.HasPrefix(typeName, "Array<") && strings.HasSuffix(typeName, ">") {
+		parts := splitTopLevel(typeName[len("Array<") : len(typeName)-1])
+		if len(parts) == 2 {
+			return fmt.Sprintf("Array<%s, %s>", substituteTypeParams(parts[0], substitutions), strings.TrimSpace(parts[1]))
+		}
+	}
+	if genericBase, genericArgs, ok := parseGenericType(typeName); ok {
+		args := make([]string, 0, len(genericArgs))
+		for _, arg := range genericArgs {
+			args = append(args, substituteTypeParams(arg, substitutions))
+		}
+		return fmt.Sprintf("%s<%s>", genericBase, strings.Join(args, ", "))
+	}
+	return typeName
 }
 
 func (a *Analyzer) sameType(expected string, found string) bool {

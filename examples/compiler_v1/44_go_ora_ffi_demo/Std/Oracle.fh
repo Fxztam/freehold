@@ -1,0 +1,107 @@
+module Std.Oracle
+
+/**
+@std
+@ffi
+Native Oracle database bindings backed by the vendored go-ora driver
+(github.com/sijms/go-ora/v2), reached through a thin primitive Go shim
+(freehold.local/oracleshim).
+
+Each routine is bound to a shim function via @ffi("import/path", "Symbol") and
+keeps an empty body: the Go codegen emits a wrapper that marshals Freehold
+values to and from their Go ABI equivalents (String <-> string). A routine
+returning Result<String, OracleError> binds to a Go function returning
+(string, error): a non-nil error becomes the error branch.
+
+These are trusted runtime bindings; their contracts are treated as assumptions
+and their bodies are not verified.
+
+The *_wallet routines connect to an Oracle Autonomous Database (Oracle Cloud)
+using a downloaded wallet folder: the shim appends the TLS + WALLET query
+parameters (SSL=enable, SSL Verify=false, WALLET=<path>) to the base URL.
+*/
+
+type OracleDemoRow is record
+	id: Integer
+	name: String
+	amount: Integer
+end record
+
+error OracleError
+
+@ffi("freehold.local/oracleshim", "ConnWithCredentials")
+function conn_with_credentials(conn_target: String, username: String, password: String) returns Result<String, OracleError>
+is
+end conn_with_credentials
+
+@ffi("freehold.local/oracleshim", "ConnFromWalletTNS")
+function conn_from_wallet_tns(wallet_path: String, username: String, password: String) returns Result<String, OracleError>
+is
+end conn_from_wallet_tns
+
+@ffi("freehold.local/oracleshim", "Ping")
+function ping(conn_str: String) returns String
+is
+end ping
+
+@ffi("freehold.local/oracleshim", "QueryScalar")
+function query_scalar(conn_str: String, query: String) returns Result<String, OracleError>
+is
+end query_scalar
+
+@ffi("freehold.local/oracleshim", "QueryRows")
+function query_rows(conn_str: String, query: String, max_rows: Integer) returns Result<String, OracleError>
+is
+end query_rows
+
+@ffi("freehold.local/oracleshim", "Exec")
+function exec_sql(conn_str: String, statement: String) returns Result<String, OracleError>
+is
+end exec_sql
+
+@ffi("freehold.local/oracleshim", "PingWallet")
+function ping_wallet(conn_str: String, wallet_path: String) returns String
+is
+end ping_wallet
+
+@ffi("freehold.local/oracleshim", "PingWalletTimeout")
+function ping_wallet_timeout(conn_str: String, wallet_path: String, timeout_seconds: Integer) returns String
+is
+end ping_wallet_timeout
+
+@ffi("freehold.local/oracleshim", "QueryScalarWallet")
+function query_scalar_wallet(conn_str: String, wallet_path: String, query: String) returns Result<String, OracleError>
+is
+end query_scalar_wallet
+
+@ffi("freehold.local/oracleshim", "QueryScalarWalletTimeout")
+function query_scalar_wallet_timeout(conn_str: String, wallet_path: String, query: String, timeout_seconds: Integer) returns Result<String, OracleError>
+is
+end query_scalar_wallet_timeout
+
+@ffi("freehold.local/oracleshim", "QueryRowsWallet")
+function query_rows_wallet(conn_str: String, wallet_path: String, query: String, max_rows: Integer) returns Result<String, OracleError>
+is
+end query_rows_wallet
+
+@ffi("freehold.local/oracleshim", "QueryRowsWalletTimeout")
+function query_rows_wallet_timeout(conn_str: String, wallet_path: String, query: String, max_rows: Integer, timeout_seconds: Integer) returns Result<String, OracleError>
+is
+end query_rows_wallet_timeout
+
+@ffi("freehold.local/oracleshim", "QueryDemoRowsWalletTimeout")
+function query_demo_rows_wallet_timeout(conn_str: String, wallet_path: String, query: String, timeout_seconds: Integer) returns Result<Array<OracleDemoRow, 2>, OracleError>
+is
+end query_demo_rows_wallet_timeout
+
+@ffi("freehold.local/oracleshim", "ExecWallet")
+function exec_sql_wallet(conn_str: String, wallet_path: String, statement: String) returns Result<String, OracleError>
+is
+end exec_sql_wallet
+
+@ffi("freehold.local/oracleshim", "ExecWalletTimeout")
+function exec_sql_wallet_timeout(conn_str: String, wallet_path: String, statement: String, timeout_seconds: Integer) returns Result<String, OracleError>
+is
+end exec_sql_wallet_timeout
+
+end Std.Oracle

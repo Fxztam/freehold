@@ -1,0 +1,55 @@
+{
+  "module": "10_websocket_json_broadcast_validation",
+  "title": "WebSocket JSON Broadcast Validation v2.3 Tests",
+  "cases": [
+    {
+      "name": "WebSocket broadcast JSON envelope roundtrips through typed records",
+      "kind": "valid",
+      "file": "valid/websocket_json_broadcast_roundtrip_pos.fh"
+    },
+    {
+      "name": "WebSocket registry room broadcast uses bounded queues with timeout",
+      "kind": "valid",
+      "file": "valid/websocket_registry_room_timeout_pos.fh"
+    },
+    {
+      "name": "WebSocket invalid JSON is modeled as typed error status",
+      "kind": "valid",
+      "file": "valid/websocket_error_status_pos.fh"
+    },
+    {
+      "name": "WebSocket ping pong keepalive is modeled as status records",
+      "kind": "valid",
+      "file": "valid/websocket_keepalive_status_pos.fh"
+    },
+    {
+      "name": "WebSocket frame policy documents text JSON only limits",
+      "kind": "valid",
+      "file": "valid/websocket_frame_policy_pos.fh"
+    },
+    {
+      "name": "WebSocket broadcast JSON message missing clientId fails at compile time",
+      "kind": "invalid_semantics",
+      "file": "invalid_semantics/websocket_json_broadcast_missing_sender_neg.fh",
+      "expected_error": "expected_errors/websocket_json_broadcast_missing_sender_neg.err"
+    },
+    {
+      "name": "WebSocket broadcast JSON message must use external clientId name",
+      "kind": "invalid_semantics",
+      "file": "invalid_semantics/websocket_json_broadcast_wrong_sender_name_neg.fh",
+      "expected_error": "expected_errors/websocket_json_broadcast_wrong_sender_name_neg.err"
+    },
+    {
+      "name": "WebSocket broadcast JSON recipient array length fails at compile time",
+      "kind": "invalid_semantics",
+      "file": "invalid_semantics/websocket_json_broadcast_recipient_count_neg.fh",
+      "expected_error": "expected_errors/websocket_json_broadcast_recipient_count_neg.err"
+    },
+    {
+      "name": "WebSocket broadcast JSON wrong message payload fails at compile time",
+      "kind": "invalid_semantics",
+      "file": "invalid_semantics/websocket_json_broadcast_kind_mismatch_neg.fh",
+      "expected_error": "expected_errors/websocket_json_broadcast_kind_mismatch_neg.err"
+    }
+  ]
+}

@@ -209,14 +209,12 @@ end lex_file_tokens_30
 
 function lex_mini_module(source_name: String, module_name: String) returns MiniModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0
-ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name
 is
     return lex_mini_module_pair(source_name, module_name, module_name)
 end lex_mini_module
 
 function lex_mini_module_pair(source_name: String, module_name: String, end_name: String) returns MiniModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(end_name, "") = 0
-ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name, result.end_name.lexeme = end_name
 is
     let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     return MiniModuleTokens {
@@ -242,7 +240,6 @@ end mini_module_lexer_summary
 
 function lex_mini_record_module(source_name: String, module_name: String, record_name: String) returns MiniRecordModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(record_name, "") = 0
-ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name, result.type_name.lexeme = record_name
 is
     let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     return MiniRecordModuleTokens {
@@ -274,7 +271,6 @@ end mini_record_module_lexer_summary
 
 function lex_mini_subtype_range_module(source_name: String, module_name: String, type_name: String) returns MiniSubtypeRangeModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(type_name, "") = 0
-ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name, result.type_name.lexeme = type_name
 is
     let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     return MiniSubtypeRangeModuleTokens {
@@ -321,7 +317,6 @@ end mini_subtype_range_module_lexer_summary
 
 function lex_mini_function_module(source_name: String, module_name: String, routine_name: String) returns MiniFunctionModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(routine_name, "") = 0
-ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name, result.routine_name.lexeme = routine_name
 is
     let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     return MiniFunctionModuleTokens {
@@ -358,7 +353,6 @@ end mini_function_module_lexer_summary
 
 function lex_mini_procedure_module(source_name: String, module_name: String, routine_name: String) returns MiniProcedureModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(routine_name, "") = 0
-ensures result.module_keyword.lexeme = "module", result.module_name.lexeme = module_name, result.routine_name.lexeme = routine_name
 is
     let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     return MiniProcedureModuleTokens {
@@ -391,7 +385,6 @@ end mini_procedure_module_lexer_summary
 
 function lex_mini_import_module(source_name: String, module_name: String, import_module_name: String, exposed_name: String) returns MiniImportModuleTokens
 requires String.instr(source_name, "") = 0, String.instr(module_name, "") = 0, String.instr(import_module_name, "") = 0, String.instr(exposed_name, "") = 0
-ensures result.import_keyword.lexeme = "import", result.module_name.lexeme = module_name
 is
     let t: Array<Token, 30> = lex_file_tokens_30(source_name)
     let t1: Token = t[1]

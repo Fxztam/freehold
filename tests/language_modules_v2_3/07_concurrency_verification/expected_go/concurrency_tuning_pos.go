@@ -188,6 +188,15 @@ func freeholdChannelSend[T any](sender chan<- T, value T) bool {
 	return true
 }
 
+func freeholdChannelTrySend[T any](sender chan<- T, value T) bool {
+	select {
+	case sender <- value:
+		return true
+	default:
+		return false
+	}
+}
+
 func freeholdChannelReceive[T any](receiver <-chan T) T {
 	return <-receiver
 }

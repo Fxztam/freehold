@@ -2,8 +2,10 @@ module JsonRecordRoundtripValidationPos
 
 type Address is record
     city: String
-    zip: Integer
+    zip: ZipCode
 end record
+
+type ZipCode is Integer range 10000..99999
 
 type Person is record
     first_name: String @json("firstName")
@@ -22,6 +24,9 @@ is
     check parsed.value.address.zip = 12345
     let encoded: String = Json.stringify(parsed.value)
     check encoded = text
+    let bad_zip_text: String = "{\"firstName\":\"Ada\",\"address\":{\"city\":\"London\",\"zip\":999},\"tags\":[\"math\",\"code\"],\"active\":true}"
+    let bad_zip: Result<Person, SchemaError> = Json.parse<Person>(bad_zip_text)
+    check bad_zip.ok = false
 end main
 
 end JsonRecordRoundtripValidationPos

@@ -888,7 +888,7 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
                                 "obligation": obligation,
                                 "smt_query": smt_validity_query(path, obligation, var_types),
                             })
-            if call.name == "channel_send":
+            if call.name in {"channel_send", "channel_try_send"}:
                 sender_name = call.args[0].name if isinstance(call.args[0], VarExpr) else None
                 val_arg = call.args[1]
                 if sender_name in channel_invariants and channel_invariants[sender_name] is not None:
@@ -936,7 +936,7 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
             is_send = False
             sender_name = None
             val_arg = None
-            if isinstance(expr, CallExpr) and expr.name == "channel_send":
+            if isinstance(expr, CallExpr) and expr.name in {"channel_send", "channel_try_send"}:
                 is_send = True
                 if isinstance(expr.args[0], VarExpr):
                     sender_name = expr.args[0].name
@@ -1107,7 +1107,7 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
             is_send = False
             sender_name = None
             val_arg = None
-            if isinstance(expr, CallExpr) and expr.name == "channel_send":
+            if isinstance(expr, CallExpr) and expr.name in {"channel_send", "channel_try_send"}:
                 is_send = True
                 if isinstance(expr.args[0], VarExpr):
                     sender_name = expr.args[0].name

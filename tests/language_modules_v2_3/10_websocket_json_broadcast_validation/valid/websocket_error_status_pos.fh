@@ -1,0 +1,49 @@
+module WebSocketErrorStatusPos
+
+type ChatPayload is record
+    room: String
+    text: String
+end record
+
+type ChatMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: ChatPayload
+end record
+
+type ErrorPayload is record
+    code: String
+    message: String
+end record
+
+type ErrorMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: ErrorPayload
+end record
+
+type DeliveryStatus is record
+    accepted: Boolean
+    error_sent: Boolean
+    disconnect_client: Boolean
+    disconnect_room: Boolean
+end record
+
+function classify_chat_message(raw: String) returns DeliveryStatus
+is
+    let parsed: Result<ChatMessage, SchemaError> = Json.parse<ChatMessage>(raw)
+    if parsed.ok then
+        return DeliveryStatus { accepted: true, error_sent: false, disconnect_client: false, disconnect_room: false }
+    else
+        let error_message: ErrorMessage = ErrorMessage {
+            kind: "error",
+            client_id: "server",
+            payload: ErrorPayload { code: "INVALID_JSON", message: "invalid chat message envelope" }
+        }
+        let encoded: String = Json.stringify(error_message)
+        let reparsed: Result<ErrorMessage, SchemaError> = Json.parse<ErrorMessage>(encoded)
+        return DeliveryStatus { accepted: false, error_sent: reparsed.ok, disconnect_client: true, disconnect_room: true }
+    end if
+end classify_chat_message
+
+end WebSocketErrorStatusPos

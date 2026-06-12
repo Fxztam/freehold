@@ -1,0 +1,34 @@
+module WebSocketJsonBroadcastRoundtripPos
+
+type ChatPayload is record
+    room: String
+    text: String
+end record
+
+type ChatMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: ChatPayload
+end record
+
+type BroadcastEnvelope is record
+    event: String
+    recipients: Array<String, 2>
+    message: ChatMessage
+end record
+
+procedure main()
+is
+    let text: String = "{\"event\":\"broadcast\",\"recipients\":[\"client-a\",\"client-b\"],\"message\":{\"kind\":\"chat\",\"clientId\":\"client-a\",\"payload\":{\"room\":\"main\",\"text\":\"hello broadcast\"}}}"
+    let parsed: Result<BroadcastEnvelope, SchemaError> = Json.parse<BroadcastEnvelope>(text)
+    check parsed.ok
+    check parsed.value.event = "broadcast"
+    check parsed.value.message.kind = "chat"
+    check parsed.value.message.client_id = "client-a"
+    check parsed.value.message.payload.room = "main"
+    check parsed.value.message.payload.text = "hello broadcast"
+    let encoded: String = Json.stringify(parsed.value)
+    check encoded = text
+end main
+
+end WebSocketJsonBroadcastRoundtripPos

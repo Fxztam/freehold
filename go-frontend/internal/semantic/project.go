@@ -34,6 +34,7 @@ func (e *ProjectLoadError) Error() string {
 }
 
 var runtimeModules = map[string]bool{
+	"Big":    true,
 	"Json":   true,
 	"Math":   true,
 	"Std.IO": true,

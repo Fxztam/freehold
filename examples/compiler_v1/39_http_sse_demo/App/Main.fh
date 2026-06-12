@@ -1,0 +1,90 @@
+module App.Main
+
+import Std.IO
+import Std.Connect.Common exposing Endpoint, ConnectError, localhost_http
+import Std.Connect.Http exposing Client, Request, ServerHandle, RequestContext, SseEvent, SseStream, new_client, new_request, new_sse_event, serve, accept_request, respond_sse, open_sse, stop_server
+
+async function server_worker(server: ServerHandle) returns Integer
+is
+    let accepted: Result<RequestContext, ConnectError> = await accept_request(server)
+    if accepted.ok = false then
+        call Std.IO.log("SSE server failed to accept")
+        return 1
+    end if
+    let event_channel: Channel<SseEvent> = channel<SseEvent>(8)
+    let tx: Sender<SseEvent> = channel_sender<SseEvent>(event_channel)
+    let rx: Receiver<SseEvent> = channel_receiver<SseEvent>(event_channel)
+    let queued_a: Boolean = await channel_send<SseEvent>(tx, new_sse_event("tick", "value-1"))
+    let queued_b: Boolean = await channel_send<SseEvent>(tx, new_sse_event("tick", "value-2"))
+    let queued_c: Boolean = await channel_send<SseEvent>(tx, new_sse_event("done", "value-3"))
+    let sent: Boolean = await respond_sse(accepted.value, 3, rx)
+    if sent then
+        return 0
+    else
+        return 1
+    end if
+end server_worker
+
+async function client_worker(client: Client) returns Integer
+is
+    let request: Request = new_request("GET", "/events")
+    let opened: Result<SseStream, ConnectError> = await open_sse(client, request)
+    if opened.ok = false then
+        call Std.IO.log("SSE client failed to open")
+        return 1
+    end if
+    if opened.value.status_code != 200 then
+        call Std.IO.log("SSE client got wrong status")
+        return 1
+    end if
+    if opened.value.event_count != 3 then
+        call Std.IO.log("SSE client got wrong event count")
+        return 1
+    end if
+    let event_a: SseEvent = await channel_receive<SseEvent>(opened.value.events)
+    let event_b: SseEvent = await channel_receive<SseEvent>(opened.value.events)
+    let event_c: SseEvent = await channel_receive<SseEvent>(opened.value.events)
+    call Std.IO.log(String.concat("sse event: ", String.concat(event_a.event_type, String.concat("=", event_a.data))))
+    call Std.IO.log(String.concat("sse event: ", String.concat(event_b.event_type, String.concat("=", event_b.data))))
+    call Std.IO.log(String.concat("sse event: ", String.concat(event_c.event_type, String.concat("=", event_c.data))))
+    return 0
+end client_worker
+
+async function run_demo() returns Integer
+is
+    let endpoint: Endpoint = localhost_http(8109, "")
+    let serve_result: Result<ServerHandle, ConnectError> = serve(endpoint)
+    if serve_result.ok = false then
+        call Std.IO.log("SSE server failed to bind")
+        return 1
+    end if
+    let server: ServerHandle = serve_result.value
+    let client: Client = new_client(endpoint)
+
+    scope demo_scope do
+        spawn
+            let server_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(server_worker(server))
+            let client_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_worker(client))
+        join
+            let server_status: Integer = await demo_scope.join<Integer>(server_handle)
+            let client_status: Integer = await demo_scope.join<Integer>(client_handle)
+            call stop_server(server)
+            if client_status = 0 and server_status = 0 then
+                call Std.IO.log("Native SSE delivered 3 events")
+            end if
+        result
+            return server_status + client_status
+    end scope
+end run_demo
+
+async procedure main()
+is
+    let status: Integer = await run_demo()
+    if status = 0 then
+        call Std.IO.log("Native SSE demo finished successfully")
+    else
+        call Std.IO.log("Native SSE demo finished with failure")
+    end if
+end main
+
+end App.Main

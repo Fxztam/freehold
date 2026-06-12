@@ -18,6 +18,7 @@ from freehold.core.go_codegen import go_executable_name
 
 GO_BACKEND_EXAMPLES = {
     "29_websocket_go_backend_demo": ("websocket_go_backend.go", 8102),
+    "35_http_client_go_backend_demo": ("http_go_backend.go", 8104),
 }
 
 
@@ -65,6 +66,19 @@ SUPPORTED_EXAMPLES = [
     SupportedExample("27_websocket_demo", "examples/compiler_v1/27_websocket_demo/App/Main.fh", "examples/expected_logs/compiler_v1_websocket_demo.expected.log"),
     SupportedExample("28_websocket_multi_client_demo", "examples/compiler_v1/28_websocket_multi_client_demo/App/Main.fh", "examples/expected_logs/compiler_v1_websocket_multi_client_demo.expected.log"),
     SupportedExample("29_websocket_go_backend_demo", "examples/compiler_v1/29_websocket_go_backend_demo/App/Main.fh", "examples/expected_logs/compiler_v1_websocket_go_backend_demo.expected.log"),
+    SupportedExample("30_websocket_json_broadcast_demo", "examples/compiler_v1/30_websocket_json_broadcast_demo/App/Main.fh", "examples/expected_logs/compiler_v1_websocket_json_broadcast_demo.expected.log"),
+    SupportedExample("32_websocket_json_broadcast_schema_neg", "examples/compiler_v1/32_websocket_json_broadcast_schema_neg/App/Main.fh", "examples/expected_logs/compiler_v1_websocket_json_broadcast_schema_neg.expected.log"),
+    SupportedExample("33_websocket_room_broadcast_demo", "examples/compiler_v1/33_websocket_room_broadcast_demo/App/Main.fh", "examples/expected_logs/compiler_v1_websocket_room_broadcast_demo.expected.log"),
+    SupportedExample("34_http_rest_contract_demo", "examples/compiler_v1/34_http_rest_contract_demo/App/Main.fh", "examples/expected_logs/compiler_v1_http_rest_contract_demo.expected.log"),
+    SupportedExample("35_http_client_go_backend_demo", "examples/compiler_v1/35_http_client_go_backend_demo/App/Main.fh", "examples/expected_logs/compiler_v1_http_client_go_backend_demo.expected.log"),
+    SupportedExample("36_http_server_demo", "examples/compiler_v1/36_http_server_demo/App/Main.fh", "examples/expected_logs/compiler_v1_http_server_demo.expected.log"),
+    SupportedExample("37_http_middleware_demo", "examples/compiler_v1/37_http_middleware_demo/App/Main.fh", "examples/expected_logs/compiler_v1_http_middleware_demo.expected.log"),
+    SupportedExample("38_http_streaming_demo", "examples/compiler_v1/38_http_streaming_demo/App/Main.fh", "examples/expected_logs/compiler_v1_http_streaming_demo.expected.log"),
+    SupportedExample("39_http_sse_demo", "examples/compiler_v1/39_http_sse_demo/App/Main.fh", "examples/expected_logs/compiler_v1_http_sse_demo.expected.log"),
+    SupportedExample("40_grpc_unary_roundtrip_demo", "examples/compiler_v1/40_grpc_unary_roundtrip_demo/App/Main.fh", "examples/expected_logs/compiler_v1_grpc_unary_roundtrip_demo.expected.log"),
+    SupportedExample("41_grpc_server_stream_demo", "examples/compiler_v1/41_grpc_server_stream_demo/App/Main.fh", "examples/expected_logs/compiler_v1_grpc_server_stream_demo.expected.log"),
+
+    SupportedExample("42_go_ffi_demo", "examples/compiler_v1/42_go_ffi_demo/App/Main.fh", "examples/expected_logs/compiler_v1_go_ffi_demo.expected.log"),
 
     SupportedExample("old_BigNumbers", "examples/BigNumbers.fh", "examples/expected_logs/BigNumbers.expected.log"),
     SupportedExample("old_ChudnovskyFeynmanPoint", "examples/ChudnovskyFeynmanPoint.fh", "examples/expected_logs/ChudnovskyFeynmanPoint.expected.log"),
@@ -180,10 +194,40 @@ def run_unsupported(example: UnsupportedExample) -> bool:
     return False
 
 
+def collect_executable_blank_imports(data: dict, project_out: Path) -> list[str]:
+    """Collect blank (side-effect) import paths from the generated executable wrapper.
+
+    The executable wrapper (package main) blank-imports glue packages whose init()
+    registers runtime dispatchers/registrars (e.g. gRPC). The in-process runtime-log
+    test must perform the same blank imports so those init() functions run.
+    """
+    blank_imports: list[str] = []
+    for f in [*data.get("files", []), *data.get("build_files", []), *data.get("extra_files", [])]:
+        content = f.get("content")
+        if content is None:
+            content = (project_out / f["output_path"]).read_text(encoding="utf-8")
+        if "package main" not in content or "func main()" not in content:
+            continue
+        for line in content.splitlines():
+            stripped = line.strip()
+            if stripped.startswith('_ "') and stripped.endswith('"'):
+                path = stripped[3:-1]
+                if path not in blank_imports:
+                    blank_imports.append(path)
+    return blank_imports
+
+
 def run_runtime_log_check(example: SupportedExample, project_out: Path, json_path: Path) -> bool:
     assert example.expected_log is not None
     data = json.loads(json_path.read_text(encoding="utf-8"))
-    entry_file = data["files"][0]
+    entry_file = next(
+        (
+            f
+            for f in data["files"]
+            if "func Main(" in (project_out / f["output_path"]).read_text(encoding="utf-8")
+        ),
+        data["files"][0],
+    )
     go_file = project_out / entry_file["output_path"]
     package_dir = go_file.parent
     package_name = entry_file["result"]["package"]
@@ -193,7 +237,11 @@ def run_runtime_log_check(example: SupportedExample, project_out: Path, json_pat
     test_path = package_dir / "freehold_runtime_log_test.go"
     main_content = go_file.read_text(encoding="utf-8")
     is_async = "func Main(ctx context.Context)" in main_content
-    test_path.write_text(runtime_log_test_source(package_name, log_name, is_async), encoding="utf-8")
+    blank_imports = collect_executable_blank_imports(data, project_out)
+    test_path.write_text(
+        runtime_log_test_source(package_name, log_name, is_async, blank_imports),
+        encoding="utf-8",
+    )
 
     if run_with_optional_go_backend(example, project_out, ["go", "test", "./...", "-run", "TestFreeholdMainRuntimeLog", "-count=1"]).returncode != 0:
         print(f"[FAIL] runtime log test failed: {example.name}")
@@ -234,15 +282,16 @@ def run_executable_log_check(example: SupportedExample, project_out: Path, expec
     return False
 
 
-def runtime_log_test_source(package_name: str, log_name: str, is_async: bool = False) -> str:
+def runtime_log_test_source(package_name: str, log_name: str, is_async: bool = False, blank_imports: list[str] | None = None) -> str:
     ctx_import = '\n\t"context"' if is_async else ''
     main_call = 'Main(context.Background())' if is_async else 'Main()'
+    blank_lines = ''.join(f'\n\t_ "{path}"' for path in (blank_imports or []))
     return f'''package {package_name}
 
 import (
     "bytes"
     "os"
-    "testing"{ctx_import}
+    "testing"{ctx_import}{blank_lines}
 )
 
 func TestFreeholdMainRuntimeLog(t *testing.T) {{

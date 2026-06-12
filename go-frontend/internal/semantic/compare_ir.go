@@ -404,6 +404,12 @@ type binaryExprIR struct {
 	Right any    `json:"right"`
 }
 
+type isExprIR struct {
+	Kind  string `json:"kind"`
+	Left  any    `json:"left"`
+	Right string `json:"right"`
+}
+
 type nullExprIR struct {
 	Kind string `json:"kind"`
 }
@@ -835,6 +841,11 @@ func exportExpr(expr ast.Expr) any {
 	case ast.UnaryExpr:
 		return unaryExprIR{Kind: "UnaryExpr", Op: value.Op, Value: exportExpr(value.Value)}
 	case ast.BinaryExpr:
+		if value.Op == "is" {
+			if right, ok := value.Right.(ast.IdentifierExpr); ok {
+				return isExprIR{Kind: "IsExpr", Left: exportExpr(value.Left), Right: right.Name}
+			}
+		}
 		return binaryExprIR{Kind: "BinaryExpr", Op: value.Op, Left: exportExpr(value.Left), Right: exportExpr(value.Right)}
 	case ast.OkExpr:
 		return exportExpr(value.Value)
@@ -992,7 +1003,7 @@ func buildModuleEnv(project *Project, moduleName string, cache map[string]module
 	env := moduleEnv{
 		Types:    map[string]typeDefIR{},
 		Records:  map[string]recordDefIR{},
-		Errors:   map[string]bool{},
+		Errors:   map[string]bool{"SchemaError": true},
 		Routines: map[string]routineDecl{},
 		Services: map[string]serviceDecl{},
 	}

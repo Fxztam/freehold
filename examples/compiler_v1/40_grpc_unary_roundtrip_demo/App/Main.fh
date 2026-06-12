@@ -1,0 +1,90 @@
+module App.Main
+
+import Std.IO
+import Std.Connect.Common exposing Endpoint, ConnectError, new_endpoint
+import Std.Connect.Grpc exposing Client, ServerHandle, Call, UnaryReply, new_client, serve, accept_call, respond, unary, stop_server
+import App.Contract exposing UserRequest, UserResponse
+
+async function handle_one(server: ServerHandle) returns Integer
+is
+    let accepted: Result<Call, ConnectError> = await accept_call(server)
+    if accepted.ok = false then
+        call Std.IO.log("gRPC server failed to accept call")
+        return 1
+    end if
+    let pending: Call = accepted.value
+    let parsed: Result<UserRequest, SchemaError> = Json.parse<UserRequest>(pending.payload)
+    if parsed.ok = false then
+        call Std.IO.log("gRPC server received malformed request")
+        return 1
+    end if
+    let reply: UserResponse = UserResponse { name: "Ada" }
+    let sent: Boolean = await respond(pending, Json.stringify(reply))
+    if sent then
+        return 0
+    else
+        return 1
+    end if
+end handle_one
+
+async function server_worker(server: ServerHandle) returns Integer
+is
+    let status: Integer = await handle_one(server)
+    return status
+end server_worker
+
+async function client_worker(client: Client) returns Integer
+is
+    let request: UserRequest = UserRequest { id: 42 }
+    let call_result: Result<UnaryReply, ConnectError> = await unary(client, "GetUser", Json.stringify(request))
+    if call_result.ok = false then
+        call Std.IO.log("gRPC unary GetUser failed")
+        return 1
+    end if
+    let response: Result<UserResponse, SchemaError> = Json.parse<UserResponse>(call_result.value.payload)
+    if response.ok = false or response.value.name != "Ada" then
+        call Std.IO.log("gRPC unary GetUser returned invalid response")
+        return 1
+    end if
+    call Std.IO.log("gRPC unary GetUser returned Ada")
+    return 0
+end client_worker
+
+async function run_demo() returns Integer
+is
+    let endpoint: Endpoint = new_endpoint("grpc", "127.0.0.1", 50551, "")
+    let serve_result: Result<ServerHandle, ConnectError> = serve(endpoint)
+    if serve_result.ok = false then
+        call Std.IO.log("gRPC server failed to bind")
+        return 1
+    end if
+    let server: ServerHandle = serve_result.value
+    let client: Client = new_client(endpoint)
+
+    scope demo_scope do
+        spawn
+            let server_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(server_worker(server))
+            let client_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_worker(client))
+        join
+            let server_status: Integer = await demo_scope.join<Integer>(server_handle)
+            let client_status: Integer = await demo_scope.join<Integer>(client_handle)
+            call stop_server(server)
+            if client_status = 0 and server_status = 0 then
+                call Std.IO.log("Native gRPC server handled unary GetUser")
+            end if
+        result
+            return server_status + client_status
+    end scope
+end run_demo
+
+async procedure main()
+is
+    let status: Integer = await run_demo()
+    if status = 0 then
+        call Std.IO.log("Native gRPC unary demo finished successfully")
+    else
+        call Std.IO.log("Native gRPC unary demo finished with failure")
+    end if
+end main
+
+end App.Main

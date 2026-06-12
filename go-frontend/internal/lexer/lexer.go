@@ -199,6 +199,14 @@ func (l *Lexer) Next() token.Token {
 			Pos:    start,
 		}
 
+	case '@':
+		l.advance()
+		return token.Token{
+			Kind:   token.At,
+			Lexeme: "@",
+			Pos:    start,
+		}
+
 	case '<':
 		if l.peekNext() == '=' {
 			l.advance()

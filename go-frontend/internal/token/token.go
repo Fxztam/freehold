@@ -73,6 +73,7 @@ const (
 	Greater      Kind = ">"
 	GreaterEqual Kind = ">="
 	Arrow        Kind = "=>"
+	At           Kind = "@"
 	Dot          Kind = "."
 	DotDot       Kind = ".."
 	Colon        Kind = ":"

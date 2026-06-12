@@ -1,0 +1,19 @@
+module WebSocketJsonBroadcastWrongPayloadNeg
+
+type ChatPayload is record
+    room: String
+    text: String
+end record
+
+type ChatMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: ChatPayload
+end record
+
+procedure main()
+is
+    let parsed: Result<ChatMessage, SchemaError> = Json.parse<ChatMessage>("{\"kind\":\"error\",\"clientId\":\"server\",\"payload\":{\"code\":\"ROOM_CLOSED\",\"message\":\"room closed\"}}")
+end main
+
+end WebSocketJsonBroadcastWrongPayloadNeg

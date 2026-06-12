@@ -1,0 +1,62 @@
+module WebSocketRegistryRoomTimeoutPos
+
+type ChatPayload is record
+    room: String
+    text: String
+end record
+
+type ChatMessage is record
+    kind: String
+    client_id: String @json("clientId")
+    payload: ChatPayload
+end record
+
+type BroadcastResult is record
+    queued_a: Boolean
+    queued_b: Boolean
+end record
+
+type ClientSlot is record
+    client_id: String
+    room: String
+    outgoing: Sender<String>
+end record
+
+type ConnectionRegistry is record
+    client_a: ClientSlot
+    client_b: ClientSlot
+end record
+
+async function broadcast_to_room(registry: ConnectionRegistry, room: String, text: String) returns BroadcastResult
+is
+    let queued_a: Boolean = await channel_try_send<String>(registry.client_a.outgoing, text)
+    let queued_b: Boolean = await channel_try_send<String>(registry.client_b.outgoing, text)
+    return BroadcastResult { queued_a: queued_a, queued_b: queued_b }
+end broadcast_to_room
+
+async function run_registry_broadcast() returns Boolean
+is
+    let channel_a: Channel<String> = channel<String>(1)
+    let channel_b: Channel<String> = channel<String>(1)
+    let sender_a: Sender<String> = channel_sender<String>(channel_a)
+    let sender_b: Sender<String> = channel_sender<String>(channel_b)
+    let slot_a: ClientSlot = ClientSlot { client_id: "client-a", room: "main", outgoing: sender_a }
+    let slot_b: ClientSlot = ClientSlot { client_id: "client-b", room: "main", outgoing: sender_b }
+    let registry: ConnectionRegistry = ConnectionRegistry { client_a: slot_a, client_b: slot_b }
+    let text: String = "{\"kind\":\"chat\",\"clientId\":\"client-a\",\"payload\":{\"room\":\"main\",\"text\":\"hello broadcast\"}}"
+    let parsed: Result<ChatMessage, SchemaError> = Json.parse<ChatMessage>(text)
+    check parsed.ok
+    let payload: String = Json.stringify(parsed.value)
+
+    scope broadcast_scope do
+        spawn
+            call broadcast_scope.timeout(500)
+            let handle: JoinHandle<BroadcastResult> = broadcast_scope.spawn<BroadcastResult>(broadcast_to_room(registry, parsed.value.payload.room, payload))
+        join
+            let delivered: BroadcastResult = await broadcast_scope.join<BroadcastResult>(handle)
+        result
+            return delivered.queued_a and delivered.queued_b
+    end scope
+end run_registry_broadcast
+
+end WebSocketRegistryRoomTimeoutPos

@@ -19,6 +19,15 @@ is
     let bad_text: String = "{\"name\":\"Ada\",\"age\":\"old\",\"active\":true}"
     let bad: Result<Person, SchemaError> = Json.parse<Person>(bad_text)
     check bad.ok = false
+    let duplicate_key_text: String = "{\"name\":\"Ada\",\"name\":\"Grace\",\"age\":37,\"active\":true}"
+    let duplicate_key: Result<Person, SchemaError> = Json.parse<Person>(duplicate_key_text)
+    check duplicate_key.ok = false
+    let null_text: String = "{\"name\":null,\"age\":37,\"active\":true}"
+    let null_field: Result<Person, SchemaError> = Json.parse<Person>(null_text)
+    check null_field.ok = false
+    let overflow_text: String = "{\"name\":\"Ada\",\"age\":9223372036854775808,\"active\":true}"
+    let overflow: Result<Person, SchemaError> = Json.parse<Person>(overflow_text)
+    check overflow.ok = false
 end main
 
 end JsonParseRecordRoundtrip

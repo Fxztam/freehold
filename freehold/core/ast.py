@@ -134,12 +134,19 @@ class DependsSpec:
     sources: list[str]
     pos: SourcePos
 
+@dataclass(frozen=True)
+class FfiBinding:
+    import_path: str
+    symbol: str
+    pos: SourcePos
+
 @dataclass
 class RoutineDecl:
     kind: str; name: str; params: list[Param]; return_type: TypeRef | None
     requires: list[Any]; aborts: list[Any]; ensures: list[Any]; body: list[Any]; pos: SourcePos; type_params: list[str] | None = None; is_async: bool = False
     global_specs: list[GlobalSpec] | None = None
     depends_specs: list[DependsSpec] | None = None
+    ffi_binding: FfiBinding | None = None
 
 @dataclass
 class AbortClause:

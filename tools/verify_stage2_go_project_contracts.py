@@ -61,6 +61,17 @@ def load_manifest(path: Path) -> dict[str, Any]:
     return manifest
 
 
+def project_entry_module_name(files: list[Any], entry_file: Path) -> str | None:
+    entry_path = entry_file.resolve()
+    for file in files:
+        source_path = Path(file.source_file)
+        if not source_path.is_absolute():
+            source_path = (Path.cwd() / source_path).resolve()
+        if source_path.resolve() == entry_path:
+            return file.module_name
+    return files[0].module_name if files else None
+
+
 def verify_contract(contract: dict[str, Any]) -> dict[str, Any]:
     name = contract.get("name", "<unnamed>")
     source_file = contract.get("source_file")
@@ -72,7 +83,8 @@ def verify_contract(contract: dict[str, Any]) -> dict[str, Any]:
     source_path = REPO_ROOT / source_file
     try:
         files = generate_go_project(source_path)
-        build_files = generate_go_project_build_files(files)
+        entry_module_name = project_entry_module_name(files, source_path)
+        build_files = generate_go_project_build_files(files, entry_module_name=entry_module_name)
         extra_files = generate_go_project_extra_files(files)
     except Exception as exc:
         failures.append(f"generation failed: {type(exc).__name__}: {exc}")

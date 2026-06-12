@@ -1,0 +1,22 @@
+module JsonRecordRangeSubtypeNeg
+
+type ZipCode is Integer range 10000..99999
+
+type Address is record
+    city: String
+    zip: ZipCode
+end record
+
+type Person is record
+    first_name: String @json("firstName")
+    address: Address
+    tags: Array<String, 2>
+    active: Boolean
+end record
+
+procedure main()
+is
+    let parsed: Result<Person, SchemaError> = Json.parse<Person>("{\"firstName\":\"Ada\",\"address\":{\"city\":\"London\",\"zip\":999},\"tags\":[\"math\",\"code\"],\"active\":true}")
+end main
+
+end JsonRecordRangeSubtypeNeg

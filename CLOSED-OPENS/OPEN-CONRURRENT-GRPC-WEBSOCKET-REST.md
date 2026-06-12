@@ -1,10 +1,10 @@
 # Open: Concurrent Scopes fuer gRPC, WebSocket und REST
 
-Stand: 2026-05-24
+Stand: 2026-06-11
 
-Status: V1 Architekturentscheidung & WebSocket-Runtime-Implementierung abgeschlossen und verifiziert
+Status: V1 Architekturentscheidung, WebSocket-Runtime-Implementierung, HTTP/REST-Typoberflaeche, native HTTP-Client-Smokes, native HTTP-Server-Handler-Runtime, HTTP-Middleware-Onion, native HTTP-Streaming-Runtime und native SSE-Runtime abgeschlossen und verifiziert
 
-Dieses Dokument haelt die Entscheidung fest, wie Freehold Scopes fuer gRPC, WebSocket, REST, SSE und aehnliche Schnittstellen modellieren soll. V1 ist vollstaendig abgeschlossen: Die Go-native WebSocket-Runtime-Implementierung ist integriert und ueber das Test-Szenario `27_websocket_demo` verifiziert. Konkrete REST/SSE-Libs und vollstaendige gRPC-Bidirectional-Streaming-Bindings bleiben fuer V2/V3 geparkt.
+Dieses Dokument haelt die Entscheidung fest, wie Freehold Scopes fuer gRPC, WebSocket, REST, SSE und aehnliche Schnittstellen modellieren soll. V1 ist fuer die gemeinsame Scope-Architektur, die Go-native WebSocket-Runtime, eine HTTP/REST-Typoberflaeche und die native HTTP-Client-Runtime abgeschlossen. Die WebSocket-Smokes reichen inzwischen von einfacher Verbindung ueber Multi-Client und Go-Backend bis zu typed JSON Broadcast, Runtime-Schemafehlern und Room/Topic-Broadcast. HTTP/REST ist als typed Request-/Response-/Resource-Slice vorhanden; `Std.Connect.Http.send`, `get` und `post_json` laufen im Go-Codegen gegen `net/http` und werden in Beispiel 35 gegen ein Go-Backend verifiziert. Die native HTTP-Server-Runtime (`serve`, `accept_request`, `respond`, `stop_server`) wird in Beispiel 36 verifiziert, in dem ein Freehold-Server GET-/POST-Requests des nativen Clients im selben Prozess bedient. Eine datengetriebene Middleware-Onion (`MiddlewareContext`, `context_with_trace`, `context_short_circuit`, `with_trace_header`) wird in Beispiel 37 verifiziert. Natives HTTP-Streaming (`respond_stream`/`open_stream`) liefert chunked Bodies (HTTP/1.1 `Transfer-Encoding: chunked`) ueber Freehold-Channels und wird in Beispiel 38 verifiziert. Native SSE (`respond_sse`/`open_sse`) liefert `text/event-stream`-Events (`event:`/`data:`-Frames) ueber einen `Channel<SseEvent>` und wird in Beispiel 39 verifiziert.
 
 ## Kurzentscheidung
 
@@ -122,7 +122,7 @@ Beispiel gRPC:
 module Grpc
 
 type RequestScope is record
-    scope: Concurrent.Scope
+    runtime_scope: Concurrent.Scope
     metadata: Metadata
     peer: Peer
     deadline: Deadline
@@ -136,7 +136,7 @@ Beispiel HTTP/REST:
 module Http
 
 type RequestScope is record
-    scope: Concurrent.Scope
+    runtime_scope: Concurrent.Scope
     request: Request
     response: ResponseBuilder
     deadline: Deadline
@@ -146,23 +146,27 @@ end record
 Beispiel WebSocket:
 
 ```fh
-module WebSocket
+module Std.Connect.WebSocket
 
 type ConnectionScope is record
-    scope: Concurrent.Scope
+    runtime_scope: Concurrent.Scope
     socket: Connection
     incoming: Receiver<ClientMessage>
     outgoing: Sender<ServerMessage>
 end record
 
 type MessageScope is record
-    scope: Concurrent.Scope
+    runtime_scope: Concurrent.Scope
     connection: ConnectionScope
     message_id: String
 end record
 ```
 
 Dadurch bekommen Programme sprechende fachliche Namen, waehrend der Verifier nur `Concurrent.Scope` und `JoinHandle<T>` verstehen muss.
+
+Aktualisierung 2026-06-11: `Std.Connect.WebSocket` ist jetzt als echter Modulpfad umgesetzt. Die WebSocket-Beispiele 27/28/29/30 importieren `Std.Connect.WebSocket` direkt; der Go-Codegen behandelt diesen Modulnamen als native WebSocket-Runtime und erzeugt den Paketpfad `std/connect/websocket`. Die Oberflaeche umfasst `ConnectionScope`, `MessageScope`, `TextMessage`, `BinaryMessage`, `FramePolicy`, `CloseStatus`, `new_connection_scope`, `new_message_scope`, `default_frame_policy`, `receive_text`, `send_text`, `try_send_text` und `close_with_status`. Das Scope-Feld heisst `runtime_scope`, weil `scope` ein reserviertes Freehold-Wort ist. Die Factory-Namen beginnen mit `new_`, damit ihr Go-Exportname nicht mit den Typnamen kollidiert. Diese echte-Modulpfad-Policy gilt auch fuer die spaeteren `Std.Connect.*`- und `Std.*`-Module; Alias-Tabellen sind nicht die Standardstrategie.
+
+Aktualisierung HTTP/REST 2026-06-11: `Std.Connect.Common`, `Std.Connect.Http` und `Std.Connect.Rest` sind als echte Modulpfade angelegt. HTTP bringt `Request`, `Response`, `ResponseBuilder`, `RequestScope`, `Client`, `Server`, Text-/JSON-Builder sowie die Go-native Client-Runtime fuer `send`, `get` und `post_json` mit. REST baut darauf mit `ResourceRoute`, `ResourceRequest`, `ResourceResponse`, `ProblemDetails` und JSON-Mapping auf; `new_resource_scope` delegiert auf `Std.Connect.Http.new_request_scope`, REST hat also keine eigene Scope-Mechanik. `34_http_rest_contract_demo` verifiziert GET/POST, typed JSON-Payloads, `ProblemDetails` und den HTTP-RequestScope ohne Netzwerk. `35_http_client_go_backend_demo` verifiziert echte GET-/POST-/404-Roundtrips gegen ein kleines Go-Backend auf Port 8104. `36_http_server_demo` verifiziert die native HTTP-Server-Runtime (`serve`/`accept_request`/`respond`/`stop_server`), die einen Freehold-Server gegen den nativen Client auf Port 8106 bedient. `37_http_middleware_demo` verifiziert eine datengetriebene Middleware-Onion (Logging + Auth) auf dem Server: ein autorisierter Request durchlaeuft alle Schichten inkl. Handler, ein anonymer Request wird von der Auth-Schicht mit 401 kurzgeschlossen (Port 8107). `38_http_streaming_demo` verifiziert natives HTTP-Streaming: der Server sendet drei Chunks ueber einen `Channel<String>` und `respond_stream` als HTTP/1.1 chunked Body, der native Client liest sie via `open_stream` ueber einen `Receiver<String>` wieder ein (Port 8108). `39_http_sse_demo` verifiziert native SSE: der Server sendet drei `SseEvent`-Werte ueber einen `Channel<SseEvent>` und `respond_sse` als `text/event-stream` (`event:`/`data:`-Frames), der native Client liest sie via `open_sse` ueber einen `Receiver<SseEvent>` wieder ein (Port 8109).
 
 ## Scope-Namen und Lebensraeume
 
@@ -354,7 +358,7 @@ Schnittstellen-Libs liefern benannte Scope-Kontexte.
 Der Verifier prueft nur das gemeinsame Scope-Modell.
 ```
 
-## V1 WebSocket Runtime-Implementierung (Erledigt 2026-06-03)
+## V1 WebSocket Runtime-Implementierung (Erledigt 2026-06-03, erweitert 2026-06-11)
 
 Die Go-native WebSocket-Laufzeitumgebung wurde erfolgreich implementiert und in den Compiler integriert. 
 
@@ -365,8 +369,45 @@ Die Go-native WebSocket-Laufzeitumgebung wurde erfolgreich implementiert und in 
 2. **WebSocket-Client & Server**:
    * Der Client-Handshake (`Connect`) wurde um eine automatische Fallback-Pfadkorrektur erweitert (leere URL-Pfade werden auf `"/"` gesetzt), um RFC-Konformität zu gewährleisten.
    * Der Server-Handshake (`Accept`) führt das Sec-WebSocket-Accept Hashing korrekt durch und startet asynchrone Read/Write-Loops zur bidirektionalen Kommunikation.
-3. **Integrationstest**:
-   * Der Integrationstest `27_websocket_demo` wurde erfolgreich verifiziert. Server- und Client-Routinen kommunizieren asynchron über den kooperativen Scheduler.
+3. **Integrationstests**:
+     * `27_websocket_demo` verifiziert die einfache Client/Server-Kommunikation.
+     * `28_websocket_multi_client_demo` verifiziert mehrere Clients im selben Runtime-Szenario.
+     * `29_websocket_go_backend_demo` verifiziert die Freehold-Seite gegen einen kleinen Go-WebSocket-Backend-Prozess.
+     * `30_websocket_json_broadcast_demo` verifiziert typed JSON Broadcast mit `Json.parse<Record>`, `Json.stringify`, `@json("clientId")`, Keepalive Ping/Pong, Delivery-Scope-Timeout, Registry/Room-Zuordnung, Backpressure via `channel_try_send`, typed ErrorMessage und Text-JSON-Frame-Policy.
+     * `32_websocket_json_broadcast_schema_neg` verifiziert runtime-invalid dynamische JSON-/Schema-Faelle als `Result`-Fehler statt Panics.
+     * `33_websocket_room_broadcast_demo` verifiziert, dass Broadcast nur an Clients des Ziel-Rooms/Topics queued wird.
+
+### WebSocket JSON Message Contract
+
+Die aktuelle V1-Demo-Bindung arbeitet auf kompletten Textframes, deren Payload JSON-Strings sind. Fragmentierte und binaere Frames gehoeren unterhalb dieser Binding-Schicht zur Runtime-/Adapter-Policy und werden in der Demo als nicht unterstuetzt modelliert.
+
+```text
+Application payload: complete text frame containing JSON text.
+Typed envelope: record with kind, clientId and payload fields.
+Validation: Json.parse<RecordType>(text) returns Result<RecordType, SchemaError>.
+Serialization: Json.stringify(record_value) emits deterministic compact JSON.
+Frame policy: text JSON only; binary and fragmented frames are rejected or closed by lower-level adapter policy.
+```
+
+### Broadcast, Rooms und Backpressure
+
+Der aktuelle WebSocket-Slice nutzt das allgemeine Concurrent-Modell weiterhin unveraendert. Fachliche WebSocket-Konzepte werden als normale Records und Channels modelliert:
+
+```text
+ClientSession
+    client_id, room, connection, outgoing sender
+
+ConnectionRegistry
+    registrierte Sessions fuer Broadcast-Entscheidungen
+
+Room/Topic Broadcast
+    sendet nur an Sessions, deren room/topic zum Ziel passt
+
+Backpressure
+    channel_try_send<T> liefert Boolean und erlaubt Drop-/Close-Policy ohne blockierenden Send
+```
+
+Die Beispiele halten die deterministischen Log-Checks bewusst auf der fachlichen Ebene: Registry-Zuordnung, Room-Erreichbarkeit, Backpressure-Drop, Close-Status und erfolgreiche typed JSON Roundtrips.
 
 Damit ist die WebSocket-Kopplung für V1 voll funktionsfähig und vollständig durch das Test-Harness abgedeckt.
 

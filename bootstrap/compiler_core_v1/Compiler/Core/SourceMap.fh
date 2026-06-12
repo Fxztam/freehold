@@ -1,0 +1,112 @@
+module Compiler.Core.SourceMap
+
+import Compiler.Core.Token exposing SourceSpan
+
+type SourceMapSpan is record
+    source_name: String
+    line: Integer
+    column: Integer
+    line_text: String
+end record
+
+type SourceMapNode is record
+    id: String
+    parent_id: String
+    role: String
+    node_index: Integer
+    kind: String
+    name: String
+    span: SourceMapSpan
+    child_count: Integer
+end record
+
+type SourceMapModule is record
+    name: String
+    source_file: String
+    source_sha256: String
+    line_count: Integer
+    root: SourceMapNode
+end record
+
+type SourceMapDocument is record
+    schema: String
+    language_version: String
+    purpose: String
+    entry_module: String
+    module_count: Integer
+    root_module: SourceMapModule
+end record
+
+function make_source_map_span(span: SourceSpan, line_text: String) returns SourceMapSpan
+requires span.start_line >= 1, span.start_column >= 1
+ensures result.source_name = span.source_name, result.line = span.start_line, result.column = span.start_column
+is
+    return SourceMapSpan {
+        source_name: span.source_name,
+        line: span.start_line,
+        column: span.start_column,
+        line_text: line_text
+    }
+end make_source_map_span
+
+function make_source_map_node(module_name: String, path: String, parent_id: String, role: String, node_index: Integer, kind: String, name: String, span: SourceMapSpan, child_count: Integer) returns SourceMapNode
+requires child_count >= 0, node_index >= 0
+ensures result.id = String.concat(String.concat(module_name, ":"), path), result.kind = kind, result.name = name
+is
+    return SourceMapNode {
+        id: String.concat(String.concat(module_name, ":"), path),
+        parent_id: parent_id,
+        role: role,
+        node_index: node_index,
+        kind: kind,
+        name: name,
+        span: span,
+        child_count: child_count
+    }
+end make_source_map_node
+
+function make_source_map_module(name: String, source_file: String, source_sha256: String, line_count: Integer, root: SourceMapNode) returns SourceMapModule
+requires line_count >= 0
+ensures result.name = name, result.source_file = source_file, result.root.id = root.id
+is
+    return SourceMapModule {
+        name: name,
+        source_file: source_file,
+        source_sha256: source_sha256,
+        line_count: line_count,
+        root: root
+    }
+end make_source_map_module
+
+function make_source_map_document(entry_module: String, root_module: SourceMapModule) returns SourceMapDocument
+ensures result.schema = "fh-source-map-v0", result.entry_module = entry_module, result.root_module.name = root_module.name
+is
+    return SourceMapDocument {
+        schema: "fh-source-map-v0",
+        language_version: "freehold-v1",
+        purpose: "source reconstruction sidecar for FH-IR",
+        entry_module: entry_module,
+        module_count: 1,
+        root_module: root_module
+    }
+end make_source_map_document
+
+function source_map_node_summary(node: SourceMapNode) returns String
+ensures String.instr(result, node.id) = 0
+is
+    return String.template("${id}:${kind}:${name}@${source}:${line}:${column}:children=${children}", id: node.id, kind: node.kind, name: node.name, source: node.span.source_name, line: node.span.line, column: node.span.column, children: node.child_count)
+end source_map_node_summary
+
+function source_map_module_summary(module_map: SourceMapModule) returns String
+ensures String.instr(result, module_map.name) = 0
+is
+    return String.template("${name}:${source}:lines=${lines}:root=${root}", name: module_map.name, source: module_map.source_file, lines: module_map.line_count, root: module_map.root.id)
+end source_map_module_summary
+
+function source_map_document_summary(document: SourceMapDocument) returns String
+ensures String.instr(result, document.schema) = 0
+is
+    return String.template("${schema}:${lang}:entry=${entry}:modules=${count}", schema: document.schema, lang: document.language_version, entry: document.entry_module, count: document.module_count)
+end source_map_document_summary
+
+end Compiler.Core.SourceMap
