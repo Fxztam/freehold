@@ -1,0 +1,727 @@
+module Compiler.Core.FullAst
+
+-- ============================================================
+-- Atomic contract/param nodes
+-- ============================================================
+
+type FullParamNode is record
+    name: String
+    type_ref: String
+end record
+
+type FullFieldNode is record
+    name: String
+    type_ref: String
+    json_name: String
+end record
+
+type FullAbortClauseNode is record
+    error_name: String
+end record
+
+-- depends target => (src1, src2, ...)
+-- sources is comma-separated: "src1,src2,src3"
+type FullDependsNode is record
+    target: String
+    sources: String
+end record
+
+-- global Input|Output|In_Out varname
+type FullGlobalNode is record
+    name: String
+    mode: String
+end record
+
+-- ============================================================
+-- Declaration nodes
+-- ============================================================
+
+-- import Module.Name exposing X, Y, Z
+-- exposed_names is comma-separated: "X,Y,Z"
+type FullImportDecl is record
+    module_name: String
+    exposed_names: String
+end record
+
+-- type T is Base range min..max  OR  type T is Base (alias)
+type FullTypeDecl is record
+    name: String
+    base_type: String
+    min_value: String
+    max_value: String
+    is_range: Boolean
+end record
+
+-- type Rec is record ... end record
+type FullRecordDecl is record
+    name: String
+    fields: Array<FullFieldNode, 16>
+    field_count: Integer
+end record
+
+-- error Foo
+type FullErrorDecl is record
+    name: String
+end record
+
+-- Full routine declaration — body is parsed but not stored
+type FullRoutineDecl is record
+    name: String
+    kind: String           -- "function" | "procedure"
+    is_async: Boolean
+    params: Array<FullParamNode, 8>
+    param_count: Integer
+    return_type: String
+    has_requires: Boolean
+    has_ensures: Boolean
+    abort_clauses: Array<FullAbortClauseNode, 8>
+    aborts_count: Integer
+    depends_specs: Array<FullDependsNode, 8>
+    depends_count: Integer
+    globals_specs: Array<FullGlobalNode, 8>
+    globals_count: Integer
+end record
+
+-- Complete module — all top-level declarations
+type FullModuleDecl is record
+    module_name: String
+    imports: Array<FullImportDecl, 16>
+    import_count: Integer
+    type_decls: Array<FullTypeDecl, 16>
+    type_count: Integer
+    record_decls: Array<FullRecordDecl, 16>
+    record_count: Integer
+    error_decls: Array<FullErrorDecl, 16>
+    error_count: Integer
+    routines: Array<FullRoutineDecl, 32>
+    routine_count: Integer
+end record
+
+-- Parse result wrapper
+type FullParseResult is record
+    is_ok: Boolean
+    module_decl: FullModuleDecl
+    error_message: String
+end record
+
+-- ============================================================
+-- Empty constructors
+-- ============================================================
+
+function make_empty_full_param_node() returns FullParamNode
+ensures result.name = "", result.type_ref = ""
+is
+    return FullParamNode { name: "", type_ref: "" }
+end make_empty_full_param_node
+
+function make_empty_full_field_node() returns FullFieldNode
+ensures result.name = ""
+is
+    return FullFieldNode { name: "", type_ref: "", json_name: "" }
+end make_empty_full_field_node
+
+function make_empty_full_abort_clause_node() returns FullAbortClauseNode
+ensures result.error_name = ""
+is
+    return FullAbortClauseNode { error_name: "" }
+end make_empty_full_abort_clause_node
+
+function make_empty_full_depends_node() returns FullDependsNode
+ensures result.target = ""
+is
+    return FullDependsNode { target: "", sources: "" }
+end make_empty_full_depends_node
+
+function make_empty_full_global_node() returns FullGlobalNode
+ensures result.name = ""
+is
+    return FullGlobalNode { name: "", mode: "" }
+end make_empty_full_global_node
+
+function make_empty_full_import_decl() returns FullImportDecl
+ensures result.module_name = ""
+is
+    return FullImportDecl { module_name: "", exposed_names: "" }
+end make_empty_full_import_decl
+
+function make_empty_full_type_decl() returns FullTypeDecl
+ensures result.name = ""
+is
+    return FullTypeDecl { name: "", base_type: "", min_value: "", max_value: "", is_range: false }
+end make_empty_full_type_decl
+
+function make_empty_full_record_decl() returns FullRecordDecl
+ensures result.name = "", result.field_count = 0
+is
+    let f: FullFieldNode = make_empty_full_field_node()
+    return FullRecordDecl {
+        name: "",
+        fields: [f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f],
+        field_count: 0
+    }
+end make_empty_full_record_decl
+
+function make_empty_full_error_decl() returns FullErrorDecl
+ensures result.name = ""
+is
+    return FullErrorDecl { name: "" }
+end make_empty_full_error_decl
+
+function make_empty_full_routine_decl() returns FullRoutineDecl
+ensures result.name = "", result.param_count = 0
+is
+    let p: FullParamNode = make_empty_full_param_node()
+    let a: FullAbortClauseNode = make_empty_full_abort_clause_node()
+    let d: FullDependsNode = make_empty_full_depends_node()
+    let g: FullGlobalNode = make_empty_full_global_node()
+    return FullRoutineDecl {
+        name: "",
+        kind: "",
+        is_async: false,
+        params: [p, p, p, p, p, p, p, p],
+        param_count: 0,
+        return_type: "",
+        has_requires: false,
+        has_ensures: false,
+        abort_clauses: [a, a, a, a, a, a, a, a],
+        aborts_count: 0,
+        depends_specs: [d, d, d, d, d, d, d, d],
+        depends_count: 0,
+        globals_specs: [g, g, g, g, g, g, g, g],
+        globals_count: 0
+    }
+end make_empty_full_routine_decl
+
+function make_empty_full_module_decl() returns FullModuleDecl
+ensures result.module_name = "", result.import_count = 0, result.routine_count = 0
+is
+    let imp: FullImportDecl = make_empty_full_import_decl()
+    let td: FullTypeDecl = make_empty_full_type_decl()
+    let rd: FullRecordDecl = make_empty_full_record_decl()
+    let ed: FullErrorDecl = make_empty_full_error_decl()
+    let rt: FullRoutineDecl = make_empty_full_routine_decl()
+    return FullModuleDecl {
+        module_name: "",
+        imports: [imp, imp, imp, imp, imp, imp, imp, imp, imp, imp, imp, imp, imp, imp, imp, imp],
+        import_count: 0,
+        type_decls: [td, td, td, td, td, td, td, td, td, td, td, td, td, td, td, td],
+        type_count: 0,
+        record_decls: [rd, rd, rd, rd, rd, rd, rd, rd, rd, rd, rd, rd, rd, rd, rd, rd],
+        record_count: 0,
+        error_decls: [ed, ed, ed, ed, ed, ed, ed, ed, ed, ed, ed, ed, ed, ed, ed, ed],
+        error_count: 0,
+        routines: [rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt,
+                   rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt],
+        routine_count: 0
+    }
+end make_empty_full_module_decl
+
+-- ============================================================
+-- Functional array setters (unpack-update-repack pattern)
+-- ============================================================
+
+function set_full_field(arr: Array<FullFieldNode, 16>, idx: Integer, val: FullFieldNode) returns Array<FullFieldNode, 16>
+requires idx >= 0, idx < 16
+is
+    let i0: FullFieldNode = arr[0]
+    let i1: FullFieldNode = arr[1]
+    let i2: FullFieldNode = arr[2]
+    let i3: FullFieldNode = arr[3]
+    let i4: FullFieldNode = arr[4]
+    let i5: FullFieldNode = arr[5]
+    let i6: FullFieldNode = arr[6]
+    let i7: FullFieldNode = arr[7]
+    let i8: FullFieldNode = arr[8]
+    let i9: FullFieldNode = arr[9]
+    let i10: FullFieldNode = arr[10]
+    let i11: FullFieldNode = arr[11]
+    let i12: FullFieldNode = arr[12]
+    let i13: FullFieldNode = arr[13]
+    let i14: FullFieldNode = arr[14]
+    let i15: FullFieldNode = arr[15]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15]
+end set_full_field
+
+function set_full_param(arr: Array<FullParamNode, 8>, idx: Integer, val: FullParamNode) returns Array<FullParamNode, 8>
+requires idx >= 0, idx < 8
+is
+    let i0: FullParamNode = arr[0]
+    let i1: FullParamNode = arr[1]
+    let i2: FullParamNode = arr[2]
+    let i3: FullParamNode = arr[3]
+    let i4: FullParamNode = arr[4]
+    let i5: FullParamNode = arr[5]
+    let i6: FullParamNode = arr[6]
+    let i7: FullParamNode = arr[7]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7]
+end set_full_param
+
+function set_full_abort(arr: Array<FullAbortClauseNode, 8>, idx: Integer, val: FullAbortClauseNode) returns Array<FullAbortClauseNode, 8>
+requires idx >= 0, idx < 8
+is
+    let i0: FullAbortClauseNode = arr[0]
+    let i1: FullAbortClauseNode = arr[1]
+    let i2: FullAbortClauseNode = arr[2]
+    let i3: FullAbortClauseNode = arr[3]
+    let i4: FullAbortClauseNode = arr[4]
+    let i5: FullAbortClauseNode = arr[5]
+    let i6: FullAbortClauseNode = arr[6]
+    let i7: FullAbortClauseNode = arr[7]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7]
+end set_full_abort
+
+function set_full_depends(arr: Array<FullDependsNode, 8>, idx: Integer, val: FullDependsNode) returns Array<FullDependsNode, 8>
+requires idx >= 0, idx < 8
+is
+    let i0: FullDependsNode = arr[0]
+    let i1: FullDependsNode = arr[1]
+    let i2: FullDependsNode = arr[2]
+    let i3: FullDependsNode = arr[3]
+    let i4: FullDependsNode = arr[4]
+    let i5: FullDependsNode = arr[5]
+    let i6: FullDependsNode = arr[6]
+    let i7: FullDependsNode = arr[7]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7]
+end set_full_depends
+
+function set_full_global(arr: Array<FullGlobalNode, 8>, idx: Integer, val: FullGlobalNode) returns Array<FullGlobalNode, 8>
+requires idx >= 0, idx < 8
+is
+    let i0: FullGlobalNode = arr[0]
+    let i1: FullGlobalNode = arr[1]
+    let i2: FullGlobalNode = arr[2]
+    let i3: FullGlobalNode = arr[3]
+    let i4: FullGlobalNode = arr[4]
+    let i5: FullGlobalNode = arr[5]
+    let i6: FullGlobalNode = arr[6]
+    let i7: FullGlobalNode = arr[7]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7]
+end set_full_global
+
+function set_full_import(arr: Array<FullImportDecl, 16>, idx: Integer, val: FullImportDecl) returns Array<FullImportDecl, 16>
+requires idx >= 0, idx < 16
+is
+    let i0: FullImportDecl = arr[0]
+    let i1: FullImportDecl = arr[1]
+    let i2: FullImportDecl = arr[2]
+    let i3: FullImportDecl = arr[3]
+    let i4: FullImportDecl = arr[4]
+    let i5: FullImportDecl = arr[5]
+    let i6: FullImportDecl = arr[6]
+    let i7: FullImportDecl = arr[7]
+    let i8: FullImportDecl = arr[8]
+    let i9: FullImportDecl = arr[9]
+    let i10: FullImportDecl = arr[10]
+    let i11: FullImportDecl = arr[11]
+    let i12: FullImportDecl = arr[12]
+    let i13: FullImportDecl = arr[13]
+    let i14: FullImportDecl = arr[14]
+    let i15: FullImportDecl = arr[15]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15]
+end set_full_import
+
+function set_full_type_decl(arr: Array<FullTypeDecl, 16>, idx: Integer, val: FullTypeDecl) returns Array<FullTypeDecl, 16>
+requires idx >= 0, idx < 16
+is
+    let i0: FullTypeDecl = arr[0]
+    let i1: FullTypeDecl = arr[1]
+    let i2: FullTypeDecl = arr[2]
+    let i3: FullTypeDecl = arr[3]
+    let i4: FullTypeDecl = arr[4]
+    let i5: FullTypeDecl = arr[5]
+    let i6: FullTypeDecl = arr[6]
+    let i7: FullTypeDecl = arr[7]
+    let i8: FullTypeDecl = arr[8]
+    let i9: FullTypeDecl = arr[9]
+    let i10: FullTypeDecl = arr[10]
+    let i11: FullTypeDecl = arr[11]
+    let i12: FullTypeDecl = arr[12]
+    let i13: FullTypeDecl = arr[13]
+    let i14: FullTypeDecl = arr[14]
+    let i15: FullTypeDecl = arr[15]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15]
+end set_full_type_decl
+
+function set_full_record_decl(arr: Array<FullRecordDecl, 16>, idx: Integer, val: FullRecordDecl) returns Array<FullRecordDecl, 16>
+requires idx >= 0, idx < 16
+is
+    let i0: FullRecordDecl = arr[0]
+    let i1: FullRecordDecl = arr[1]
+    let i2: FullRecordDecl = arr[2]
+    let i3: FullRecordDecl = arr[3]
+    let i4: FullRecordDecl = arr[4]
+    let i5: FullRecordDecl = arr[5]
+    let i6: FullRecordDecl = arr[6]
+    let i7: FullRecordDecl = arr[7]
+    let i8: FullRecordDecl = arr[8]
+    let i9: FullRecordDecl = arr[9]
+    let i10: FullRecordDecl = arr[10]
+    let i11: FullRecordDecl = arr[11]
+    let i12: FullRecordDecl = arr[12]
+    let i13: FullRecordDecl = arr[13]
+    let i14: FullRecordDecl = arr[14]
+    let i15: FullRecordDecl = arr[15]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15]
+end set_full_record_decl
+
+function set_full_error_decl(arr: Array<FullErrorDecl, 16>, idx: Integer, val: FullErrorDecl) returns Array<FullErrorDecl, 16>
+requires idx >= 0, idx < 16
+is
+    let i0: FullErrorDecl = arr[0]
+    let i1: FullErrorDecl = arr[1]
+    let i2: FullErrorDecl = arr[2]
+    let i3: FullErrorDecl = arr[3]
+    let i4: FullErrorDecl = arr[4]
+    let i5: FullErrorDecl = arr[5]
+    let i6: FullErrorDecl = arr[6]
+    let i7: FullErrorDecl = arr[7]
+    let i8: FullErrorDecl = arr[8]
+    let i9: FullErrorDecl = arr[9]
+    let i10: FullErrorDecl = arr[10]
+    let i11: FullErrorDecl = arr[11]
+    let i12: FullErrorDecl = arr[12]
+    let i13: FullErrorDecl = arr[13]
+    let i14: FullErrorDecl = arr[14]
+    let i15: FullErrorDecl = arr[15]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15]
+end set_full_error_decl
+
+function set_full_routine(arr: Array<FullRoutineDecl, 32>, idx: Integer, val: FullRoutineDecl) returns Array<FullRoutineDecl, 32>
+requires idx >= 0, idx < 32
+is
+    let i0: FullRoutineDecl = arr[0]
+    let i1: FullRoutineDecl = arr[1]
+    let i2: FullRoutineDecl = arr[2]
+    let i3: FullRoutineDecl = arr[3]
+    let i4: FullRoutineDecl = arr[4]
+    let i5: FullRoutineDecl = arr[5]
+    let i6: FullRoutineDecl = arr[6]
+    let i7: FullRoutineDecl = arr[7]
+    let i8: FullRoutineDecl = arr[8]
+    let i9: FullRoutineDecl = arr[9]
+    let i10: FullRoutineDecl = arr[10]
+    let i11: FullRoutineDecl = arr[11]
+    let i12: FullRoutineDecl = arr[12]
+    let i13: FullRoutineDecl = arr[13]
+    let i14: FullRoutineDecl = arr[14]
+    let i15: FullRoutineDecl = arr[15]
+    let i16: FullRoutineDecl = arr[16]
+    let i17: FullRoutineDecl = arr[17]
+    let i18: FullRoutineDecl = arr[18]
+    let i19: FullRoutineDecl = arr[19]
+    let i20: FullRoutineDecl = arr[20]
+    let i21: FullRoutineDecl = arr[21]
+    let i22: FullRoutineDecl = arr[22]
+    let i23: FullRoutineDecl = arr[23]
+    let i24: FullRoutineDecl = arr[24]
+    let i25: FullRoutineDecl = arr[25]
+    let i26: FullRoutineDecl = arr[26]
+    let i27: FullRoutineDecl = arr[27]
+    let i28: FullRoutineDecl = arr[28]
+    let i29: FullRoutineDecl = arr[29]
+    let i30: FullRoutineDecl = arr[30]
+    let i31: FullRoutineDecl = arr[31]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    if idx = 16 then i16 := val end if
+    if idx = 17 then i17 := val end if
+    if idx = 18 then i18 := val end if
+    if idx = 19 then i19 := val end if
+    if idx = 20 then i20 := val end if
+    if idx = 21 then i21 := val end if
+    if idx = 22 then i22 := val end if
+    if idx = 23 then i23 := val end if
+    if idx = 24 then i24 := val end if
+    if idx = 25 then i25 := val end if
+    if idx = 26 then i26 := val end if
+    if idx = 27 then i27 := val end if
+    if idx = 28 then i28 := val end if
+    if idx = 29 then i29 := val end if
+    if idx = 30 then i30 := val end if
+    if idx = 31 then i31 := val end if
+    return [
+        i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15,
+        i16, i17, i18, i19, i20, i21, i22, i23, i24, i25, i26, i27, i28, i29, i30, i31
+    ]
+end set_full_routine
+
+-- ============================================================
+-- Module builder helpers — functional update of FullModuleDecl
+-- ============================================================
+
+function full_module_set_name(m: FullModuleDecl, name: String) returns FullModuleDecl
+is
+    return FullModuleDecl {
+        module_name: name,
+        imports: m.imports,
+        import_count: m.import_count,
+        type_decls: m.type_decls,
+        type_count: m.type_count,
+        record_decls: m.record_decls,
+        record_count: m.record_count,
+        error_decls: m.error_decls,
+        error_count: m.error_count,
+        routines: m.routines,
+        routine_count: m.routine_count
+    }
+end full_module_set_name
+
+function full_module_add_import(m: FullModuleDecl, imp: FullImportDecl) returns FullModuleDecl
+is
+    if m.import_count >= 16 then
+        return m
+    end if
+    return FullModuleDecl {
+        module_name: m.module_name,
+        imports: set_full_import(m.imports, m.import_count, imp),
+        import_count: m.import_count + 1,
+        type_decls: m.type_decls,
+        type_count: m.type_count,
+        record_decls: m.record_decls,
+        record_count: m.record_count,
+        error_decls: m.error_decls,
+        error_count: m.error_count,
+        routines: m.routines,
+        routine_count: m.routine_count
+    }
+end full_module_add_import
+
+function full_module_add_type_decl(m: FullModuleDecl, td: FullTypeDecl) returns FullModuleDecl
+is
+    if m.type_count >= 16 then
+        return m
+    end if
+    return FullModuleDecl {
+        module_name: m.module_name,
+        imports: m.imports,
+        import_count: m.import_count,
+        type_decls: set_full_type_decl(m.type_decls, m.type_count, td),
+        type_count: m.type_count + 1,
+        record_decls: m.record_decls,
+        record_count: m.record_count,
+        error_decls: m.error_decls,
+        error_count: m.error_count,
+        routines: m.routines,
+        routine_count: m.routine_count
+    }
+end full_module_add_type_decl
+
+function full_module_add_record_decl(m: FullModuleDecl, rd: FullRecordDecl) returns FullModuleDecl
+is
+    if m.record_count >= 16 then
+        return m
+    end if
+    return FullModuleDecl {
+        module_name: m.module_name,
+        imports: m.imports,
+        import_count: m.import_count,
+        type_decls: m.type_decls,
+        type_count: m.type_count,
+        record_decls: set_full_record_decl(m.record_decls, m.record_count, rd),
+        record_count: m.record_count + 1,
+        error_decls: m.error_decls,
+        error_count: m.error_count,
+        routines: m.routines,
+        routine_count: m.routine_count
+    }
+end full_module_add_record_decl
+
+function full_module_add_error_decl(m: FullModuleDecl, ed: FullErrorDecl) returns FullModuleDecl
+is
+    if m.error_count >= 16 then
+        return m
+    end if
+    return FullModuleDecl {
+        module_name: m.module_name,
+        imports: m.imports,
+        import_count: m.import_count,
+        type_decls: m.type_decls,
+        type_count: m.type_count,
+        record_decls: m.record_decls,
+        record_count: m.record_count,
+        error_decls: set_full_error_decl(m.error_decls, m.error_count, ed),
+        error_count: m.error_count + 1,
+        routines: m.routines,
+        routine_count: m.routine_count
+    }
+end full_module_add_error_decl
+
+function full_module_add_routine(m: FullModuleDecl, rt: FullRoutineDecl) returns FullModuleDecl
+is
+    if m.routine_count >= 32 then
+        return m
+    end if
+    return FullModuleDecl {
+        module_name: m.module_name,
+        imports: m.imports,
+        import_count: m.import_count,
+        type_decls: m.type_decls,
+        type_count: m.type_count,
+        record_decls: m.record_decls,
+        record_count: m.record_count,
+        error_decls: m.error_decls,
+        error_count: m.error_count,
+        routines: set_full_routine(m.routines, m.routine_count, rt),
+        routine_count: m.routine_count + 1
+    }
+end full_module_add_routine
+
+-- ============================================================
+-- Query helpers
+-- ============================================================
+
+-- Check if a name appears in a comma-separated list (e.g., exposed_names)
+function name_in_csv(csv: String, name: String) returns Boolean
+requires String.instr(name, "") = 0
+ensures result = true or result = false
+is
+    let search: String = String.concat(",", String.concat(name, ","))
+    let padded: String = String.concat(",", String.concat(csv, ","))
+    if String.instr(padded, search) >= 0 then
+        return true
+    else
+        return false
+    end if
+end name_in_csv
+
+function exposed_contains(decl: FullImportDecl, name: String) returns Boolean
+requires String.instr(name, "") = 0
+ensures result = true or result = false
+is
+    return name_in_csv(decl.exposed_names, name)
+end exposed_contains
+
+function depends_has_source(dep: FullDependsNode, name: String) returns Boolean
+requires String.instr(name, "") = 0
+ensures result = true or result = false
+is
+    return name_in_csv(dep.sources, name)
+end depends_has_source
+
+end Compiler.Core.FullAst
