@@ -1,6 +1,6 @@
 module Compiler.Core.Resolve
 
-import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_text, make_unknown_exposed_symbol_diagnostic
+import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_text, make_unknown_exposed_symbol_diagnostic, make_type_mismatch_diagnostic, make_unknown_field_diagnostic, make_shadowing_diagnostic, make_unknown_variable_diagnostic, make_array_bounds_diagnostic
 import Compiler.Core.Ast exposing ModuleWithImportReferenceNode, ExprNode, StmtNode
 import Compiler.Core.Names exposing ModuleName, SymbolName
 
@@ -12,6 +12,11 @@ type ResolveResult is record
     status: ResolveStatus
     module_name: String
     symbol_name: String
+    issue: Diagnostic
+end record
+
+type ExprResolveResult is record
+    resolved_type: String
     issue: Diagnostic
 end record
 
@@ -72,6 +77,23 @@ is
     let status: ResolveStatus = make_resolve_status("error")
     return ResolveResult { status: status, module_name: import_module_full, symbol_name: symbol_raw, issue: issue }
 end resolve_error
+
+function expr_ok(type_ref: String) returns ExprResolveResult
+requires String.instr(type_ref, "") = 0
+ensures result.resolved_type = type_ref, result.issue.code = ""
+is
+    let empty_mod: ModuleName = ModuleName { full: "" }
+    let empty_sym: SymbolName = SymbolName { raw: "" }
+    let empty_issue: Diagnostic = Diagnostic { code: "", message: "", module_name: empty_mod, symbol_name: empty_sym }
+    return ExprResolveResult { resolved_type: type_ref, issue: empty_issue }
+end expr_ok
+
+function expr_error(issue: Diagnostic, fallback_type: String) returns ExprResolveResult
+requires String.instr(issue.code, "FH-") = 0, String.instr(fallback_type, "") = 0
+ensures result.resolved_type = fallback_type, result.issue.code = issue.code
+is
+    return ExprResolveResult { resolved_type: fallback_type, issue: issue }
+end expr_error
 
 function resolve_mini_import_reference_module(ast_node: ModuleWithImportReferenceNode) returns ResolveResult
 requires String.instr(ast_node.import_decl.module_name.name, "") = 0, String.instr(ast_node.routine.return_symbol.symbol_name.name, "") = 0
@@ -176,76 +198,126 @@ is
 end lookup_local_var
 
 
-function resolve_expr(expr: ExprNode, exprs: Array<ExprNode, 64>, locals: Array<VarSymbol, 128>, local_count: Integer) returns String
-requires local_count >= 0, local_count <= 128, String.instr(expr.kind, "") = 0
-ensures String.instr(result, "") = 0
+function resolve_expr(
+    expr: ExprNode,
+    exprs: Array<ExprNode, 64>,
+    locals: Array<VarSymbol, 128>,
+    local_count: Integer,
+    mod_full: String,
+    sym_raw: String
+) returns ExprResolveResult
+requires local_count >= 0, local_count <= 128, String.instr(expr.kind, "") = 0, String.instr(mod_full, "") = 0, String.instr(sym_raw, "") = 0
+ensures String.instr(result.resolved_type, "") = 0
 is
     if expr.kind = "LITERAL" then
-        return expr.literal_kind
+        return expr_ok(expr.literal_kind)
     else
         if expr.kind = "IDENTIFIER" then
             let v: VarSymbol = lookup_local_var(locals, local_count, expr.text)
             if v.name != "" then
-                return v.type_ref
+                return expr_ok(v.type_ref)
             else
                 if expr.text = "true" or expr.text = "false" then
-                    return "Boolean"
+                    return expr_ok("Boolean")
                 else
-                    return "UnknownType"
+                    let issue: Diagnostic = make_unknown_variable_diagnostic(expr.text, mod_full, sym_raw)
+                    return expr_error(issue, "UnknownType")
                 end if
             end if
         else
             if expr.kind = "UNARY_OP" then
                 if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
                     let operand: ExprNode = exprs[expr.left_node_idx]
-                    let t_op: String = resolve_expr(operand, exprs, locals, local_count)
-                    if expr.op = "not" then
-                        return "Boolean"
+                    let res_op: ExprResolveResult = resolve_expr(operand, exprs, locals, local_count, mod_full, sym_raw)
+                    if res_op.issue.code != "" then
+                        return res_op
                     else
-                        return t_op
+                        if expr.op = "not" then
+                            if res_op.resolved_type = "Boolean" then
+                                return expr_ok("Boolean")
+                            else
+                                let issue: Diagnostic = make_type_mismatch_diagnostic("Boolean", res_op.resolved_type, mod_full, sym_raw)
+                                return expr_error(issue, "Boolean")
+                            end if
+                        else
+                            return res_op
+                        end if
                     end if
                 else
-                    return "UnknownType"
+                    let empty_mod: ModuleName = ModuleName { full: mod_full }
+                    let empty_sym: SymbolName = SymbolName { raw: sym_raw }
+                    let issue: Diagnostic = make_diagnostic("FH-TYP-2007", "invalid unary operand index", empty_mod, empty_sym)
+                    return expr_error(issue, "UnknownType")
                 end if
             else
                 if expr.kind = "BINARY_OP" then
                     if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 then
                         let left: ExprNode = exprs[expr.left_node_idx]
                         let right: ExprNode = exprs[expr.right_node_idx]
-                        let t_l: String = resolve_expr(left, exprs, locals, local_count)
-                        let t_r: String = resolve_expr(right, exprs, locals, local_count)
-                        if expr.op = "and" or expr.op = "or" or expr.op = "=" or expr.op = "!=" or expr.op = "<" or expr.op = "<=" or expr.op = ">" or expr.op = ">=" then
-                            return "Boolean"
+                        let res_l: ExprResolveResult = resolve_expr(left, exprs, locals, local_count, mod_full, sym_raw)
+                        if res_l.issue.code != "" then
+                            return res_l
                         else
-                            if t_l = "Double" or t_r = "Double" then
-                                return "Double"
+                            let res_r: ExprResolveResult = resolve_expr(right, exprs, locals, local_count, mod_full, sym_raw)
+                            if res_r.issue.code != "" then
+                                return res_r
                             else
-                                return t_l
+                                if expr.op = "and" or expr.op = "or" then
+                                    if res_l.resolved_type = "Boolean" and res_r.resolved_type = "Boolean" then
+                                        return expr_ok("Boolean")
+                                    else
+                                        let issue: Diagnostic = make_type_mismatch_diagnostic("Boolean", res_l.resolved_type, mod_full, sym_raw)
+                                        return expr_error(issue, "Boolean")
+                                    end if
+                                else
+                                    if expr.op = "=" or expr.op = "!=" or expr.op = "<" or expr.op = "<=" or expr.op = ">" or expr.op = ">=" then
+                                        if res_l.resolved_type != res_r.resolved_type then
+                                            let issue: Diagnostic = make_type_mismatch_diagnostic(res_l.resolved_type, res_r.resolved_type, mod_full, sym_raw)
+                                            return expr_error(issue, "Boolean")
+                                        else
+                                            return expr_ok("Boolean")
+                                        end if
+                                    else
+                                        if res_l.resolved_type = "Double" or res_r.resolved_type = "Double" then
+                                            return expr_ok("Double")
+                                        else
+                                            return expr_ok(res_l.resolved_type)
+                                        end if
+                                    end if
+                                end if
                             end if
                         end if
                     else
-                        return "UnknownType"
+                        let empty_mod: ModuleName = ModuleName { full: mod_full }
+                        let empty_sym: SymbolName = SymbolName { raw: sym_raw }
+                        let issue: Diagnostic = make_diagnostic("FH-TYP-2007", "invalid binary operands indices", empty_mod, empty_sym)
+                        return expr_error(issue, "UnknownType")
                     end if
                 else
                     if expr.kind = "CALL" then
                         if expr.routine_name = "channel" then
                             if expr.invariant_idx >= 0 and expr.invariant_idx < 64 then
                                 let inv_expr: ExprNode = exprs[expr.invariant_idx]
-                                let t_inv: String = resolve_expr(inv_expr, exprs, locals, local_count)
-                                if t_inv != "Boolean" then
-                                    return "TypeError"
+                                let res_inv: ExprResolveResult = resolve_expr(inv_expr, exprs, locals, local_count, mod_full, sym_raw)
+                                if res_inv.issue.code != "" then
+                                    return res_inv
+                                else
+                                    if res_inv.resolved_type != "Boolean" then
+                                        let issue: Diagnostic = make_type_mismatch_diagnostic("Boolean", res_inv.resolved_type, mod_full, sym_raw)
+                                        return expr_error(issue, "TypeError")
+                                    end if
                                 end if
                             end if
-                            return expr.literal_kind
+                            return expr_ok(expr.literal_kind)
                         else
                             if expr.routine_name = "answer" then
-                                return "Integer"
+                                return expr_ok("Integer")
                             else
-                                return "UnknownType"
+                                return expr_ok("UnknownType")
                             end if
                         end if
                     else
-                        return "UnknownType"
+                        return expr_ok("UnknownType")
                     end if
                 end if
             end if
@@ -253,77 +325,114 @@ is
     end if
 end resolve_expr
 
-function resolve_stmt(stmt: StmtNode, exprs: Array<ExprNode, 64>, locals: Array<VarSymbol, 128>, local_count: Integer) returns Boolean
-requires local_count >= 0, local_count <= 128, String.instr(stmt.kind, "") = 0
-ensures result = true or result = false
+function resolve_stmt(
+    stmt: StmtNode,
+    exprs: Array<ExprNode, 64>,
+    locals: Array<VarSymbol, 128>,
+    local_count: Integer,
+    mod_full: String,
+    sym_raw: String
+) returns ResolveResult
+requires local_count >= 0, local_count <= 128, String.instr(stmt.kind, "") = 0, String.instr(mod_full, "") = 0, String.instr(sym_raw, "") = 0
+ensures String.instr(result.status.name, "") = 0, result.module_name = mod_full, result.symbol_name = sym_raw
 is
     if stmt.kind = "LET" then
         let existing: VarSymbol = lookup_local_var(locals, local_count, stmt.var_name)
         if existing.name != "" then
-            return false
+            let issue: Diagnostic = make_shadowing_diagnostic(stmt.var_name, mod_full, sym_raw)
+            return resolve_error(issue, mod_full, sym_raw)
         else
             if stmt.expr_idx >= 0 and stmt.expr_idx < 64 then
                 let ex: ExprNode = exprs[stmt.expr_idx]
-                let t_expr: String = resolve_expr(ex, exprs, locals, local_count)
-                if t_expr = stmt.var_type then
-                    return true
+                let res_expr: ExprResolveResult = resolve_expr(ex, exprs, locals, local_count, mod_full, sym_raw)
+                if res_expr.issue.code != "" then
+                    return resolve_error(res_expr.issue, mod_full, sym_raw)
                 else
-                    return false
+                    if res_expr.resolved_type = stmt.var_type then
+                        return resolve_ok(mod_full, sym_raw)
+                    else
+                        let issue: Diagnostic = make_type_mismatch_diagnostic(stmt.var_type, res_expr.resolved_type, mod_full, sym_raw)
+                        return resolve_error(issue, mod_full, sym_raw)
+                    end if
                 end if
             else
-                return false
+                let empty_mod: ModuleName = ModuleName { full: mod_full }
+                let empty_sym: SymbolName = SymbolName { raw: sym_raw }
+                let issue: Diagnostic = make_diagnostic("FH-TYP-2007", "invalid let expr index", empty_mod, empty_sym)
+                return resolve_error(issue, mod_full, sym_raw)
             end if
         end if
     else
         if stmt.kind = "ASSIGN" then
             let v_assign: VarSymbol = lookup_local_var(locals, local_count, stmt.var_name)
             if v_assign.name = "" then
-                return false
+                let issue: Diagnostic = make_unknown_variable_diagnostic(stmt.var_name, mod_full, sym_raw)
+                return resolve_error(issue, mod_full, sym_raw)
             else
                 if stmt.expr_idx >= 0 and stmt.expr_idx < 64 then
                     let ex_assign: ExprNode = exprs[stmt.expr_idx]
-                    let t_expr_assign: String = resolve_expr(ex_assign, exprs, locals, local_count)
-                    if t_expr_assign = v_assign.type_ref then
-                        return true
+                    let res_expr_assign: ExprResolveResult = resolve_expr(ex_assign, exprs, locals, local_count, mod_full, sym_raw)
+                    if res_expr_assign.issue.code != "" then
+                        return resolve_error(res_expr_assign.issue, mod_full, sym_raw)
                     else
-                        return false
+                        if res_expr_assign.resolved_type = v_assign.type_ref then
+                            return resolve_ok(mod_full, sym_raw)
+                        else
+                            let issue: Diagnostic = make_type_mismatch_diagnostic(v_assign.type_ref, res_expr_assign.resolved_type, mod_full, sym_raw)
+                            return resolve_error(issue, mod_full, sym_raw)
+                        end if
                     end if
                 else
-                    return false
+                    let empty_mod: ModuleName = ModuleName { full: mod_full }
+                    let empty_sym: SymbolName = SymbolName { raw: sym_raw }
+                    let issue: Diagnostic = make_diagnostic("FH-TYP-2007", "invalid assign expr index", empty_mod, empty_sym)
+                    return resolve_error(issue, mod_full, sym_raw)
                 end if
             end if
         else
             if stmt.kind = "IF" then
                 if stmt.cond_expr_idx >= 0 and stmt.cond_expr_idx < 64 then
                     let cond_ex: ExprNode = exprs[stmt.cond_expr_idx]
-                    let t_cond: String = resolve_expr(cond_ex, exprs, locals, local_count)
-                    if t_cond = "Boolean" then
-                        return true
+                    let res_cond: ExprResolveResult = resolve_expr(cond_ex, exprs, locals, local_count, mod_full, sym_raw)
+                    if res_cond.issue.code != "" then
+                        return resolve_error(res_cond.issue, mod_full, sym_raw)
                     else
-                        return false
+                        if res_cond.resolved_type = "Boolean" then
+                            return resolve_ok(mod_full, sym_raw)
+                        else
+                            let issue: Diagnostic = make_type_mismatch_diagnostic("Boolean", res_cond.resolved_type, mod_full, sym_raw)
+                            return resolve_error(issue, mod_full, sym_raw)
+                        end if
                     end if
                 else
-                    return false
+                    let empty_mod: ModuleName = ModuleName { full: mod_full }
+                    let empty_sym: SymbolName = SymbolName { raw: sym_raw }
+                    let issue: Diagnostic = make_diagnostic("FH-TYP-2007", "invalid if condition index", empty_mod, empty_sym)
+                    return resolve_error(issue, mod_full, sym_raw)
                 end if
             else
                 if stmt.kind = "WHILE" then
                     if stmt.cond_expr_idx >= 0 and stmt.cond_expr_idx < 64 then
                         let cond_ex_while: ExprNode = exprs[stmt.cond_expr_idx]
-                        let t_cond_while: String = resolve_expr(cond_ex_while, exprs, locals, local_count)
-                        if t_cond_while = "Boolean" then
-                            return true
+                        let res_cond_while: ExprResolveResult = resolve_expr(cond_ex_while, exprs, locals, local_count, mod_full, sym_raw)
+                        if res_cond_while.issue.code != "" then
+                            return resolve_error(res_cond_while.issue, mod_full, sym_raw)
                         else
-                            return false
+                            if res_cond_while.resolved_type = "Boolean" then
+                                return resolve_ok(mod_full, sym_raw)
+                            else
+                                let issue: Diagnostic = make_type_mismatch_diagnostic("Boolean", res_cond_while.resolved_type, mod_full, sym_raw)
+                                return resolve_error(issue, mod_full, sym_raw)
+                            end if
                         end if
                     else
-                        return false
+                        let empty_mod: ModuleName = ModuleName { full: mod_full }
+                        let empty_sym: SymbolName = SymbolName { raw: sym_raw }
+                        let issue: Diagnostic = make_diagnostic("FH-TYP-2007", "invalid while condition index", empty_mod, empty_sym)
+                        return resolve_error(issue, mod_full, sym_raw)
                     end if
                 else
-                    if stmt.kind = "RETURN" or stmt.kind = "CHECK" or stmt.kind = "ABORT" or stmt.kind = "CALL" or stmt.kind = "SCOPE" or stmt.kind = "CASE" then
-                        return true
-                    else
-                        return false
-                    end if
+                    return resolve_ok(mod_full, sym_raw)
                 end if
             end if
         end if
@@ -441,5 +550,114 @@ is
     end if
 end check_variable_shadowing
 
+function lookup_record_field(
+    rec: RecordSymbol,
+    field_name: String,
+    fields: Array<RecordField, 256>
+) returns String
+requires rec.first_field_idx >= 0, rec.field_count >= 0, String.instr(field_name, "") = 0
+is
+    let i: Integer = 0
+    let found_type: String = ""
+    while i < rec.field_count invariant i >= 0 and i <= rec.field_count do
+        let idx: Integer = rec.first_field_idx + i
+        if idx >= 0 and idx < 256 then
+            let f: RecordField = fields[idx]
+            if f.name = field_name then
+                found_type := f.type_ref
+            end if
+        end if
+        i := i + 1
+    end while
+    return found_type
+end lookup_record_field
+
+function type_check_record_literal(
+    rec: RecordSymbol,
+    fields: Array<RecordField, 256>,
+    literal_fields: Array<String, 16>,
+    literal_types: Array<String, 16>,
+    literal_field_count: Integer,
+    mod_full: String,
+    sym_raw: String
+) returns ResolveResult
+requires rec.first_field_idx >= 0, rec.field_count >= 0, literal_field_count >= 0 and literal_field_count <= 16, String.instr(mod_full, "") = 0, String.instr(sym_raw, "") = 0
+is
+    let i: Integer = 0
+    while i < literal_field_count invariant i >= 0 and i <= literal_field_count do
+        let fname: String = literal_fields[i]
+        let ftype: String = literal_types[i]
+        let expected_type: String = lookup_record_field(rec, fname, fields)
+        if expected_type = "" then
+            let issue: Diagnostic = make_unknown_field_diagnostic(rec.name, fname, mod_full, sym_raw)
+            return resolve_error(issue, mod_full, sym_raw)
+        else
+            if expected_type != ftype then
+                let issue: Diagnostic = make_type_mismatch_diagnostic(expected_type, ftype, mod_full, sym_raw)
+                return resolve_error(issue, mod_full, sym_raw)
+            end if
+        end if
+        i := i + 1
+    end while
+    return resolve_ok(mod_full, sym_raw)
+end type_check_record_literal
+
+function type_check_record_update(
+    base_type: String,
+    rec_type: String,
+    mod_full: String,
+    sym_raw: String
+) returns ResolveResult
+requires String.instr(base_type, "") = 0, String.instr(rec_type, "") = 0, String.instr(mod_full, "") = 0, String.instr(sym_raw, "") = 0
+is
+    if base_type != rec_type then
+        let issue: Diagnostic = make_type_mismatch_diagnostic(rec_type, base_type, mod_full, sym_raw)
+        return resolve_error(issue, mod_full, sym_raw)
+    else
+        return resolve_ok(mod_full, sym_raw)
+    end if
+end type_check_record_update
+
+function parse_array_size(type_ref: String) returns Integer
+requires String.instr(type_ref, "") = 0
+is
+    let comma_idx: Integer = String.instr(type_ref, ",")
+    let close_idx: Integer = String.instr(type_ref, ">")
+    if comma_idx >= 0 and close_idx > comma_idx then
+        let size_str: String = String.substr(type_ref, comma_idx + 1, close_idx - comma_idx - 1)
+        if String.instr(size_str, " ") = 0 then
+            size_str := String.substr(size_str, 1, String.length(size_str) - 1)
+        end if
+        if size_str = "16" then return 16 end if
+        if size_str = "32" then return 32 end if
+        if size_str = "64" then return 64 end if
+        if size_str = "128" then return 128 end if
+        if size_str = "256" then return 256 end if
+        return 0
+    else
+        return 0
+    end if
+end parse_array_size
+
+function type_check_array_index(
+    type_ref: String,
+    index_val: Integer,
+    mod_full: String,
+    sym_raw: String
+) returns ResolveResult
+requires String.instr(type_ref, "") = 0, String.instr(mod_full, "") = 0, String.instr(sym_raw, "") = 0
+is
+    let size: Integer = parse_array_size(type_ref)
+    if size > 0 then
+        if index_val < 0 or index_val >= size then
+            let issue: Diagnostic = make_array_bounds_diagnostic(index_val, size, mod_full, sym_raw)
+            return resolve_error(issue, mod_full, sym_raw)
+        else
+            return resolve_ok(mod_full, sym_raw)
+        end if
+    else
+        return resolve_ok(mod_full, sym_raw)
+    end if
+end type_check_array_index
 
 end Compiler.Core.Resolve
