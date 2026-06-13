@@ -1,0 +1,198 @@
+module App.MainFull
+
+import Compiler.Core.FullSemanticChecker exposing FullSemanticResult, FullSemanticError
+import Compiler.Core.FullVerifier exposing FullVerificationResult, FVContractSnapshot, verify_module_source, fv_module_name, fv_summary, fv_routine_count, fv_record_count, fv_type_count, fv_error_count, fv_import_count, fv_routine_exists, fv_routine_kind, fv_routine_is_async, fv_routine_param_count, fv_routine_return_type, fv_routine_has_requires, fv_routine_has_ensures, fv_routine_aborts_count, fv_routine_depends_count, fv_routine_globals_count, fv_type_exists, fv_error_exists, fv_import_exists, fv_contract_snapshot, fv_contract_snapshot_summary
+import Compiler.Core.FullLexer
+
+import Std.IO
+
+-- ============================================================
+-- Sample Freehold source built as a string
+-- Exercises: range type, record, error, function contracts,
+-- aborts clause, depends clause
+-- ============================================================
+
+function build_sample_source() returns String
+is
+    let nl: String = "\n"
+    let src: String = ""
+
+    -- Module header
+    src := String.concat(src, String.concat("module Sample.Math", nl))
+    src := String.concat(src, nl)
+
+    -- Range type
+    src := String.concat(src, String.concat("type Percentage is Integer range 0..100", nl))
+    src := String.concat(src, nl)
+
+    -- Record type
+    src := String.concat(src, String.concat("type Point is record", nl))
+    src := String.concat(src, String.concat("    x: Integer", nl))
+    src := String.concat(src, String.concat("    y: Integer", nl))
+    src := String.concat(src, String.concat("end record", nl))
+    src := String.concat(src, nl)
+
+    -- Error declaration
+    src := String.concat(src, String.concat("error OutOfRange", nl))
+    src := String.concat(src, nl)
+
+    -- Function with requires/ensures contracts
+    src := String.concat(src, String.concat("function clamp(value: Integer, lo: Integer, hi: Integer) returns Integer", nl))
+    src := String.concat(src, String.concat("requires lo <= hi", nl))
+    src := String.concat(src, String.concat("ensures result >= lo", nl))
+    src := String.concat(src, String.concat("ensures result <= hi", nl))
+    src := String.concat(src, String.concat("is", nl))
+    src := String.concat(src, String.concat("    if value < lo then", nl))
+    src := String.concat(src, String.concat("        return lo", nl))
+    src := String.concat(src, String.concat("    else", nl))
+    src := String.concat(src, String.concat("        if value > hi then", nl))
+    src := String.concat(src, String.concat("            return hi", nl))
+    src := String.concat(src, String.concat("        else", nl))
+    src := String.concat(src, String.concat("            return value", nl))
+    src := String.concat(src, String.concat("        end if", nl))
+    src := String.concat(src, String.concat("    end if", nl))
+    src := String.concat(src, String.concat("end clamp", nl))
+    src := String.concat(src, nl)
+
+    -- Function with aborts clause
+    src := String.concat(src, String.concat("function to_percentage(value: Integer) returns Percentage", nl))
+    src := String.concat(src, String.concat("aborts OutOfRange", nl))
+    src := String.concat(src, String.concat("is", nl))
+    src := String.concat(src, String.concat("    if value < 0 or value > 100 then", nl))
+    src := String.concat(src, String.concat("        abort OutOfRange", nl))
+    src := String.concat(src, String.concat("    end if", nl))
+    src := String.concat(src, String.concat("    return value", nl))
+    src := String.concat(src, String.concat("end to_percentage", nl))
+    src := String.concat(src, nl)
+
+    -- Procedure with global + depends contracts
+    src := String.concat(src, String.concat("procedure translate(pt: Point, dx: Integer, dy: Integer)", nl))
+    src := String.concat(src, String.concat("depends result => (pt, dx, dy)", nl))
+    src := String.concat(src, String.concat("is", nl))
+    src := String.concat(src, String.concat("    let new_x: Integer = pt.x + dx", nl))
+    src := String.concat(src, String.concat("    let new_y: Integer = pt.y + dy", nl))
+    src := String.concat(src, String.concat("end translate", nl))
+    src := String.concat(src, nl)
+
+    src := String.concat(src, "end Sample.Math")
+    return src
+end build_sample_source
+
+-- ============================================================
+-- Second sample: intentional semantic error (duplicate type name)
+-- ============================================================
+
+function build_error_source() returns String
+is
+    let nl: String = "\n"
+    let src: String = ""
+    src := String.concat(src, String.concat("module Sample.Bad", nl))
+    src := String.concat(src, nl)
+    src := String.concat(src, String.concat("type Foo is Integer range 0..10", nl))
+    src := String.concat(src, String.concat("type Foo is Integer range 0..20", nl))
+    src := String.concat(src, nl)
+    src := String.concat(src, "end Sample.Bad")
+    return src
+end build_error_source
+
+-- ============================================================
+-- Output helpers
+-- ============================================================
+
+procedure print_separator()
+is
+    call Std.IO.logf("--------------------------------------------------")
+end print_separator
+
+procedure print_verification_header(label: String, res: FullVerificationResult)
+is
+    call Std.IO.logf("${}.module = ${}", label, fv_module_name(res))
+    call Std.IO.logf("${}.ok = ${}", label, res.is_ok)
+    call Std.IO.logf("${}.phase = ${}", label, res.phase)
+    if res.phase = "parse" then
+        call Std.IO.logf("${}.parse_error = ${}", label, res.parse_error)
+    end if
+end print_verification_header
+
+procedure print_module_counts(label: String, res: FullVerificationResult)
+is
+    call Std.IO.logf("${}.routine_count = ${}", label, fv_routine_count(res))
+    call Std.IO.logf("${}.record_count = ${}", label, fv_record_count(res))
+    call Std.IO.logf("${}.type_count = ${}", label, fv_type_count(res))
+    call Std.IO.logf("${}.error_count = ${}", label, fv_error_count(res))
+    call Std.IO.logf("${}.import_count = ${}", label, fv_import_count(res))
+end print_module_counts
+
+procedure print_routine_info(label: String, res: FullVerificationResult, name: String)
+is
+    call Std.IO.logf("${}.${}.exists = ${}", label, name, fv_routine_exists(res, name))
+    if fv_routine_exists(res, name) then
+        call Std.IO.logf("${}.${}.kind = ${}", label, name, fv_routine_kind(res, name))
+        call Std.IO.logf("${}.${}.param_count = ${}", label, name, fv_routine_param_count(res, name))
+        call Std.IO.logf("${}.${}.return_type = ${}", label, name, fv_routine_return_type(res, name))
+        call Std.IO.logf("${}.${}.has_requires = ${}", label, name, fv_routine_has_requires(res, name))
+        call Std.IO.logf("${}.${}.has_ensures = ${}", label, name, fv_routine_has_ensures(res, name))
+        call Std.IO.logf("${}.${}.aborts_count = ${}", label, name, fv_routine_aborts_count(res, name))
+        call Std.IO.logf("${}.${}.depends_count = ${}", label, name, fv_routine_depends_count(res, name))
+        call Std.IO.logf("${}.${}.globals_count = ${}", label, name, fv_routine_globals_count(res, name))
+        let snap: FVContractSnapshot = fv_contract_snapshot(res, name)
+        call Std.IO.logf("${}.${}.snapshot = ${}", label, name, fv_contract_snapshot_summary(snap))
+    end if
+end print_routine_info
+
+-- ============================================================
+-- Main entry point
+-- ============================================================
+
+procedure Main()
+is
+    -- --------------------------------------------------------
+    -- Case 1: valid module with all declaration types
+    -- --------------------------------------------------------
+    call Std.IO.logf("=== FullVerifier: Sample.Math ===")
+    let src: String = build_sample_source()
+    let res: FullVerificationResult = verify_module_source(src, "sample.fh")
+
+    call print_verification_header("fullverify", res)
+    call print_module_counts("fullverify", res)
+
+    -- Routine queries
+    call print_routine_info("fullverify", res, "clamp")
+    call print_routine_info("fullverify", res, "to_percentage")
+    call print_routine_info("fullverify", res, "translate")
+
+    -- Type/error namespace queries
+    call Std.IO.logf("fullverify.Percentage.type_exists = ${}", fv_type_exists(res, "Percentage"))
+    call Std.IO.logf("fullverify.Point.type_exists = ${}", fv_type_exists(res, "Point"))
+    call Std.IO.logf("fullverify.OutOfRange.error_exists = ${}", fv_error_exists(res, "OutOfRange"))
+    call Std.IO.logf("fullverify.Unknown.type_exists = ${}", fv_type_exists(res, "Unknown"))
+
+    -- Summary
+    call Std.IO.logf("fullverify.summary = ${}", fv_summary(res))
+
+    call print_separator()
+
+    -- --------------------------------------------------------
+    -- Case 2: duplicate type name → semantic error
+    -- --------------------------------------------------------
+    call Std.IO.logf("=== FullVerifier: Sample.Bad (expects semantic error) ===")
+    let src_bad: String = build_error_source()
+    let res_bad: FullVerificationResult = verify_module_source(src_bad, "bad.fh")
+
+    call print_verification_header("fullverify.bad", res_bad)
+    if not res_bad.is_ok then
+        let bad_sem: FullSemanticResult = res_bad.semantic
+        call Std.IO.logf("fullverify.bad.error_count = ${}", bad_sem.error_count)
+        if bad_sem.error_count > 0 then
+            let bad_sem_errors: Array<FullSemanticError, 16> = bad_sem.errors
+            let first_err: FullSemanticError = bad_sem_errors[0]
+            call Std.IO.logf("fullverify.bad.first_error = ${}", first_err.message)
+        end if
+    end if
+    call Std.IO.logf("fullverify.bad.summary = ${}", fv_summary(res_bad))
+
+    call print_separator()
+
+end Main
+
+end App.MainFull

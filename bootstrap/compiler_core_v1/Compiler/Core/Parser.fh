@@ -1,8 +1,8 @@
 module Compiler.Core.Parser
 
-import Compiler.Core.Ast exposing FunctionImportReferenceNode, FunctionNode, IdentifierNode, ImportNode, ImportReferenceNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, TypeDeclNode, ModuleWithTypeDeclNode, ProcedureNode, RecordTypeNode, ModuleWithRecordLiteralNode, RecordLiteralNode, ModuleWithReturnNode, ReturnStmtNode, ModuleWithCallNode, CallStmtNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, make_function_import_reference_node, make_function_node, make_identifier_node, make_import_node, make_import_reference_node, make_literal_node, make_module_node, make_module_with_function_node, make_module_with_import_node, make_module_with_import_reference_node, make_module_with_procedure_node, make_module_with_record_node, make_type_decl_node, make_module_with_type_decl_node, make_procedure_node, make_record_type_node, make_record_literal_node, make_module_with_record_literal_node, make_return_stmt_node, make_module_with_return_node, make_module_with_call_node, make_call_stmt_node, make_nested_call_stmt_node, make_module_with_nested_call_node, make_lowered_call_node, make_module_with_lowered_calls_node, module_text, module_with_function_text, module_with_import_reference_text, module_with_import_text, module_with_procedure_text, module_with_record_text, module_with_type_decl_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text, ExprNode, StmtNode, make_expr_node, make_stmt_node
+import Compiler.Core.Ast exposing FunctionImportReferenceNode, FunctionNode, IdentifierNode, ImportNode, ImportReferenceNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, TypeDeclNode, ModuleWithTypeDeclNode, ProcedureNode, RecordTypeNode, ModuleWithRecordLiteralNode, RecordLiteralNode, ModuleWithReturnNode, ReturnStmtNode, ModuleWithCallNode, CallStmtNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, make_function_import_reference_node, make_function_node, make_identifier_node, make_import_node, make_import_reference_node, make_literal_node, make_module_node, make_module_with_function_node, make_module_with_import_node, make_module_with_import_reference_node, make_module_with_procedure_node, make_module_with_record_node, make_type_decl_node, make_module_with_type_decl_node, make_procedure_node, make_record_type_node, make_record_literal_node, make_module_with_record_literal_node, make_return_stmt_node, make_module_with_return_node, make_module_with_call_node, make_call_stmt_node, make_nested_call_stmt_node, make_module_with_nested_call_node, make_lowered_call_node, make_module_with_lowered_calls_node, module_text, module_with_function_text, module_with_import_reference_text, module_with_import_text, module_with_procedure_text, module_with_record_text, module_with_type_decl_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text, ExprNode, StmtNode, make_expr_node, make_stmt_node, AbortClauseNode, DependsNode, ErrorDeclNode, FieldNode, GlobalNode, ModuleDeclNode, ParamNode, RecordTypeWithFieldsNode, RoutineDeclNode, make_abort_clause_node, make_depends_node, make_error_decl_node, make_field_node, make_global_node, make_param_node, make_record_type_with_fields_node, make_routine_decl_node, make_empty_abort_clause_node, make_empty_depends_node, make_empty_error_decl_node, make_empty_field_node, make_empty_global_node, make_empty_param_node, make_empty_record_type_with_fields_node, make_empty_routine_decl_node, make_empty_module_decl_node, set_fields, set_params, set_abort_clauses, set_depends_specs, set_globals_specs, set_imports, set_type_decls, set_record_decls, set_error_decls, set_routines
 import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, MiniSubtypeRangeModuleTokens, MiniRecordLiteralModuleTokens, MiniReturnStmtModuleTokens, MiniCallModuleTokens, MiniNestedCallModuleTokens, Lexer, LexerResult, make_lexer, lex_next_token
-import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok
+import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok, ParseStatus, make_parse_status
 import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_token, make_token_kind, make_source_span
 
 function build_mini_module_node(tokens: MiniModuleTokens) returns ModuleNode
@@ -418,6 +418,613 @@ type ParserStmtResult is record
     node: StmtNode
 end record
 
+type ParserRecordWithFieldsResult is record
+    parser: GeneralParser
+    node: RecordTypeWithFieldsNode
+end record
+
+type ParserParamListResult is record
+    parser: GeneralParser
+    params: Array<ParamNode, 8>
+    count: Integer
+end record
+
+type ParserContractResult is record
+    parser: GeneralParser
+    has_requires: Boolean
+    has_ensures: Boolean
+    abort_clauses: Array<AbortClauseNode, 8>
+    aborts_count: Integer
+    depends_specs: Array<DependsNode, 8>
+    depends_count: Integer
+    globals_specs: Array<GlobalNode, 8>
+    globals_count: Integer
+end record
+
+type ParserRoutineDeclResult is record
+    parser: GeneralParser
+    node: RoutineDeclNode
+end record
+
+type ParserErrorDeclResult is record
+    parser: GeneralParser
+    node: ErrorDeclNode
+end record
+
+type ParseModuleDeclResult is record
+    status: ParseStatus
+    module_node: ModuleDeclNode
+    issue: ParseError
+end record
+
+function parse_record_body_general(p: GeneralParser, type_name_node: IdentifierNode) returns ParserRecordWithFieldsResult
+is
+    let p_curr: GeneralParser = p
+    let empty_f: FieldNode = make_empty_field_node(p.source_name)
+    let fields: Array<FieldNode, 16> = [empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f]
+    let count: Integer = 0
+    let done: Boolean = false
+
+    while not done and p_curr.has_error = false
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        let k: String = p_curr.curr_tok.kind.name
+        if k = "KeywordEnd" then
+            p_curr := advance_parser(p_curr)
+            p_curr := expect_kind(p_curr, "KeywordRecord", "FH-PARSE-0002", "Expected 'record'")
+            done := true
+        else
+            if k = "Identifier" then
+                let field_name_tok: Token = p_curr.curr_tok
+                let field_name_node: IdentifierNode = make_identifier_node(field_name_tok.span, field_name_tok.lexeme)
+                p_curr := advance_parser(p_curr)
+                p_curr := expect_kind(p_curr, "Colon", "FH-PARSE-0002", "Expected ':'")
+                let res_type: ParserIdentifierResult = parse_type_ref(p_curr)
+                p_curr := res_type.parser
+                if p_curr.has_error = false and count < 16 then
+                    let f: FieldNode = make_field_node(field_name_tok.span, field_name_node, res_type.node)
+                    fields := set_fields(fields, count, f)
+                    count := count + 1
+                end if
+            else
+                if k = "EOF" then
+                    done := true
+                else
+                    p_curr := advance_parser(p_curr)
+                end if
+            end if
+        end if
+    end while
+
+    let res_rec: RecordTypeWithFieldsNode = make_record_type_with_fields_node(type_name_node.span, type_name_node, fields, count)
+    return ParserRecordWithFieldsResult { parser: p_curr, node: res_rec }
+end parse_record_body_general
+
+function parse_param_list_general(p: GeneralParser) returns ParserParamListResult
+is
+    let empty_p: ParamNode = make_empty_param_node(p.source_name)
+    let params: Array<ParamNode, 8> = [empty_p, empty_p, empty_p, empty_p, empty_p, empty_p, empty_p, empty_p]
+    let count: Integer = 0
+    let p_curr: GeneralParser = expect_kind(p, "OpenParen", "FH-PARSE-0002", "Expected '('")
+
+    if p_curr.has_error then
+        return ParserParamListResult { parser: p_curr, params: params, count: 0 }
+    end if
+
+    if p_curr.curr_tok.kind.name = "CloseParen" then
+        p_curr := advance_parser(p_curr)
+        return ParserParamListResult { parser: p_curr, params: params, count: 0 }
+    end if
+
+    let done: Boolean = false
+    while not done and p_curr.has_error = false
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        let res_name: ParserIdentifierResult = parse_identifier(p_curr)
+        p_curr := res_name.parser
+        p_curr := expect_kind(p_curr, "Colon", "FH-PARSE-0002", "Expected ':'")
+        let res_type: ParserIdentifierResult = parse_type_ref(p_curr)
+        p_curr := res_type.parser
+
+        if p_curr.has_error = false and count < 8 then
+            let new_param: ParamNode = make_param_node(res_name.node.span, res_name.node, res_type.node)
+            params := set_params(params, count, new_param)
+            count := count + 1
+        end if
+
+        if p_curr.curr_tok.kind.name = "Comma" then
+            p_curr := advance_parser(p_curr)
+        else
+            done := true
+        end if
+    end while
+
+    p_curr := expect_kind(p_curr, "CloseParen", "FH-PARSE-0002", "Expected ')'")
+    return ParserParamListResult { parser: p_curr, params: params, count: count }
+end parse_param_list_general
+
+function parse_contract_blocks_general(p: GeneralParser) returns ParserContractResult
+is
+    let empty_a: AbortClauseNode = make_empty_abort_clause_node(p.source_name)
+    let empty_d: DependsNode = make_empty_depends_node(p.source_name)
+    let empty_g: GlobalNode = make_empty_global_node(p.source_name)
+    let abort_list: Array<AbortClauseNode, 8> = [empty_a, empty_a, empty_a, empty_a, empty_a, empty_a, empty_a, empty_a]
+    let deps: Array<DependsNode, 8> = [empty_d, empty_d, empty_d, empty_d, empty_d, empty_d, empty_d, empty_d]
+    let globs: Array<GlobalNode, 8> = [empty_g, empty_g, empty_g, empty_g, empty_g, empty_g, empty_g, empty_g]
+    let aborts_count: Integer = 0
+    let deps_count: Integer = 0
+    let globs_count: Integer = 0
+    let has_req: Boolean = false
+    let has_ens: Boolean = false
+    let p_curr: GeneralParser = p
+    let done: Boolean = false
+
+    while not done and p_curr.has_error = false
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        let k: String = p_curr.curr_tok.kind.name
+
+        if k = "KeywordRequires" then
+            has_req := true
+            p_curr := advance_parser(p_curr)
+            let res_expr: ParserExprResult = parse_expr(p_curr)
+            p_curr := res_expr.parser
+
+        else
+            if k = "KeywordEnsures" then
+                has_ens := true
+                p_curr := advance_parser(p_curr)
+                let res_expr: ParserExprResult = parse_expr(p_curr)
+                p_curr := res_expr.parser
+
+            else
+                if k = "KeywordAborts" then
+                    p_curr := advance_parser(p_curr)
+                    let err_tok: Token = p_curr.curr_tok
+                    let res_err: ParserIdentifierResult = parse_identifier(p_curr)
+                    p_curr := res_err.parser
+                    if p_curr.curr_tok.kind.name = "KeywordWhen" then
+                        p_curr := advance_parser(p_curr)
+                        let res_expr: ParserExprResult = parse_expr(p_curr)
+                        p_curr := res_expr.parser
+                    end if
+                    if p_curr.has_error = false and aborts_count < 8 then
+                        let ab: AbortClauseNode = make_abort_clause_node(err_tok.span, res_err.node)
+                        abort_list := set_abort_clauses(abort_list, aborts_count, ab)
+                        aborts_count := aborts_count + 1
+                    end if
+
+                else
+                    if k = "KeywordDepends" or (k = "Identifier" and p_curr.curr_tok.lexeme = "depends") then
+                        p_curr := advance_parser(p_curr)
+                        let target_tok: Token = p_curr.curr_tok
+                        let target_name: String = p_curr.curr_tok.lexeme
+                        p_curr := advance_parser(p_curr) -- past target IDENT or result
+                        p_curr := expect_kind(p_curr, "CaseArrow", "FH-PARSE-0002", "Expected '=>'")
+                        p_curr := expect_kind(p_curr, "OpenParen", "FH-PARSE-0002", "Expected '('")
+                        let sources: String = ""
+                        let sdone: Boolean = false
+                        while not sdone and p_curr.has_error = false
+                            invariant p_curr.has_error = true or p_curr.has_error = false
+                        do
+                            if p_curr.curr_tok.kind.name = "Identifier" then
+                                if sources = "" then
+                                    sources := p_curr.curr_tok.lexeme
+                                else
+                                    sources := String.concat(sources, String.concat(",", p_curr.curr_tok.lexeme))
+                                end if
+                                p_curr := advance_parser(p_curr)
+                                if p_curr.curr_tok.kind.name = "Comma" then
+                                    p_curr := advance_parser(p_curr)
+                                else
+                                    sdone := true
+                                end if
+                            else
+                                sdone := true
+                            end if
+                        end while
+                        p_curr := expect_kind(p_curr, "CloseParen", "FH-PARSE-0002", "Expected ')'")
+                        if p_curr.has_error = false and deps_count < 8 then
+                            let target_ident: IdentifierNode = make_identifier_node(target_tok.span, target_name)
+                            let new_dep: DependsNode = make_depends_node(target_tok.span, target_ident, sources)
+                            deps := set_depends_specs(deps, deps_count, new_dep)
+                            deps_count := deps_count + 1
+                        end if
+
+                    else
+                        if k = "KeywordGlobal" or (k = "Identifier" and p_curr.curr_tok.lexeme = "global") then
+                            p_curr := advance_parser(p_curr)
+                            let mode_tok: Token = p_curr.curr_tok
+                            let mode_str: String = ""
+                            let m: String = mode_tok.lexeme
+                            if m = "Input" or m = "input" then
+                                mode_str := "Input"
+                                p_curr := advance_parser(p_curr)
+                            else
+                                if m = "Output" or m = "output" then
+                                    mode_str := "Output"
+                                    p_curr := advance_parser(p_curr)
+                                else
+                                    if m = "In_Out" or m = "inout" then
+                                        mode_str := "In_Out"
+                                        p_curr := advance_parser(p_curr)
+                                    end if
+                                end if
+                            end if
+                            let res_name: ParserIdentifierResult = parse_identifier(p_curr)
+                            p_curr := res_name.parser
+                            if p_curr.has_error = false and mode_str != "" and globals_count < 8 then
+                                let new_glob: GlobalNode = make_global_node(mode_tok.span, res_name.node, mode_str)
+                                globs := set_globals_specs(globs, globals_count, new_glob)
+                                globals_count := globals_count + 1
+                            end if
+
+                        else
+                            done := true
+                        end if
+                    end if
+                end if
+            end if
+        end if
+    end while
+
+    return ParserContractResult {
+        parser: p_curr,
+        has_requires: has_req,
+        has_ensures: has_ens,
+        abort_clauses: abort_list,
+        aborts_count: aborts_count,
+        depends_specs: deps,
+        depends_count: deps_count,
+        globals_specs: globs,
+        globals_count: globals_count
+    }
+end parse_contract_blocks_general
+
+function skip_routine_body_general(p: GeneralParser, routine_name: String) returns GeneralParser
+requires String.instr(routine_name, "") = 0
+is
+    let p_curr: GeneralParser = p
+    let depth: Integer = 0
+    let done: Boolean = false
+
+    while not done and p_curr.has_error = false
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        let k: String = p_curr.curr_tok.kind.name
+
+        if k = "KeywordIf" or k = "KeywordWhile" or k = "KeywordCase" or k = "KeywordScope" then
+            depth := depth + 1
+            p_curr := advance_parser(p_curr)
+        else
+            if k = "KeywordEnd" then
+                p_curr := advance_parser(p_curr)
+                let nxt: Token = p_curr.curr_tok
+                if nxt.kind.name = "Identifier" then
+                    if nxt.lexeme = routine_name and depth = 0 then
+                        p_curr := advance_parser(p_curr)
+                        done := true
+                    else
+                        if depth > 0 then
+                            depth := depth - 1
+                        end if
+                        p_curr := advance_parser(p_curr)
+                    end if
+                else
+                    if nxt.kind.name = "KeywordIf" or nxt.kind.name = "KeywordWhile" or nxt.kind.name = "KeywordCase" or nxt.kind.name = "KeywordScope" or nxt.kind.name = "KeywordRecord" then
+                        if depth > 0 then
+                            depth := depth - 1
+                        end if
+                        p_curr := advance_parser(p_curr)
+                    else
+                        if depth > 0 then
+                            depth := depth - 1
+                        end if
+                        p_curr := advance_parser(p_curr)
+                    end if
+                end if
+            else
+                if k = "EOF" then
+                    done := true
+                else
+                    p_curr := advance_parser(p_curr)
+                end if
+            end if
+        end if
+    end while
+
+    return p_curr
+end skip_routine_body_general
+
+function parse_routine_decl_general(p: GeneralParser) returns ParserRoutineDeclResult
+is
+    let empty_rt: RoutineDeclNode = make_empty_routine_decl_node(p.source_name)
+    let p_curr: GeneralParser = p
+    let is_async: Boolean = false
+
+    if p_curr.curr_tok.kind.name = "KeywordAsync" then
+        is_async := true
+        p_curr := advance_parser(p_curr)
+    end if
+
+    let kind: String = ""
+    let kw_tok: Token = p_curr.curr_tok
+    if p_curr.curr_tok.kind.name = "KeywordFunction" then
+        kind := "function"
+        p_curr := advance_parser(p_curr)
+    else
+        if p_curr.curr_tok.kind.name = "KeywordProcedure" then
+            kind := "procedure"
+            p_curr := advance_parser(p_curr)
+        else
+            let p_err: GeneralParser = expect_kind(p_curr, "KeywordFunction", "FH-PARSE-0002", "Expected function or procedure")
+            return ParserRoutineDeclResult { parser: p_err, node: empty_rt }
+        end if
+    end if
+
+    let res_name: ParserIdentifierResult = parse_identifier(p_curr)
+    p_curr := res_name.parser
+
+    let res_params: ParserParamListResult = parse_param_list_general(p_curr)
+    p_curr := res_params.parser
+
+    let empty_id: IdentifierNode = make_identifier_node(kw_tok.span, "")
+    let return_type: IdentifierNode = empty_id
+    if p_curr.curr_tok.kind.name = "KeywordReturns" then
+        p_curr := advance_parser(p_curr)
+        let res_ret: ParserIdentifierResult = parse_type_ref(p_curr)
+        p_curr := res_ret.parser
+        return_type := res_ret.node
+    end if
+
+    let res_contracts: ParserContractResult = parse_contract_blocks_general(p_curr)
+    p_curr := res_contracts.parser
+
+    p_curr := expect_kind(p_curr, "KeywordIs", "FH-PARSE-0002", "Expected 'is'")
+    p_curr := skip_routine_body_general(p_curr, res_name.node.name)
+
+    let node_rt: RoutineDeclNode = make_routine_decl_node(
+        kw_tok.span,
+        res_name.node,
+        kind,
+        is_async,
+        res_params.params,
+        res_params.count,
+        return_type,
+        res_contracts.has_requires,
+        res_contracts.has_ensures,
+        res_contracts.abort_clauses,
+        res_contracts.aborts_count,
+        res_contracts.depends_specs,
+        res_contracts.depends_count,
+        res_contracts.globals_specs,
+        res_contracts.globals_count
+    )
+
+    return ParserRoutineDeclResult { parser: p_curr, node: node_rt }
+end parse_routine_decl_general
+
+function parse_error_decl_general(p: GeneralParser) returns ParserErrorDeclResult
+is
+    let p1: GeneralParser = expect_kind(p, "KeywordError", "FH-PARSE-0002", "Expected 'error'")
+    let res_name: ParserIdentifierResult = parse_identifier(p1)
+    let er_node: ErrorDeclNode = make_error_decl_node(p.curr_tok.span, res_name.node)
+    return ParserErrorDeclResult { parser: res_name.parser, node: er_node }
+end parse_error_decl_general
+
+function parse_full_module_decl_result(source_name: String, source: String) returns ParseModuleDeclResult
+is
+    let p: GeneralParser = init_general_parser(source_name, source)
+    let empty_node: ModuleDeclNode = make_empty_module_decl_node(source_name)
+
+    let p1: GeneralParser = expect_kind(p, "KeywordModule", "FH-PARSE-0002", "Expected 'module'")
+    let res_name: ParserIdentifierResult = parse_dotted_identifier(p1)
+    let p_curr: GeneralParser = res_name.parser
+
+    if p_curr.has_error then
+        let empty_id: IdentifierNode = make_identifier_node(p.curr_tok.span, "")
+        let status: ParseStatus = make_parse_status("error")
+        return ParseModuleDeclResult { status: status, module_node: empty_node, issue: p_curr.issue }
+    end if
+
+    let module_decl: ModuleDeclNode = ModuleDeclNode {
+        span: p.curr_tok.span,
+        name: res_name.node,
+        imports: empty_node.imports,
+        import_count: 0,
+        type_decls: empty_node.type_decls,
+        type_count: 0,
+        record_decls: empty_node.record_decls,
+        record_count: 0,
+        error_decls: empty_node.error_decls,
+        error_count: 0,
+        routines: empty_node.routines,
+        routine_count: 0
+    }
+
+    let done: Boolean = false
+    while not done and p_curr.has_error = false
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        let k: String = p_curr.curr_tok.kind.name
+
+        if k = "KeywordImport" then
+            let res_imp: ParserImportResult = parse_import_decl(p_curr)
+            if res_imp.parser.has_error = false and module_decl.import_count < 16 then
+                module_decl := ModuleDeclNode {
+                    span: module_decl.span,
+                    name: module_decl.name,
+                    imports: set_imports(module_decl.imports, module_decl.import_count, res_imp.node),
+                    import_count: module_decl.import_count + 1,
+                    type_decls: module_decl.type_decls,
+                    type_count: module_decl.type_count,
+                    record_decls: module_decl.record_decls,
+                    record_count: module_decl.record_count,
+                    error_decls: module_decl.error_decls,
+                    error_count: module_decl.error_count,
+                    routines: module_decl.routines,
+                    routine_count: module_decl.routine_count
+                }
+            end if
+            p_curr := res_imp.parser
+
+        else
+            if k = "KeywordType" then
+                -- Lookahead to check if record follows "is" keyword
+                let is_rec: Boolean = false
+                let lex_temp: Lexer = p_curr.lexer
+                let tok_is: LexerResult = lex_next_token(lex_temp) -- skip type name
+                let tok_rec: LexerResult = lex_next_token(tok_is.lexer) -- the record or other keyword
+                if tok_rec.token.kind.name = "KeywordRecord" then
+                    is_rec := true
+                end if
+
+                if is_rec then
+                    -- Parse record
+                    let p_type: GeneralParser = expect_kind(p_curr, "KeywordType", "FH-PARSE-0002", "Expected 'type'")
+                    let res_typename: ParserIdentifierResult = parse_identifier(p_type)
+                    let p_is: GeneralParser = expect_kind(res_typename.parser, "KeywordIs", "FH-PARSE-0002", "Expected 'is'")
+                    let p_rec: GeneralParser = expect_kind(p_is, "KeywordRecord", "FH-PARSE-0002", "Expected 'record'")
+                    let res_rec: ParserRecordWithFieldsResult = parse_record_body_general(p_rec, res_typename.node)
+                    if res_rec.parser.has_error = false and module_decl.record_count < 16 then
+                        module_decl := ModuleDeclNode {
+                            span: module_decl.span,
+                            name: module_decl.name,
+                            imports: module_decl.imports,
+                            import_count: module_decl.import_count,
+                            type_decls: module_decl.type_decls,
+                            type_count: module_decl.type_count,
+                            record_decls: set_record_decls(module_decl.record_decls, module_decl.record_count, res_rec.node),
+                            record_count: module_decl.record_count + 1,
+                            error_decls: module_decl.error_decls,
+                            error_count: module_decl.error_count,
+                            routines: module_decl.routines,
+                            routine_count: module_decl.routine_count
+                        }
+                    end if
+                    p_curr := res_rec.parser
+                else
+                    -- Parse range type or alias type
+                    let p_type_node: GeneralParser = expect_kind(p_curr, "KeywordType", "FH-PARSE-0002", "Expected 'type'")
+                    let res_typename: ParserIdentifierResult = parse_identifier(p_type_node)
+                    let p_is: GeneralParser = expect_kind(res_typename.parser, "KeywordIs", "FH-PARSE-0002", "Expected 'is'")
+                    let res_base: ParserIdentifierResult = parse_identifier(p_is)
+                    p_curr := res_base.parser
+
+                    let min_val: String = ""
+                    let max_val: String = ""
+                    if p_curr.curr_tok.kind.name = "KeywordRange" then
+                        p_curr := advance_parser(p_curr)
+                        let min_tok: Token = p_curr.curr_tok
+                        p_curr := expect_kind(p_curr, "NumberLiteral", "FH-PARSE-0002", "Expected number literal")
+                        p_curr := expect_kind(p_curr, "DoubleDot", "FH-PARSE-0002", "Expected '..'")
+                        let max_tok: Token = p_curr.curr_tok
+                        p_curr := expect_kind(p_curr, "NumberLiteral", "FH-PARSE-0002", "Expected number literal")
+                        min_val := min_tok.lexeme
+                        max_val := max_tok.lexeme
+                    end if
+
+                    if p_curr.has_error = false and module_decl.type_count < 16 then
+                        let td: TypeDeclNode = make_type_decl_node(res_typename.node.span, res_typename.node, res_base.node, min_val, max_val)
+                        module_decl := ModuleDeclNode {
+                            span: module_decl.span,
+                            name: module_decl.name,
+                            imports: module_decl.imports,
+                            import_count: module_decl.import_count,
+                            type_decls: set_type_decls(module_decl.type_decls, module_decl.type_count, td),
+                            type_count: module_decl.type_count + 1,
+                            record_decls: module_decl.record_decls,
+                            record_count: module_decl.record_count,
+                            error_decls: module_decl.error_decls,
+                            error_count: module_decl.error_count,
+                            routines: module_decl.routines,
+                            routine_count: module_decl.routine_count
+                        }
+                    end if
+                end if
+
+            else
+                if k = "KeywordError" then
+                    let res_ed: ParserErrorDeclResult = parse_error_decl_general(p_curr)
+                    if res_ed.parser.has_error = false and module_decl.error_count < 16 then
+                        module_decl := ModuleDeclNode {
+                            span: module_decl.span,
+                            name: module_decl.name,
+                            imports: module_decl.imports,
+                            import_count: module_decl.import_count,
+                            type_decls: module_decl.type_decls,
+                            type_count: module_decl.type_count,
+                            record_decls: module_decl.record_decls,
+                            record_count: module_decl.record_count,
+                            error_decls: set_error_decls(module_decl.error_decls, module_decl.error_count, res_ed.node),
+                            error_count: module_decl.error_count + 1,
+                            routines: module_decl.routines,
+                            routine_count: module_decl.routine_count
+                        }
+                    end if
+                    p_curr := res_ed.parser
+
+                else
+                    if k = "KeywordFunction" or k = "KeywordProcedure" or k = "KeywordAsync" then
+                        let res_rt: ParserRoutineDeclResult = parse_routine_decl_general(p_curr)
+                        if res_rt.parser.has_error = false and module_decl.routine_count < 32 then
+                            module_decl := ModuleDeclNode {
+                                span: module_decl.span,
+                                name: module_decl.name,
+                                imports: module_decl.imports,
+                                import_count: module_decl.import_count,
+                                type_decls: module_decl.type_decls,
+                                type_count: module_decl.type_count,
+                                record_decls: module_decl.record_decls,
+                                record_count: module_decl.record_count,
+                                error_decls: module_decl.error_decls,
+                                error_count: module_decl.error_count,
+                                routines: set_routines(module_decl.routines, module_decl.routine_count, res_rt.node),
+                                routine_count: module_decl.routine_count + 1
+                            }
+                        end if
+                        p_curr := res_rt.parser
+
+                    else
+                        if k = "KeywordEnd" or k = "EOF" then
+                            done := true
+                        else
+                            let err_msg: String = String.template("Expected declarations, got ${lexeme}", lexeme: p_curr.curr_tok.lexeme)
+                            let p_err: GeneralParser = expect_kind(p_curr, "KeywordEnd", "FH-PARSE-0002", err_msg)
+                            p_curr := p_err
+                        end if
+                    end if
+                end if
+            end if
+        end if
+    end while
+
+    if p_curr.has_error then
+        let status: ParseStatus = make_parse_status("error")
+        return ParseModuleDeclResult { status: status, module_node: module_decl, issue: p_curr.issue }
+    end if
+
+    p_curr := expect_kind(p_curr, "KeywordEnd", "FH-PARSE-0002", "Expected 'end'")
+    let res_endname: ParserIdentifierResult = parse_identifier(p_curr)
+    p_curr := res_endname.parser
+
+    if p_curr.has_error then
+        let status: ParseStatus = make_parse_status("error")
+        return ParseModuleDeclResult { status: status, module_node: module_decl, issue: p_curr.issue }
+    end if
+
+    if res_name.node.name != res_endname.node.name then
+        let err_msg: String = String.template("end module name mismatch: expected ${expected}, got ${actual}", expected: res_name.node.name, actual: res_endname.node.name)
+        let err: ParseError = make_parse_error("FH-PARSE-0001", err_msg, res_endname.node.span)
+        let status: ParseStatus = make_parse_status("error")
+        return ParseModuleDeclResult { status: status, module_node: module_decl, issue: err }
+    end if
+
+    let ok_status: ParseStatus = make_parse_status("ok")
+    let empty_span: SourceSpan = SourceSpan { source_name: source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_error: ParseError = ParseError { code: "", message: "", span: empty_span }
+    return ParseModuleDeclResult { status: ok_status, module_node: module_decl, issue: empty_error }
+end parse_full_module_decl_result
 
 function init_general_parser(source_name: String, source: String) returns GeneralParser
 requires String.instr(source_name, "") = 0, String.instr(source, "") = 0

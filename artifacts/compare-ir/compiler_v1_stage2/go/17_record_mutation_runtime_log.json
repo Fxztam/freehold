@@ -1,0 +1,1252 @@
+{
+  "schema": "fh-compare-ir-v1",
+  "language_version": "freehold-v1",
+  "module": {
+    "node": "Module",
+    "name": "App.Main",
+    "imports": [
+      {
+        "kind": "ImportDecl",
+        "module": "Std.IO",
+        "exposing": []
+      }
+    ],
+    "declarations": [
+      {
+        "kind": "RecordTypeDecl",
+        "name": "Counter",
+        "fields": [
+          {
+            "name": "count",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          {
+            "name": "label",
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "counter",
+            "type": {
+              "kind": "TypeName",
+              "name": "Counter"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "make_counter",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "cold-start"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "FieldAssignStmt",
+            "path": [
+              "counter",
+              "count"
+            ],
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "counter",
+                  "count"
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 4
+              }
+            }
+          },
+          {
+            "kind": "FieldAssignStmt",
+            "path": [
+              "counter",
+              "label"
+            ],
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.replace",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "counter",
+                      "label"
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "cold"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "warm"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "marker",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.instr",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "counter",
+                      "label"
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "warm"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "counter = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "counter",
+                    "count"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "label = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "counter",
+                    "label"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "marker = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "marker"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "make_counter",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "count",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          {
+            "name": "label",
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Counter"
+        },
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "VarExpr",
+              "name": "count"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          }
+        ],
+        "aborts": [],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "result",
+                "count"
+              ]
+            },
+            "right": {
+              "kind": "VarExpr",
+              "name": "count"
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "result",
+                "label"
+              ]
+            },
+            "right": {
+              "kind": "VarExpr",
+              "name": "label"
+            }
+          }
+        ],
+        "contracts": {
+          "requires": [
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "count"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            }
+          ],
+          "ensures": [
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "result",
+                    "count"
+                  ]
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "count"
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 1,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "result",
+                    "label"
+                  ]
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "label"
+                }
+              }
+            }
+          ],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Counter"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Counter"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Counter"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "RecordLiteralExpr",
+                "type": "Counter",
+                "args": [
+                  {
+                    "kind": "NamedArg",
+                    "name": "count",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "count"
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "label",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "label"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "types": [
+      {
+        "kind": "TypeDef",
+        "name": "BigFloat",
+        "base": "BigFloat",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigFloat"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "BigInteger",
+        "base": "BigInteger",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "BigInteger"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Boolean",
+        "base": "Boolean",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Boolean"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Double",
+        "base": "Double",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Double"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Executor",
+        "base": "Executor",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Executor"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Integer",
+        "base": "Integer",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Integer"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "Scope",
+        "base": "Scope",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "Scope"
+        }
+      },
+      {
+        "kind": "TypeDef",
+        "name": "String",
+        "base": "String",
+        "base_type": {
+          "kind": "TypeName",
+          "name": "String"
+        }
+      }
+    ],
+    "records": [
+      {
+        "kind": "RecordDef",
+        "name": "Counter",
+        "fields": [
+          {
+            "kind": "RecordFieldDef",
+            "name": "count",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          {
+            "kind": "RecordFieldDef",
+            "name": "label",
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
+          }
+        ],
+        "proto_fields": []
+      }
+    ],
+    "errors": [
+      "SchemaError"
+    ],
+    "routines": [
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "procedure",
+        "name": "main",
+        "type_params": [],
+        "is_async": false,
+        "params": [],
+        "return_type": {
+          "kind": "Void"
+        },
+        "requires": [],
+        "aborts": [],
+        "ensures": [],
+        "contracts": {
+          "requires": [],
+          "ensures": [],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "LetStmt",
+            "name": "counter",
+            "type": {
+              "kind": "TypeName",
+              "name": "Counter"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "make_counter",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "NumberExpr",
+                    "value": 1
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "cold-start"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "FieldAssignStmt",
+            "path": [
+              "counter",
+              "count"
+            ],
+            "value": {
+              "kind": "BinaryExpr",
+              "op": "+",
+              "left": {
+                "kind": "FieldAccessExpr",
+                "path": [
+                  "counter",
+                  "count"
+                ]
+              },
+              "right": {
+                "kind": "NumberExpr",
+                "value": 4
+              }
+            }
+          },
+          {
+            "kind": "FieldAssignStmt",
+            "path": [
+              "counter",
+              "label"
+            ],
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.replace",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "counter",
+                      "label"
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "cold"
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "warm"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "LetStmt",
+            "name": "marker",
+            "type": {
+              "kind": "TypeName",
+              "name": "Integer"
+            },
+            "value": {
+              "kind": "CallExpr",
+              "name": "String.instr",
+              "args": [
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "counter",
+                      "label"
+                    ]
+                  }
+                },
+                {
+                  "kind": "PositionalArg",
+                  "value": {
+                    "kind": "StringExpr",
+                    "value": "warm"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "counter = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "counter",
+                    "count"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "label = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "counter",
+                    "label"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "kind": "CallStmt",
+            "name": "Std.IO.logf",
+            "args": [
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "StringExpr",
+                  "value": "marker = ${}"
+                }
+              },
+              {
+                "kind": "PositionalArg",
+                "value": {
+                  "kind": "VarExpr",
+                  "name": "marker"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "RoutineDecl",
+        "routine_kind": "function",
+        "name": "make_counter",
+        "type_params": [],
+        "is_async": false,
+        "params": [
+          {
+            "name": "count",
+            "type": "Integer",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "Integer"
+            }
+          },
+          {
+            "name": "label",
+            "type": "String",
+            "type_repr": {
+              "kind": "TypeName",
+              "name": "String"
+            }
+          }
+        ],
+        "return_type": {
+          "kind": "TypeName",
+          "name": "Counter"
+        },
+        "requires": [
+          {
+            "kind": "BinaryExpr",
+            "op": ">=",
+            "left": {
+              "kind": "VarExpr",
+              "name": "count"
+            },
+            "right": {
+              "kind": "NumberExpr",
+              "value": 0
+            }
+          }
+        ],
+        "aborts": [],
+        "ensures": [
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "result",
+                "count"
+              ]
+            },
+            "right": {
+              "kind": "VarExpr",
+              "name": "count"
+            }
+          },
+          {
+            "kind": "BinaryExpr",
+            "op": "=",
+            "left": {
+              "kind": "FieldAccessExpr",
+              "path": [
+                "result",
+                "label"
+              ]
+            },
+            "right": {
+              "kind": "VarExpr",
+              "name": "label"
+            }
+          }
+        ],
+        "contracts": {
+          "requires": [
+            {
+              "kind": "ContractClause",
+              "role": "requires",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": ">=",
+                "left": {
+                  "kind": "VarExpr",
+                  "name": "count"
+                },
+                "right": {
+                  "kind": "NumberExpr",
+                  "value": 0
+                }
+              }
+            }
+          ],
+          "ensures": [
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 0,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "result",
+                    "count"
+                  ]
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "count"
+                }
+              }
+            },
+            {
+              "kind": "ContractClause",
+              "role": "ensures",
+              "index": 1,
+              "condition": {
+                "kind": "BinaryExpr",
+                "op": "=",
+                "left": {
+                  "kind": "FieldAccessExpr",
+                  "path": [
+                    "result",
+                    "label"
+                  ]
+                },
+                "right": {
+                  "kind": "VarExpr",
+                  "name": "label"
+                }
+              }
+            }
+          ],
+          "aborts": []
+        },
+        "contract_bindings": {
+          "kind": "ContractBindings",
+          "is_result_return": false,
+          "contexts": {
+            "requires": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            },
+            "ensures": {
+              "result": true,
+              "success": false,
+              "failure": false,
+              "value": true,
+              "error": false
+            },
+            "aborts": {
+              "result": false,
+              "success": false,
+              "failure": false,
+              "value": false,
+              "error": false
+            }
+          },
+          "bindings": [
+            {
+              "kind": "ContractBinding",
+              "name": "result",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Counter"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "success",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "failure",
+              "available": false,
+              "type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "value",
+              "available": true,
+              "type": {
+                "kind": "TypeName",
+                "name": "Counter"
+              }
+            },
+            {
+              "kind": "ContractBinding",
+              "name": "error",
+              "available": false,
+              "type": {
+                "kind": "Void"
+              },
+              "error_ref": null
+            }
+          ],
+          "result_value_binding": {
+            "name": "value",
+            "available": true,
+            "type": {
+              "kind": "TypeName",
+              "name": "Counter"
+            }
+          },
+          "result_error_binding": {
+            "name": "error",
+            "available": false,
+            "type": {
+              "kind": "Void"
+            },
+            "error_ref": null
+          }
+        },
+        "body": [
+          {
+            "kind": "ReturnStmt",
+            "value": {
+              "kind": "ReturnPlain",
+              "value": {
+                "kind": "RecordLiteralExpr",
+                "type": "Counter",
+                "args": [
+                  {
+                    "kind": "NamedArg",
+                    "name": "count",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "count"
+                    }
+                  },
+                  {
+                    "kind": "NamedArg",
+                    "name": "label",
+                    "value": {
+                      "kind": "VarExpr",
+                      "name": "label"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "services": []
+  }
+}

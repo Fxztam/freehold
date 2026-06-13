@@ -194,6 +194,89 @@ type StmtNode is record
     aborts_type: String
 end record
 
+-- ============================================================
+-- Modern AST Nodes with SourceSpans for full-strength module declarations
+-- ============================================================
+
+type FieldNode is record
+    span: SourceSpan
+    name: IdentifierNode
+    type_ref: IdentifierNode
+end record
+
+type RecordTypeWithFieldsNode is record
+    span: SourceSpan
+    name: IdentifierNode
+    fields: Array<FieldNode, 16>
+    field_count: Integer
+end record
+
+type ModuleWithRecordWithFieldsNode is record
+    module_node: ModuleNode
+    record_type: RecordTypeWithFieldsNode
+end record
+
+type ParamNode is record
+    span: SourceSpan
+    name: IdentifierNode
+    type_ref: IdentifierNode
+end record
+
+type AbortClauseNode is record
+    span: SourceSpan
+    error_name: IdentifierNode
+end record
+
+type DependsNode is record
+    span: SourceSpan
+    target: IdentifierNode
+    sources: String
+end record
+
+type GlobalNode is record
+    span: SourceSpan
+    name: IdentifierNode
+    mode: String
+end record
+
+type ErrorDeclNode is record
+    span: SourceSpan
+    name: IdentifierNode
+end record
+
+type RoutineDeclNode is record
+    span: SourceSpan
+    name: IdentifierNode
+    kind: String           -- "function" | "procedure"
+    is_async: Boolean
+    params: Array<ParamNode, 8>
+    param_count: Integer
+    return_type: IdentifierNode
+    has_requires: Boolean
+    has_ensures: Boolean
+    abort_clauses: Array<AbortClauseNode, 8>
+    aborts_count: Integer
+    depends_specs: Array<DependsNode, 8>
+    depends_count: Integer
+    globals_specs: Array<GlobalNode, 8>
+    globals_count: Integer
+end record
+
+type ModuleDeclNode is record
+    span: SourceSpan
+    name: IdentifierNode
+    imports: Array<ImportNode, 16>
+    import_count: Integer
+    type_decls: Array<TypeDeclNode, 16>
+    type_count: Integer
+    record_decls: Array<RecordTypeWithFieldsNode, 16>
+    record_count: Integer
+    error_decls: Array<ErrorDeclNode, 16>
+    error_count: Integer
+    routines: Array<RoutineDeclNode, 32>
+    routine_count: Integer
+end record
+
 
 
 
@@ -734,5 +817,575 @@ is
     return JoinStmtNode { span: span, scope_name: scope_name, handle_var_name: handle_var_name }
 end make_join_stmt_node
 
+-- ============================================================
+-- Modern AST constructors with SourceSpans
+-- ============================================================
+
+function make_field_node(span: SourceSpan, name: IdentifierNode, type_ref: IdentifierNode) returns FieldNode
+requires String.instr(name.name, "") = 0, String.instr(type_ref.name, "") = 0
+ensures result.name.name = name.name
+is
+    return FieldNode { span: span, name: name, type_ref: type_ref }
+end make_field_node
+
+function make_empty_field_node(source_name: String) returns FieldNode
+requires String.instr(source_name, "") = 0
+is
+    let empty_span: SourceSpan = SourceSpan { source_name: source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_ident: IdentifierNode = make_identifier_node(empty_span, "")
+    return FieldNode { span: empty_span, name: empty_ident, type_ref: empty_ident }
+end make_empty_field_node
+
+function make_record_type_with_fields_node(span: SourceSpan, name: IdentifierNode, fields: Array<FieldNode, 16>, field_count: Integer) returns RecordTypeWithFieldsNode
+requires String.instr(name.name, "") = 0, field_count >= 0
+ensures result.name.name = name.name, result.field_count = field_count
+is
+    return RecordTypeWithFieldsNode { span: span, name: name, fields: fields, field_count: field_count }
+end make_record_type_with_fields_node
+
+function make_empty_record_type_with_fields_node(source_name: String) returns RecordTypeWithFieldsNode
+requires String.instr(source_name, "") = 0
+is
+    let empty_span: SourceSpan = SourceSpan { source_name: source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_id: IdentifierNode = make_identifier_node(empty_span, "")
+    let empty_f: FieldNode = make_empty_field_node(source_name)
+    return RecordTypeWithFieldsNode {
+        span: empty_span,
+        name: empty_id,
+        fields: [empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f, empty_f],
+        field_count: 0
+    }
+end make_empty_record_type_with_fields_node
+
+function make_module_with_record_with_fields_node(module_node: ModuleNode, record_type: RecordTypeWithFieldsNode) returns ModuleWithRecordWithFieldsNode
+requires String.instr(module_node.name.name, "") = 0, String.instr(record_type.name.name, "") = 0
+ensures result.module_node.name.name = module_node.name.name, result.record_type.name.name = record_type.name.name
+is
+    return ModuleWithRecordWithFieldsNode { module_node: module_node, record_type: record_type }
+end make_module_with_record_with_fields_node
+
+function make_param_node(span: SourceSpan, name: IdentifierNode, type_ref: IdentifierNode) returns ParamNode
+requires String.instr(name.name, "") = 0, String.instr(type_ref.name, "") = 0
+ensures result.name.name = name.name, result.type_ref.name = type_ref.name
+is
+    return ParamNode { span: span, name: name, type_ref: type_ref }
+end make_param_node
+
+function make_empty_param_node(source_name: String) returns ParamNode
+requires String.instr(source_name, "") = 0
+is
+    let empty_span: SourceSpan = SourceSpan { source_name: source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_id: IdentifierNode = make_identifier_node(empty_span, "")
+    return ParamNode { span: empty_span, name: empty_id, type_ref: empty_id }
+end make_empty_param_node
+
+function make_abort_clause_node(span: SourceSpan, error_name: IdentifierNode) returns AbortClauseNode
+requires String.instr(error_name.name, "") = 0
+ensures result.error_name.name = error_name.name
+is
+    return AbortClauseNode { span: span, error_name: error_name }
+end make_abort_clause_node
+
+function make_empty_abort_clause_node(source_name: String) returns AbortClauseNode
+requires String.instr(source_name, "") = 0
+is
+    let empty_span: SourceSpan = SourceSpan { source_name: source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_id: IdentifierNode = make_identifier_node(empty_span, "")
+    return AbortClauseNode { span: empty_span, error_name: empty_id }
+end make_empty_abort_clause_node
+
+function make_depends_node(span: SourceSpan, target: IdentifierNode, sources: String) returns DependsNode
+requires String.instr(target.name, "") = 0
+ensures result.target.name = target.name
+is
+    return DependsNode { span: span, target: target, sources: sources }
+end make_depends_node
+
+function make_empty_depends_node(source_name: String) returns DependsNode
+requires String.instr(source_name, "") = 0
+is
+    let empty_span: SourceSpan = SourceSpan { source_name: source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_id: IdentifierNode = make_identifier_node(empty_span, "")
+    return DependsNode { span: empty_span, target: empty_id, sources: "" }
+end make_empty_depends_node
+
+function make_global_node(span: SourceSpan, name: IdentifierNode, mode: String) returns GlobalNode
+requires String.instr(name.name, "") = 0
+ensures result.name.name = name.name
+is
+    return GlobalNode { span: span, name: name, mode: mode }
+end make_global_node
+
+function make_empty_global_node(source_name: String) returns GlobalNode
+requires String.instr(source_name, "") = 0
+is
+    let empty_span: SourceSpan = SourceSpan { source_name: source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_id: IdentifierNode = make_identifier_node(empty_span, "")
+    return GlobalNode { span: empty_span, name: empty_id, mode: "" }
+end make_empty_global_node
+
+function make_error_decl_node(span: SourceSpan, name: IdentifierNode) returns ErrorDeclNode
+requires String.instr(name.name, "") = 0
+ensures result.name.name = name.name
+is
+    return ErrorDeclNode { span: span, name: name }
+end make_error_decl_node
+
+function make_empty_error_decl_node(source_name: String) returns ErrorDeclNode
+requires String.instr(source_name, "") = 0
+is
+    let empty_span: SourceSpan = SourceSpan { source_name: source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_id: IdentifierNode = make_identifier_node(empty_span, "")
+    return ErrorDeclNode { span: empty_span, name: empty_id }
+end make_empty_error_decl_node
+
+function make_routine_decl_node(
+    span: SourceSpan,
+    name: IdentifierNode,
+    kind: String,
+    is_async: Boolean,
+    params: Array<ParamNode, 8>,
+    param_count: Integer,
+    return_type: IdentifierNode,
+    has_requires: Boolean,
+    has_ensures: Boolean,
+    abort_clauses: Array<AbortClauseNode, 8>,
+    aborts_count: Integer,
+    depends_specs: Array<DependsNode, 8>,
+    depends_count: Integer,
+    globals_specs: Array<GlobalNode, 8>,
+    globals_count: Integer
+) returns RoutineDeclNode
+requires String.instr(name.name, "") = 0, param_count >= 0
+ensures result.name.name = name.name
+is
+    return RoutineDeclNode {
+        span: span,
+        name: name,
+        kind: kind,
+        is_async: is_async,
+        params: params,
+        param_count: param_count,
+        return_type: return_type,
+        has_requires: has_requires,
+        has_ensures: has_ensures,
+        abort_clauses: abort_clauses,
+        aborts_count: aborts_count,
+        depends_specs: depends_specs,
+        depends_count: depends_count,
+        globals_specs: globals_specs,
+        globals_count: globals_count
+    }
+end make_routine_decl_node
+
+function make_empty_routine_decl_node(source_name: String) returns RoutineDeclNode
+requires String.instr(source_name, "") = 0
+is
+    let empty_span: SourceSpan = SourceSpan { source_name: source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_id: IdentifierNode = make_identifier_node(empty_span, "")
+    let p: ParamNode = make_empty_param_node(source_name)
+    let a: AbortClauseNode = make_empty_abort_clause_node(source_name)
+    let d: DependsNode = make_empty_depends_node(source_name)
+    let g: GlobalNode = make_empty_global_node(source_name)
+    return RoutineDeclNode {
+        span: empty_span,
+        name: empty_id,
+        kind: "",
+        is_async: false,
+        params: [p, p, p, p, p, p, p, p],
+        param_count: 0,
+        return_type: empty_id,
+        has_requires: false,
+        has_ensures: false,
+        abort_clauses: [a, a, a, a, a, a, a, a],
+        aborts_count: 0,
+        depends_specs: [d, d, d, d, d, d, d, d],
+        depends_count: 0,
+        globals_specs: [g, g, g, g, g, g, g, g],
+        globals_count: 0
+    }
+end make_empty_routine_decl_node
+
+function make_empty_module_decl_node(source_name: String) returns ModuleDeclNode
+requires String.instr(source_name, "") = 0
+is
+    let empty_span: SourceSpan = SourceSpan { source_name: source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
+    let empty_id: IdentifierNode = make_identifier_node(empty_span, "")
+    let imp: ImportNode = ImportNode { span: empty_span, module_name: empty_id, exposed_name: empty_id }
+    let td: TypeDeclNode = TypeDeclNode { span: empty_span, name: empty_id, base_type: empty_id, min_value: "", max_value: "" }
+    let rd: RecordTypeWithFieldsNode = make_empty_record_type_with_fields_node(source_name)
+    let ed: ErrorDeclNode = make_empty_error_decl_node(source_name)
+    let rt: RoutineDeclNode = make_empty_routine_decl_node(source_name)
+
+    return ModuleDeclNode {
+        span: empty_span,
+        name: empty_id,
+        imports: [imp, imp, imp, imp, imp, imp, imp, imp, imp, imp, imp, imp, imp, imp, imp, imp],
+        import_count: 0,
+        type_decls: [td, td, td, td, td, td, td, td, td, td, td, td, td, td, td, td],
+        type_count: 0,
+        record_decls: [rd, rd, rd, rd, rd, rd, rd, rd, rd, rd, rd, rd, rd, rd, rd, rd],
+        record_count: 0,
+        error_decls: [ed, ed, ed, ed, ed, ed, ed, ed, ed, ed, ed, ed, ed, ed, ed, ed],
+        error_count: 0,
+        routines: [rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt, rt],
+        routine_count: 0
+    }
+end make_empty_module_decl_node
+
+-- ============================================================
+-- Functional setter helpers for Arrays
+-- ============================================================
+
+function set_fields(arr: Array<FieldNode, 16>, idx: Integer, val: FieldNode) returns Array<FieldNode, 16>
+requires idx >= 0, idx < 16
+is
+    let i0: FieldNode = arr[0]
+    let i1: FieldNode = arr[1]
+    let i2: FieldNode = arr[2]
+    let i3: FieldNode = arr[3]
+    let i4: FieldNode = arr[4]
+    let i5: FieldNode = arr[5]
+    let i6: FieldNode = arr[6]
+    let i7: FieldNode = arr[7]
+    let i8: FieldNode = arr[8]
+    let i9: FieldNode = arr[9]
+    let i10: FieldNode = arr[10]
+    let i11: FieldNode = arr[11]
+    let i12: FieldNode = arr[12]
+    let i13: FieldNode = arr[13]
+    let i14: FieldNode = arr[14]
+    let i15: FieldNode = arr[15]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15]
+end set_fields
+
+function set_params(arr: Array<ParamNode, 8>, idx: Integer, val: ParamNode) returns Array<ParamNode, 8>
+requires idx >= 0, idx < 8
+is
+    let i0: ParamNode = arr[0]
+    let i1: ParamNode = arr[1]
+    let i2: ParamNode = arr[2]
+    let i3: ParamNode = arr[3]
+    let i4: ParamNode = arr[4]
+    let i5: ParamNode = arr[5]
+    let i6: ParamNode = arr[6]
+    let i7: ParamNode = arr[7]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7]
+end set_params
+
+function set_abort_clauses(arr: Array<AbortClauseNode, 8>, idx: Integer, val: AbortClauseNode) returns Array<AbortClauseNode, 8>
+requires idx >= 0, idx < 8
+is
+    let i0: AbortClauseNode = arr[0]
+    let i1: AbortClauseNode = arr[1]
+    let i2: AbortClauseNode = arr[2]
+    let i3: AbortClauseNode = arr[3]
+    let i4: AbortClauseNode = arr[4]
+    let i5: AbortClauseNode = arr[5]
+    let i6: AbortClauseNode = arr[6]
+    let i7: AbortClauseNode = arr[7]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7]
+end set_abort_clauses
+
+function set_depends_specs(arr: Array<DependsNode, 8>, idx: Integer, val: DependsNode) returns Array<DependsNode, 8>
+requires idx >= 0, idx < 8
+is
+    let i0: DependsNode = arr[0]
+    let i1: DependsNode = arr[1]
+    let i2: DependsNode = arr[2]
+    let i3: DependsNode = arr[3]
+    let i4: DependsNode = arr[4]
+    let i5: DependsNode = arr[5]
+    let i6: DependsNode = arr[6]
+    let i7: DependsNode = arr[7]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7]
+end set_depends_specs
+
+function set_globals_specs(arr: Array<GlobalNode, 8>, idx: Integer, val: GlobalNode) returns Array<GlobalNode, 8>
+requires idx >= 0, idx < 8
+is
+    let i0: GlobalNode = arr[0]
+    let i1: GlobalNode = arr[1]
+    let i2: GlobalNode = arr[2]
+    let i3: GlobalNode = arr[3]
+    let i4: GlobalNode = arr[4]
+    let i5: GlobalNode = arr[5]
+    let i6: GlobalNode = arr[6]
+    let i7: GlobalNode = arr[7]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7]
+end set_globals_specs
+
+function set_imports(arr: Array<ImportNode, 16>, idx: Integer, val: ImportNode) returns Array<ImportNode, 16>
+requires idx >= 0, idx < 16
+is
+    let i0: ImportNode = arr[0]
+    let i1: ImportNode = arr[1]
+    let i2: ImportNode = arr[2]
+    let i3: ImportNode = arr[3]
+    let i4: ImportNode = arr[4]
+    let i5: ImportNode = arr[5]
+    let i6: ImportNode = arr[6]
+    let i7: ImportNode = arr[7]
+    let i8: ImportNode = arr[8]
+    let i9: ImportNode = arr[9]
+    let i10: ImportNode = arr[10]
+    let i11: ImportNode = arr[11]
+    let i12: ImportNode = arr[12]
+    let i13: ImportNode = arr[13]
+    let i14: ImportNode = arr[14]
+    let i15: ImportNode = arr[15]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15]
+end set_imports
+
+function set_type_decls(arr: Array<TypeDeclNode, 16>, idx: Integer, val: TypeDeclNode) returns Array<TypeDeclNode, 16>
+requires idx >= 0, idx < 16
+is
+    let i0: TypeDeclNode = arr[0]
+    let i1: TypeDeclNode = arr[1]
+    let i2: TypeDeclNode = arr[2]
+    let i3: TypeDeclNode = arr[3]
+    let i4: TypeDeclNode = arr[4]
+    let i5: TypeDeclNode = arr[5]
+    let i6: TypeDeclNode = arr[6]
+    let i7: TypeDeclNode = arr[7]
+    let i8: TypeDeclNode = arr[8]
+    let i9: TypeDeclNode = arr[9]
+    let i10: TypeDeclNode = arr[10]
+    let i11: TypeDeclNode = arr[11]
+    let i12: TypeDeclNode = arr[12]
+    let i13: TypeDeclNode = arr[13]
+    let i14: TypeDeclNode = arr[14]
+    let i15: TypeDeclNode = arr[15]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15]
+end set_type_decls
+
+function set_record_decls(arr: Array<RecordTypeWithFieldsNode, 16>, idx: Integer, val: RecordTypeWithFieldsNode) returns Array<RecordTypeWithFieldsNode, 16>
+requires idx >= 0, idx < 16
+is
+    let i0: RecordTypeWithFieldsNode = arr[0]
+    let i1: RecordTypeWithFieldsNode = arr[1]
+    let i2: RecordTypeWithFieldsNode = arr[2]
+    let i3: RecordTypeWithFieldsNode = arr[3]
+    let i4: RecordTypeWithFieldsNode = arr[4]
+    let i5: RecordTypeWithFieldsNode = arr[5]
+    let i6: RecordTypeWithFieldsNode = arr[6]
+    let i7: RecordTypeWithFieldsNode = arr[7]
+    let i8: RecordTypeWithFieldsNode = arr[8]
+    let i9: RecordTypeWithFieldsNode = arr[9]
+    let i10: RecordTypeWithFieldsNode = arr[10]
+    let i11: RecordTypeWithFieldsNode = arr[11]
+    let i12: RecordTypeWithFieldsNode = arr[12]
+    let i13: RecordTypeWithFieldsNode = arr[13]
+    let i14: RecordTypeWithFieldsNode = arr[14]
+    let i15: RecordTypeWithFieldsNode = arr[15]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15]
+end set_record_decls
+
+function set_error_decls(arr: Array<ErrorDeclNode, 16>, idx: Integer, val: ErrorDeclNode) returns Array<ErrorDeclNode, 16>
+requires idx >= 0, idx < 16
+is
+    let i0: ErrorDeclNode = arr[0]
+    let i1: ErrorDeclNode = arr[1]
+    let i2: ErrorDeclNode = arr[2]
+    let i3: ErrorDeclNode = arr[3]
+    let i4: ErrorDeclNode = arr[4]
+    let i5: ErrorDeclNode = arr[5]
+    let i6: ErrorDeclNode = arr[6]
+    let i7: ErrorDeclNode = arr[7]
+    let i8: ErrorDeclNode = arr[8]
+    let i9: ErrorDeclNode = arr[9]
+    let i10: ErrorDeclNode = arr[10]
+    let i11: ErrorDeclNode = arr[11]
+    let i12: ErrorDeclNode = arr[12]
+    let i13: ErrorDeclNode = arr[13]
+    let i14: ErrorDeclNode = arr[14]
+    let i15: ErrorDeclNode = arr[15]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    return [i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15]
+end set_error_decls
+
+function set_routines(arr: Array<RoutineDeclNode, 32>, idx: Integer, val: RoutineDeclNode) returns Array<RoutineDeclNode, 32>
+requires idx >= 0, idx < 32
+is
+    let i0: RoutineDeclNode = arr[0]
+    let i1: RoutineDeclNode = arr[1]
+    let i2: RoutineDeclNode = arr[2]
+    let i3: RoutineDeclNode = arr[3]
+    let i4: RoutineDeclNode = arr[4]
+    let i5: RoutineDeclNode = arr[5]
+    let i6: RoutineDeclNode = arr[6]
+    let i7: RoutineDeclNode = arr[7]
+    let i8: RoutineDeclNode = arr[8]
+    let i9: RoutineDeclNode = arr[9]
+    let i10: RoutineDeclNode = arr[10]
+    let i11: RoutineDeclNode = arr[11]
+    let i12: RoutineDeclNode = arr[12]
+    let i13: RoutineDeclNode = arr[13]
+    let i14: RoutineDeclNode = arr[14]
+    let i15: RoutineDeclNode = arr[15]
+    let i16: RoutineDeclNode = arr[16]
+    let i17: RoutineDeclNode = arr[17]
+    let i18: RoutineDeclNode = arr[18]
+    let i19: RoutineDeclNode = arr[19]
+    let i20: RoutineDeclNode = arr[20]
+    let i21: RoutineDeclNode = arr[21]
+    let i22: RoutineDeclNode = arr[22]
+    let i23: RoutineDeclNode = arr[23]
+    let i24: RoutineDeclNode = arr[24]
+    let i25: RoutineDeclNode = arr[25]
+    let i26: RoutineDeclNode = arr[26]
+    let i27: RoutineDeclNode = arr[27]
+    let i28: RoutineDeclNode = arr[28]
+    let i29: RoutineDeclNode = arr[29]
+    let i30: RoutineDeclNode = arr[30]
+    let i31: RoutineDeclNode = arr[31]
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    if idx = 16 then i16 := val end if
+    if idx = 17 then i17 := val end if
+    if idx = 18 then i18 := val end if
+    if idx = 19 then i19 := val end if
+    if idx = 20 then i20 := val end if
+    if idx = 21 then i21 := val end if
+    if idx = 22 then i22 := val end if
+    if idx = 23 then i23 := val end if
+    if idx = 24 then i24 := val end if
+    if idx = 25 then i25 := val end if
+    if idx = 26 then i26 := val end if
+    if idx = 27 then i27 := val end if
+    if idx = 28 then i28 := val end if
+    if idx = 29 then i29 := val end if
+    if idx = 30 then i30 := val end if
+    if idx = 31 then i31 := val end if
+    return [
+        i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15,
+        i16, i17, i18, i19, i20, i21, i22, i23, i24, i25, i26, i27, i28, i29, i30, i31
+    ]
+end set_routines
 
 end Compiler.Core.Ast

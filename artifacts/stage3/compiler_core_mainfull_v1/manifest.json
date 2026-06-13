@@ -1,0 +1,131 @@
+{
+  "schema": "stage3-compiler-core-contracts-v1",
+  "stage": "stage3-compiler-core-mainfull-v1",
+  "entry": "bootstrap/compiler_core_v1/App/MainFull.fh",
+  "policy": {
+    "slice": "FullVerifier pipeline — parse + semantic check of full Freehold modules",
+    "purpose": "prove Stage0 can build App/MainFull which runs FullParser + FullSemanticChecker + FullVerifier on two sample modules",
+    "total_contracts": 1
+  },
+  "contracts": [
+    {
+      "name": "compiler_core_mainfull_v1_go_project",
+      "source_file": "bootstrap/compiler_core_v1/App/MainFull.fh",
+      "build_options": {
+        "executable_name": "stage3_compiler_mainfull_v1",
+        "entry_module_name": "App.MainFull"
+      },
+      "expected": {
+        "module_path": "freehold.local",
+        "supported": true
+      },
+      "files": [
+        {
+          "output_path": "app/mainfull/mainfull.go",
+          "module": "App.MainFull",
+          "supported": true,
+          "must_contain": [
+            "func Main()",
+            "%v.module = %v",
+            "%v.ok = %v",
+            "%v.phase = %v",
+            "%v.routine_count = %v",
+            "%v.record_count = %v",
+            "%v.type_count = %v",
+            "%v.error_count = %v",
+            "%v.import_count = %v",
+            "fullverify.bad.error_count = %v",
+            "fullverify.bad.first_error = %v",
+            "fullverify.bad.summary = %v"
+          ]
+        },
+        {
+          "output_path": "compiler/core/fulllexer/fulllexer.go",
+          "module": "Compiler.Core.FullLexer",
+          "supported": true,
+          "must_contain": [
+            "type ScanResult struct",
+            "func ScanNext("
+          ]
+        },
+        {
+          "output_path": "compiler/core/fullast/fullast.go",
+          "module": "Compiler.Core.FullAst",
+          "supported": true,
+          "must_contain": [
+            "type FullRoutineDecl struct",
+            "type FullModuleDecl struct",
+            "type FullParseResult struct",
+            "func MakeEmptyFullRoutineDecl("
+          ]
+        },
+        {
+          "output_path": "compiler/core/fullparser/fullparser.go",
+          "module": "Compiler.Core.FullParser",
+          "supported": true,
+          "must_contain": [
+            "func ParseFullModule("
+          ]
+        },
+        {
+          "output_path": "compiler/core/fullsemanticchecker/fullsemanticchecker.go",
+          "module": "Compiler.Core.FullSemanticChecker",
+          "supported": true,
+          "must_contain": [
+            "type FullSemanticResult struct",
+            "func CheckFullModule(",
+            "func BuildSymbolTable("
+          ]
+        },
+        {
+          "output_path": "compiler/core/fullverifier/fullverifier.go",
+          "module": "Compiler.Core.FullVerifier",
+          "supported": true,
+          "must_contain": [
+            "type FullVerificationResult struct",
+            "func VerifyModuleSource(",
+            "func FvSummary("
+          ]
+        }
+      ],
+      "build_files": [
+        {
+          "output_path": "go.mod",
+          "kind": "go_mod",
+          "must_contain": [
+            "module freehold.local",
+            "go 1.22"
+          ]
+        },
+        {
+          "output_path": "cmd/stage3_compiler_mainfull_v1/main.go",
+          "kind": "go_main",
+          "must_contain": [
+            "app_mainfull.Main()"
+          ]
+        },
+        {
+          "output_path": "build.cmd",
+          "kind": "build_cmd",
+          "must_contain": [
+            "go test ./...",
+            "stage3_compiler_mainfull_v1.exe"
+          ]
+        },
+        {
+          "output_path": "build.sh",
+          "kind": "build_sh",
+          "must_contain": [
+            "go test ./...",
+            "bin/stage3_compiler_mainfull_v1"
+          ]
+        }
+      ],
+      "extra_files": [],
+      "runtime_golden": {
+        "executable": "bin/stage3_compiler_mainfull_v1.exe",
+        "expected_stdout_file": "artifacts/stage3/compiler_core_mainfull_v1/expected/mainfull_results.expected.txt"
+      }
+    }
+  ]
+}

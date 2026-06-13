@@ -1,0 +1,4583 @@
+{
+  "node": "FhirDocumentV1",
+  "schema_profile": "fh-ir",
+  "schema": "fh-ir-v1",
+  "schema_version": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
+  "language_version": "freehold-v1",
+  "entry_module": "App.Main",
+  "project": {
+    "node": "ProjectGraph",
+    "module_order": [
+      "App.Main"
+    ],
+    "modules": [
+      {
+        "node": "ModuleEntry",
+        "name": "App.Main",
+        "source_ast": {
+          "node": "SourceAst",
+          "module": {
+            "node": "Module",
+            "name": "App.Main",
+            "imports": [
+              {
+                "kind": "ImportDecl",
+                "module": "Std.IO",
+                "exposing": []
+              }
+            ],
+            "declarations": [
+              {
+                "kind": "RecordTypeDecl",
+                "name": "ChatMessage",
+                "fields": [
+                  {
+                    "name": "client_id",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    },
+                    "json_name": "clientId"
+                  },
+                  {
+                    "name": "kind",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "name": "payload",
+                    "type": "ChatPayload",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "ChatPayload"
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RecordTypeDecl",
+                "name": "ChatPayload",
+                "fields": [
+                  {
+                    "name": "room",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "name": "text",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RecordTypeDecl",
+                "name": "ErrorMessage",
+                "fields": [
+                  {
+                    "name": "client_id",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    },
+                    "json_name": "clientId"
+                  },
+                  {
+                    "name": "kind",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "name": "payload",
+                    "type": "ErrorPayload",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "ErrorPayload"
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RecordTypeDecl",
+                "name": "ErrorPayload",
+                "fields": [
+                  {
+                    "name": "code",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "name": "message",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RecordTypeDecl",
+                "name": "SchemaStatus",
+                "fields": [
+                  {
+                    "name": "accepted",
+                    "type": "Boolean",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "name": "error_message",
+                    "type": "ErrorMessage",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "ErrorMessage"
+                    }
+                  },
+                  {
+                    "name": "runtime_result_error",
+                    "type": "Boolean",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "dynamic_invalid_json",
+                "type_params": [],
+                "is_async": false,
+                "params": [],
+                "return_type": {
+                  "kind": "TypeName",
+                  "name": "String"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": true,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "String"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "String"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "String.concat",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "{"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "not-json"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "dynamic_schema_mismatch",
+                "type_params": [],
+                "is_async": false,
+                "params": [],
+                "return_type": {
+                  "kind": "TypeName",
+                  "name": "String"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": true,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "String"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "String"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "String.concat",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "{\"kind\":\"chat\",\"clientId\":\"client-a\",\"payload\":{\"room\":\"main\"}"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "}"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "procedure",
+                "name": "main",
+                "type_params": [],
+                "is_async": false,
+                "params": [],
+                "return_type": {
+                  "kind": "Void"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "LetStmt",
+                    "name": "invalid_json",
+                    "type": {
+                      "kind": "ResultTypeName",
+                      "ok_type": {
+                        "kind": "TypeName",
+                        "name": "ChatMessage"
+                      },
+                      "error_type": "SchemaError",
+                      "error_ref": {
+                        "kind": "ErrorRef",
+                        "name": "SchemaError"
+                      }
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Json.parse",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "CallExpr",
+                            "name": "dynamic_invalid_json",
+                            "args": []
+                          }
+                        }
+                      ],
+                      "type_args": [
+                        "ChatMessage"
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "IfStmt",
+                    "condition": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "invalid_json",
+                        "ok"
+                      ]
+                    },
+                    "then_body": [
+                      {
+                        "kind": "CallStmt",
+                        "name": "Std.IO.log",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "Unexpected invalid JSON success"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "else_body": [
+                      {
+                        "kind": "LetStmt",
+                        "name": "invalid_status",
+                        "type": {
+                          "kind": "TypeName",
+                          "name": "SchemaStatus"
+                        },
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "reject_payload",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "INVALID_JSON"
+                              }
+                            },
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "client payload was not JSON"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "kind": "IfStmt",
+                        "condition": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "invalid_status",
+                            "runtime_result_error"
+                          ]
+                        },
+                        "then_body": [
+                          {
+                            "kind": "CallStmt",
+                            "name": "Std.IO.log",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "StringExpr",
+                                  "value": "Runtime invalid JSON returned Result error"
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "else_body": []
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "wrong_schema",
+                    "type": {
+                      "kind": "ResultTypeName",
+                      "ok_type": {
+                        "kind": "TypeName",
+                        "name": "ChatMessage"
+                      },
+                      "error_type": "SchemaError",
+                      "error_ref": {
+                        "kind": "ErrorRef",
+                        "name": "SchemaError"
+                      }
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Json.parse",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "CallExpr",
+                            "name": "dynamic_schema_mismatch",
+                            "args": []
+                          }
+                        }
+                      ],
+                      "type_args": [
+                        "ChatMessage"
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "IfStmt",
+                    "condition": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "wrong_schema",
+                        "ok"
+                      ]
+                    },
+                    "then_body": [
+                      {
+                        "kind": "CallStmt",
+                        "name": "Std.IO.log",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "Unexpected schema mismatch success"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "else_body": [
+                      {
+                        "kind": "LetStmt",
+                        "name": "schema_status",
+                        "type": {
+                          "kind": "TypeName",
+                          "name": "SchemaStatus"
+                        },
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "reject_payload",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "SCHEMA_MISMATCH"
+                              }
+                            },
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "client payload did not match ChatMessage"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "kind": "IfStmt",
+                        "condition": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "schema_status",
+                            "runtime_result_error"
+                          ]
+                        },
+                        "then_body": [
+                          {
+                            "kind": "CallStmt",
+                            "name": "Std.IO.log",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "StringExpr",
+                                  "value": "Runtime schema mismatch returned Result error"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "CallStmt",
+                            "name": "Std.IO.log",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "StringExpr",
+                                  "value": "Typed ErrorMessage emitted for invalid client payload"
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "else_body": []
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.log",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "Compile-time JSON literal schema failures covered by VF-J009 tests"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.log",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "WebSocket JSON schema negative demo finished successfully"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "reject_payload",
+                "type_params": [],
+                "is_async": false,
+                "params": [
+                  {
+                    "name": "code",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "name": "message",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "return_type": {
+                  "kind": "TypeName",
+                  "name": "SchemaStatus"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": true,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "SchemaStatus"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "SchemaStatus"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "SchemaStatus"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "LetStmt",
+                    "name": "error_message",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "ErrorMessage"
+                    },
+                    "value": {
+                      "kind": "RecordLiteralExpr",
+                      "type": "ErrorMessage",
+                      "args": [
+                        {
+                          "kind": "NamedArg",
+                          "name": "kind",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "error"
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "client_id",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "server"
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "payload",
+                          "value": {
+                            "kind": "RecordLiteralExpr",
+                            "type": "ErrorPayload",
+                            "args": [
+                              {
+                                "kind": "NamedArg",
+                                "name": "code",
+                                "value": {
+                                  "kind": "VarExpr",
+                                  "name": "code"
+                                }
+                              },
+                              {
+                                "kind": "NamedArg",
+                                "name": "message",
+                                "value": {
+                                  "kind": "VarExpr",
+                                  "name": "message"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "RecordLiteralExpr",
+                        "type": "SchemaStatus",
+                        "args": [
+                          {
+                            "kind": "NamedArg",
+                            "name": "accepted",
+                            "value": {
+                              "kind": "BoolExpr",
+                              "value": false
+                            }
+                          },
+                          {
+                            "kind": "NamedArg",
+                            "name": "runtime_result_error",
+                            "value": {
+                              "kind": "BoolExpr",
+                              "value": true
+                            }
+                          },
+                          {
+                            "kind": "NamedArg",
+                            "name": "error_message",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "error_message"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "semantic_ir": {
+          "node": "SemanticIr",
+          "analysis": {
+            "node": "AnalysisReport",
+            "types": [
+              {
+                "kind": "TypeDef",
+                "name": "BigFloat",
+                "base": "BigFloat",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "BigFloat"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "BigInteger",
+                "base": "BigInteger",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "BigInteger"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Boolean",
+                "base": "Boolean",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Double",
+                "base": "Double",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Executor",
+                "base": "Executor",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Executor"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Integer",
+                "base": "Integer",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Scope",
+                "base": "Scope",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Scope"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "String",
+                "base": "String",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "String"
+                }
+              }
+            ],
+            "records": [
+              {
+                "kind": "RecordDef",
+                "name": "ChatMessage",
+                "fields": [
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "client_id",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "kind",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "payload",
+                    "type": "ChatPayload",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "ChatPayload"
+                    }
+                  }
+                ],
+                "proto_fields": []
+              },
+              {
+                "kind": "RecordDef",
+                "name": "ChatPayload",
+                "fields": [
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "room",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "text",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "proto_fields": []
+              },
+              {
+                "kind": "RecordDef",
+                "name": "ErrorMessage",
+                "fields": [
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "client_id",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "kind",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "payload",
+                    "type": "ErrorPayload",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "ErrorPayload"
+                    }
+                  }
+                ],
+                "proto_fields": []
+              },
+              {
+                "kind": "RecordDef",
+                "name": "ErrorPayload",
+                "fields": [
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "code",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "message",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "proto_fields": []
+              },
+              {
+                "kind": "RecordDef",
+                "name": "SchemaStatus",
+                "fields": [
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "accepted",
+                    "type": "Boolean",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "error_message",
+                    "type": "ErrorMessage",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "ErrorMessage"
+                    }
+                  },
+                  {
+                    "kind": "RecordFieldDef",
+                    "name": "runtime_result_error",
+                    "type": "Boolean",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  }
+                ],
+                "proto_fields": []
+              }
+            ],
+            "errors": [
+              "SchemaError"
+            ],
+            "error_defs": [
+              {
+                "kind": "ErrorDef",
+                "name": "SchemaError"
+              }
+            ],
+            "routines": [
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "dynamic_invalid_json",
+                "type_params": [],
+                "is_async": false,
+                "params": [],
+                "return_type": {
+                  "kind": "TypeName",
+                  "name": "String"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": true,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "String"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "String"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "String.concat",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "{"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "not-json"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "dynamic_schema_mismatch",
+                "type_params": [],
+                "is_async": false,
+                "params": [],
+                "return_type": {
+                  "kind": "TypeName",
+                  "name": "String"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": true,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "String"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "String"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "String.concat",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "{\"kind\":\"chat\",\"clientId\":\"client-a\",\"payload\":{\"room\":\"main\"}"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "}"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "procedure",
+                "name": "main",
+                "type_params": [],
+                "is_async": false,
+                "params": [],
+                "return_type": {
+                  "kind": "Void"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "LetStmt",
+                    "name": "invalid_json",
+                    "type": {
+                      "kind": "ResultTypeName",
+                      "ok_type": {
+                        "kind": "TypeName",
+                        "name": "ChatMessage"
+                      },
+                      "error_type": "SchemaError",
+                      "error_ref": {
+                        "kind": "ErrorRef",
+                        "name": "SchemaError"
+                      }
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Json.parse",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "CallExpr",
+                            "name": "dynamic_invalid_json",
+                            "args": []
+                          }
+                        }
+                      ],
+                      "type_args": [
+                        "ChatMessage"
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "IfStmt",
+                    "condition": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "invalid_json",
+                        "ok"
+                      ]
+                    },
+                    "then_body": [
+                      {
+                        "kind": "CallStmt",
+                        "name": "Std.IO.log",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "Unexpected invalid JSON success"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "else_body": [
+                      {
+                        "kind": "LetStmt",
+                        "name": "invalid_status",
+                        "type": {
+                          "kind": "TypeName",
+                          "name": "SchemaStatus"
+                        },
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "reject_payload",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "INVALID_JSON"
+                              }
+                            },
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "client payload was not JSON"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "kind": "IfStmt",
+                        "condition": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "invalid_status",
+                            "runtime_result_error"
+                          ]
+                        },
+                        "then_body": [
+                          {
+                            "kind": "CallStmt",
+                            "name": "Std.IO.log",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "StringExpr",
+                                  "value": "Runtime invalid JSON returned Result error"
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "else_body": []
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "LetStmt",
+                    "name": "wrong_schema",
+                    "type": {
+                      "kind": "ResultTypeName",
+                      "ok_type": {
+                        "kind": "TypeName",
+                        "name": "ChatMessage"
+                      },
+                      "error_type": "SchemaError",
+                      "error_ref": {
+                        "kind": "ErrorRef",
+                        "name": "SchemaError"
+                      }
+                    },
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "Json.parse",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "CallExpr",
+                            "name": "dynamic_schema_mismatch",
+                            "args": []
+                          }
+                        }
+                      ],
+                      "type_args": [
+                        "ChatMessage"
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "IfStmt",
+                    "condition": {
+                      "kind": "FieldAccessExpr",
+                      "path": [
+                        "wrong_schema",
+                        "ok"
+                      ]
+                    },
+                    "then_body": [
+                      {
+                        "kind": "CallStmt",
+                        "name": "Std.IO.log",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "Unexpected schema mismatch success"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "else_body": [
+                      {
+                        "kind": "LetStmt",
+                        "name": "schema_status",
+                        "type": {
+                          "kind": "TypeName",
+                          "name": "SchemaStatus"
+                        },
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "reject_payload",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "SCHEMA_MISMATCH"
+                              }
+                            },
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "client payload did not match ChatMessage"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "kind": "IfStmt",
+                        "condition": {
+                          "kind": "FieldAccessExpr",
+                          "path": [
+                            "schema_status",
+                            "runtime_result_error"
+                          ]
+                        },
+                        "then_body": [
+                          {
+                            "kind": "CallStmt",
+                            "name": "Std.IO.log",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "StringExpr",
+                                  "value": "Runtime schema mismatch returned Result error"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "CallStmt",
+                            "name": "Std.IO.log",
+                            "args": [
+                              {
+                                "kind": "PositionalArg",
+                                "value": {
+                                  "kind": "StringExpr",
+                                  "value": "Typed ErrorMessage emitted for invalid client payload"
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "else_body": []
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.log",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "Compile-time JSON literal schema failures covered by VF-J009 tests"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "CallStmt",
+                    "name": "Std.IO.log",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "WebSocket JSON schema negative demo finished successfully"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "function",
+                "name": "reject_payload",
+                "type_params": [],
+                "is_async": false,
+                "params": [
+                  {
+                    "name": "code",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "name": "message",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "return_type": {
+                  "kind": "TypeName",
+                  "name": "SchemaStatus"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": true,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "SchemaStatus"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": true,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "SchemaStatus"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "SchemaStatus"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": [
+                  {
+                    "kind": "LetStmt",
+                    "name": "error_message",
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "ErrorMessage"
+                    },
+                    "value": {
+                      "kind": "RecordLiteralExpr",
+                      "type": "ErrorMessage",
+                      "args": [
+                        {
+                          "kind": "NamedArg",
+                          "name": "kind",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "error"
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "client_id",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "server"
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "payload",
+                          "value": {
+                            "kind": "RecordLiteralExpr",
+                            "type": "ErrorPayload",
+                            "args": [
+                              {
+                                "kind": "NamedArg",
+                                "name": "code",
+                                "value": {
+                                  "kind": "VarExpr",
+                                  "name": "code"
+                                }
+                              },
+                              {
+                                "kind": "NamedArg",
+                                "name": "message",
+                                "value": {
+                                  "kind": "VarExpr",
+                                  "name": "message"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "ReturnStmt",
+                    "value": {
+                      "kind": "ReturnPlain",
+                      "value": {
+                        "kind": "RecordLiteralExpr",
+                        "type": "SchemaStatus",
+                        "args": [
+                          {
+                            "kind": "NamedArg",
+                            "name": "accepted",
+                            "value": {
+                              "kind": "BoolExpr",
+                              "value": false
+                            }
+                          },
+                          {
+                            "kind": "NamedArg",
+                            "name": "runtime_result_error",
+                            "value": {
+                              "kind": "BoolExpr",
+                              "value": true
+                            }
+                          },
+                          {
+                            "kind": "NamedArg",
+                            "name": "error_message",
+                            "value": {
+                              "kind": "VarExpr",
+                              "name": "error_message"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "services": [],
+            "proof_obligations": [],
+            "flow_summaries": [
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "dynamic_invalid_json",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              },
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "dynamic_schema_mismatch",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              },
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "main",
+                "routine_kind": "procedure",
+                "normal_return_possible": true,
+                "guaranteed_exit": false,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [
+                  "dynamic_invalid_json",
+                  "dynamic_schema_mismatch",
+                  "reject_payload"
+                ],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              },
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "reject_payload",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              }
+            ],
+            "verifier": {
+              "node": "VerifierReport",
+              "proof_obligations": [],
+              "flow_summaries": [
+                {
+                  "kind": "RoutineFlowSummary",
+                  "routine_name": "dynamic_invalid_json",
+                  "routine_kind": "function",
+                  "normal_return_possible": true,
+                  "guaranteed_exit": true,
+                  "declared_aborts": [],
+                  "declared_abort_refs": [],
+                  "emitted_aborts": [],
+                  "emitted_abort_refs": [],
+                  "called_routines": [],
+                  "propagated_aborts": [],
+                  "propagated_abort_refs": []
+                },
+                {
+                  "kind": "RoutineFlowSummary",
+                  "routine_name": "dynamic_schema_mismatch",
+                  "routine_kind": "function",
+                  "normal_return_possible": true,
+                  "guaranteed_exit": true,
+                  "declared_aborts": [],
+                  "declared_abort_refs": [],
+                  "emitted_aborts": [],
+                  "emitted_abort_refs": [],
+                  "called_routines": [],
+                  "propagated_aborts": [],
+                  "propagated_abort_refs": []
+                },
+                {
+                  "kind": "RoutineFlowSummary",
+                  "routine_name": "main",
+                  "routine_kind": "procedure",
+                  "normal_return_possible": true,
+                  "guaranteed_exit": false,
+                  "declared_aborts": [],
+                  "declared_abort_refs": [],
+                  "emitted_aborts": [],
+                  "emitted_abort_refs": [],
+                  "called_routines": [
+                    "dynamic_invalid_json",
+                    "dynamic_schema_mismatch",
+                    "reject_payload"
+                  ],
+                  "propagated_aborts": [],
+                  "propagated_abort_refs": []
+                },
+                {
+                  "kind": "RoutineFlowSummary",
+                  "routine_name": "reject_payload",
+                  "routine_kind": "function",
+                  "normal_return_possible": true,
+                  "guaranteed_exit": true,
+                  "declared_aborts": [],
+                  "declared_abort_refs": [],
+                  "emitted_aborts": [],
+                  "emitted_abort_refs": [],
+                  "called_routines": [],
+                  "propagated_aborts": [],
+                  "propagated_abort_refs": []
+                }
+              ]
+            }
+          }
+        },
+        "module": {
+          "node": "Module",
+          "name": "App.Main",
+          "imports": [
+            {
+              "kind": "ImportDecl",
+              "module": "Std.IO",
+              "exposing": []
+            }
+          ],
+          "declarations": [
+            {
+              "kind": "RecordTypeDecl",
+              "name": "ChatMessage",
+              "fields": [
+                {
+                  "name": "client_id",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  },
+                  "json_name": "clientId"
+                },
+                {
+                  "name": "kind",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "name": "payload",
+                  "type": "ChatPayload",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "ChatPayload"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RecordTypeDecl",
+              "name": "ChatPayload",
+              "fields": [
+                {
+                  "name": "room",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "name": "text",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RecordTypeDecl",
+              "name": "ErrorMessage",
+              "fields": [
+                {
+                  "name": "client_id",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  },
+                  "json_name": "clientId"
+                },
+                {
+                  "name": "kind",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "name": "payload",
+                  "type": "ErrorPayload",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "ErrorPayload"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RecordTypeDecl",
+              "name": "ErrorPayload",
+              "fields": [
+                {
+                  "name": "code",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "name": "message",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RecordTypeDecl",
+              "name": "SchemaStatus",
+              "fields": [
+                {
+                  "name": "accepted",
+                  "type": "Boolean",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Boolean"
+                  }
+                },
+                {
+                  "name": "error_message",
+                  "type": "ErrorMessage",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "ErrorMessage"
+                  }
+                },
+                {
+                  "name": "runtime_result_error",
+                  "type": "Boolean",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Boolean"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "dynamic_invalid_json",
+              "type_params": [],
+              "is_async": false,
+              "params": [],
+              "return_type": {
+                "kind": "TypeName",
+                "name": "String"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": true,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": true,
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "String.concat",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "{"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "not-json"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "dynamic_schema_mismatch",
+              "type_params": [],
+              "is_async": false,
+              "params": [],
+              "return_type": {
+                "kind": "TypeName",
+                "name": "String"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": true,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": true,
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "String.concat",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "{\"kind\":\"chat\",\"clientId\":\"client-a\",\"payload\":{\"room\":\"main\"}"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "}"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "procedure",
+              "name": "main",
+              "type_params": [],
+              "is_async": false,
+              "params": [],
+              "return_type": {
+                "kind": "Void"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "invalid_json",
+                  "type": {
+                    "kind": "ResultTypeName",
+                    "ok_type": {
+                      "kind": "TypeName",
+                      "name": "ChatMessage"
+                    },
+                    "error_type": "SchemaError",
+                    "error_ref": {
+                      "kind": "ErrorRef",
+                      "name": "SchemaError"
+                    }
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Json.parse",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "dynamic_invalid_json",
+                          "args": []
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "ChatMessage"
+                    ]
+                  }
+                },
+                {
+                  "kind": "IfStmt",
+                  "condition": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "invalid_json",
+                      "ok"
+                    ]
+                  },
+                  "then_body": [
+                    {
+                      "kind": "CallStmt",
+                      "name": "Std.IO.log",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "Unexpected invalid JSON success"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "else_body": [
+                    {
+                      "kind": "LetStmt",
+                      "name": "invalid_status",
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "SchemaStatus"
+                      },
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "reject_payload",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "INVALID_JSON"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "client payload was not JSON"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "kind": "IfStmt",
+                      "condition": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "invalid_status",
+                          "runtime_result_error"
+                        ]
+                      },
+                      "then_body": [
+                        {
+                          "kind": "CallStmt",
+                          "name": "Std.IO.log",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "Runtime invalid JSON returned Result error"
+                              }
+                            }
+                          ]
+                        }
+                      ],
+                      "else_body": []
+                    }
+                  ]
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "wrong_schema",
+                  "type": {
+                    "kind": "ResultTypeName",
+                    "ok_type": {
+                      "kind": "TypeName",
+                      "name": "ChatMessage"
+                    },
+                    "error_type": "SchemaError",
+                    "error_ref": {
+                      "kind": "ErrorRef",
+                      "name": "SchemaError"
+                    }
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Json.parse",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "dynamic_schema_mismatch",
+                          "args": []
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "ChatMessage"
+                    ]
+                  }
+                },
+                {
+                  "kind": "IfStmt",
+                  "condition": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "wrong_schema",
+                      "ok"
+                    ]
+                  },
+                  "then_body": [
+                    {
+                      "kind": "CallStmt",
+                      "name": "Std.IO.log",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "Unexpected schema mismatch success"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "else_body": [
+                    {
+                      "kind": "LetStmt",
+                      "name": "schema_status",
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "SchemaStatus"
+                      },
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "reject_payload",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "SCHEMA_MISMATCH"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "client payload did not match ChatMessage"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "kind": "IfStmt",
+                      "condition": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "schema_status",
+                          "runtime_result_error"
+                        ]
+                      },
+                      "then_body": [
+                        {
+                          "kind": "CallStmt",
+                          "name": "Std.IO.log",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "Runtime schema mismatch returned Result error"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "CallStmt",
+                          "name": "Std.IO.log",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "Typed ErrorMessage emitted for invalid client payload"
+                              }
+                            }
+                          ]
+                        }
+                      ],
+                      "else_body": []
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.log",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "Compile-time JSON literal schema failures covered by VF-J009 tests"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.log",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "WebSocket JSON schema negative demo finished successfully"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "reject_payload",
+              "type_params": [],
+              "is_async": false,
+              "params": [
+                {
+                  "name": "code",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "name": "message",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "return_type": {
+                "kind": "TypeName",
+                "name": "SchemaStatus"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": true,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "SchemaStatus"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "SchemaStatus"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": true,
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "SchemaStatus"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "error_message",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "ErrorMessage"
+                  },
+                  "value": {
+                    "kind": "RecordLiteralExpr",
+                    "type": "ErrorMessage",
+                    "args": [
+                      {
+                        "kind": "NamedArg",
+                        "name": "kind",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "error"
+                        }
+                      },
+                      {
+                        "kind": "NamedArg",
+                        "name": "client_id",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "server"
+                        }
+                      },
+                      {
+                        "kind": "NamedArg",
+                        "name": "payload",
+                        "value": {
+                          "kind": "RecordLiteralExpr",
+                          "type": "ErrorPayload",
+                          "args": [
+                            {
+                              "kind": "NamedArg",
+                              "name": "code",
+                              "value": {
+                                "kind": "VarExpr",
+                                "name": "code"
+                              }
+                            },
+                            {
+                              "kind": "NamedArg",
+                              "name": "message",
+                              "value": {
+                                "kind": "VarExpr",
+                                "name": "message"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "RecordLiteralExpr",
+                      "type": "SchemaStatus",
+                      "args": [
+                        {
+                          "kind": "NamedArg",
+                          "name": "accepted",
+                          "value": {
+                            "kind": "BoolExpr",
+                            "value": false
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "runtime_result_error",
+                          "value": {
+                            "kind": "BoolExpr",
+                            "value": true
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "error_message",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "error_message"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "analysis": {
+          "node": "AnalysisReport",
+          "types": [
+            {
+              "kind": "TypeDef",
+              "name": "BigFloat",
+              "base": "BigFloat",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "BigFloat"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "BigInteger",
+              "base": "BigInteger",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "BigInteger"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Boolean",
+              "base": "Boolean",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Double",
+              "base": "Double",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Double"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Executor",
+              "base": "Executor",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Executor"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Integer",
+              "base": "Integer",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Scope",
+              "base": "Scope",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Scope"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "String",
+              "base": "String",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "String"
+              }
+            }
+          ],
+          "records": [
+            {
+              "kind": "RecordDef",
+              "name": "ChatMessage",
+              "fields": [
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "client_id",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "kind",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "payload",
+                  "type": "ChatPayload",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "ChatPayload"
+                  }
+                }
+              ],
+              "proto_fields": []
+            },
+            {
+              "kind": "RecordDef",
+              "name": "ChatPayload",
+              "fields": [
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "room",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "text",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "proto_fields": []
+            },
+            {
+              "kind": "RecordDef",
+              "name": "ErrorMessage",
+              "fields": [
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "client_id",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "kind",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "payload",
+                  "type": "ErrorPayload",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "ErrorPayload"
+                  }
+                }
+              ],
+              "proto_fields": []
+            },
+            {
+              "kind": "RecordDef",
+              "name": "ErrorPayload",
+              "fields": [
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "code",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "message",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "proto_fields": []
+            },
+            {
+              "kind": "RecordDef",
+              "name": "SchemaStatus",
+              "fields": [
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "accepted",
+                  "type": "Boolean",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Boolean"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "error_message",
+                  "type": "ErrorMessage",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "ErrorMessage"
+                  }
+                },
+                {
+                  "kind": "RecordFieldDef",
+                  "name": "runtime_result_error",
+                  "type": "Boolean",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "Boolean"
+                  }
+                }
+              ],
+              "proto_fields": []
+            }
+          ],
+          "errors": [
+            "SchemaError"
+          ],
+          "error_defs": [
+            {
+              "kind": "ErrorDef",
+              "name": "SchemaError"
+            }
+          ],
+          "routines": [
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "dynamic_invalid_json",
+              "type_params": [],
+              "is_async": false,
+              "params": [],
+              "return_type": {
+                "kind": "TypeName",
+                "name": "String"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": true,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": true,
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "String.concat",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "{"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "not-json"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "dynamic_schema_mismatch",
+              "type_params": [],
+              "is_async": false,
+              "params": [],
+              "return_type": {
+                "kind": "TypeName",
+                "name": "String"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": true,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": true,
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "CallExpr",
+                      "name": "String.concat",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "{\"kind\":\"chat\",\"clientId\":\"client-a\",\"payload\":{\"room\":\"main\"}"
+                          }
+                        },
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "}"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "procedure",
+              "name": "main",
+              "type_params": [],
+              "is_async": false,
+              "params": [],
+              "return_type": {
+                "kind": "Void"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "invalid_json",
+                  "type": {
+                    "kind": "ResultTypeName",
+                    "ok_type": {
+                      "kind": "TypeName",
+                      "name": "ChatMessage"
+                    },
+                    "error_type": "SchemaError",
+                    "error_ref": {
+                      "kind": "ErrorRef",
+                      "name": "SchemaError"
+                    }
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Json.parse",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "dynamic_invalid_json",
+                          "args": []
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "ChatMessage"
+                    ]
+                  }
+                },
+                {
+                  "kind": "IfStmt",
+                  "condition": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "invalid_json",
+                      "ok"
+                    ]
+                  },
+                  "then_body": [
+                    {
+                      "kind": "CallStmt",
+                      "name": "Std.IO.log",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "Unexpected invalid JSON success"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "else_body": [
+                    {
+                      "kind": "LetStmt",
+                      "name": "invalid_status",
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "SchemaStatus"
+                      },
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "reject_payload",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "INVALID_JSON"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "client payload was not JSON"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "kind": "IfStmt",
+                      "condition": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "invalid_status",
+                          "runtime_result_error"
+                        ]
+                      },
+                      "then_body": [
+                        {
+                          "kind": "CallStmt",
+                          "name": "Std.IO.log",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "Runtime invalid JSON returned Result error"
+                              }
+                            }
+                          ]
+                        }
+                      ],
+                      "else_body": []
+                    }
+                  ]
+                },
+                {
+                  "kind": "LetStmt",
+                  "name": "wrong_schema",
+                  "type": {
+                    "kind": "ResultTypeName",
+                    "ok_type": {
+                      "kind": "TypeName",
+                      "name": "ChatMessage"
+                    },
+                    "error_type": "SchemaError",
+                    "error_ref": {
+                      "kind": "ErrorRef",
+                      "name": "SchemaError"
+                    }
+                  },
+                  "value": {
+                    "kind": "CallExpr",
+                    "name": "Json.parse",
+                    "args": [
+                      {
+                        "kind": "PositionalArg",
+                        "value": {
+                          "kind": "CallExpr",
+                          "name": "dynamic_schema_mismatch",
+                          "args": []
+                        }
+                      }
+                    ],
+                    "type_args": [
+                      "ChatMessage"
+                    ]
+                  }
+                },
+                {
+                  "kind": "IfStmt",
+                  "condition": {
+                    "kind": "FieldAccessExpr",
+                    "path": [
+                      "wrong_schema",
+                      "ok"
+                    ]
+                  },
+                  "then_body": [
+                    {
+                      "kind": "CallStmt",
+                      "name": "Std.IO.log",
+                      "args": [
+                        {
+                          "kind": "PositionalArg",
+                          "value": {
+                            "kind": "StringExpr",
+                            "value": "Unexpected schema mismatch success"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "else_body": [
+                    {
+                      "kind": "LetStmt",
+                      "name": "schema_status",
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "SchemaStatus"
+                      },
+                      "value": {
+                        "kind": "CallExpr",
+                        "name": "reject_payload",
+                        "args": [
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "SCHEMA_MISMATCH"
+                            }
+                          },
+                          {
+                            "kind": "PositionalArg",
+                            "value": {
+                              "kind": "StringExpr",
+                              "value": "client payload did not match ChatMessage"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "kind": "IfStmt",
+                      "condition": {
+                        "kind": "FieldAccessExpr",
+                        "path": [
+                          "schema_status",
+                          "runtime_result_error"
+                        ]
+                      },
+                      "then_body": [
+                        {
+                          "kind": "CallStmt",
+                          "name": "Std.IO.log",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "Runtime schema mismatch returned Result error"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "CallStmt",
+                          "name": "Std.IO.log",
+                          "args": [
+                            {
+                              "kind": "PositionalArg",
+                              "value": {
+                                "kind": "StringExpr",
+                                "value": "Typed ErrorMessage emitted for invalid client payload"
+                              }
+                            }
+                          ]
+                        }
+                      ],
+                      "else_body": []
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.log",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "Compile-time JSON literal schema failures covered by VF-J009 tests"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "CallStmt",
+                  "name": "Std.IO.log",
+                  "args": [
+                    {
+                      "kind": "PositionalArg",
+                      "value": {
+                        "kind": "StringExpr",
+                        "value": "WebSocket JSON schema negative demo finished successfully"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "function",
+              "name": "reject_payload",
+              "type_params": [],
+              "is_async": false,
+              "params": [
+                {
+                  "name": "code",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "name": "message",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "return_type": {
+                "kind": "TypeName",
+                "name": "SchemaStatus"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": true,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "SchemaStatus"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": true,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "SchemaStatus"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": true,
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "SchemaStatus"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": [
+                {
+                  "kind": "LetStmt",
+                  "name": "error_message",
+                  "type": {
+                    "kind": "TypeName",
+                    "name": "ErrorMessage"
+                  },
+                  "value": {
+                    "kind": "RecordLiteralExpr",
+                    "type": "ErrorMessage",
+                    "args": [
+                      {
+                        "kind": "NamedArg",
+                        "name": "kind",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "error"
+                        }
+                      },
+                      {
+                        "kind": "NamedArg",
+                        "name": "client_id",
+                        "value": {
+                          "kind": "StringExpr",
+                          "value": "server"
+                        }
+                      },
+                      {
+                        "kind": "NamedArg",
+                        "name": "payload",
+                        "value": {
+                          "kind": "RecordLiteralExpr",
+                          "type": "ErrorPayload",
+                          "args": [
+                            {
+                              "kind": "NamedArg",
+                              "name": "code",
+                              "value": {
+                                "kind": "VarExpr",
+                                "name": "code"
+                              }
+                            },
+                            {
+                              "kind": "NamedArg",
+                              "name": "message",
+                              "value": {
+                                "kind": "VarExpr",
+                                "name": "message"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "kind": "ReturnStmt",
+                  "value": {
+                    "kind": "ReturnPlain",
+                    "value": {
+                      "kind": "RecordLiteralExpr",
+                      "type": "SchemaStatus",
+                      "args": [
+                        {
+                          "kind": "NamedArg",
+                          "name": "accepted",
+                          "value": {
+                            "kind": "BoolExpr",
+                            "value": false
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "runtime_result_error",
+                          "value": {
+                            "kind": "BoolExpr",
+                            "value": true
+                          }
+                        },
+                        {
+                          "kind": "NamedArg",
+                          "name": "error_message",
+                          "value": {
+                            "kind": "VarExpr",
+                            "name": "error_message"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "services": [],
+          "proof_obligations": [],
+          "flow_summaries": [
+            {
+              "kind": "RoutineFlowSummary",
+              "routine_name": "dynamic_invalid_json",
+              "routine_kind": "function",
+              "normal_return_possible": true,
+              "guaranteed_exit": true,
+              "declared_aborts": [],
+              "declared_abort_refs": [],
+              "emitted_aborts": [],
+              "emitted_abort_refs": [],
+              "called_routines": [],
+              "propagated_aborts": [],
+              "propagated_abort_refs": []
+            },
+            {
+              "kind": "RoutineFlowSummary",
+              "routine_name": "dynamic_schema_mismatch",
+              "routine_kind": "function",
+              "normal_return_possible": true,
+              "guaranteed_exit": true,
+              "declared_aborts": [],
+              "declared_abort_refs": [],
+              "emitted_aborts": [],
+              "emitted_abort_refs": [],
+              "called_routines": [],
+              "propagated_aborts": [],
+              "propagated_abort_refs": []
+            },
+            {
+              "kind": "RoutineFlowSummary",
+              "routine_name": "main",
+              "routine_kind": "procedure",
+              "normal_return_possible": true,
+              "guaranteed_exit": false,
+              "declared_aborts": [],
+              "declared_abort_refs": [],
+              "emitted_aborts": [],
+              "emitted_abort_refs": [],
+              "called_routines": [
+                "dynamic_invalid_json",
+                "dynamic_schema_mismatch",
+                "reject_payload"
+              ],
+              "propagated_aborts": [],
+              "propagated_abort_refs": []
+            },
+            {
+              "kind": "RoutineFlowSummary",
+              "routine_name": "reject_payload",
+              "routine_kind": "function",
+              "normal_return_possible": true,
+              "guaranteed_exit": true,
+              "declared_aborts": [],
+              "declared_abort_refs": [],
+              "emitted_aborts": [],
+              "emitted_abort_refs": [],
+              "called_routines": [],
+              "propagated_aborts": [],
+              "propagated_abort_refs": []
+            }
+          ],
+          "verifier": {
+            "node": "VerifierReport",
+            "proof_obligations": [],
+            "flow_summaries": [
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "dynamic_invalid_json",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              },
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "dynamic_schema_mismatch",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              },
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "main",
+                "routine_kind": "procedure",
+                "normal_return_possible": true,
+                "guaranteed_exit": false,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [
+                  "dynamic_invalid_json",
+                  "dynamic_schema_mismatch",
+                  "reject_payload"
+                ],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              },
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "reject_payload",
+                "routine_kind": "function",
+                "normal_return_possible": true,
+                "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "import_graph": [
+      {
+        "node": "ImportEdge",
+        "from_module": "App.Main",
+        "to_module": "Std.IO",
+        "is_runtime": true,
+        "exposing": [],
+        "qualified_exposing": []
+      }
+    ],
+    "runtime_modules": [
+      {
+        "node": "RuntimeModule",
+        "name": "Std.IO",
+        "exports": [
+          "log",
+          "log_bool",
+          "log_double",
+          "log_int",
+          "logf"
+        ]
+      }
+    ]
+  }
+}
