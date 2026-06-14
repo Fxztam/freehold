@@ -152,7 +152,7 @@ def run_supported(example: SupportedExample) -> bool:
     for go_file in example_root.glob("*.go"):
         shutil.copy(go_file, project_out)
 
-    if run(["cmd", "/c", "build.cmd"], project_out).returncode != 0:
+    if run(["cmd", "/c", ".\\build.cmd"], project_out).returncode != 0:
         print(f"[FAIL] generated Go build failed: {example.name}")
         return True
 

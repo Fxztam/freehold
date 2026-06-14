@@ -423,11 +423,12 @@ def expr_to_smt(e: Any) -> str:
             sub = expr_to_smt(e.args[1])
             return f"(str.indexof {s} {sub} 0)"
         if e.name == "String.replace":
-            s_expr = e.args[0]
-            src_expr = e.args[1]
-            dst_expr = e.args[2]
-            if isinstance(s_expr, StringExpr) and isinstance(src_expr, StringExpr) and isinstance(dst_expr, StringExpr):
-                return f'"{s_expr.value.replace(src_expr.value, dst_expr.value)}"'
+            s = expr_to_smt(e.args[0])
+            src = expr_to_smt(e.args[1])
+            dst = expr_to_smt(e.args[2])
+            if s.startswith('"') and s.endswith('"') and src.startswith('"') and src.endswith('"') and dst.startswith('"') and dst.endswith('"'):
+                return f'"{s[1:-1].replace(src[1:-1], dst[1:-1])}"'
+            return f"(str.replace {s} {src} {dst})"
         if e.name == "String.length":
             s = expr_to_smt(e.args[0])
             return f"(str.len {s})"
@@ -1414,6 +1415,7 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
                         "obligation": obligation,
                         "smt_query": smt_validity_query(path, obligation, var_types),
                     })
+            return path_conditions
         elif isinstance(stmt, AbortStmt):
             abort_cond = None
             for clause in r.aborts:
@@ -1432,6 +1434,7 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
                     "obligation": abort_cond_smt,
                     "smt_query": smt_validity_query(path, abort_cond_smt, var_types),
                 })
+            return path_conditions
         elif isinstance(stmt, CheckStmt):
             expr = apply_subst(stmt.expr, local_substs)
             expr = let_bind_calls(expr, env, path_conditions, routines, imports, imported_modules, [0])
@@ -1487,9 +1490,9 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
                 walk_body((stmt.default_body or []) + remaining, dict(env), path_conditions + [default_cond], routines, types, records, obs, r, r_name, dict(channel_invariants), dict(spawned_tasks), imports, imported_modules, dict(local_substs))
             return path_conditions
         elif isinstance(stmt, ScopeStmt):
-            path_conditions = walk_body(stmt.spawn_body, env, path_conditions, routines, types, records, obs, r, r_name, channel_invariants, spawned_tasks, imports, imported_modules, dict(local_substs))
-            path_conditions = walk_body(stmt.join_body, env, path_conditions, routines, types, records, obs, r, r_name, channel_invariants, spawned_tasks, imports, imported_modules, dict(local_substs))
-            path_conditions = walk_body(stmt.result_body, env, path_conditions, routines, types, records, obs, r, r_name, channel_invariants, spawned_tasks, imports, imported_modules, dict(local_substs))
+            path_conditions = walk_body(stmt.spawn_body, env, path_conditions, routines, types, records, obs, r, r_name, channel_invariants, spawned_tasks, imports, imported_modules, local_substs)
+            path_conditions = walk_body(stmt.join_body, env, path_conditions, routines, types, records, obs, r, r_name, channel_invariants, spawned_tasks, imports, imported_modules, local_substs)
+            path_conditions = walk_body(stmt.result_body, env, path_conditions, routines, types, records, obs, r, r_name, channel_invariants, spawned_tasks, imports, imported_modules, local_substs)
         i += 1
     return path_conditions
 

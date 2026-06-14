@@ -1,0 +1,11 @@
+{
+  "source_file": "tests\\language_modules_02\\12_result\\invalid_semantics\\res_06_test_res_06.fh",
+  "module_name": "12_result",
+  "case_kind": "invalid_semantics",
+  "parse_ok": false,
+  "source_snippet": "module Test.RES.06\n\nimport Test.Support exposing NotFound\nfunction fail_on_zero(n: Integer) returns Result<Integer, NotFound>\nrequires n >= 0\naborts NotFound\nis\n    if n = 0 then\n        return error NotFound\n    end if\n    return ok n\nend fail_on_zero\nfunction unsafe_value(n: Integer) returns Integer\nrequires n >= 0\nis\n    let r: Result<Integer, NotFound> = fail_on_zero(n)\n    return r.value\nend unsafe_value\n\nend Test.RES.06\n",
+  "error": "1:17: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... all\\\\b|some\\\\b|each\\\\b|in\\\\b|stream\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bb06\n\nimport Test.Supp ...\u00ab",
+  "errors": [
+    "1:17: Error (1040): Parser IDENT->/(?!module\\\\b|import\\\\b|exposing\\\\b|type\\\\b|is\\\\b|record\\\\b|erro ... all\\\\b|some\\\\b|each\\\\b|in\\\\b|stream\\\\b)[A-Za-z_][A-Za-z0-9_]*/ did not match: \u00bb06\n\nimport Test.Supp ...\u00ab"
+  ]
+}

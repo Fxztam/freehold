@@ -1,0 +1,1719 @@
+{
+  "source_file": "tests\\language_modules_02\\08_service_rpc\\valid\\service_pos.fh",
+  "module_name": "08_service_rpc",
+  "case_kind": "valid",
+  "parse_ok": true,
+  "source_snippet": "-- ============================================================\n-- test-08-service_pos.fh  -  Service/RPC PASS-Tests (SVC-01..04)\n-- ============================================================\nmodule Test.Service.Pos\n\ntype PointRequest is record\n    id: Integer proto 1\nend record\n\ntype PrefixRequest is record\n    prefix: String proto 1\nend record\n\ntype ValueRequest is record\n    val: Integer proto 1\nend record\n\ntype CreatePointRequest is record\n    n: Integer proto 1\nend record\n\ntype PointMessage is record\n    x: Integer proto 1\n    y: Integer proto 2\nend record\n\ntype LabeledMessage is record\n    name: String proto 1\n    amount: Integer proto 2\nend record\n\ntype CountLabelsResponse is record\n    count: Integer proto 1\nend record\n\ntype SafePointResponse is record\n    success_flag: Boolean proto 1\n    point: PointMessage proto 2\n    error_text: String proto 3\nend record\n\n-- SVC-01/02: Service mit einem RPC\nservice PointService is\n    rpc GetPoint(request: PointRequest): PointMessage\nend PointService\n\n-- SVC-01/02: Service mit mehreren RPCs\nservice LabelService is\n    rpc GetLabeled(request: PointRequest):  LabeledMessage\n    rpc CountLabels(request: PrefixRequest): CountLabelsResponse\n    rpc FindByValue(request: ValueRequest):  LabeledMessage\nend LabelService\n\n-- SVC-02: RPC mit explizitem Safe-Response-Record\nservice SafeService is\n    rpc FindPoint(request: PointRequest):       SafePointResponse\n    rpc CreatePoint(request: CreatePointRequest): SafePointResponse\nend SafeService\n\nend Test.Service.Pos\n",
+  "ast": {
+    "name": "start",
+    "pos": 0,
+    "children": [
+      {
+        "name": "module_decl",
+        "pos": 194,
+        "children": [
+          {
+            "name": ":Text",
+            "pos": 194,
+            "text": "module"
+          },
+          {
+            "name": "qualified_name",
+            "pos": 201,
+            "children": [
+              {
+                "name": "IDENT",
+                "pos": 201,
+                "text": "Test"
+              },
+              {
+                "name": ":Text",
+                "pos": 205,
+                "text": "."
+              },
+              {
+                "name": "IDENT",
+                "pos": 206,
+                "text": "Service"
+              },
+              {
+                "name": ":Text",
+                "pos": 213,
+                "text": "."
+              },
+              {
+                "name": "IDENT",
+                "pos": 214,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 214,
+                    "text": "Pos"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 219,
+        "children": [
+          {
+            "name": "record_type_decl",
+            "pos": 219,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 219,
+                "text": "type"
+              },
+              {
+                "name": "IDENT",
+                "pos": 224,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 224,
+                    "text": "PointRequest"
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 237,
+                "text": "is"
+              },
+              {
+                "name": ":Text",
+                "pos": 240,
+                "text": "record"
+              },
+              {
+                "name": "record_field",
+                "pos": 251,
+                "children": [
+                  {
+                    "name": "IDENT",
+                    "pos": 251,
+                    "text": "id"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 253,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 255,
+                    "children": [
+                      {
+                        "name": "BASE_TYPE",
+                        "pos": 255,
+                        "children": [
+                          {
+                            "name": ":Text",
+                            "pos": 255,
+                            "text": "Integer"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "proto_field_id",
+                    "pos": 263,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 263,
+                        "text": "proto"
+                      },
+                      {
+                        "name": "INTEGER_LITERAL",
+                        "pos": 269,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 269,
+                            "text": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 271,
+                "text": "end"
+              },
+              {
+                "name": ":Text",
+                "pos": 275,
+                "text": "record"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 283,
+        "children": [
+          {
+            "name": "record_type_decl",
+            "pos": 283,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 283,
+                "text": "type"
+              },
+              {
+                "name": "IDENT",
+                "pos": 288,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 288,
+                    "text": "PrefixRequest"
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 302,
+                "text": "is"
+              },
+              {
+                "name": ":Text",
+                "pos": 305,
+                "text": "record"
+              },
+              {
+                "name": "record_field",
+                "pos": 316,
+                "children": [
+                  {
+                    "name": "IDENT",
+                    "pos": 316,
+                    "text": "prefix"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 322,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 324,
+                    "children": [
+                      {
+                        "name": "BASE_TYPE",
+                        "pos": 324,
+                        "children": [
+                          {
+                            "name": ":Text",
+                            "pos": 324,
+                            "text": "String"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "proto_field_id",
+                    "pos": 331,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 331,
+                        "text": "proto"
+                      },
+                      {
+                        "name": "INTEGER_LITERAL",
+                        "pos": 337,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 337,
+                            "text": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 339,
+                "text": "end"
+              },
+              {
+                "name": ":Text",
+                "pos": 343,
+                "text": "record"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 351,
+        "children": [
+          {
+            "name": "record_type_decl",
+            "pos": 351,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 351,
+                "text": "type"
+              },
+              {
+                "name": "IDENT",
+                "pos": 356,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 356,
+                    "text": "ValueRequest"
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 369,
+                "text": "is"
+              },
+              {
+                "name": ":Text",
+                "pos": 372,
+                "text": "record"
+              },
+              {
+                "name": "record_field",
+                "pos": 383,
+                "children": [
+                  {
+                    "name": "IDENT",
+                    "pos": 383,
+                    "text": "val"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 386,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 388,
+                    "children": [
+                      {
+                        "name": "BASE_TYPE",
+                        "pos": 388,
+                        "children": [
+                          {
+                            "name": ":Text",
+                            "pos": 388,
+                            "text": "Integer"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "proto_field_id",
+                    "pos": 396,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 396,
+                        "text": "proto"
+                      },
+                      {
+                        "name": "INTEGER_LITERAL",
+                        "pos": 402,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 402,
+                            "text": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 404,
+                "text": "end"
+              },
+              {
+                "name": ":Text",
+                "pos": 408,
+                "text": "record"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 416,
+        "children": [
+          {
+            "name": "record_type_decl",
+            "pos": 416,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 416,
+                "text": "type"
+              },
+              {
+                "name": "IDENT",
+                "pos": 421,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 421,
+                    "text": "CreatePointRequest"
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 440,
+                "text": "is"
+              },
+              {
+                "name": ":Text",
+                "pos": 443,
+                "text": "record"
+              },
+              {
+                "name": "record_field",
+                "pos": 454,
+                "children": [
+                  {
+                    "name": "IDENT",
+                    "pos": 454,
+                    "text": "n"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 455,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 457,
+                    "children": [
+                      {
+                        "name": "BASE_TYPE",
+                        "pos": 457,
+                        "children": [
+                          {
+                            "name": ":Text",
+                            "pos": 457,
+                            "text": "Integer"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "proto_field_id",
+                    "pos": 465,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 465,
+                        "text": "proto"
+                      },
+                      {
+                        "name": "INTEGER_LITERAL",
+                        "pos": 471,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 471,
+                            "text": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 473,
+                "text": "end"
+              },
+              {
+                "name": ":Text",
+                "pos": 477,
+                "text": "record"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 485,
+        "children": [
+          {
+            "name": "record_type_decl",
+            "pos": 485,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 485,
+                "text": "type"
+              },
+              {
+                "name": "IDENT",
+                "pos": 490,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 490,
+                    "text": "PointMessage"
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 503,
+                "text": "is"
+              },
+              {
+                "name": ":Text",
+                "pos": 506,
+                "text": "record"
+              },
+              {
+                "name": "record_field",
+                "pos": 517,
+                "children": [
+                  {
+                    "name": "IDENT",
+                    "pos": 517,
+                    "text": "x"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 518,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 520,
+                    "children": [
+                      {
+                        "name": "BASE_TYPE",
+                        "pos": 520,
+                        "children": [
+                          {
+                            "name": ":Text",
+                            "pos": 520,
+                            "text": "Integer"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "proto_field_id",
+                    "pos": 528,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 528,
+                        "text": "proto"
+                      },
+                      {
+                        "name": "INTEGER_LITERAL",
+                        "pos": 534,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 534,
+                            "text": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "record_field",
+                "pos": 540,
+                "children": [
+                  {
+                    "name": "IDENT",
+                    "pos": 540,
+                    "text": "y"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 541,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 543,
+                    "children": [
+                      {
+                        "name": "BASE_TYPE",
+                        "pos": 543,
+                        "children": [
+                          {
+                            "name": ":Text",
+                            "pos": 543,
+                            "text": "Integer"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "proto_field_id",
+                    "pos": 551,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 551,
+                        "text": "proto"
+                      },
+                      {
+                        "name": "INTEGER_LITERAL",
+                        "pos": 557,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 557,
+                            "text": "2"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 559,
+                "text": "end"
+              },
+              {
+                "name": ":Text",
+                "pos": 563,
+                "text": "record"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 571,
+        "children": [
+          {
+            "name": "record_type_decl",
+            "pos": 571,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 571,
+                "text": "type"
+              },
+              {
+                "name": "IDENT",
+                "pos": 576,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 576,
+                    "text": "LabeledMessage"
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 591,
+                "text": "is"
+              },
+              {
+                "name": ":Text",
+                "pos": 594,
+                "text": "record"
+              },
+              {
+                "name": "record_field",
+                "pos": 605,
+                "children": [
+                  {
+                    "name": "IDENT",
+                    "pos": 605,
+                    "text": "name"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 609,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 611,
+                    "children": [
+                      {
+                        "name": "BASE_TYPE",
+                        "pos": 611,
+                        "children": [
+                          {
+                            "name": ":Text",
+                            "pos": 611,
+                            "text": "String"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "proto_field_id",
+                    "pos": 618,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 618,
+                        "text": "proto"
+                      },
+                      {
+                        "name": "INTEGER_LITERAL",
+                        "pos": 624,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 624,
+                            "text": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "record_field",
+                "pos": 630,
+                "children": [
+                  {
+                    "name": "IDENT",
+                    "pos": 630,
+                    "text": "amount"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 636,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 638,
+                    "children": [
+                      {
+                        "name": "BASE_TYPE",
+                        "pos": 638,
+                        "children": [
+                          {
+                            "name": ":Text",
+                            "pos": 638,
+                            "text": "Integer"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "proto_field_id",
+                    "pos": 646,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 646,
+                        "text": "proto"
+                      },
+                      {
+                        "name": "INTEGER_LITERAL",
+                        "pos": 652,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 652,
+                            "text": "2"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 654,
+                "text": "end"
+              },
+              {
+                "name": ":Text",
+                "pos": 658,
+                "text": "record"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 666,
+        "children": [
+          {
+            "name": "record_type_decl",
+            "pos": 666,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 666,
+                "text": "type"
+              },
+              {
+                "name": "IDENT",
+                "pos": 671,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 671,
+                    "text": "CountLabelsResponse"
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 691,
+                "text": "is"
+              },
+              {
+                "name": ":Text",
+                "pos": 694,
+                "text": "record"
+              },
+              {
+                "name": "record_field",
+                "pos": 705,
+                "children": [
+                  {
+                    "name": "IDENT",
+                    "pos": 705,
+                    "text": "count"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 710,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 712,
+                    "children": [
+                      {
+                        "name": "BASE_TYPE",
+                        "pos": 712,
+                        "children": [
+                          {
+                            "name": ":Text",
+                            "pos": 712,
+                            "text": "Integer"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "proto_field_id",
+                    "pos": 720,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 720,
+                        "text": "proto"
+                      },
+                      {
+                        "name": "INTEGER_LITERAL",
+                        "pos": 726,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 726,
+                            "text": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 728,
+                "text": "end"
+              },
+              {
+                "name": ":Text",
+                "pos": 732,
+                "text": "record"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 740,
+        "children": [
+          {
+            "name": "record_type_decl",
+            "pos": 740,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 740,
+                "text": "type"
+              },
+              {
+                "name": "IDENT",
+                "pos": 745,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 745,
+                    "text": "SafePointResponse"
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 763,
+                "text": "is"
+              },
+              {
+                "name": ":Text",
+                "pos": 766,
+                "text": "record"
+              },
+              {
+                "name": "record_field",
+                "pos": 777,
+                "children": [
+                  {
+                    "name": "IDENT",
+                    "pos": 777,
+                    "text": "success_flag"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 789,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 791,
+                    "children": [
+                      {
+                        "name": "BASE_TYPE",
+                        "pos": 791,
+                        "children": [
+                          {
+                            "name": ":Text",
+                            "pos": 791,
+                            "text": "Boolean"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "proto_field_id",
+                    "pos": 799,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 799,
+                        "text": "proto"
+                      },
+                      {
+                        "name": "INTEGER_LITERAL",
+                        "pos": 805,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 805,
+                            "text": "1"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "record_field",
+                "pos": 811,
+                "children": [
+                  {
+                    "name": "IDENT",
+                    "pos": 811,
+                    "text": "point"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 816,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 818,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 818,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 818,
+                            "text": "PointMessage"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "proto_field_id",
+                    "pos": 831,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 831,
+                        "text": "proto"
+                      },
+                      {
+                        "name": "INTEGER_LITERAL",
+                        "pos": 837,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 837,
+                            "text": "2"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "record_field",
+                "pos": 843,
+                "children": [
+                  {
+                    "name": "IDENT",
+                    "pos": 843,
+                    "text": "error_text"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 853,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 855,
+                    "children": [
+                      {
+                        "name": "BASE_TYPE",
+                        "pos": 855,
+                        "children": [
+                          {
+                            "name": ":Text",
+                            "pos": 855,
+                            "text": "String"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "proto_field_id",
+                    "pos": 862,
+                    "children": [
+                      {
+                        "name": ":Text",
+                        "pos": 862,
+                        "text": "proto"
+                      },
+                      {
+                        "name": "INTEGER_LITERAL",
+                        "pos": 868,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 868,
+                            "text": "3"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 870,
+                "text": "end"
+              },
+              {
+                "name": ":Text",
+                "pos": 874,
+                "text": "record"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 918,
+        "children": [
+          {
+            "name": "service_decl",
+            "pos": 918,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 918,
+                "text": "service"
+              },
+              {
+                "name": "IDENT",
+                "pos": 926,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 926,
+                    "text": "PointService"
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 939,
+                "text": "is"
+              },
+              {
+                "name": "rpc_decl",
+                "pos": 946,
+                "children": [
+                  {
+                    "name": ":Text",
+                    "pos": 946,
+                    "text": "rpc"
+                  },
+                  {
+                    "name": "IDENT",
+                    "pos": 950,
+                    "text": "GetPoint"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 958,
+                    "text": "("
+                  },
+                  {
+                    "name": "IDENT",
+                    "pos": 959,
+                    "text": "request"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 966,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 968,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 968,
+                        "text": "PointRequest"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 980,
+                    "text": ")"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 981,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 983,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 983,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 983,
+                            "text": "PointMessage"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 996,
+                "text": "end"
+              },
+              {
+                "name": "IDENT",
+                "pos": 1000,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 1000,
+                    "text": "PointService"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 1054,
+        "children": [
+          {
+            "name": "service_decl",
+            "pos": 1054,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 1054,
+                "text": "service"
+              },
+              {
+                "name": "IDENT",
+                "pos": 1062,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 1062,
+                    "text": "LabelService"
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 1075,
+                "text": "is"
+              },
+              {
+                "name": "rpc_decl",
+                "pos": 1082,
+                "children": [
+                  {
+                    "name": ":Text",
+                    "pos": 1082,
+                    "text": "rpc"
+                  },
+                  {
+                    "name": "IDENT",
+                    "pos": 1086,
+                    "text": "GetLabeled"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1096,
+                    "text": "("
+                  },
+                  {
+                    "name": "IDENT",
+                    "pos": 1097,
+                    "text": "request"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1104,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 1106,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 1106,
+                        "text": "PointRequest"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1118,
+                    "text": ")"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1119,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 1122,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 1122,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 1122,
+                            "text": "LabeledMessage"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "rpc_decl",
+                "pos": 1141,
+                "children": [
+                  {
+                    "name": ":Text",
+                    "pos": 1141,
+                    "text": "rpc"
+                  },
+                  {
+                    "name": "IDENT",
+                    "pos": 1145,
+                    "text": "CountLabels"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1156,
+                    "text": "("
+                  },
+                  {
+                    "name": "IDENT",
+                    "pos": 1157,
+                    "text": "request"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1164,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 1166,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 1166,
+                        "text": "PrefixRequest"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1179,
+                    "text": ")"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1180,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 1182,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 1182,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 1182,
+                            "text": "CountLabelsResponse"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "rpc_decl",
+                "pos": 1206,
+                "children": [
+                  {
+                    "name": ":Text",
+                    "pos": 1206,
+                    "text": "rpc"
+                  },
+                  {
+                    "name": "IDENT",
+                    "pos": 1210,
+                    "text": "FindByValue"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1221,
+                    "text": "("
+                  },
+                  {
+                    "name": "IDENT",
+                    "pos": 1222,
+                    "text": "request"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1229,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 1231,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 1231,
+                        "text": "ValueRequest"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1243,
+                    "text": ")"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1244,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 1247,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 1247,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 1247,
+                            "text": "LabeledMessage"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 1262,
+                "text": "end"
+              },
+              {
+                "name": "IDENT",
+                "pos": 1266,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 1266,
+                    "text": "LabelService"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "declaration",
+        "pos": 1331,
+        "children": [
+          {
+            "name": "service_decl",
+            "pos": 1331,
+            "children": [
+              {
+                "name": ":Text",
+                "pos": 1331,
+                "text": "service"
+              },
+              {
+                "name": "IDENT",
+                "pos": 1339,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 1339,
+                    "text": "SafeService"
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 1351,
+                "text": "is"
+              },
+              {
+                "name": "rpc_decl",
+                "pos": 1358,
+                "children": [
+                  {
+                    "name": ":Text",
+                    "pos": 1358,
+                    "text": "rpc"
+                  },
+                  {
+                    "name": "IDENT",
+                    "pos": 1362,
+                    "text": "FindPoint"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1371,
+                    "text": "("
+                  },
+                  {
+                    "name": "IDENT",
+                    "pos": 1372,
+                    "text": "request"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1379,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 1381,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 1381,
+                        "text": "PointRequest"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1393,
+                    "text": ")"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1394,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 1402,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 1402,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 1402,
+                            "text": "SafePointResponse"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "rpc_decl",
+                "pos": 1424,
+                "children": [
+                  {
+                    "name": ":Text",
+                    "pos": 1424,
+                    "text": "rpc"
+                  },
+                  {
+                    "name": "IDENT",
+                    "pos": 1428,
+                    "text": "CreatePoint"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1439,
+                    "text": "("
+                  },
+                  {
+                    "name": "IDENT",
+                    "pos": 1440,
+                    "text": "request"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1447,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 1449,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 1449,
+                        "text": "CreatePointRequest"
+                      }
+                    ]
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1467,
+                    "text": ")"
+                  },
+                  {
+                    "name": ":Text",
+                    "pos": 1468,
+                    "text": ":"
+                  },
+                  {
+                    "name": "type_ref",
+                    "pos": 1470,
+                    "children": [
+                      {
+                        "name": "IDENT",
+                        "pos": 1470,
+                        "children": [
+                          {
+                            "name": ":RegExp",
+                            "pos": 1470,
+                            "text": "SafePointResponse"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": ":Text",
+                "pos": 1488,
+                "text": "end"
+              },
+              {
+                "name": "IDENT",
+                "pos": 1492,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 1492,
+                    "text": "SafeService"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "module_end",
+        "pos": 1505,
+        "children": [
+          {
+            "name": ":Text",
+            "pos": 1505,
+            "text": "end"
+          },
+          {
+            "name": "qualified_name",
+            "pos": 1509,
+            "children": [
+              {
+                "name": "IDENT",
+                "pos": 1509,
+                "text": "Test"
+              },
+              {
+                "name": ":Text",
+                "pos": 1513,
+                "text": "."
+              },
+              {
+                "name": "IDENT",
+                "pos": 1514,
+                "text": "Service"
+              },
+              {
+                "name": ":Text",
+                "pos": 1521,
+                "text": "."
+              },
+              {
+                "name": "IDENT",
+                "pos": 1522,
+                "children": [
+                  {
+                    "name": ":RegExp",
+                    "pos": 1522,
+                    "text": "Pos"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "EOF",
+        "pos": 1526,
+        "text": ""
+      }
+    ]
+  }
+}
