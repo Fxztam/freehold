@@ -1,7 +1,7 @@
 # TODO: FH-Native-V1 Final Bootstrapping Phase Checklist
 **Format Reference:** Google Open Knowledge Format (OKF) & Implementation Blueprint  
 **Status:** High Priority Roadmap (The Final Step to Permanent Self-Hosting)  
-**Target Domain:** Language Design, Compiler Engineering & GNATprove/SPARK Ada Parity  
+**Target Domain:** Language Design, Compiler Architecture & GNATprove/SPARK Ada Parity  
 
 ---
 
@@ -16,11 +16,22 @@ This specification sheets exactly what stands between our current state and the 
 
 ---
 
-## 2. Topic 1: Porting Verifier Upgrades (GNATprove/SPARK Ada Parity)
+## 2. Topic 1: Grammar and Language Scope Hardening (The Absolute First Step)
+
+Before executing any verifier upgrades or shutting down the Python runtime environment, we must secure the exact syntactical **"Ist-Stand" (current state)** of the Freehold language.
+
+### 2.1 EBNF Parity & Verification Safeguard
+* **Goal:** Establish and freeze the absolute syntactical "source of truth" in a single, definitive EBNF grammar file (`Freehold.ebnf`).
+* **Task:** Run a rigorous grammatical comparison betwixt the active, executable Lark grammar (`freehold/grammar/freehold.lark`) and the structural EBNF syntax files. 
+* **Deliverable:** Produce an aligned, complete `Freehold.ebnf` file that officially defines the syntactical spec of Freehold V1. This ensures that when the Python Lark parser is decommissioned, the language's syntax is permanently documented and protected against grammatical regression.
+
+---
+
+## 3. Topic 2: Porting Verifier Upgrades (GNATprove/SPARK Ada Parity)
 
 The high-safety verification upgrades recently established inside the Python reference model (`freehold/core/verifier.py`) must be fully ported to the native self-hosted compiler core under `bootstrap/compiler_core_v1/Compiler/Core/Verifier.fh`.
 
-### 2.1 Transitive Information Flow Analysis (Taint-Tracking)
+### 3.1 Transitive Information Flow Analysis (Taint-Tracking)
 * **Goal:** Implement inter-procedural dependency tracking inside `Verifier.fh` to enforce information-flow integrity across module boundaries.
 * **Task:** Add full parsing, validation, and semantic analysis of `depends` contract statements.
 
