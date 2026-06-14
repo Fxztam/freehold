@@ -38,6 +38,7 @@ type TypeDeclNode is record
     base_type: IdentifierNode
     min_value: String
     max_value: String
+    is_range: Boolean
 end record
 
 type ModuleWithTypeDeclNode is record
@@ -322,11 +323,11 @@ is
     return ModuleWithRecordNode { module_node: module_node, record_type: record_type }
 end make_module_with_record_node
 
-function make_type_decl_node(span: SourceSpan, name: IdentifierNode, base_type: IdentifierNode, min_value: String, max_value: String) returns TypeDeclNode
+function make_type_decl_node(span: SourceSpan, name: IdentifierNode, base_type: IdentifierNode, min_value: String, max_value: String, is_range: Boolean) returns TypeDeclNode
 requires String.instr(name.name, "") = 0, String.instr(base_type.name, "") = 0
-ensures result.name.name = name.name, result.base_type.name = base_type.name, result.min_value = min_value, result.max_value = max_value
+ensures result.name.name = name.name, result.base_type.name = base_type.name, result.min_value = min_value, result.max_value = max_value, result.is_range = is_range
 is
-    return TypeDeclNode { span: span, name: name, base_type: base_type, min_value: min_value, max_value: max_value }
+    return TypeDeclNode { span: span, name: name, base_type: base_type, min_value: min_value, max_value: max_value, is_range: is_range }
 end make_type_decl_node
 
 function make_module_with_type_decl_node(module_node: ModuleNode, type_decl: TypeDeclNode) returns ModuleWithTypeDeclNode
@@ -1012,7 +1013,7 @@ is
     let empty_span: SourceSpan = SourceSpan { source_name: source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
     let empty_id: IdentifierNode = make_identifier_node(empty_span, "")
     let imp: ImportNode = ImportNode { span: empty_span, module_name: empty_id, exposed_name: empty_id }
-    let td: TypeDeclNode = TypeDeclNode { span: empty_span, name: empty_id, base_type: empty_id, min_value: "", max_value: "" }
+    let td: TypeDeclNode = TypeDeclNode { span: empty_span, name: empty_id, base_type: empty_id, min_value: "", max_value: "", is_range: false }
     let rd: RecordTypeWithFieldsNode = make_empty_record_type_with_fields_node(source_name)
     let ed: ErrorDeclNode = make_empty_error_decl_node(source_name)
     let rt: RoutineDeclNode = make_empty_routine_decl_node(source_name)

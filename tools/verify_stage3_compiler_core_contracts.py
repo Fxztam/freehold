@@ -113,7 +113,7 @@ def verify_contract(contract: dict[str, Any], build_root: Path) -> dict[str, Any
 
     if not failures:
         write_project(build_root, files, build_files, extra_files)
-        build_result = subprocess.run(["cmd", "/c", "build.cmd"], cwd=build_root, text=True)
+        build_result = subprocess.run(["cmd", "/c", ".\\build.cmd"], cwd=build_root, text=True)
         if build_result.returncode != 0:
             failures.append(f"generated Go project build failed with exit code {build_result.returncode}")
         else:
@@ -169,7 +169,7 @@ def check_runtime_golden(contract: dict[str, Any], build_root: Path, failures: l
         failures.append(f"runtime_golden: missing expected stdout file {expected_stdout_file}")
         return {"status": "mismatch", "executable": executable, "expected_stdout_file": expected_stdout_file}
 
-    result = subprocess.run([str(executable_path)], cwd=build_root, capture_output=True, text=True)
+    result = subprocess.run([str(executable_path)], cwd=build_root, capture_output=True, encoding="utf-8")
     actual_stdout = normalize_text(result.stdout)
     expected_stdout = normalize_text(expected_path.read_text(encoding="utf-8"))
     status = "match"

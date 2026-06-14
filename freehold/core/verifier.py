@@ -1953,7 +1953,7 @@ class Ctx:
             self.add_imported_type_dependencies(field_type, imported, seen)
 
     def imported_record_context_name(self, name: str, imported: VerifiedProgram) -> str:
-        if name not in self.records or self.records.get(name) == imported.records.get(name):
+        if name not in self.records or self.records.get(name).name == imported.records.get(name).name:
             return name
         return f"{imported.ast.module_name}.{name}"
 

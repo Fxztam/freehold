@@ -173,8 +173,8 @@
           "must_contain": [
             "type FreeholdScope struct",
             "type FreeholdJoinHandle[T any] struct",
-            "func freeholdChannelSend[T any](sender chan<- T, value T) bool",
-            "func freeholdChannelReceive[T any](receiver <-chan T) T",
+            "func freeholdChannelSend[T any](sender chan<- T, value T) (ok bool) {",
+            "func freeholdChannelReceive[T any](ctx context.Context, receiver <-chan T) T {",
             "quoteScope := FreeholdScope{}",
             "freeholdSpawn[int64](&quoteScope.wg, quoteScope.priority, quoteScope.sem, func() int64 { return LoadUnitPrice(quoteScope.ctx, request.Sku) })",
             "freeholdSpawn[AuditEvent](&quoteScope.wg, quoteScope.priority, quoteScope.sem, func() AuditEvent { return AuditRoundtrip(quoteScope.ctx, sender, receiver, request.TraceId) })",

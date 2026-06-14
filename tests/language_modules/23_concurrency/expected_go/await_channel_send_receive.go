@@ -183,12 +183,32 @@ func freeholdSpawn[T any](wg *sync.WaitGroup, priority int, sem chan struct{}, f
 	return FreeholdJoinHandle[T]{ch: ch}
 }
 
-func freeholdChannelSend[T any](sender chan<- T, value T) bool {
+func freeholdJoin[T any](ctx context.Context, handle FreeholdJoinHandle[T]) T {
+	select {
+	case val := <-handle.ch:
+		return val
+	case <-ctx.Done():
+		var zero T
+		return zero
+	}
+}
+
+func freeholdChannelSend[T any](sender chan<- T, value T) (ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			ok = false
+		}
+	}()
 	sender <- value
 	return true
 }
 
-func freeholdChannelTrySend[T any](sender chan<- T, value T) bool {
+func freeholdChannelTrySend[T any](sender chan<- T, value T) (ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			ok = false
+		}
+	}()
 	select {
 	case sender <- value:
 		return true
@@ -197,8 +217,14 @@ func freeholdChannelTrySend[T any](sender chan<- T, value T) bool {
 	}
 }
 
-func freeholdChannelReceive[T any](receiver <-chan T) T {
-	return <-receiver
+func freeholdChannelReceive[T any](ctx context.Context, receiver <-chan T) T {
+	select {
+	case val := <-receiver:
+		return val
+	case <-ctx.Done():
+		var zero T
+		return zero
+	}
 }
 
 func Exchange(ctx context.Context, sender chan<- int64, receiver <-chan int64) int64 {
@@ -206,6 +232,6 @@ func Exchange(ctx context.Context, sender chan<- int64, receiver <-chan int64) i
 	if !(sent == true) {
 		panic("freehold check failed")
 	}
-	var item int64 = freeholdChannelReceive[int64](receiver)
+	var item int64 = freeholdChannelReceive[int64](ctx, receiver)
 	return item
 }

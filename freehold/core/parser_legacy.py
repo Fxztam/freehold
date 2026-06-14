@@ -331,7 +331,8 @@ class AstBuilder:
         if tree.data == "string":
             raw = str(tree.children[0])
             try:
-                value = bytes(raw[1:-1], "utf-8").decode("unicode_escape")
+                escaped = raw[1:-1].encode("ascii", "backslashreplace").decode("ascii")
+                value = escaped.encode("utf-8").decode("unicode_escape")
             except Exception:
                 value = raw[1:-1]
             return StringExpr(value, pos(tree))

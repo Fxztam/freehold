@@ -644,6 +644,104 @@ end mini_nested_call_module_lexer_summary
 
 
 
+function set_string_32(arr: Array<String, 32>, idx: Integer, val: String) returns Array<String, 32>
+is
+    let i0: String = arr[0]
+    let i1: String = arr[1]
+    let i2: String = arr[2]
+    let i3: String = arr[3]
+    let i4: String = arr[4]
+    let i5: String = arr[5]
+    let i6: String = arr[6]
+    let i7: String = arr[7]
+    let i8: String = arr[8]
+    let i9: String = arr[9]
+    let i10: String = arr[10]
+    let i11: String = arr[11]
+    let i12: String = arr[12]
+    let i13: String = arr[13]
+    let i14: String = arr[14]
+    let i15: String = arr[15]
+    let i16: String = arr[16]
+    let i17: String = arr[17]
+    let i18: String = arr[18]
+    let i19: String = arr[19]
+    let i20: String = arr[20]
+    let i21: String = arr[21]
+    let i22: String = arr[22]
+    let i23: String = arr[23]
+    let i24: String = arr[24]
+    let i25: String = arr[25]
+    let i26: String = arr[26]
+    let i27: String = arr[27]
+    let i28: String = arr[28]
+    let i29: String = arr[29]
+    let i30: String = arr[30]
+    let i31: String = arr[31]
+
+    if idx = 0 then i0 := val end if
+    if idx = 1 then i1 := val end if
+    if idx = 2 then i2 := val end if
+    if idx = 3 then i3 := val end if
+    if idx = 4 then i4 := val end if
+    if idx = 5 then i5 := val end if
+    if idx = 6 then i6 := val end if
+    if idx = 7 then i7 := val end if
+    if idx = 8 then i8 := val end if
+    if idx = 9 then i9 := val end if
+    if idx = 10 then i10 := val end if
+    if idx = 11 then i11 := val end if
+    if idx = 12 then i12 := val end if
+    if idx = 13 then i13 := val end if
+    if idx = 14 then i14 := val end if
+    if idx = 15 then i15 := val end if
+    if idx = 16 then i16 := val end if
+    if idx = 17 then i17 := val end if
+    if idx = 18 then i18 := val end if
+    if idx = 19 then i19 := val end if
+    if idx = 20 then i20 := val end if
+    if idx = 21 then i21 := val end if
+    if idx = 22 then i22 := val end if
+    if idx = 23 then i23 := val end if
+    if idx = 24 then i24 := val end if
+    if idx = 25 then i25 := val end if
+    if idx = 26 then i26 := val end if
+    if idx = 27 then i27 := val end if
+    if idx = 28 then i28 := val end if
+    if idx = 29 then i29 := val end if
+    if idx = 30 then i30 := val end if
+    if idx = 31 then i31 := val end if
+
+    return [
+        i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15,
+        i16, i17, i18, i19, i20, i21, i22, i23, i24, i25, i26, i27, i28, i29, i30, i31
+    ]
+end set_string_32
+
+function fill_buffer_32(source: String, start_pos: Integer, source_len: Integer) returns Array<String, 32>
+requires start_pos >= 0, source_len >= 0
+is
+    let arr: Array<String, 32> = [
+        "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+    ]
+    let abs_pos: Integer = start_pos
+    let i: Integer = 0
+    while i < 32
+        invariant i >= 0
+        invariant i <= 32
+        variant 32 - i
+    do
+        if abs_pos < source_len then
+            let ch: String = String.substr(source, abs_pos, 1)
+            arr := set_string_32(arr, i, ch)
+        end if
+        abs_pos := abs_pos + 1
+        i := i + 1
+    end while
+    return arr
+end fill_buffer_32
+
 type Lexer is record
     source_name: String
     source: String
@@ -651,6 +749,8 @@ type Lexer is record
     offset: Integer
     line: Integer
     column: Integer
+    buf_data: Array<String, 32>
+    buf_offset: Integer
 end record
 
 type LexerResult is record
@@ -662,13 +762,16 @@ end record
 function make_lexer(source_name: String, source: String) returns Lexer
 requires String.instr(source_name, "") = 0, String.instr(source, "") = 0
 is
+    let initial_buf: Array<String, 32> = fill_buffer_32(source, 0, String.length(source))
     return Lexer {
         source_name: source_name,
         source: source,
         length: String.length(source),
         offset: 0,
         line: 1,
-        column: 1
+        column: 1,
+        buf_data: initial_buf,
+        buf_offset: 0
     }
 end make_lexer
 
@@ -741,6 +844,11 @@ function peek_char(lexer: Lexer) returns String
 is
     if lexer.offset >= lexer.length then
         return ""
+    end if
+    let local_idx: Integer = lexer.offset - lexer.buf_offset
+    if local_idx >= 0 and local_idx < 32 then
+        let arr: Array<String, 32> = lexer.buf_data
+        return arr[local_idx]
     else
         return String.substr(lexer.source, lexer.offset, 1)
     end if
@@ -750,6 +858,11 @@ function peek_next_char(lexer: Lexer) returns String
 is
     if lexer.offset + 1 >= lexer.length then
         return ""
+    end if
+    let local_idx: Integer = (lexer.offset + 1) - lexer.buf_offset
+    if local_idx >= 0 and local_idx < 32 then
+        let arr: Array<String, 32> = lexer.buf_data
+        return arr[local_idx]
     else
         return String.substr(lexer.source, lexer.offset + 1, 1)
     end if
@@ -761,7 +874,7 @@ is
         return lexer
     end if
     
-    let c: String = String.substr(lexer.source, lexer.offset, 1)
+    let c: String = peek_char(lexer)
     let next_offset: Integer = lexer.offset + 1
     let next_line: Integer = lexer.line
     let next_column: Integer = lexer.column
@@ -773,13 +886,22 @@ is
         next_column := lexer.column + 1
     end if
     
+    let next_buf_offset: Integer = lexer.buf_offset
+    let next_buf_data: Array<String, 32> = lexer.buf_data
+    if next_offset - lexer.buf_offset >= 32 then
+        next_buf_offset := next_offset
+        next_buf_data := fill_buffer_32(lexer.source, next_buf_offset, lexer.length)
+    end if
+    
     return Lexer {
         source_name: lexer.source_name,
         source: lexer.source,
         length: lexer.length,
         offset: next_offset,
         line: next_line,
-        column: next_column
+        column: next_column,
+        buf_data: next_buf_data,
+        buf_offset: next_buf_offset
     }
 end advance_lexer
 
@@ -1011,7 +1133,7 @@ is
 end lex_next_token
 
 -- ============================================================
--- Modern on-demand scanner additions from FullLexer.fh
+-- Modern on-demand scanner additions
 -- ============================================================
 
 type ScanResult is record
@@ -1122,15 +1244,21 @@ function scan_word(src: String, pos: Integer, line: Integer, col: Integer) retur
 requires pos >= 0, pos <= String.length(src)
 is
     let len: Integer = String.length(src)
+    let buf_len: Integer = len - pos
+    if buf_len > 4096 then
+        buf_len := 4096
+    end if
+    let buf: String = String.substr(src, pos, buf_len)
+
     let start: Integer = pos
     let cur: Integer = pos
     let word: String = ""
     let done: Boolean = false
 
-    while cur < len and not done
+    while cur - pos < buf_len and not done
         invariant cur >= start and cur <= len
     do
-        let ch: String = String.substr(src, cur, 1)
+        let ch: String = String.substr(buf, cur - pos, 1)
         if is_alnum(ch) then
             word := String.concat(word, ch)
             cur := cur + 1
@@ -1147,15 +1275,21 @@ function scan_integer(src: String, pos: Integer, line: Integer, col: Integer) re
 requires pos >= 0, pos <= String.length(src)
 is
     let len: Integer = String.length(src)
+    let buf_len: Integer = len - pos
+    if buf_len > 4096 then
+        buf_len := 4096
+    end if
+    let buf: String = String.substr(src, pos, buf_len)
+
     let start: Integer = pos
     let cur: Integer = pos
     let num: String = ""
     let done: Boolean = false
 
-    while cur < len and not done
+    while cur - pos < buf_len and not done
         invariant cur >= start and cur <= len
     do
-        let ch: String = String.substr(src, cur, 1)
+        let ch: String = String.substr(buf, cur - pos, 1)
         if is_digit(ch) then
             num := String.concat(num, ch)
             cur := cur + 1
@@ -1171,15 +1305,21 @@ function scan_string_lit(src: String, pos: Integer, line: Integer, col: Integer)
 requires pos >= 0, pos < String.length(src)
 is
     let len: Integer = String.length(src)
+    let buf_len: Integer = len - pos
+    if buf_len > 4096 then
+        buf_len := 4096
+    end if
+    let buf: String = String.substr(src, pos, buf_len)
+
     let start: Integer = pos
     let cur: Integer = pos + 1
     let lit: String = "\""
     let done: Boolean = false
 
-    while cur < len and not done
+    while cur - pos < buf_len and not done
         invariant cur >= pos and cur <= len
     do
-        let ch: String = String.substr(src, cur, 1)
+        let ch: String = String.substr(buf, cur - pos, 1)
         lit := String.concat(lit, ch)
         cur := cur + 1
         if ch = "\"" then
@@ -1194,15 +1334,21 @@ function scan_next(src: String, pos: Integer, line: Integer, col: Integer) retur
 requires pos >= 0
 is
     let len: Integer = String.length(src)
+    let buf_len: Integer = len - pos
+    if buf_len > 4096 then
+        buf_len := 4096
+    end if
+    let buf: String = String.substr(src, pos, buf_len)
+
     let cur: Integer = pos
     let cur_line: Integer = line
     let cur_col: Integer = col
 
     let skipping: Boolean = true
-    while cur < len and skipping
+    while cur - pos < buf_len and skipping
         invariant cur >= pos and cur <= len
     do
-        let ch: String = String.substr(src, cur, 1)
+        let ch: String = String.substr(buf, cur - pos, 1)
         if ch = "\n" then
             cur := cur + 1
             cur_line := cur_line + 1
@@ -1212,14 +1358,14 @@ is
                 cur := cur + 1
                 cur_col := cur_col + 1
             else
-                if ch = "-" and cur + 1 < len then
-                    let nxt: String = String.substr(src, cur + 1, 1)
+                if ch = "-" and cur - pos + 1 < buf_len then
+                    let nxt: String = String.substr(buf, cur - pos + 1, 1)
                     if nxt = "-" then
                         let cdone: Boolean = false
-                        while cur < len and not cdone
+                        while cur - pos < buf_len and not cdone
                             invariant cur >= 0 and cur <= len
                         do
-                            let cc: String = String.substr(src, cur, 1)
+                            let cc: String = String.substr(buf, cur - pos, 1)
                             if cc = "\n" then
                                 cdone := true
                             else
@@ -1241,7 +1387,17 @@ is
         return make_scan_eof(cur, cur_line, cur_col)
     end if
 
-    let ch: String = String.substr(src, cur, 1)
+    if cur - pos >= buf_len and skipping then
+        return scan_next(src, cur, cur_line, cur_col)
+    end if
+
+    let tok_buf_len: Integer = len - cur
+    if tok_buf_len > 4096 then
+        tok_buf_len := 4096
+    end if
+    let token_buf: String = String.substr(src, cur, tok_buf_len)
+
+    let ch: String = String.substr(token_buf, 0, 1)
 
     if is_alpha(ch) then
         return scan_word(src, cur, cur_line, cur_col)
@@ -1255,8 +1411,8 @@ is
         return scan_string_lit(src, cur, cur_line, cur_col)
     end if
 
-    if cur + 1 < len then
-        let nxt: String = String.substr(src, cur + 1, 1)
+    if 0 + 1 < tok_buf_len then
+        let nxt: String = String.substr(token_buf, 1, 1)
 
         if ch = ":" and nxt = "=" then
             return make_scan_ok("OP_ASSIGN", ":=", cur + 2, cur_line, cur_col + 2)

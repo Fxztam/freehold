@@ -1,6 +1,6 @@
 module Compiler.Core.Resolve
 
-import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_text, make_unknown_exposed_symbol_diagnostic, make_type_mismatch_diagnostic, make_unknown_field_diagnostic, make_shadowing_diagnostic, make_unknown_variable_diagnostic, make_array_bounds_diagnostic
+import Compiler.Core.Diagnostics exposing Diagnostic, diagnostic_text, make_unknown_exposed_symbol_diagnostic, make_type_mismatch_diagnostic, make_unknown_field_diagnostic, make_shadowing_diagnostic, make_unknown_variable_diagnostic, make_array_bounds_diagnostic, make_diagnostic
 import Compiler.Core.Ast exposing ModuleWithImportReferenceNode, ExprNode, StmtNode
 import Compiler.Core.Names exposing ModuleName, SymbolName
 
@@ -452,7 +452,7 @@ ensures String.instr(result.module_name, "") = 0
 is
     let i: Integer = 0
     let found: ExportedSymbol = ExportedSymbol { module_name: "", symbol_name: "", symbol_kind: "", type_ref: "" }
-    while i < export_count invariant i >= 0 do
+    while i < export_count invariant i >= 0 and i <= export_count do
         let exp: ExportedSymbol = exports[i]
         if exp.module_name = mod_name and exp.symbol_name = sym_name then
             found := exp
@@ -557,7 +557,7 @@ function lookup_record_field(
 ) returns String
 requires rec.first_field_idx >= 0, rec.field_count >= 0, String.instr(field_name, "") = 0
 is
-    let i: Integer = 0
+    let i: Integer = rec.field_count - rec.field_count
     let found_type: String = ""
     while i < rec.field_count invariant i >= 0 and i <= rec.field_count do
         let idx: Integer = rec.first_field_idx + i
@@ -583,7 +583,7 @@ function type_check_record_literal(
 ) returns ResolveResult
 requires rec.first_field_idx >= 0, rec.field_count >= 0, literal_field_count >= 0 and literal_field_count <= 16, String.instr(mod_full, "") = 0, String.instr(sym_raw, "") = 0
 is
-    let i: Integer = 0
+    let i: Integer = literal_field_count - literal_field_count
     while i < literal_field_count invariant i >= 0 and i <= literal_field_count do
         let fname: String = literal_fields[i]
         let ftype: String = literal_types[i]

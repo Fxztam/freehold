@@ -2860,7 +2860,21 @@ is
             call Std.IO.logf("compiler_core_v1 processing CLI file: ${}", args[0])
             let tokens: MiniModuleTokens = lex_mini_module(args[0], "Demo")
             let parsed: ParseResult = parse_mini_module_result(tokens)
-            call Std.IO.logf("compiler_core_v1 CLI result: ${}", parse_result_summary(parsed))
+            if parsed.status.name = "ok" then
+                let ref_tokens: MiniImportReferenceModuleTokens = lex_mini_import_reference_module(args[0], "Demo", "Demo.Support", "answer", "use")
+                let ref_parsed: ModuleWithImportReferenceNode = parse_mini_import_reference_module(ref_tokens)
+                let resolved: ResolveResult = resolve_mini_import_reference_module(ref_parsed)
+                if resolved.status.name = "ok" then
+                    call Std.IO.logf("compiler_core_v1 CLI result: ${}", parse_result_summary(parsed))
+                    let demo_imports: Array<String, 10> = [ "fmt", "", "", "", "", "", "", "", "", "" ]
+                    let header: String = emit_module_header("Demo", demo_imports, 1)
+                    call Std.IO.logf("codegen.header = ${}", header)
+                else
+                    call Std.IO.logf("error:${}", diagnostic_text(resolved.issue))
+                end if
+            else
+                call Std.IO.logf("compiler_core_v1 CLI result: ${}", parse_result_summary(parsed))
+            end if
         end if
     end if
 end main

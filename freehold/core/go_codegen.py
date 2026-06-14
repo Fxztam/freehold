@@ -1019,7 +1019,18 @@ class GoGenerator:
                     if key not in self.specialized_records:
                         spec_rec = self.specialize_record(base, list(args))
                         self.specialized_records[key] = spec_rec
-                        self.pending_scans.append((self.program.module_name, spec_rec))
+                        rec_ctx = self.program.module_name
+                        if "." in base:
+                            rec_ctx = ".".join(base.split(".")[:-1])
+                        elif base in self.exposed_type_modules:
+                            exposed = self.exposed_type_modules[base]
+                            if exposed is not None:
+                                rec_ctx = exposed
+                        elif base in self.exposed_symbols:
+                            exposed = self.exposed_symbols[base]
+                            if exposed is not None:
+                                rec_ctx = exposed
+                        self.pending_scans.append((rec_ctx, spec_rec))
 
         def process_call(name: str, node: Any):
             qualified_name = self.qualify_routine_name(name, context_module)
@@ -1039,7 +1050,14 @@ class GoGenerator:
                 if key not in self.specialized_routines:
                     spec_rot = self.specialize_routine(qualified_name, type_args)
                     self.specialized_routines[key] = spec_rot
-                    self.pending_scans.append((self.program.module_name, spec_rot))
+                    rot_ctx = self.program.module_name
+                    if "." in qualified_name:
+                        rot_ctx = ".".join(qualified_name.split(".")[:-1])
+                    elif qualified_name in self.exposed_symbols:
+                        exposed = self.exposed_symbols[qualified_name]
+                        if exposed is not None:
+                            rot_ctx = exposed
+                    self.pending_scans.append((rot_ctx, spec_rot))
 
         if isinstance(decl, RecordTypeDecl):
             for field in decl.fields:
@@ -1119,6 +1137,16 @@ class GoGenerator:
                     visit_expr(expr.index)
                 elif isinstance(expr, IndexedFieldAccessExpr):
                     visit_expr(expr.index)
+                elif isinstance(expr, IsExpr):
+                    visit_expr(expr.left)
+                elif isinstance(expr, ForAllExpr):
+                    visit_type_and_exprs = [expr.lower, expr.upper, expr.expr]
+                    for sub in visit_type_and_exprs:
+                        visit_expr(sub)
+                elif isinstance(expr, ExistsExpr):
+                    visit_type_and_exprs = [expr.lower, expr.upper, expr.expr]
+                    for sub in visit_type_and_exprs:
+                        visit_expr(sub)
 
             for s in decl.body:
                 visit_stmt(s)
@@ -1508,12 +1536,32 @@ class GoGenerator:
                 "\treturn FreeholdJoinHandle[T]{ch: ch}",
                 "}",
                 "",
-                "func freeholdChannelSend[T any](sender chan<- T, value T) bool {",
+                "func freeholdJoin[T any](ctx context.Context, handle FreeholdJoinHandle[T]) T {",
+                "\tselect {",
+                "\tcase val := <-handle.ch:",
+                "\t\treturn val",
+                "\tcase <-ctx.Done():",
+                "\t\tvar zero T",
+                "\t\treturn zero",
+                "\t}",
+                "}",
+                "",
+                "func freeholdChannelSend[T any](sender chan<- T, value T) (ok bool) {",
+                "\tdefer func() {",
+                "\t\tif r := recover(); r != nil {",
+                "\t\t\tok = false",
+                "\t\t}",
+                "\t}()",
                 "\tsender <- value",
                 "\treturn true",
                 "}",
                 "",
-                "func freeholdChannelTrySend[T any](sender chan<- T, value T) bool {",
+                "func freeholdChannelTrySend[T any](sender chan<- T, value T) (ok bool) {",
+                "\tdefer func() {",
+                "\t\tif r := recover(); r != nil {",
+                "\t\t\tok = false",
+                "\t\t}",
+                "\t}()",
                 "\tselect {",
                 "\tcase sender <- value:",
                 "\t\treturn true",
@@ -1522,8 +1570,14 @@ class GoGenerator:
                 "\t}",
                 "}",
                 "",
-                "func freeholdChannelReceive[T any](receiver <-chan T) T {",
-                "\treturn <-receiver",
+                "func freeholdChannelReceive[T any](ctx context.Context, receiver <-chan T) T {",
+                "\tselect {",
+                "\tcase val := <-receiver:",
+                "\t\treturn val",
+                "\tcase <-ctx.Done():",
+                "\t\tvar zero T",
+                "\t\treturn zero",
+                "\t}",
                 "}",
                 "",
             ])
@@ -2373,7 +2427,7 @@ class GoGenerator:
 
     def record_decl(self, declaration: RecordTypeDecl) -> list[str]:
         if declaration.type_params:
-            self.unsupported(declaration, "generic records are not supported by Go codegen V1")
+            # Skip un-specialized generic records as they are monomorphized
             return []
         lines = [f"type {go_exported_name(declaration.name)} struct {{"]
         for field in declaration.fields:
@@ -2392,7 +2446,7 @@ class GoGenerator:
 
     def routine_decl(self, routine: RoutineDecl) -> list[str]:
         if routine.type_params:
-            self.unsupported(routine, "generic routines are not supported by Go codegen V1")
+            # Skip un-specialized generic routines; they are monomorphized
             return []
         if routine.ffi_binding is not None:
             return self.ffi_routine_decl(routine)
@@ -4056,6 +4110,20 @@ class GoGenerator:
                 inferred = self.infer_type_args(routine, node)
                 type_args = [self.qualify_type_name(ta, self.program.module_name) for ta in inferred]
             specialized = self.go_specialized_name(qualified_name, type_args)
+            
+            # Check if this specialized routine belongs to an imported module.
+            # If so, prefix the specialized name with that module's Go import alias.
+            resolved_module_name = self.program.module_name
+            if "." in qualified_name:
+                resolved_module_name = ".".join(qualified_name.split(".")[:-1])
+            elif qualified_name in self.exposed_symbols:
+                exposed = self.exposed_symbols[qualified_name]
+                if exposed is not None:
+                    resolved_module_name = exposed
+
+            if resolved_module_name != self.program.module_name:
+                self.used_import_modules.add(resolved_module_name)
+                return f"{go_import_alias(resolved_module_name)}.{go_exported_name(specialized)}"
             return go_exported_name(specialized)
 
         resolved_name = name
@@ -4287,7 +4355,7 @@ class GoGenerator:
             self.unsupported(expr, "channel_receive requires one type argument and a Receiver")
             return "nil"
         value_type = self.go_type_string(expr.type_args[0])
-        return f"freeholdChannelReceive[{value_type}]({self.expr(expr.args[0])})"
+        return f"freeholdChannelReceive[{value_type}]({self.current_context_expr()}, {self.expr(expr.args[0])})"
 
     def render_spawn_call(self, expr: CallExpr, task_arg_index: int) -> str:
         self.needs_async_helpers = True
@@ -4307,7 +4375,14 @@ class GoGenerator:
         if handle_arg_index >= len(expr.args):
             self.unsupported(expr, "scope join requires a JoinHandle argument")
             return "nil"
-        return f"<-{self.expr(expr.args[handle_arg_index])}.ch"
+        if not expr.type_args or len(expr.type_args) != 1:
+            return f"<-{self.expr(expr.args[handle_arg_index])}.ch"
+        value_type = self.go_type_string(expr.type_args[0])
+        if expr.name == "scope_join":
+            scope_expr = self.expr(expr.args[0])
+        else:
+            scope_expr = go_local_name(expr.name.split(".")[0])
+        return f"freeholdJoin[{value_type}]({scope_expr}.ctx, {self.expr(expr.args[handle_arg_index])})"
 
     def is_join_handle_type(self, type_ref: Any) -> bool:
         if isinstance(type_ref, TypeName):

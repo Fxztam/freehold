@@ -183,12 +183,32 @@ func freeholdSpawn[T any](wg *sync.WaitGroup, priority int, sem chan struct{}, f
 	return FreeholdJoinHandle[T]{ch: ch}
 }
 
-func freeholdChannelSend[T any](sender chan<- T, value T) bool {
+func freeholdJoin[T any](ctx context.Context, handle FreeholdJoinHandle[T]) T {
+	select {
+	case val := <-handle.ch:
+		return val
+	case <-ctx.Done():
+		var zero T
+		return zero
+	}
+}
+
+func freeholdChannelSend[T any](sender chan<- T, value T) (ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			ok = false
+		}
+	}()
 	sender <- value
 	return true
 }
 
-func freeholdChannelTrySend[T any](sender chan<- T, value T) bool {
+func freeholdChannelTrySend[T any](sender chan<- T, value T) (ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			ok = false
+		}
+	}()
 	select {
 	case sender <- value:
 		return true
@@ -197,8 +217,14 @@ func freeholdChannelTrySend[T any](sender chan<- T, value T) bool {
 	}
 }
 
-func freeholdChannelReceive[T any](receiver <-chan T) T {
-	return <-receiver
+func freeholdChannelReceive[T any](ctx context.Context, receiver <-chan T) T {
+	select {
+	case val := <-receiver:
+		return val
+	case <-ctx.Done():
+		var zero T
+		return zero
+	}
 }
 
 func Worker(ctx context.Context, val int64) int64 {
@@ -216,7 +242,7 @@ func ExecuteTuning(ctx context.Context, input int64) int64 {
 		sc.priority = int(5)
 		sc.sem = make(chan struct{}, 2)
 		var handle FreeholdJoinHandle[int64] = freeholdSpawn[int64](&sc.wg, sc.priority, sc.sem, func() int64 { return Worker(sc.ctx, input) })
-		var res int64 = <-handle.ch
+		var res int64 = freeholdJoin[int64](sc.ctx, handle)
 		sc.wg.Wait()
 		return res
 	}

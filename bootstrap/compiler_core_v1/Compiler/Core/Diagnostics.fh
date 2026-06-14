@@ -32,7 +32,7 @@ end diagnostic_text
 
 function make_unknown_exposed_symbol_diagnostic(import_module_full: String, symbol_raw: String) returns Diagnostic
 requires String.instr(import_module_full, "") = 0, String.instr(symbol_raw, "") = 0
-ensures result.code = "FH-REF-1001", result.module_name.full = import_module_full, result.symbol_name.raw = symbol_raw
+ensures result.code = "FH-REF-1001", result.module_name.full = import_module_full, result.symbol_name.raw = symbol_raw, String.instr(result.code, "FH-") = 0
 is
     let module_name: ModuleName = make_module_name(import_module_full)
     let symbol_name: SymbolName = make_symbol_name(symbol_raw)
@@ -42,7 +42,7 @@ end make_unknown_exposed_symbol_diagnostic
 
 function make_type_mismatch_diagnostic(expected_type: String, got_type: String, mod_full: String, symbol_raw: String) returns Diagnostic
 requires String.instr(expected_type, "") = 0, String.instr(got_type, "") = 0, String.instr(mod_full, "") = 0, String.instr(symbol_raw, "") = 0
-ensures result.code = "FH-TYP-2007", result.module_name.full = mod_full, result.symbol_name.raw = symbol_raw
+ensures result.code = "FH-TYP-2007", result.module_name.full = mod_full, result.symbol_name.raw = symbol_raw, String.instr(result.code, "FH-") = 0
 is
     let module_name: ModuleName = make_module_name(mod_full)
     let symbol_name: SymbolName = make_symbol_name(symbol_raw)
@@ -52,7 +52,7 @@ end make_type_mismatch_diagnostic
 
 function make_unknown_field_diagnostic(record_name: String, field_name: String, mod_full: String, symbol_raw: String) returns Diagnostic
 requires String.instr(record_name, "") = 0, String.instr(field_name, "") = 0, String.instr(mod_full, "") = 0, String.instr(symbol_raw, "") = 0
-ensures result.code = "FH-TYP-2009", result.module_name.full = mod_full, result.symbol_name.raw = symbol_raw
+ensures result.code = "FH-TYP-2009", result.module_name.full = mod_full, result.symbol_name.raw = symbol_raw, String.instr(result.code, "FH-") = 0
 is
     let module_name: ModuleName = make_module_name(mod_full)
     let symbol_name: SymbolName = make_symbol_name(symbol_raw)
@@ -62,7 +62,7 @@ end make_unknown_field_diagnostic
 
 function make_shadowing_diagnostic(var_name: String, mod_full: String, symbol_raw: String) returns Diagnostic
 requires String.instr(var_name, "") = 0, String.instr(mod_full, "") = 0, String.instr(symbol_raw, "") = 0
-ensures result.code = "FH-SEM-1005", result.module_name.full = mod_full, result.symbol_name.raw = symbol_raw
+ensures result.code = "FH-SEM-1005", result.module_name.full = mod_full, result.symbol_name.raw = symbol_raw, String.instr(result.code, "FH-") = 0
 is
     let module_name: ModuleName = make_module_name(mod_full)
     let symbol_name: SymbolName = make_symbol_name(symbol_raw)
@@ -72,7 +72,7 @@ end make_shadowing_diagnostic
 
 function make_unknown_variable_diagnostic(var_name: String, mod_full: String, symbol_raw: String) returns Diagnostic
 requires String.instr(var_name, "") = 0, String.instr(mod_full, "") = 0, String.instr(symbol_raw, "") = 0
-ensures result.code = "FH-SEM-1006", result.module_name.full = mod_full, result.symbol_name.raw = symbol_raw
+ensures result.code = "FH-SEM-1006", result.module_name.full = mod_full, result.symbol_name.raw = symbol_raw, String.instr(result.code, "FH-") = 0
 is
     let module_name: ModuleName = make_module_name(mod_full)
     let symbol_name: SymbolName = make_symbol_name(symbol_raw)
@@ -82,11 +82,11 @@ end make_unknown_variable_diagnostic
 
 function make_array_bounds_diagnostic(index: Integer, size: Integer, mod_full: String, symbol_raw: String) returns Diagnostic
 requires String.instr(mod_full, "") = 0, String.instr(symbol_raw, "") = 0
-ensures result.code = "FH-TYP-2011", result.module_name.full = mod_full, result.symbol_name.raw = symbol_raw
+ensures result.code = "FH-TYP-2011", result.module_name.full = mod_full, result.symbol_name.raw = symbol_raw, String.instr(result.code, "FH-") = 0
 is
     let module_name: ModuleName = make_module_name(mod_full)
     let symbol_name: SymbolName = make_symbol_name(symbol_raw)
-    let message: String = String.template("static array index out of bounds: index ${idx} for size ${sz}", idx: String.from_integer(index), sz: String.from_integer(size))
+    let message: String = String.template("static array index out of bounds: index ${idx} for size ${sz}", idx: String.template("${index}", index: index), sz: String.template("${size}", size: size))
     return make_diagnostic("FH-TYP-2011", message, module_name, symbol_name)
 end make_array_bounds_diagnostic
 

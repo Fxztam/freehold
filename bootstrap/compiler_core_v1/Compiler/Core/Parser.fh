@@ -1,7 +1,7 @@
 module Compiler.Core.Parser
 
 import Compiler.Core.Ast exposing FunctionImportReferenceNode, FunctionNode, IdentifierNode, ImportNode, ImportReferenceNode, LiteralNode, ModuleNode, ModuleWithFunctionNode, ModuleWithImportNode, ModuleWithImportReferenceNode, ModuleWithProcedureNode, ModuleWithRecordNode, TypeDeclNode, ModuleWithTypeDeclNode, ProcedureNode, RecordTypeNode, ModuleWithRecordLiteralNode, RecordLiteralNode, ModuleWithReturnNode, ReturnStmtNode, ModuleWithCallNode, CallStmtNode, NestedCallStmtNode, ModuleWithNestedCallNode, LoweredCallNode, ModuleWithLoweredCallsNode, make_function_import_reference_node, make_function_node, make_identifier_node, make_import_node, make_import_reference_node, make_literal_node, make_module_node, make_module_with_function_node, make_module_with_import_node, make_module_with_import_reference_node, make_module_with_procedure_node, make_module_with_record_node, make_type_decl_node, make_module_with_type_decl_node, make_procedure_node, make_record_type_node, make_record_literal_node, make_module_with_record_literal_node, make_return_stmt_node, make_module_with_return_node, make_module_with_call_node, make_call_stmt_node, make_nested_call_stmt_node, make_module_with_nested_call_node, make_lowered_call_node, make_module_with_lowered_calls_node, module_text, module_with_function_text, module_with_import_reference_text, module_with_import_text, module_with_procedure_text, module_with_record_text, module_with_type_decl_text, module_with_record_literal_text, module_with_return_text, module_with_call_text, module_with_nested_call_text, module_with_lowered_calls_text, ExprNode, StmtNode, make_expr_node, make_stmt_node, AbortClauseNode, DependsNode, ErrorDeclNode, FieldNode, GlobalNode, ModuleDeclNode, ParamNode, RecordTypeWithFieldsNode, RoutineDeclNode, make_abort_clause_node, make_depends_node, make_error_decl_node, make_field_node, make_global_node, make_param_node, make_record_type_with_fields_node, make_routine_decl_node, make_empty_abort_clause_node, make_empty_depends_node, make_empty_error_decl_node, make_empty_field_node, make_empty_global_node, make_empty_param_node, make_empty_record_type_with_fields_node, make_empty_routine_decl_node, make_empty_module_decl_node, set_fields, set_params, set_abort_clauses, set_depends_specs, set_globals_specs, set_imports, set_type_decls, set_record_decls, set_error_decls, set_routines
-import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, MiniSubtypeRangeModuleTokens, MiniRecordLiteralModuleTokens, MiniReturnStmtModuleTokens, MiniCallModuleTokens, MiniNestedCallModuleTokens, Lexer, LexerResult, make_lexer, lex_next_token
+import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, MiniSubtypeRangeModuleTokens, MiniRecordLiteralModuleTokens, MiniReturnStmtModuleTokens, MiniCallModuleTokens, MiniNestedCallModuleTokens, Lexer, LexerResult, make_lexer, lex_next_token, ScanResult, scan_next
 import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok, ParseStatus, make_parse_status
 import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_token, make_token_kind, make_source_span
 
@@ -72,7 +72,7 @@ is
     let min_val: String = tokens.min_value.lexeme
     let max_val: String = tokens.max_value.lexeme
 
-    let type_decl: TypeDeclNode = make_type_decl_node(tokens.type_keyword.span, type_identifier, base_type_identifier, min_val, max_val)
+    let type_decl: TypeDeclNode = make_type_decl_node(tokens.type_keyword.span, type_identifier, base_type_identifier, min_val, max_val, true)
     return make_module_with_type_decl_node(module_node, type_decl)
 end parse_mini_subtype_range_module
 
@@ -553,7 +553,7 @@ is
     let globs: Array<GlobalNode, 8> = [empty_g, empty_g, empty_g, empty_g, empty_g, empty_g, empty_g, empty_g]
     let aborts_count: Integer = 0
     let deps_count: Integer = 0
-    let globs_count: Integer = 0
+    let globals_count: Integer = 0
     let has_req: Boolean = false
     let has_ens: Boolean = false
     let p_curr: GeneralParser = p
@@ -925,7 +925,7 @@ is
                     end if
 
                     if p_curr.has_error = false and module_decl.type_count < 16 then
-                        let td: TypeDeclNode = make_type_decl_node(res_typename.node.span, res_typename.node, res_base.node, min_val, max_val)
+                        let td: TypeDeclNode = make_type_decl_node(res_typename.node.span, res_typename.node, res_base.node, min_val, max_val, min_val != "")
                         module_decl := ModuleDeclNode {
                             span: module_decl.span,
                             name: module_decl.name,
@@ -1234,7 +1234,7 @@ is
 
         let dummy_span: SourceSpan = res_name.node.span
         let dummy_ident: IdentifierNode = make_identifier_node(dummy_span, "")
-        let dummy_type_decl: TypeDeclNode = make_type_decl_node(dummy_span, dummy_ident, dummy_ident, "0", "0")
+        let dummy_type_decl: TypeDeclNode = make_type_decl_node(dummy_span, dummy_ident, dummy_ident, "0", "0", false)
         return ParserTypeDeclResult { parser: p5, node: dummy_type_decl, is_record: true, record_node: rec_node }
     else
         let res_base: ParserIdentifierResult = parse_identifier(p2)
@@ -1251,7 +1251,7 @@ is
         let min_val: String = min_tok.lexeme
         let max_val: String = max_tok.lexeme
 
-        let type_decl: TypeDeclNode = make_type_decl_node(res_name.node.span, res_name.node, res_base.node, min_val, max_val)
+        let type_decl: TypeDeclNode = make_type_decl_node(res_name.node.span, res_name.node, res_base.node, min_val, max_val, true)
 
         let dummy_rec: RecordTypeNode = make_record_type_node(res_name.node.span, res_name.node)
         return ParserTypeDeclResult { parser: p6, node: type_decl, is_record: false, record_node: dummy_rec }
@@ -2056,5 +2056,5 @@ is
     end if
 end parse_stmt
 
-end Compiler.Core.Parser
 
+end Compiler.Core.Parser

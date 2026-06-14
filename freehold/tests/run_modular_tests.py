@@ -15,10 +15,11 @@ from freehold.tests.v11d_case_tests import V11D_CASE_TESTS
 from freehold.tests.v11e_comment_tests import V11E_COMMENT_TESTS
 from freehold.tests.v11f_string_tests import V11F_STRING_TESTS
 from freehold.tests.v11h_std_io_tests import V11H_STD_IO_TESTS
+from freehold.tests.v11i_generics_tests import V11I_GENERICS_TESTS
 from freehold.core.cfg import build_cfgs, cfg_summary
 from freehold.core.symbolic import symbolic_obligations
 
-ALL_STATIC_TESTS = REGRESSION_TESTS + V11A_ASSIGNMENT_TESTS + V11B_IMPORT_TESTS + V11C_QUALIFIED_END_TESTS + V11D_CASE_TESTS + V11E_COMMENT_TESTS + V11F_STRING_TESTS + V11H_STD_IO_TESTS
+ALL_STATIC_TESTS = REGRESSION_TESTS + V11A_ASSIGNMENT_TESTS + V11B_IMPORT_TESTS + V11C_QUALIFIED_END_TESTS + V11D_CASE_TESTS + V11E_COMMENT_TESTS + V11F_STRING_TESTS + V11H_STD_IO_TESTS + V11I_GENERICS_TESTS
 
 def run_source(src: str) -> None:
     ast = parse_source(src)

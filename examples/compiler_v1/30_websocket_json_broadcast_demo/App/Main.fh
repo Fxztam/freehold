@@ -465,7 +465,7 @@ end client_b_worker
 
 async function run_demo() returns Integer
 is
-    let server_res: Result<Server, WebSocketError> = listen("127.0.0.1:8103")
+    let server_res: Result<Server, WebSocketError> = listen("127.0.0.1:8115")
     if server_res.ok then
         let server: Server = server_res.value
         let gate_channel: Channel<Boolean> = channel<Boolean>(1)
@@ -475,8 +475,8 @@ is
         scope demo_scope do
             spawn
                 let server_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(server_worker(server, gate_sender))
-                let client_a_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_a_worker("ws://127.0.0.1:8103"))
-                let client_b_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_b_worker("ws://127.0.0.1:8103", gate_receiver))
+                let client_a_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_a_worker("ws://127.0.0.1:8115"))
+                let client_b_handle: JoinHandle<Integer> = demo_scope.spawn<Integer>(client_b_worker("ws://127.0.0.1:8115", gate_receiver))
             join
                 let server_status: Integer = await demo_scope.join<Integer>(server_handle)
                 let client_a_status: Integer = await demo_scope.join<Integer>(client_a_handle)
