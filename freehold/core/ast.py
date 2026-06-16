@@ -163,6 +163,7 @@ class RoutineDecl:
     global_specs: list[GlobalSpec] | None = None
     depends_specs: list[DependsSpec] | None = None
     ffi_binding: FfiBinding | None = None
+    modifies_specs: list[Any] | None = None
 
 @dataclass
 class AbortClause:

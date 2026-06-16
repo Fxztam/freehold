@@ -174,7 +174,7 @@ class AstBuilder:
         if kind == "function":
             ret = self.return_type(tree.children[idx]); idx += 1
         requires, aborts, ensures = [], [], []
-        global_specs, depends_specs = [], []
+        global_specs, depends_specs, modifies_specs = [], [], []
         if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "contract_block":
             for c in tree.children[idx].children:
                 if c.data == "requires_clause": requires.extend(self.constraint_list(c.children[0]))
@@ -182,6 +182,7 @@ class AstBuilder:
                 elif c.data == "ensures_clause": ensures.extend(self.expr_list(c.children[0]))
                 elif c.data == "global_clause": global_specs.extend(self.global_clause(c))
                 elif c.data == "depends_clause": depends_specs.extend(self.depends_clause(c))
+                elif c.data == "modifies_clause": modifies_specs.extend(self.modifies_clause(c))
             idx += 1
         end_name = None
         for child in reversed(tree.children):
@@ -191,7 +192,7 @@ class AstBuilder:
         if end_name != name:
             raise TypeCheckError(f"{pos(tree).text()}: {kind} end name mismatch: expected {name}, got {end_name}")
         body = [self.stmt(s.children[0] if s.data == "stmt" else s) for s in tree.children[idx:] if isinstance(s, Tree)]
-        return RoutineDecl(kind, name, params, ret, requires, aborts, ensures, body, pos(tree), type_params, is_async, global_specs, depends_specs, ffi_binding)
+        return RoutineDecl(kind, name, params, ret, requires, aborts, ensures, body, pos(tree), type_params, is_async, global_specs, depends_specs, ffi_binding, modifies_specs)
 
     def global_clause(self, tree: Tree) -> list[GlobalSpec]:
         specs = []
@@ -233,6 +234,17 @@ class AstBuilder:
                                 collect_sources(c)
                 collect_sources(sources_tree)
                 specs.append(DependsSpec(target, sources, pos(child)))
+        return specs
+
+    def modifies_clause(self, tree: Tree) -> list[Any]:
+        specs = []
+        for child in tree.children:
+            if isinstance(child, Tree) and child.data == "modifies_spec":
+                inner = child.children[0]
+                if isinstance(inner, Tree) and inner.data == "field_path":
+                    specs.append(FieldAccessExpr([str(x) for x in inner.children], pos(inner)))
+                else:
+                    specs.append(VarExpr(str(inner), pos(child)))
         return specs
 
     def return_type(self, tree: Tree):

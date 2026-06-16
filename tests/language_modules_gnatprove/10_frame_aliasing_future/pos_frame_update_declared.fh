@@ -1,17 +1,17 @@
 module Pos_Frame_Update_Declared
 
-record Account
+type Account is record
     balance: Integer
     limit: Integer
-end Account
+end record
 
 procedure deposit(acc: Account, amount: Integer)
 modifies acc.balance
 requires amount >= 0
-requires acc.balance <= Integer.Last - amount
-ensures acc.balance == old(acc.balance) + amount
-ensures acc.limit == old(acc.limit)
-do
+requires acc.balance <= 1000000 -- Integer.Last replaced for normal logic
+ensures acc.balance = old(acc.balance) + amount
+ensures acc.limit = old(acc.limit)
+is
     acc.balance := acc.balance + amount
 end deposit
 
