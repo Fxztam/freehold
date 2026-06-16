@@ -12,7 +12,7 @@ import Compiler.Core.SourceMap exposing SourceMapDocument, SourceMapModule, Sour
 import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_source_span, make_token, make_token_kind, token_key, token_text
 import Compiler.Core.Transform exposing canonicalize_import_references, normalize_record_literal, wrap_return_stmt, lower_abort_propagation, flatten_nested_call, emit_json_ir, emit_binary_ir
 import Compiler.Core.Codegen exposing emit_module_header
-import Compiler.Core.Verifier exposing verify_contract, verify_subtype_range, VerificationFailed
+import Compiler.Core.Verifier exposing verify_contract, verify_subtype_range, VerificationFailed, check_anti_aliasing, check_transitive_globals, check_depends_validity
 import Compiler.Core.Flow exposing FlowSummary, analyze_stmt_flow
 import Compiler.Core.WhyMLCodeGen exposing to_lower
 import Compiler.Core.Ir exposing IrType, IrInstruction, IrBasicBlock, IrRoutine
@@ -453,7 +453,7 @@ end test_vm_builtins
 procedure test_vm_e2e()
 is
     let empty_span: SourceSpan = SourceSpan { source_name: "test", start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
-    let empty_stmt: StmtNode = make_stmt_node(empty_span, "", "", "", -1, -1, -1, 0, -1, 0, "", "")
+    let empty_stmt: StmtNode = make_stmt_node(empty_span, "", "", "", -1, -1, -1, 0, -1, 0, "", "", -1)
     let empty_expr: ExprNode = make_expr_node(empty_span, "", "", "", "", -1, -1, "", -1, -1, 0, -1)
 
     let exprs: Array<ExprNode, 64> = [
@@ -488,16 +488,16 @@ is
     ]
 
     let stmts: Array<StmtNode, 64> = [
-        make_stmt_node(empty_span, "LET", "rec", "Record", 0, -1, -1, 0, -1, 0, "", ""),
-        make_stmt_node(empty_span, "FIELD_WRITE", "rec", "", 1, -1, -1, 0, -1, 0, "x", ""),
-        make_stmt_node(empty_span, "LET", "arr", "Array", 2, -1, -1, 0, -1, 0, "", ""),
-        make_stmt_node(empty_span, "ARRAY_WRITE", "arr", "", 4, 3, -1, 0, -1, 0, "", ""),
-        make_stmt_node(empty_span, "LET", "i", "Integer", 5, -1, -1, 0, -1, 0, "", ""),
-        make_stmt_node(empty_span, "LET", "sum", "Integer", 6, -1, -1, 0, -1, 0, "", ""),
-        make_stmt_node(empty_span, "WHILE", "", "", -1, 9, 8, 2, -1, 0, "", ""),
-        make_stmt_node(empty_span, "RETURN", "", "", 21, -1, -1, 0, -1, 0, "", ""),
-        make_stmt_node(empty_span, "ASSIGN", "sum", "", 17, -1, -1, 0, -1, 0, "", ""),
-        make_stmt_node(empty_span, "ASSIGN", "i", "", 20, -1, -1, 0, -1, 0, "", ""),
+        make_stmt_node(empty_span, "LET", "rec", "Record", 0, -1, -1, 0, -1, 0, "", "", -1),
+        make_stmt_node(empty_span, "FIELD_WRITE", "rec", "", 1, -1, -1, 0, -1, 0, "x", "", -1),
+        make_stmt_node(empty_span, "LET", "arr", "Array", 2, -1, -1, 0, -1, 0, "", "", -1),
+        make_stmt_node(empty_span, "ARRAY_WRITE", "arr", "", 4, 3, -1, 0, -1, 0, "", "", -1),
+        make_stmt_node(empty_span, "LET", "i", "Integer", 5, -1, -1, 0, -1, 0, "", "", -1),
+        make_stmt_node(empty_span, "LET", "sum", "Integer", 6, -1, -1, 0, -1, 0, "", "", -1),
+        make_stmt_node(empty_span, "WHILE", "", "", -1, 9, 8, 2, -1, 0, "", "", -1),
+        make_stmt_node(empty_span, "RETURN", "", "", 21, -1, -1, 0, -1, 0, "", "", -1),
+        make_stmt_node(empty_span, "ASSIGN", "sum", "", 17, -1, -1, 0, -1, 0, "", "", -1),
+        make_stmt_node(empty_span, "ASSIGN", "i", "", 20, -1, -1, 0, -1, 0, "", "", -1),
         empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt,
         empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt,
         empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt, empty_stmt,
@@ -2709,6 +2709,45 @@ is
         call Std.IO.logf("verifier.subtype_range.invalid = VerificationFailed")
     end if
 
+    -- Anti-Aliasing positive and negative tests
+    let alias_args_bad: Array<Integer, 8> = [0, 0, -1, -1, -1, -1, -1, -1]
+    let alias_param_modes_bad: Array<String, 8> = ["Output", "Output", "", "", "", "", "", ""]
+    let dummy_callee_globals: Array<String, 8> = ["", "", "", "", "", "", "", ""]
+    let dummy_callee_global_modes: Array<String, 8> = ["", "", "", "", "", "", "", ""]
+    let is_aliasing_bad_result: Boolean = check_anti_aliasing(range_exprs, alias_args_bad, 2, alias_param_modes_bad, dummy_callee_globals, dummy_callee_global_modes, 0)
+    call Std.IO.logf("verifier.anti_aliasing.invalid = ${}", is_aliasing_bad_result)
+
+    let alias_args_good: Array<Integer, 8> = [0, 1, -1, -1, -1, -1, -1, -1]
+    let alias_param_modes_good: Array<String, 8> = ["Output", "In_Out", "", "", "", "", "", ""]
+    let is_aliasing_good_result: Boolean = check_anti_aliasing(range_exprs, alias_args_good, 2, alias_param_modes_good, dummy_callee_globals, dummy_callee_global_modes, 0)
+    call Std.IO.logf("verifier.anti_aliasing.valid = ${}", is_aliasing_good_result)
+
+    -- Transitive Globals positive and negative tests
+    let caller_globals_good: Array<String, 8> = ["x", "y", "", "", "", "", "", ""]
+    let caller_modes_good: Array<String, 8> = ["In_Out", "Input", "", "", "", "", "", ""]
+    let callee_globals_good: Array<String, 8> = ["x", "", "", "", "", "", "", ""]
+    let callee_modes_good: Array<String, 8> = ["In_Out", "", "", "", "", "", "", ""]
+    let is_tg_good: Boolean = check_transitive_globals(caller_globals_good, caller_modes_good, 2, callee_globals_good, callee_modes_good, 1)
+    call Std.IO.logf("verifier.transitive_globals.valid = ${}", is_tg_good)
+
+    let callee_globals_bad: Array<String, 8> = ["z", "", "", "", "", "", "", ""]
+    let callee_modes_bad: Array<String, 8> = ["Input", "", "", "", "", "", "", ""]
+    let is_tg_bad: Boolean = check_transitive_globals(caller_globals_good, caller_modes_good, 2, callee_globals_bad, callee_modes_bad, 1)
+    call Std.IO.logf("verifier.transitive_globals.invalid = ${}", is_tg_bad)
+
+    -- Dependency tracking positive and negative tests
+    let dep_params: Array<String, 8> = ["x", "", "", "", "", "", "", ""]
+    let dep_globals: Array<String, 8> = ["g", "", "", "", "", "", "", ""]
+    let dep_global_modes: Array<String, 8> = ["Output", "", "", "", "", "", "", ""]
+    let dep_targets: Array<String, 8> = ["result", "g", "", "", "", "", "", ""]
+    let dep_sources: Array<String, 8> = ["x", "+", "", "", "", "", "", ""]
+    let is_dep_good: Boolean = check_depends_validity(dep_params, 1, "function", dep_globals, dep_global_modes, 1, dep_targets, dep_sources, 2)
+    call Std.IO.logf("verifier.depends_validity.valid = ${}", is_dep_good)
+
+    let dep_sources_bad: Array<String, 8> = ["y", "", "", "", "", "", "", ""]
+    let is_dep_bad: Boolean = check_depends_validity(dep_params, 1, "function", dep_globals, dep_global_modes, 1, dep_targets, dep_sources_bad, 2)
+    call Std.IO.logf("verifier.depends_validity.invalid = ${}", is_dep_bad)
+
     let mock_span: SourceSpan = make_source_span("bootstrap/compiler_core_v1/fixtures/mini_module.fh", 1, 1, 1, 1)
     let mock_stmt: StmtNode = StmtNode {
         span: mock_span,
@@ -2722,7 +2761,8 @@ is
         else_block_start_idx: 0,
         else_block_len: 0,
         routine_name: "",
-        aborts_type: ""
+        aborts_type: "",
+        invariant_expr_idx: -1
     }
     let stmts_array: Array<StmtNode, 64> = [
         mock_stmt, mock_stmt, mock_stmt, mock_stmt, mock_stmt, mock_stmt, mock_stmt, mock_stmt,
@@ -2786,7 +2826,8 @@ is
         else_block_start_idx: -1,
         else_block_len: 0,
         routine_name: "",
-        aborts_type: ""
+        aborts_type: "",
+        invariant_expr_idx: -1
     }
     let stmts_array_let: Array<StmtNode, 64> = [
         mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let, mock_stmt_let,

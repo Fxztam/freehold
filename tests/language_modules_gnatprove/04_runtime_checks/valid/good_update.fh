@@ -1,0 +1,31 @@
+module test_runtime_checks.good_update
+
+type Int is Integer range -2147483648..2147483647
+
+function good_update(
+    a: Array<Int, 10>,
+    i: Int,
+    j: Int,
+    p: Int,
+    q: Int
+) returns Boolean
+requires q != 0
+requires i <= 2147483647 - j
+requires i + j >= 0
+requires i + j <= 9
+requires p / q >= -2147483648
+requires p / q <= 2147483647
+ensures a[i + j] = p / q
+is
+    a[i + j] := p / q
+    return true
+end good_update
+
+procedure main()
+is
+    let r: Array<Int, 10> = [0,0,0,0,0,0,0,0,0,0]
+    let res: Boolean = good_update(r, 2, 3, 10, 2)
+    check r[5] = 5
+end main
+
+end test_runtime_checks.good_update

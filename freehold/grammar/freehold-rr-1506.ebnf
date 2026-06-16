@@ -1,0 +1,169 @@
+start ::= module_decl import_decl* declaration* module_end
+module_end ::= "end" qualified_name
+module_decl ::= "module" qualified_name
+qualified_name ::= IDENT ( "." IDENT )*
+import_decl ::= "import" qualified_name exposing_clause?
+exposing_clause ::= "exposing" exposing_list
+exposing_list ::= IDENT ( "," IDENT )*
+
+declaration ::= record_type_decl | type_decl | error_decl | service_decl | function_decl | procedure_decl
+
+record_type_decl ::= "type" IDENT type_param_list? "is" "record" record_field record_field* "end" "record"
+type_param_list ::= TYPE_ARG_START IDENT ( "," IDENT )* ">"
+record_field ::= IDENT ":" type_ref json_field_name? proto_field_id?
+json_field_name ::= "@json" "(" string_literal ")"
+proto_field_id ::= "proto" INT_NUMBER
+
+type_decl ::= "type" IDENT "is" base_type range_decl?
+range_decl ::= "range" ( SIGNED_NUMBER | INT_NUMBER ) ".." ( SIGNED_NUMBER | INT_NUMBER )
+error_decl ::= "error" IDENT
+base_type ::= "Integer" | "Boolean" | "Double" | "String" | "BigInteger" | "BigFloat"
+
+function_decl ::= ffi_binding? async_marker? "function" IDENT type_param_list? "(" param_list? ")" "returns" return_type contract_block? "is" stmt* "end" IDENT
+procedure_decl ::= ffi_binding? async_marker? "procedure" IDENT type_param_list? "(" param_list? ")" contract_block? "is" stmt* "end" IDENT
+async_marker ::= "async"
+ffi_binding ::= "@ffi" "(" string_literal "," string_literal ")"
+
+service_decl ::= "service" IDENT "is" rpc_decl rpc_decl* "end" IDENT
+rpc_decl ::= "rpc" IDENT "(" IDENT ":" stream_marker? type_ref ")" ":" stream_marker? type_ref
+stream_marker ::= "stream"
+
+param_list ::= param ( "," param )*
+param ::= IDENT ":" param_type
+param_type ::= type_ref
+
+type_ref ::= IDENT type_arg_list? | array_type
+type_arg_list ::= TYPE_ARG_START type_ref ( "," type_ref )* ">"
+
+return_type ::= result_type | type_ref
+result_payload_type ::= result_type | type_ref
+result_type ::= "Result" TYPE_ARG_START result_payload_type "," type_ref ">"
+array_type ::= IDENT TYPE_ARG_START type_ref "," INT_NUMBER ">"
+
+contract_block ::= global_clause* depends_clause* requires_clause* aborts_clause* ensures_clause*
+
+global_clause ::= "global" global_spec ( "," global_spec )*
+global_spec ::= GLOBAL_MODE? IDENT
+GLOBAL_MODE ::= "Input" | "Output" | "In_Out"
+
+depends_clause ::= "depends" dependency_spec ( "," dependency_spec )*
+dependency_spec ::= qualified_name "=>" dependency_sources
+dependency_sources ::= dependency_source | "(" dependency_source_list ")"
+dependency_source_list ::= dependency_source ( "," dependency_source )*
+dependency_source ::= qualified_name | "+"
+
+requires_clause ::= "requires" constraint_list
+constraint_list ::= constraint ( "," constraint )*
+constraint ::= IDENT "is" IDENT | expr
+aborts_clause ::= "aborts" IDENT ( "when" expr )?
+ensures_clause ::= "ensures" expr_list
+
+stmt ::= let_stmt | field_assign_stmt | assign_stmt | return_stmt | abort_stmt | if_stmt | while_stmt | case_stmt | scope_stmt | check_stmt | call_stmt
+
+let_stmt ::= "let" IDENT ":" return_type "=" expr
+field_assign_stmt ::= field_path ":=" expr
+assign_stmt ::= IDENT ":=" expr
+return_stmt ::= "return" return_value
+abort_stmt ::= "abort" IDENT
+return_value ::= "ok" expr | "error" IDENT | expr
+check_stmt ::= "check" expr
+call_stmt ::= "call" qualified_name type_arg_list? "(" arg_list? ")"
+
+if_stmt ::= "if" expr "then" then_block ( "else" else_block )? "end" "if"
+then_block ::= stmt*
+else_block ::= stmt*
+
+while_stmt ::= "while" expr invariant_clause invariant_clause* variant_clause? "do" loop_block "end" "while"
+invariant_clause ::= "invariant" expr
+variant_clause ::= "variant" expr
+loop_block ::= stmt*
+
+case_stmt ::= "case" expr "is" case_branch case_branch* default_branch "end" "case"
+case_branch ::= "when" expr "=>" case_block
+default_branch ::= "default" "=>" case_block
+case_block ::= stmt*
+
+scope_stmt ::= "scope" IDENT "do" scope_spawn_block scope_join_block scope_result_block "end" "scope"
+scope_spawn_block ::= "spawn" stmt*
+scope_join_block ::= "join" stmt*
+scope_result_block ::= "result" stmt*
+
+arg_list ::= call_arg ( "," call_arg )*
+call_arg ::= IDENT ":" expr | expr
+expr_list ::= expr ( "," expr )*
+named_arg_list ::= named_arg ( "," named_arg )*
+named_arg ::= IDENT ":" expr
+
+expr ::= logic_or
+     | "for" "all" IDENT "in" logic_or ".." logic_or "=>" expr
+     | "for" "some" IDENT "in" logic_or ".." logic_or "=>" expr
+
+logic_or ::= logic_and ( "or" logic_and )*
+logic_and ::= equality ( "and" equality )*
+equality ::= comparison ( ( "=" | "!=" ) comparison )*
+comparison ::= sum ( ( "<" | "<=" | ">" | ">=" ) sum )*
+sum ::= product ( ( "+" | "-" ) product )*
+product ::= unary ( ( "*" | "/" ) unary )*
+unary ::= atom | "await" unary | "-" unary | "not" unary
+
+atom ::= string_literal
+     | SIGNED_FLOAT
+     | INT_NUMBER
+     | "true"
+     | "false"
+     | "success"
+     | "failure"
+     | "result" "." IDENT ( "." IDENT )*
+     | "result" "[" expr "]" "." IDENT ( "." IDENT )*
+     | "result" "[" expr "]"
+     | "result"
+     | "value" "." IDENT ( "." IDENT )*
+     | "value" "[" expr "]" "." IDENT ( "." IDENT )*
+     | "value" "[" expr "]"
+     | "error" "." IDENT ( "." IDENT )*
+     | "value"
+     | "error"
+     | array_literal
+     | type_ref "{" named_arg_list "}"
+     | field_path
+     | IDENT "[" expr "]"
+     | IDENT type_arg_list? "(" arg_list? ")" "with" "invariant" expr
+     | field_path type_arg_list? "(" arg_list? ")"
+     | IDENT type_arg_list? "(" arg_list? ")"
+     | qualified_name "(" arg_list? ")"
+     | IDENT
+     | "(" expr ")"
+
+field_path ::= IDENT "." IDENT ( "." IDENT )*
+array_literal ::= "[" arg_list? "]"
+
+string_literal ::= DOUBLE_QUOTE ( string_character | escape_sequence )* DOUBLE_QUOTE
+string_character ::= LETTER | DIGIT | PRINTABLE_SYMBOL | SPACE | TAB
+escape_sequence ::= BACKSLASH ( DOUBLE_QUOTE | BACKSLASH | "/" | "b" | "f" | "n" | "r" | "t" )
+
+IDENT ::= LETTER ( LETTER | DIGIT | "_" )*
+LETTER ::= "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
+DIGIT ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+INT_NUMBER ::= DIGIT DIGIT*
+SIGNED_FLOAT ::= "-"? INT_NUMBER "." INT_NUMBER
+SIGNED_NUMBER ::= "-"? INT_NUMBER ( "." INT_NUMBER )?
+
+TYPE_ARG_START ::= "<"
+
+line_comment ::= "--" LINE_COMMENT_CHARACTER*
+block_comment ::= "/" "*" BLOCK_COMMENT_CHARACTER* "*" "/"
+doc_comment ::= "/" "*" "*" BLOCK_COMMENT_CHARACTER* "*" "/"
+
+line_comment ::= "--" LINE_COMMENT_CHARACTER*
+block_comment ::= "/" "*" BLOCK_COMMENT_CHARACTER* "*" "/"
+doc_comment ::= "/" "*" "*" BLOCK_COMMENT_CHARACTER* "*" "/"
+
+DOUBLE_QUOTE ::= '"'
+BACKSLASH ::= '\'
+SPACE ::= " "
+TAB ::= #x9
+NEWLINE ::= #xA
+PRINTABLE_SYMBOL ::= "!" | "#" | "$" | "%" | "&" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/" | ":" | ";" | "<" | "=" | ">" | "?" | "@" | "[" | "]" | "^" | "_" | "`" | "{" | "|" | "}" | "~"
+LINE_COMMENT_CHARACTER ::= LETTER | DIGIT | PRINTABLE_SYMBOL | SPACE | TAB | DOUBLE_QUOTE | BACKSLASH
+BLOCK_COMMENT_CHARACTER ::= LINE_COMMENT_CHARACTER | NEWLINE

@@ -6,9 +6,11 @@ qualified_name: NAME ("." NAME)*
 import_decl: "import" qualified_name exposing_clause?
 exposing_clause: "exposing" exposing_list
 exposing_list: NAME ("," NAME)*
-declaration: record_type_decl | type_decl | error_decl | service_decl | function_decl | procedure_decl
+declaration: record_type_decl | choice_type_decl | type_decl | error_decl | service_decl | function_decl | procedure_decl
 
 record_type_decl: "type" NAME type_param_list? "is" "record" record_field+ "end" "record"
+choice_type_decl: "choice" NAME type_param_list? "=" "|"? constructor_decl ("|" constructor_decl)* "end" NAME
+constructor_decl: NAME ("(" (param ("," param)*)? ")")?
 type_param_list: TYPE_ARG_START NAME ("," NAME)* ">"
 record_field: NAME ":" type_ref json_field_name? proto_field_id?
 json_field_name: "@json" "(" ESCAPED_STRING ")"
@@ -36,7 +38,7 @@ result_payload_type: result_type | type_ref
 result_type: "Result" TYPE_ARG_START result_payload_type "," type_ref ">"
 array_type: NAME TYPE_ARG_START type_ref "," INT_NUMBER ">"
 
-contract_block: global_clause* depends_clause* requires_clause* aborts_clause* ensures_clause*
+contract_block: global_clause* depends_clause* modifies_clause* requires_clause* aborts_clause* ensures_clause*
 global_clause: "global" global_spec ("," global_spec)*
 global_spec: GLOBAL_MODE? NAME
 GLOBAL_MODE.2: "Input" | "Output" | "In_Out"
@@ -45,6 +47,9 @@ depends_clause: "depends" dependency_spec ("," dependency_spec)*
 dependency_spec: qualified_name "=>" dependency_sources
 dependency_sources: dependency_source
                   | "(" dependency_source_list ")"
+
+modifies_clause: "modifies" modifies_spec ("," modifies_spec)*
+modifies_spec: field_path | NAME
 dependency_source_list: dependency_source ("," dependency_source)*
 dependency_source: qualified_name | "+"
 
@@ -72,8 +77,10 @@ else_block: stmt*
 while_stmt: "while" expr invariant_clause+ variant_clause? "do" loop_block "end" "while"
 loop_block: stmt*
 
-case_stmt: "case" expr "is" case_branch+ default_branch "end" "case"
+case_stmt: "case" expr "is" (case_branch+ default_branch | pattern_branch+ default_branch?) "end" "case"
 case_branch: "when" expr "=>" case_block
+pattern_branch: "|" pattern_expr ("when" expr)? "=>" case_block
+pattern_expr: NAME ("(" NAME ("," NAME)* ")")?
 default_branch: "default" "=>" case_block
 case_block: stmt*
 scope_stmt: "scope" NAME "do" scope_spawn_block scope_join_block scope_result_block "end" "scope"
@@ -119,6 +126,8 @@ named_arg: NAME ":" expr
      | "error" -> result_error_value
      | array_literal
      | type_ref "{" named_arg_list "}" -> record_literal
+     | type_ref "{" map_entries? "}" -> map_literal
+     | type_ref "{" set_entries "}" -> set_literal
      | field_path -> field_access
      | NAME "[" expr "]" -> index_expr
      | NAME type_arg_list "(" arg_list? ")" "with" "invariant" expr -> channel_create_with_invariant
@@ -130,6 +139,9 @@ named_arg: NAME ":" expr
 
 field_path: NAME ("." NAME)+
 array_literal: "[" arg_list? "]"
+map_entries: map_entry ("," map_entry)*
+map_entry: ESCAPED_STRING ":" expr
+set_entries: expr ("," expr)*
 
 BASE_TYPE: "Integer" | "Boolean" | "Double" | "String" | "BigInteger" | "BigFloat"
 SIGNED_FLOAT: /-?\d+\.\d+/

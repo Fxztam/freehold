@@ -1,0 +1,18 @@
+module Neg_Frame_Update_Undeclared_Field
+
+record Account
+    balance: Integer
+    limit: Integer
+end Account
+
+procedure bad_deposit(acc: Account, amount: Integer)
+modifies acc.balance
+requires amount >= 0
+requires acc.balance <= Integer.Last - amount
+ensures acc.balance == old(acc.balance) + amount
+do
+    acc.balance := acc.balance + amount
+    acc.limit := acc.limit + 1
+end bad_deposit
+
+end Neg_Frame_Update_Undeclared_Field

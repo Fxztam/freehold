@@ -1,0 +1,107 @@
+(*
+  Freehold generated ISO EBNF grammar.
+  Source: freehold\grammar\freehold.lark
+
+  Generated from the executable Lark grammar.
+  This file is intended for review/documentation.
+  The parser source of truth remains freehold.lark.
+*)
+
+start = moduleDecl , { importDecl } , { declaration } , moduleEnd ;
+moduleEnd = "end" , qualifiedName ;
+moduleDecl = "module" , qualifiedName ;
+qualifiedName = IDENT , { "." , IDENT } ;
+importDecl = "import" , qualifiedName , [ exposingClause ] ;
+exposingClause = "exposing" , exposingList ;
+exposingList = IDENT , { "," , IDENT } ;
+declaration = recordTypeDecl | typeDecl | errorDecl | serviceDecl | functionDecl | procedureDecl ;
+recordTypeDecl = "type" , IDENT , [ typeParamList ] , "is" , "record" , recordField , { recordField } , "end" , "record" ;
+typeParamList = TYPEARGSTART , IDENT , { "," , IDENT } , ">" ;
+recordField = IDENT , ":" , typeRef , [ protoFieldId ] ;
+protoFieldId = "proto" , INTEGERLITERAL ;
+typeDecl = "type" , IDENT , "is" , baseType , [ rangeDecl ] ;
+errorDecl = "error" , IDENT ;
+baseType = BASETYPE ;
+rangeDecl = "range" , NUMBERLITERAL , ".." , NUMBERLITERAL ;
+functionDecl = [ asyncMarker ] , "function" , IDENT , [ typeParamList ] , "(" , [ paramList ] , ")" , "returns" , returnType , [ contractBlock ] , "is" , { stmt } , "end" , IDENT ;
+asyncMarker = "async" ;
+procedureDecl = [ asyncMarker ] , "procedure" , IDENT , [ typeParamList ] , "(" , [ paramList ] , ")" , [ contractBlock ] , "is" , { stmt } , "end" , IDENT ;
+serviceDecl = "service" , IDENT , "is" , rpcDecl , { rpcDecl } , "end" , IDENT ;
+rpcDecl = "rpc" , IDENT , "(" , IDENT , ":" , typeRef , ")" , ":" , typeRef ;
+paramList = param , { "," , param } ;
+param = IDENT , ":" , paramType ;
+paramType = typeRef ;
+typeRef = IDENT , [ typeArgList ] | arrayType ;
+typeArgList = TYPEARGSTART , typeRef , { "," , typeRef } , ">" ;
+returnType = resultType | typeRef ;
+resultPayloadType = resultType | typeRef ;
+resultType = "Result" , TYPEARGSTART , resultPayloadType , "," , typeRef , ">" ;
+arrayType = IDENT , TYPEARGSTART , typeRef , "," , INTEGERLITERAL , ">" ;
+contractBlock = { requiresClause } , { abortsClause } , { ensuresClause } ;
+requiresClause = "requires" , exprList ;
+abortsClause = "aborts" , IDENT , [ "when" , expr ] ;
+ensuresClause = "ensures" , exprList ;
+stmt = letStmt | fieldAssignStmt | assignStmt | returnStmt | abortStmt | ifStmt | whileStmt | caseStmt | scopeStmt | checkStmt | callStmt ;
+letStmt = "let" , IDENT , ":" , returnType , "=" , expr ;
+fieldAssignStmt = fieldPath , ":=" , expr ;
+assignStmt = IDENT , ":=" , expr ;
+returnStmt = "return" , returnValue ;
+abortStmt = "abort" , IDENT ;
+returnValue = "ok" , expr | "error" , IDENT | expr ;
+checkStmt = "check" , expr ;
+callStmt = "call" , qualifiedName , [ typeArgList ] , "(" , [ argList ] , ")" ;
+ifStmt = "if" , expr , "then" , thenBlock , [ "else" , elseBlock ] , "end" , "if" ;
+thenBlock = { stmt } ;
+elseBlock = { stmt } ;
+whileStmt = "while" , expr , invariantClause , { invariantClause } , [ variantClause ] , "do" , loopBlock , "end" , "while" ;
+loopBlock = { stmt } ;
+caseStmt = "case" , expr , "is" , caseBranch , { caseBranch } , defaultBranch , "end" , "case" ;
+caseBranch = "when" , expr , "=>" , caseBlock ;
+defaultBranch = "default" , "=>" , caseBlock ;
+caseBlock = { stmt } ;
+scopeStmt = "scope" , IDENT , "do" , scopeSpawnBlock , scopeJoinBlock , scopeResultBlock , "end" , "scope" ;
+scopeSpawnBlock = "spawn" , { stmt } ;
+scopeJoinBlock = "join" , { stmt } ;
+scopeResultBlock = "result" , { stmt } ;
+invariantClause = "invariant" , expr ;
+variantClause = "variant" , expr ;
+argList = callArg , { "," , callArg } ;
+callArg = IDENT , ":" , expr | expr ;
+exprList = expr , { "," , expr } ;
+namedArgList = namedArg , { "," , namedArg } ;
+namedArg = IDENT , ":" , expr ;
+expr = logicOr ;
+logicOr = logicAnd | logicOr , "or" , logicAnd ;
+logicAnd = equality | logicAnd , "and" , equality ;
+equality = comparison | equality , "=" , comparison | equality , "!=" , comparison ;
+comparison = sum | comparison , "<" , sum | comparison , "<=" , sum | comparison , ">" , sum | comparison , ">=" , sum ;
+sum = product | sum , "+" , product | sum , "-" , product ;
+product = unary | product , "*" , unary | product , "/" , unary ;
+unary = atom | "await" , unary | "-" , unary | "not" , unary ;
+atom = STRINGLITERAL | DOUBLELITERAL | INTEGERLITERAL | "true" | "false" | "success" | "failure" | "result" , "." , IDENT , { "." , IDENT } | "result" | "value" , "." , IDENT , { "." , IDENT } | "value" , "[" , expr , "]" , "." , IDENT , { "." , IDENT } | "value" , "[" , expr , "]" | "error" , "." , IDENT , { "." , IDENT } | "value" | "error" | arrayLiteral | typeRef , "{" , namedArgList , "}" | fieldPath | IDENT , "[" , expr , "]" | fieldPath , typeArgList , "(" , [ argList ] , ")" | IDENT , typeArgList , "(" , [ argList ] , ")" | qualifiedName , "(" , [ argList ] , ")" | IDENT | "(" , expr , ")" ;
+fieldPath = IDENT , "." , IDENT , { "." , IDENT } ;
+arrayLiteral = "[" , [ argList ] , "]" ;
+BASETYPE = "Integer" | "Boolean" | "Double" | "String" | "BigInteger" | "BigFloat" ;
+DOUBLELITERAL = SIGNEDDOUBLELITERAL ;
+NUMBERLITERAL = SIGNEDDOUBLELITERAL | SIGNEDINTEGERLITERAL ;
+INTEGERLITERAL = DIGITS ;
+TYPEARGSTART = ? regular , expression / < ( ? = [ A - Za - z ] ) / ? ;
+LINECOMMENT = "-" , "-" , { LINECOMMENTCHARACTER } ;
+BLOCKCOMMENT = "/" , "*" , { BLOCKCOMMENTCHARACTER } , "*" , "/" ;
+IDENT = LETTER , { LETTER | DIGIT | "_" } ;
+STRINGLITERAL = DOUBLEQUOTE , { STRINGCHARACTER | ESCAPESEQUENCE } , DOUBLEQUOTE ;
+DIGIT = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+DIGITS = DIGIT , { DIGIT } ;
+SIGNEDINTEGERLITERAL = [ "-" ] , DIGITS ;
+SIGNEDDOUBLELITERAL = [ "-" ] , DIGITS , "." , DIGITS ;
+LETTER = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" ;
+DOUBLEQUOTE = ? double quote character ? ;
+BACKSLASH = ? backslash character ? ;
+SPACE = " " ;
+TAB = ? tab character ? ;
+NEWLINE = ? newline character ? ;
+PRINTABLESYMBOL = "!" | "#" | "$" | "%" | "&" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/" | ":" | ";" | "<" | "=" | ">" | "?" | "@" | "[" | "]" | "^" | "_" | "`" | "{" | "|" | "}" | "~" ;
+LINECOMMENTCHARACTER = LETTER | DIGIT | PRINTABLESYMBOL | SPACE | TAB | DOUBLEQUOTE | BACKSLASH ;
+BLOCKCOMMENTCHARACTER = LINECOMMENTCHARACTER | NEWLINE ;
+STRINGCHARACTER = LETTER | DIGIT | PRINTABLESYMBOL | SPACE | TAB ;
+ESCAPESEQUENCE = BACKSLASH , ( DOUBLEQUOTE | BACKSLASH | "/" | "b" | "f" | "n" | "r" | "t" ) ;

@@ -1,0 +1,18 @@
+module test_basic_swap.neg_swap_uninitialized_read
+
+type Int is Integer range -2147483648..2147483647
+
+type Cell is record
+    val: Int
+end record
+
+procedure swap_warn(x: Cell, y: Cell)
+is
+    let tmp_x: Int = x.val
+    let tmp_y: Int
+    x.val := tmp_y
+    tmp_y := y.val
+    y.val := tmp_x
+end swap_warn
+
+end test_basic_swap.neg_swap_uninitialized_read

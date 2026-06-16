@@ -1,0 +1,17 @@
+module test_callsite_precondition.callsite_precondition_fail
+
+type Int is Integer range -2147483648..2147483647
+
+function bounded_increment(x: Int) returns Int
+requires x < 2147483647
+ensures result = x + 1
+is
+    return x + 1
+end bounded_increment
+
+procedure main()
+is
+    let x: Int = bounded_increment(2147483647)
+end main
+
+end test_callsite_precondition.callsite_precondition_fail

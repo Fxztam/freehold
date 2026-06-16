@@ -1,0 +1,23 @@
+module test_array_bounds.index_exact_bounds
+
+type Int is Integer range -2147483648..2147483647
+
+function set_checked(a: Array<Int, 10>, i: Int, v: Int) returns Boolean
+requires i >= 0
+requires i <= 9
+ensures a[i] = v
+is
+    a[i] := v
+    return true
+end set_checked
+
+procedure main()
+is
+    let a: Array<Int, 10> = [0,0,0,0,0,0,0,0,0,0]
+    let res1: Boolean = set_checked(a, 0, 11)
+    let res2: Boolean = set_checked(a, 9, 99)
+    check a[0] = 11
+    check a[9] = 99
+end main
+
+end test_array_bounds.index_exact_bounds

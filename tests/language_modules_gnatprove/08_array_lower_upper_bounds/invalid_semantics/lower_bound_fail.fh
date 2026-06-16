@@ -1,0 +1,18 @@
+module test_array_bounds.lower_bound_fail
+
+type Int is Integer range -2147483648..2147483647
+
+function set_maybe_too_low(a: Array<Int, 10>, i: Int, v: Int) returns Boolean
+requires i <= 9
+is
+    a[i] := v
+    return true
+end set_maybe_too_low
+
+procedure main()
+is
+    let a: Array<Int, 10> = [0,0,0,0,0,0,0,0,0,0]
+    let res: Boolean = set_maybe_too_low(a, -1, 99)
+end main
+
+end test_array_bounds.lower_bound_fail

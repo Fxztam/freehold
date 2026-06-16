@@ -1,0 +1,151 @@
+module MapsPos
+
+import Std.IO exposing logf
+
+type Employee is record
+    age: Integer
+    role: String
+end record
+
+function add(m: Map<Integer>) returns Integer
+is
+    let sum: Integer = 0
+    let keys: Array<String, 16> = Map.keys(m)
+    let size: Integer = Map.size(m)
+    let i: Integer = 0
+    while i < size
+    invariant i >= 0
+    variant size - i
+    do
+        let key: String = keys[i]
+        let r: Result<Integer, SchemaError> = m[key]
+        if r.ok = true then
+            sum := sum + r.value
+            call Std.IO.logf("Iterated Key: ${}, Value: ${}", key, r.value)
+        end if
+        i := i + 1
+    end while
+    return sum
+end add
+
+procedure test_map_ops()
+is
+    let m: Map<Integer> = Map<Integer> { "Alice": 95, "Bob": 80 }
+    let s: Integer = Map.size(m)
+    check s = 2
+
+    let r: Result<Integer, SchemaError> = m["Alice"]
+    check r.ok = true
+    check r.value = 95
+
+    let r2: Result<Integer, SchemaError> = m["Charlie"]
+    check r2.ok = false
+
+    let m2: Map<Integer> = Map.set(m, "Charlie", 70)
+    let s2: Integer = Map.size(m2)
+    check s2 = 3
+
+    let m3: Map<Integer> = Map.remove(m2, "Alice")
+    let s3: Integer = Map.size(m3)
+    check s3 = 2
+
+    let m_add: Map<Integer> = Map<Integer> { "a": 1, "b": 3 }
+    let total: Integer = add(m_add)
+    check total = 4
+    call Std.IO.logf("Total sum of map values is: ${}", total)
+
+    -- Demo: Element hinzufügen und anschliessend löschen
+    let demo_start: Map<Integer> = Map<Integer> { "X": 10 }
+    check Map.size(demo_start) = 1
+    call Std.IO.logf("Demo Start - Size: ${}", Map.size(demo_start))
+
+    let demo_add: Map<Integer> = Map.set(demo_start, "Y", 20)
+    check Map.size(demo_add) = 2
+    let lookup_y: Result<Integer, SchemaError> = demo_add["Y"]
+    check lookup_y.ok = true
+    check lookup_y.value = 20
+    call Std.IO.logf("Demo Added 'Y' with value: ${} - Size: ${}", lookup_y.value, Map.size(demo_add))
+
+    let demo_remove: Map<Integer> = Map.remove(demo_add, "Y")
+    check Map.size(demo_remove) = 1
+    let lookup_removed_y: Result<Integer, SchemaError> = demo_remove["Y"]
+    check lookup_removed_y.ok = false
+    call Std.IO.logf("Demo Removed 'Y' - Size has returned to: ${}", Map.size(demo_remove))
+
+    -- Demo: Drei Zuweisungen hintereinander an dieselbe bestehende Variable
+    let mut_map: Map<Integer> = Map<Integer> { "Initial": 100 }
+    mut_map := Map.set(mut_map, "First", 10)
+    mut_map := Map.set(mut_map, "Second", 20)
+    mut_map := Map.set(mut_map, "Third", 30)
+    check Map.size(mut_map) = 4
+    call Std.IO.logf("Demo Mutate Reassignment - After 3 sets onto same variable, final size is: ${}", Map.size(mut_map))
+end test_map_ops
+
+procedure test_map_record()
+is
+    -- 1. INITIALIZATION & INSERT
+    -- Wir erstellen eine Map, die Mitarbeiterdaten (Employee records) hält.
+    -- Initialer Eintrag: Alice
+    let emp_map: Map<Employee> = Map<Employee> { 
+        "Alice": Employee { age: 30, role: "Engineer" } 
+    }
+    check Map.size(emp_map) = 1
+    call Std.IO.logf("Initial Map - Size: ${}", Map.size(emp_map))
+
+    -- Einfügen (Insert) von Bob
+    let emp_map_2: Map<Employee> = Map.set(emp_map, "Bob", Employee { age: 35, role: "Manager" })
+    check Map.size(emp_map_2) = 2
+    call Std.IO.logf("Inserted 'Bob' - New Size: ${}", Map.size(emp_map_2))
+
+    -- 2. READ-ITERATION
+    -- Wir holen alle Keys der Map ab und iterieren über das Array,
+    -- um die jeweiligen Datensätze auszulesen und auszugeben.
+    let keys: Array<String, 16> = Map.keys(emp_map_2)
+    let size: Integer = Map.size(emp_map_2)
+    let i: Integer = 0
+    while i < size
+    invariant i >= 0
+    variant size - i
+    do
+        let key: String = keys[i]
+        let r: Result<Employee, SchemaError> = emp_map_2[key]
+        if r.ok = true then
+            call Std.IO.logf("Iteration - Key: ${}, Age: ${}, Role: ${}", key, r.value.age, r.value.role)
+        end if
+        i := i + 1
+    end while
+
+    -- 3. UPDATE
+    -- Wir holen Bobs aktuellen Datensatz, modifizieren die Attribute (Alter erhoeht, Befoerderung),
+    -- und speichern ihn via Map.set wieder unter demselben Key ab.
+    let bob_lookup: Result<Employee, SchemaError> = emp_map_2["Bob"]
+    check bob_lookup.ok = true
+    
+    let bob_data: Employee = bob_lookup.value
+    let bob_updated: Employee = Employee { age: bob_data.age + 1, role: "Senior Manager" }
+    let emp_map_3: Map<Employee> = Map.set(emp_map_2, "Bob", bob_updated)
+
+    -- Verifizieren des Updates
+    let bob_lookup_updated: Result<Employee, SchemaError> = emp_map_3["Bob"]
+    check bob_lookup_updated.ok = true
+    check bob_lookup_updated.value.age = 36
+    check bob_lookup_updated.value.role = "Senior Manager"
+    call Std.IO.logf("Updated 'Bob' - New Age: ${}, New Role: ${}", bob_lookup_updated.value.age, bob_lookup_updated.value.role)
+
+    -- 4. DELETE
+    -- Wir entfernen Alice aus der Map und verifizieren, dass sie nicht mehr auffindbar ist.
+    let emp_map_4: Map<Employee> = Map.remove(emp_map_3, "Alice")
+    check Map.size(emp_map_4) = 1
+
+    let alice_lookup: Result<Employee, SchemaError> = emp_map_4["Alice"]
+    check alice_lookup.ok = false
+    call Std.IO.logf("Deleted 'Alice' - Map Size is now: ${}", Map.size(emp_map_4))
+end test_map_record
+
+procedure main()
+is
+    call test_map_ops()
+    call test_map_record()
+end main
+
+end MapsPos

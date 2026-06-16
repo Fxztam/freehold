@@ -26,13 +26,13 @@ function run_exec_file(wallet_conn: String, wallet_path: String, sql_dir: String
 is
     let path: String = sql_path(sql_dir, file_name)
     let loaded: Result<String, String> = read_to_string(path)
-    if loaded.ok = false then
+    if not loaded.ok then
         call Std.IO.logf("read SQL file failed: ${}", loaded.error)
         return false
     end if
 
     let executed: Result<String, OracleError> = exec_sql_wallet_timeout(wallet_conn, wallet_path, loaded.value, timeout_seconds)
-    if executed.ok = false then
+    if not executed.ok then
         call Std.IO.logf("execute SQL file failed: ${}", String.error_text(executed.error))
         return false
     end if
@@ -52,7 +52,7 @@ is
     end if
 
     let oracle_credentials: Result<KeePassXCCredential, CryptoError> = keepassxc_entry_credential("OracleAccounts", "./OracleAccounts.dbx", "TEST_DEMO")
-    if oracle_credentials.ok = false then
+    if not oracle_credentials.ok then
         call Std.IO.logf("Oracle TEST_DEMO credential lookup failed: ${}", String.error_text(oracle_credentials.error))
         return 1
     end if
@@ -61,7 +61,7 @@ is
     call Std.IO.log("Oracle wallet location loaded from KeePassXC")
 
     let wallet_conn_result: Result<String, OracleError> = conn_from_wallet_tns(wallet_path, oracle_credentials.value.username, oracle_credentials.value.password)
-    if wallet_conn_result.ok = false then
+    if not wallet_conn_result.ok then
         call Std.IO.logf("Oracle connection URL build from tnsnames.ora failed: ${}", String.error_text(wallet_conn_result.error))
         return 1
     end if
@@ -76,13 +76,13 @@ is
 
     let time_sql_path: String = sql_path(sql_dir, "select_time.sql")
     let time_sql: Result<String, String> = read_to_string(time_sql_path)
-    if time_sql.ok = false then
+    if not time_sql.ok then
         call Std.IO.logf("read select_time.sql failed: ${}", time_sql.error)
         return 1
     end if
 
     let wallet_scalar: Result<String, OracleError> = query_scalar_wallet_timeout(wallet_conn, wallet_path, time_sql.value, timeout_seconds)
-    if wallet_scalar.ok = false then
+    if not wallet_scalar.ok then
         call Std.IO.logf("Oracle select_time.sql failed: ${}", String.error_text(wallet_scalar.error))
         return 1
     end if
@@ -106,20 +106,20 @@ is
 
     let select_rows_path: String = sql_path(sql_dir, "select_rows.sql")
     let select_rows: Result<String, String> = read_to_string(select_rows_path)
-    if select_rows.ok = false then
+    if not select_rows.ok then
         call Std.IO.logf("read select_rows.sql failed: ${}", select_rows.error)
         return 1
     end if
 
     let rows: Result<String, OracleError> = query_rows_wallet_timeout(wallet_conn, wallet_path, select_rows.value, 20, timeout_seconds)
-    if rows.ok = false then
+    if not rows.ok then
         call Std.IO.logf("Oracle select_rows.sql failed: ${}", String.error_text(rows.error))
         return 1
     end if
     call Std.IO.logf("Oracle SQL-file rows:\n${}", rows.value)
 
     let typed_rows_result: Result<Array<OracleDemoRow, 2>, OracleError> = query_demo_rows_wallet_timeout(wallet_conn, wallet_path, select_rows.value, timeout_seconds)
-    if typed_rows_result.ok = false then
+    if not typed_rows_result.ok then
         call Std.IO.logf("Oracle typed rows from SQL file failed: ${}", String.error_text(typed_rows_result.error))
         return 1
     end if

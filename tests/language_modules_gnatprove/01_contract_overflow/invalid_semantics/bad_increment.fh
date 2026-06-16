@@ -1,0 +1,17 @@
+module test_contract_overflow.bad_increment
+
+type Int is Integer range -2147483648..2147483647
+
+function bad_increment(x: Int) returns Int
+ensures result = x + 1
+is
+    return x + 1
+end bad_increment
+
+procedure main()
+is
+    let x: Int = bad_increment(41)
+    check x = 42
+end main
+
+end test_contract_overflow.bad_increment

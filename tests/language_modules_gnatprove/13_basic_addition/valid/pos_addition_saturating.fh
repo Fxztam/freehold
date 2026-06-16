@@ -1,0 +1,35 @@
+module test_basic_addition.pos_addition_saturating
+
+type Int is Integer range -2147483648..2147483647
+
+function addition_saturating(x: Int, y: Int) returns Int
+ensures not (x >= 0 and y > 2147483647 - x) or result = 2147483647
+ensures not (x < 0 and y < -2147483648 - x) or result = -2147483648
+ensures not (not (x >= 0 and y > 2147483647 - x) and not (x < 0 and y < -2147483648 - x)) or result = x + y
+is
+    if x < 0 and y < 0 then
+        if x < -2147483648 - y then
+            return -2147483648
+        else
+            return x + y
+        end if
+    else
+        if x > 0 and y > 0 then
+            if x > 2147483647 - y then
+                return 2147483647
+            else
+                return x + y
+            end if
+        else
+            return x + y
+        end if
+    end if
+end addition_saturating
+
+procedure main()
+is
+    let z: Int = addition_saturating(2147483647, 5)
+    check z = 2147483647
+end main
+
+end test_basic_addition.pos_addition_saturating

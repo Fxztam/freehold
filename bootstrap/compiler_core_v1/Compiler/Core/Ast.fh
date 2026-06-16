@@ -193,6 +193,7 @@ type StmtNode is record
     else_block_len: Integer
     routine_name: String
     aborts_type: String
+    invariant_expr_idx: Integer
 end record
 
 -- ============================================================
@@ -716,7 +717,7 @@ is
     }
 end make_expr_node
 
-function make_stmt_node(span: SourceSpan, kind: String, var_name: String, var_type: String, expr_idx: Integer, cond_expr_idx: Integer, then_block_start_idx: Integer, then_block_len: Integer, else_block_start_idx: Integer, else_block_len: Integer, routine_name: String, aborts_type: String) returns StmtNode
+function make_stmt_node(span: SourceSpan, kind: String, var_name: String, var_type: String, expr_idx: Integer, cond_expr_idx: Integer, then_block_start_idx: Integer, then_block_len: Integer, else_block_start_idx: Integer, else_block_len: Integer, routine_name: String, aborts_type: String, invariant_expr_idx: Integer) returns StmtNode
 requires String.instr(kind, "") = 0
 ensures result.kind = kind
 is
@@ -732,7 +733,8 @@ is
         else_block_start_idx: else_block_start_idx,
         else_block_len: else_block_len,
         routine_name: routine_name,
-        aborts_type: aborts_type
+        aborts_type: aborts_type,
+        invariant_expr_idx: invariant_expr_idx
     }
 end make_stmt_node
 

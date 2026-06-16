@@ -1,0 +1,35 @@
+module test_loop_examples.update_arr_zero
+
+type Int is Integer range -2147483648..2147483647
+
+function update_arr_zero(a: Array<Int, 10>, threshold: Int) returns Array<Int, 10>
+ensures for all j in 0..9 => (not (a[j] <= threshold) or result[j] = 0) and (a[j] <= threshold or result[j] = a[j])
+is
+    let i: Int = 0
+    let b: Array<Int, 10> = a
+
+    while i < 10
+        invariant i >= 0
+        invariant i <= 10
+        invariant for all k in 0..i-1 => (not (a[k] <= threshold) or b[k] = 0) and (a[k] <= threshold or b[k] = a[k])
+        invariant for all k in i..9 => b[k] = a[k]
+        variant 10 - i
+    do
+        if b[i] <= threshold then
+            b[i] := 0
+        end if
+        i := i + 1
+    end while
+
+    return b
+end update_arr_zero
+
+procedure main()
+is
+    let values: Array<Int, 10> = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    let res: Array<Int, 10> = update_arr_zero(values, 5)
+    check res[3] = 0
+    check res[7] = 8
+end main
+
+end test_loop_examples.update_arr_zero

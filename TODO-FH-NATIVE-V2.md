@@ -9,7 +9,7 @@
 
 The second generation of the native, self-hosted Freehold compiler (**`FH-Native-V2`**) elevates the language from its minimalist, bootstrap-centric core to a fully-featured, mathematically-verified systems programming language.
 
-While `FH-Native-V1` focused strictly on the minimal, safe compiler dialect required to achieve byte-identical self-compilation, `FH-Native-V2` introduces advanced type systems, structured exception recoveries, dynamic collection mapping, and distributed workflow modeling.
+While `FH-Native-V1` focused strictly on the minimal, safe compiler dialect required to achieve byte-identical self-compilation, `FH-Native-V2` introduces advanced type systems, dynamic collection mapping, and distributed workflow modeling.
 
 ---
 
@@ -27,7 +27,6 @@ Using `variant` for both features introduces severe cognitive load for developer
 ### 2.2 SMT-LIB and Z3 Mathematical Verifiability
 * **Native Z3 Datatype Modeling:** Sum types represent directly as `(declare-datatypes ...)` in SMT-LIB v2 without state-space explosion.
 * **Reduction of Tag Constraints:** Simulating optional records with variable tags requires complex boolean invariant equations. SMT Solvers natively resolve algebraic sum types, drastically accelerating verification time.
-* **Exhaustiveness Analysis:** Z3 mathematically proves complete coverage of cases, discarding hazardous and imprecise "default" branches.
 
 ### 2.3 Syntax and Language Specification
 ```freehold
@@ -129,34 +128,7 @@ $$\text{Set}\langle T \rangle \implies (\text{Array } T \text{ Bool})$$
 
 ---
 
-## 5. Topic 4: Named Structured Try-Catch Recovery
-
-To provide resilient transactional behavior, `FH-Native-V2` upgrades unrecoverable `abort <ErrorName>` actions into localizable Try-Catch blocks utilizing strict, named boundaries.
-
-### 5.1 Syntax Design
-```freehold
-try db_transaction
-    try api_call
-        if id < 0 then
-            abort ConnectionError
-        end if
-        return User { id: id, active: true }
-    on ConnectionError do
-        if id = -42 then
-            abort DBError -- Escapes connection block and targets parent
-        end if
-        return User { id: 0, active: false }
-    end try api_call
-on DBError, SchemaError do
-    return User { id: -1, active: false }
-end try db_transaction
-```
-* **Name Match Guards:** The parser validates that `try <id>` matches `end try <id>` strictly, preventing silent block nesting overlaps.
-* **Go Lowering Parity:** Mapped elegantly using anonymous closures preserving Go's structural `panic` / `recover` semantics.
-
----
-
-## 6. Topic 5: State Machine Workflows, Spawns & Channels
+## 5. Topic 4: State Machine Workflows, Spawns & Channels
 
 Business workflows are asynchronous, parallel, and state-dependent. Freehold models processes as Deterministic Finite Automata (DFA) using `choice` structures coupled with lightweight scheduling actors.
 
@@ -173,7 +145,7 @@ sequenceDiagram
     Proc->>Proc: transition(newState)
 ```
 
-### 6.1 State Transitions Safety
+### 5.1 State Transitions Safety
 ```freehold
 function transition(state: CheckoutState, action: CheckoutAction) returns CheckoutState
 ensures case state is Completed(_) => result = state | _ => true end
@@ -195,10 +167,67 @@ is
 end transition
 ```
 
-### 6.2 Spawns & Channels Architecture
+### 5.2 Spawns & Channels Architecture
 * **`Channel<T>`:** Typed thread-safe FIFO message pipelines.
 * **`spawn`:** Initiates independent, memory-isolated green fibers running concurrent loops:
   ```freehold
   spawn start_checkout_worker(queue)
   ```
 * **Verification Targets:** SMT checking validates deadlock absence (buffer capacity proofs) and confirms that terminal sink states like `Completed` can never be reverted back to pending/failed.
+
+---
+
+## 6. Topic 5: Dynamic AST Architecture & Multi-Invariant Loops
+
+In `FH-Native-V1`, the bootstrap compiler uses flat, pre-allocated record arrays to model the AST. This is highly robust for memory constraints during bootstrapping but forces single-scalar tracking fields inside AST nodes, such as a single `invariant_expr_idx: Integer` inside `StmtNode`.
+
+With **`FH-Native-V2`**, the compiler upgrades to a dynamic, pointer-rich heap-allocated AST or native list collections. This allows full alignment with the grammar's EBNF specification:
+$$\text{while\_stmt} \Rightarrow \text{while } \text{expr } \text{invariant\_clause}^+ \ [\text{variant\_clause}] \ \text{do } \text{loop\_block } \text{end while}$$
+
+### 6.1 AST Modeling Upgrade
+Instead of a single index, the `WhileStmt` representation in V2 supports an array or list of invariants:
+```freehold
+type StmtNode is choice
+    -- ... other statement choices ...
+    | WhileStmt(
+        cond_expr: ExprNode,
+        invariants: List<ExprNode>,
+        variant_expr: Option<ExprNode>,
+        body: List<StmtNode>
+    )
+end choice
+```
+
+### 6.2 Benefits for Formal Verification
+1. **Separation of Concerns:** Developers can split loop invariants into discrete, logical assertions (e.g., lower bound, upper bound, array state equivalence) rather than packing them into a single massive `and` clause.
+2. **SMT Parity:** In WhyML, multiple `invariant` statements can be emitted sequentially:
+   ```why3
+   while i < len do
+     invariant { 0 <= i }
+     invariant { i <= len }
+     invariant { sum >= 0 }
+     ...
+   ```
+3. **Debuggability:** If Z3 fails to prove one of the invariants, the compiler can trace the failure to the exact line number of the specific failing `invariant_clause` in the source file, boosting diagnostic accuracy.
+
+### 6.3 WhyML AST Lowering Parity for Nested Structures
+In `FH-Native-V1`, structures like `CASE` (Pattern Matching) and `SCOPE` (Concurrency/Spawns) are syntactically checked by the parser, but they are not fully represented as detailed nested sub-trees inside the flat, array-based `StmtNode` bounds. This constraint makes a general, structured WhyML export of these pathways technically impossible in V1.
+
+With the dynamic `choice`-based tree models introduced in **`FH-Native-V2`**, the WhyML-Codegenerator (`WhyMLCodeGen.fh`) will natively translate these nesting structures:
+* **Pattern Matching (`CaseStmt`):** Lowered into native WhyML pattern matching blocks:
+  ```why3
+  match expr with
+  | Branch1 -> ...
+  | Branch2 -> ...
+  | _ -> ...
+  end
+  ```
+* **Concurrent Scopes (`ScopeStmt`):** Lowered into structural simulations matching thread sandboxes:
+  ```why3
+  let scope = () in
+  begin
+    (* Sparked async verification nodes *)
+  end
+  ```
+
+

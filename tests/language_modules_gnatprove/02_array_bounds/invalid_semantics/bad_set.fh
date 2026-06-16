@@ -1,0 +1,17 @@
+module test_array_bounds.bad_set
+
+type Int is Integer range -2147483648..2147483647
+
+procedure bad_set(a: Array<Int, 10>, i: Int, v: Int)
+ensures true
+is
+    a[i] := v
+end bad_set
+
+procedure main()
+is
+    let a: Array<Int, 10> = [0,0,0,0,0,0,0,0,0,0]
+    call bad_set(a, 3, 99)
+end main
+
+end test_array_bounds.bad_set

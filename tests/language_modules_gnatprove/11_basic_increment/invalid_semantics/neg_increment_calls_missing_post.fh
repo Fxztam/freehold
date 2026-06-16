@@ -1,0 +1,18 @@
+module test_basic_increment.neg_increment_calls_missing_post
+
+type Int is Integer range -2147483648..2147483647
+
+function increment_guarded(x: Int) returns Int
+requires x < 2147483647
+is
+    return x + 1
+end increment_guarded
+
+procedure main()
+is
+    let x: Int = 0
+    x := increment_guarded(x)
+    x := increment_guarded(x)
+end main
+
+end test_basic_increment.neg_increment_calls_missing_post

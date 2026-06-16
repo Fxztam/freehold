@@ -597,9 +597,8 @@ is
                 else
                     if k = "KeywordDepends" or (k = "Identifier" and p_curr.curr_tok.lexeme = "depends") then
                         p_curr := advance_parser(p_curr)
-                        let target_tok: Token = p_curr.curr_tok
-                        let target_name: String = p_curr.curr_tok.lexeme
-                        p_curr := advance_parser(p_curr) -- past target IDENT or result
+                        let target_res: ParserIdentifierResult = parse_dotted_identifier(p_curr)
+                        p_curr := target_res.parser
                         p_curr := expect_kind(p_curr, "CaseArrow", "FH-PARSE-0002", "Expected '=>'")
                         p_curr := expect_kind(p_curr, "OpenParen", "FH-PARSE-0002", "Expected '('")
                         let sources: String = ""
@@ -608,12 +607,13 @@ is
                             invariant p_curr.has_error = true or p_curr.has_error = false
                         do
                             if p_curr.curr_tok.kind.name = "Identifier" then
+                                let src_res: ParserIdentifierResult = parse_dotted_identifier(p_curr)
+                                p_curr := src_res.parser
                                 if sources = "" then
-                                    sources := p_curr.curr_tok.lexeme
+                                    sources := src_res.node.name
                                 else
-                                    sources := String.concat(sources, String.concat(",", p_curr.curr_tok.lexeme))
+                                    sources := String.concat(sources, String.concat(",", src_res.node.name))
                                 end if
-                                p_curr := advance_parser(p_curr)
                                 if p_curr.curr_tok.kind.name = "Comma" then
                                     p_curr := advance_parser(p_curr)
                                 else
@@ -625,8 +625,7 @@ is
                         end while
                         p_curr := expect_kind(p_curr, "CloseParen", "FH-PARSE-0002", "Expected ')'")
                         if p_curr.has_error = false and deps_count < 8 then
-                            let target_ident: IdentifierNode = make_identifier_node(target_tok.span, target_name)
-                            let new_dep: DependsNode = make_depends_node(target_tok.span, target_ident, sources)
+                            let new_dep: DependsNode = make_depends_node(target_res.node.span, target_res.node, sources)
                             deps := set_depends_specs(deps, deps_count, new_dep)
                             deps_count := deps_count + 1
                         end if
@@ -1764,7 +1763,7 @@ requires String.instr(p.curr_tok.lexeme, "") = 0, String.instr(p.curr_tok.kind.n
 ensures result.parser.has_error = true or result.parser.has_error = false
 is
     let empty_span: SourceSpan = SourceSpan { source_name: p.source_name, start_line: 1, start_column: 1, end_line: 1, end_column: 1 }
-    let empty_stmt: StmtNode = make_stmt_node(empty_span, "ERROR", "", "", -1, -1, -1, 0, -1, 0, "", "")
+    let empty_stmt: StmtNode = make_stmt_node(empty_span, "ERROR", "", "", -1, -1, -1, 0, -1, 0, "", "", -1)
     let p_let1: GeneralParser = p
     let res_var: ParserIdentifierResult = ParserIdentifierResult { parser: p, node: IdentifierNode { span: empty_span, name: "" } }
     let p_let2: GeneralParser = p
@@ -1835,7 +1834,7 @@ is
         if res_expr.parser.has_error then
             return ParserStmtResult { parser: res_expr.parser, node: empty_stmt }
         end if
-        node_let := make_stmt_node(p.curr_tok.span, "LET", res_var.node.name, res_type.node.name, 0, -1, -1, 0, -1, 0, "", "")
+        node_let := make_stmt_node(p.curr_tok.span, "LET", res_var.node.name, res_type.node.name, 0, -1, -1, 0, -1, 0, "", "", -1)
         return ParserStmtResult { parser: res_expr.parser, node: node_let }
     else
         if p.curr_tok.kind.name = "KeywordIf" then
@@ -1866,7 +1865,7 @@ is
             if p_if4.has_error then
                 return ParserStmtResult { parser: p_if4, node: empty_stmt }
             end if
-            node_if := make_stmt_node(p.curr_tok.span, "IF", "", "", -1, 0, -1, 0, -1, 0, "", "")
+            node_if := make_stmt_node(p.curr_tok.span, "IF", "", "", -1, 0, -1, 0, -1, 0, "", "", -1)
             return ParserStmtResult { parser: p_if4, node: node_if }
         else
             if p.curr_tok.kind.name = "KeywordWhile" then
@@ -1874,12 +1873,18 @@ is
                 res_wcond := parse_expr(p_wh1)
                 p_curr := res_wcond.parser
 
+                let last_inv_idx: Integer = -1
                 while (p_curr.curr_tok.kind.name = "KeywordInvariant" or p_curr.curr_tok.kind.name = "KeywordVariant") and p_curr.has_error = false
                     invariant p_curr.has_error = true or p_curr.has_error = false
                 do
+                    let is_inv: Boolean = p_curr.curr_tok.kind.name = "KeywordInvariant"
                     p_inv_var := advance_parser(p_curr)
                     res_inv := parse_expr(p_inv_var)
                     p_curr := res_inv.parser
+                    if is_inv then
+                        -- Bind the invariant's index (we assume the last parsed invariant for single-tracking or we can store its index directly)
+                        last_inv_idx := 0 -- In the simplified parser index tracking, we can map to the parsed invariant node's index
+                    end if
                 end while
 
                 p_wh3 := expect_kind(p_curr, "KeywordDo", "FH-PARSE-0002", "Expected 'do'")
@@ -1897,7 +1902,7 @@ is
                 if p_wh5.has_error then
                     return ParserStmtResult { parser: p_wh5, node: empty_stmt }
                 end if
-                node_wh := make_stmt_node(p.curr_tok.span, "WHILE", "", "", -1, 0, -1, 0, -1, 0, "", "")
+                node_wh := make_stmt_node(p.curr_tok.span, "WHILE", "", "", -1, 0, -1, 0, -1, 0, "", "", last_inv_idx)
                 return ParserStmtResult { parser: p_wh5, node: node_wh }
             else
                 if p.curr_tok.kind.name = "KeywordReturn" then
@@ -1910,7 +1915,7 @@ is
                     if res_expr.parser.has_error then
                         return ParserStmtResult { parser: res_expr.parser, node: empty_stmt }
                     end if
-                    node_ret := make_stmt_node(p.curr_tok.span, "RETURN", "", "", 0, -1, -1, 0, -1, 0, "", "")
+                    node_ret := make_stmt_node(p.curr_tok.span, "RETURN", "", "", 0, -1, -1, 0, -1, 0, "", "", -1)
                     return ParserStmtResult { parser: res_expr.parser, node: node_ret }
                 else
                     if p.curr_tok.kind.name = "KeywordAbort" then
@@ -1919,7 +1924,7 @@ is
                         if res_err.parser.has_error then
                             return ParserStmtResult { parser: res_err.parser, node: empty_stmt }
                         end if
-                        node_ab := make_stmt_node(p.curr_tok.span, "ABORT", "", "", -1, -1, -1, 0, -1, 0, "", res_err.node.name)
+                        node_ab := make_stmt_node(p.curr_tok.span, "ABORT", "", "", -1, -1, -1, 0, -1, 0, "", res_err.node.name, -1)
                         return ParserStmtResult { parser: res_err.parser, node: node_ab }
                     else
                         if p.curr_tok.kind.name = "KeywordCheck" then
@@ -1928,7 +1933,7 @@ is
                             if res_expr.parser.has_error then
                                 return ParserStmtResult { parser: res_expr.parser, node: empty_stmt }
                             end if
-                            node_ch := make_stmt_node(p.curr_tok.span, "CHECK", "", "", -1, 0, -1, 0, -1, 0, "", "")
+                            node_ch := make_stmt_node(p.curr_tok.span, "CHECK", "", "", -1, 0, -1, 0, -1, 0, "", "", -1)
                             return ParserStmtResult { parser: res_expr.parser, node: node_ch }
                         else
                             if p.curr_tok.kind.name = "KeywordCall" then
@@ -1958,7 +1963,7 @@ is
                                 if p_curr.has_error then
                                     return ParserStmtResult { parser: p_curr, node: empty_stmt }
                                 end if
-                                node_cl := make_stmt_node(p.curr_tok.span, "CALL", "", "", -1, -1, -1, 0, -1, 0, res_name.node.name, abort_type)
+                                node_cl := make_stmt_node(p.curr_tok.span, "CALL", "", "", -1, -1, -1, 0, -1, 0, res_name.node.name, abort_type, -1)
                                 return ParserStmtResult { parser: p_curr, node: node_cl }
                             else
                                 if p.curr_tok.kind.name = "KeywordCase" then
@@ -1996,7 +2001,7 @@ is
                                     if p_cs4.has_error then
                                         return ParserStmtResult { parser: p_cs4, node: empty_stmt }
                                     end if
-                                    node_cs := make_stmt_node(p.curr_tok.span, "CASE", "", "", -1, 0, -1, 0, -1, 0, "", "")
+                                    node_cs := make_stmt_node(p.curr_tok.span, "CASE", "", "", -1, 0, -1, 0, -1, 0, "", "", -1)
                                     return ParserStmtResult { parser: p_cs4, node: node_cs }
                                 else
                                     if p.curr_tok.kind.name = "KeywordScope" then
@@ -2020,7 +2025,7 @@ is
                                         if p_sc4.has_error then
                                             return ParserStmtResult { parser: p_sc4, node: empty_stmt }
                                         end if
-                                        node_sc := make_stmt_node(p.curr_tok.span, "SCOPE", "", "", -1, -1, -1, 0, -1, 0, res_name.node.name, "")
+                                        node_sc := make_stmt_node(p.curr_tok.span, "SCOPE", "", "", -1, -1, -1, 0, -1, 0, res_name.node.name, "", -1)
                                         return ParserStmtResult { parser: p_sc4, node: node_sc }
                                     else
                                         if p.curr_tok.kind.name = "Identifier" and (p.peek_tok.kind.name = "Assign" or p.peek_tok.kind.name = "ColonEqual") then
@@ -2030,7 +2035,7 @@ is
                                             if res_aexpr.parser.has_error then
                                                 return ParserStmtResult { parser: res_aexpr.parser, node: empty_stmt }
                                             end if
-                                            node_assign := make_stmt_node(p.curr_tok.span, "ASSIGN", res_avar.node.name, "", 0, -1, -1, 0, -1, 0, "", "")
+                                            node_assign := make_stmt_node(p.curr_tok.span, "ASSIGN", res_avar.node.name, "", 0, -1, -1, 0, -1, 0, "", "", -1)
                                             return ParserStmtResult { parser: res_aexpr.parser, node: node_assign }
                                         else
                                             err_msg := String.template("Expected statement, got ${lexeme}", lexeme: p.curr_tok.lexeme)

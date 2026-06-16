@@ -1,0 +1,30 @@
+module test_loop_invariant.good_fill
+
+type Int is Integer range -2147483648..2147483647
+
+function good_fill(a: Array<Int, 32>, v: Int) returns Boolean
+ensures for all k in 0..31 => a[k] = v
+is
+    let i: Int = 0
+
+    while i <= 31
+    invariant i >= 0
+    invariant i <= 32
+    invariant for all j in 0..i-1 => a[j] = v
+    variant 32 - i
+    do
+        a[i] := v
+        i := i + 1
+    end while
+    return true
+end good_fill
+
+procedure main()
+is
+    let a: Array<Int, 32> = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    let res: Boolean = good_fill(a, 7)
+    check a[0] = 7
+    check a[31] = 7
+end main
+
+end test_loop_invariant.good_fill

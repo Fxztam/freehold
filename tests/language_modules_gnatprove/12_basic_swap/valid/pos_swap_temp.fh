@@ -1,0 +1,27 @@
+module test_basic_swap.pos_swap_temp
+
+type Int is Integer range -2147483648..2147483647
+
+type Cell is record
+    val: Int
+end record
+
+procedure swap(x: Cell, y: Cell)
+ensures x.val = old(y.val)
+ensures y.val = old(x.val)
+is
+    let tmp: Int = x.val
+    x.val := y.val
+    y.val := tmp
+end swap
+
+procedure main()
+is
+    let a: Cell = Cell { val: 1 }
+    let b: Cell = Cell { val: 2 }
+    call swap(a, b)
+    check a.val = 2
+    check b.val = 1
+end main
+
+end test_basic_swap.pos_swap_temp

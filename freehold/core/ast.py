@@ -102,6 +102,22 @@ class RecordTypeDecl:
     name: str; fields: list[RecordField]; pos: SourcePos; type_params: list[str] | None = None
 
 @dataclass(frozen=True)
+class ChoiceConstructor:
+    name: str; params: list[Param]; pos: SourcePos
+
+@dataclass(frozen=True)
+class ChoiceTypeDecl:
+    name: str; constructors: list[ChoiceConstructor]; pos: SourcePos; type_params: list[str] | None = None
+
+@dataclass(frozen=True)
+class PatternExpr:
+    name: str; args: list[str]; pos: SourcePos
+
+@dataclass(frozen=True)
+class PatternBranch:
+    pattern: PatternExpr; guard: Any | None; body: list[Any]; pos: SourcePos
+
+@dataclass(frozen=True)
 class ErrorDecl:
     name: str; pos: SourcePos
 
@@ -159,6 +175,10 @@ class LetStmt:
 @dataclass
 class AssignStmt:
     name: str; expr: Any; pos: SourcePos
+
+@dataclass
+class IndexAssignStmt:
+    name: str; index: Any; expr: Any; pos: SourcePos
 
 @dataclass
 class FieldAssignStmt:
@@ -244,6 +264,24 @@ class RecordLiteralExpr:
 @dataclass(frozen=True)
 class ArrayLiteralExpr:
     items: list[Any]; pos: SourcePos
+
+@dataclass(frozen=True)
+class MapEntry:
+    key: str
+    expr: Any
+    pos: SourcePos
+
+@dataclass(frozen=True)
+class MapLiteralExpr:
+    type_name: str
+    entries: list[MapEntry]
+    pos: SourcePos
+
+@dataclass(frozen=True)
+class SetLiteralExpr:
+    type_name: str
+    items: list[Any]
+    pos: SourcePos
 
 @dataclass(frozen=True)
 class IndexExpr:

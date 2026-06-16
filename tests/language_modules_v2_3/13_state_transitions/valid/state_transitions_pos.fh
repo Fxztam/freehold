@@ -1,0 +1,129 @@
+module StateTransitionsPos
+
+import Std.IO exposing log, logf
+
+choice State =
+    Inactive
+  | StepActive(id: Integer)
+  | Completed
+end State
+
+function transition(current: State, action: Integer) returns State
+is
+    case current is
+        | Inactive =>
+            if action = 1 then
+                return StepActive(1)
+            else
+                return Inactive
+            end if
+        | StepActive(n) =>
+            if action = n + 1 then
+                if action = 3 then
+                    return Completed
+                else
+                    return StepActive(action)
+                end if
+            else
+                return current
+            end if
+        | Completed =>
+            return Completed
+    end case
+end transition
+
+async function worker_a(chan1: Receiver<Integer>, chan_main_a: Sender<Integer>) returns Boolean
+is
+    call Std.IO.log("Worker A: Waiting for activation...")
+    let trigger: Integer = await channel_receive<Integer>(chan1)
+    
+    let local_state: State = transition(Inactive, trigger)
+    call Std.IO.log("Worker A: Activated! New state is StepActive(1)")
+    
+    let sent_a: Boolean = await channel_send<Integer>(chan_main_a, 100)
+    return sent_a
+end worker_a
+
+async function worker_b(chan2: Receiver<Integer>, chan3: Sender<Integer>) returns Boolean
+is
+    call Std.IO.log("Worker B: Waiting for activation...")
+    let trigger: Integer = await channel_receive<Integer>(chan2)
+    
+    let local_state: State = transition(StepActive(1), trigger)
+    call Std.IO.log("Worker B: Activated! New state is StepActive(2)")
+    
+    let sent_b: Boolean = await channel_send<Integer>(chan3, 3)
+    return sent_b
+end worker_b
+
+async function worker_c(chan3: Receiver<Integer>, chan_end: Sender<Integer>) returns Boolean
+is
+    call Std.IO.log("Worker C: Waiting for activation...")
+    let trigger: Integer = await channel_receive<Integer>(chan3)
+    
+    let local_state: State = transition(StepActive(2), trigger)
+    call Std.IO.log("Worker C: Activated! New state is Completed")
+    
+    let sent_c: Boolean = await channel_send<Integer>(chan_end, 999)
+    return sent_c
+end worker_c
+
+async function run_workflow() returns Integer
+is
+    let chan1: Channel<Integer> = channel<Integer>(1)
+    let chan2: Channel<Integer> = channel<Integer>(1)
+    let chan3: Channel<Integer> = channel<Integer>(1)
+    let chan_main_a: Channel<Integer> = channel<Integer>(1)
+    let chan_end: Channel<Integer> = channel<Integer>(1)
+
+    let s1: Sender<Integer> = channel_sender<Integer>(chan1)
+    let r1: Receiver<Integer> = channel_receiver<Integer>(chan1)
+    
+    let s2: Sender<Integer> = channel_sender<Integer>(chan2)
+    let r2: Receiver<Integer> = channel_receiver<Integer>(chan2)
+    
+    let s3: Sender<Integer> = channel_sender<Integer>(chan3)
+    let r3: Receiver<Integer> = channel_receiver<Integer>(chan3)
+    
+    let s_main_a: Sender<Integer> = channel_sender<Integer>(chan_main_a)
+    let r_main_a: Receiver<Integer> = channel_receiver<Integer>(chan_main_a)
+    
+    let s_end: Sender<Integer> = channel_sender<Integer>(chan_end)
+    let r_end: Receiver<Integer> = channel_receiver<Integer>(chan_end)
+
+    scope sc do
+        spawn
+            let h_a: JoinHandle<Boolean> = sc.spawn<Boolean>(worker_a(r1, s_main_a))
+            let h_b: JoinHandle<Boolean> = sc.spawn<Boolean>(worker_b(r2, s3))
+            let h_c: JoinHandle<Boolean> = sc.spawn<Boolean>(worker_c(r3, s_end))
+        join
+            call Std.IO.log("Main: All 3 workers started. Starting workflow chain.")
+            
+            call Std.IO.log("Main -> Sending trigger 1 to Worker A")
+            let t1: Boolean = await channel_send<Integer>(s1, 1)
+            
+            let token_a: Integer = await channel_receive<Integer>(r_main_a)
+            call Std.IO.log("Main -> Received confirmation token from Worker A.")
+            
+            call Std.IO.log("Main -> Sending trigger 2 to Worker B")
+            let t2: Boolean = await channel_send<Integer>(s2, 2)
+            
+            call Std.IO.log("Main: Waiting for termination signal from Worker C...")
+            let end_token: Integer = await channel_receive<Integer>(r_end)
+            call Std.IO.log("Main: Signal received! Cleanly terminating concurrency scope.")
+
+            let ok_a: Boolean = await sc.join<Boolean>(h_a)
+            let ok_b: Boolean = await sc.join<Boolean>(h_b)
+            let ok_c: Boolean = await sc.join<Boolean>(h_c)
+        result
+            return end_token
+    end scope
+end run_workflow
+
+async procedure main()
+is
+    let res: Integer = await run_workflow()
+    call Std.IO.logf("Workflow successfully terminated with token: ${}", res)
+end main
+
+end StateTransitionsPos

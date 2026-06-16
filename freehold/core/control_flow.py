@@ -125,7 +125,11 @@ class ControlFlowAnalyzer:
             normal_return_possible = False
             guaranteed_exit = True
             for branch in statement.branches:
-                called_routines.update(self._calls_in_expr(branch.value))
+                if isinstance(branch, PatternBranch):
+                    if branch.guard is not None:
+                        called_routines.update(self._calls_in_expr(branch.guard))
+                else:
+                    called_routines.update(self._calls_in_expr(branch.value))
             for flow in all_flows:
                 emitted_aborts.update(flow.emitted_aborts)
                 called_routines.update(flow.called_routines)

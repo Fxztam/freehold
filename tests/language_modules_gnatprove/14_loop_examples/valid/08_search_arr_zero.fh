@@ -1,0 +1,40 @@
+module test_loop_examples.search_arr_zero
+
+type Int is Integer range -2147483648..2147483647
+
+type SearchResult is record
+    found: Boolean
+    pos: Int
+end record
+
+function search_arr_zero(a: Array<Int, 10>) returns SearchResult
+ensures result.found = (for some j in 0..9 => a[j] = 0)
+ensures not result.found or a[result.pos] = 0
+ensures result.found or result.pos = 0
+is
+    let i: Int = 0
+
+    while i < 10
+        invariant i >= 0
+        invariant i <= 10
+        invariant for all k in 0..i-1 => a[k] != 0
+        variant 10 - i
+    do
+        if a[i] = 0 then
+            return SearchResult { found: true, pos: i }
+        end if
+        i := i + 1
+    end while
+
+    return SearchResult { found: false, pos: 0 }
+end search_arr_zero
+
+procedure main()
+is
+    let non_zeroes: Array<Int, 10> = [1, 2, 3, 4, 5, 0, 7, 8, 9, 10]
+    let res: SearchResult = search_arr_zero(non_zeroes)
+    check res.found = true
+    check res.pos = 5
+end main
+
+end test_loop_examples.search_arr_zero

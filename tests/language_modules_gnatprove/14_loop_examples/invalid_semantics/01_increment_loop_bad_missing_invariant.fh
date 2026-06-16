@@ -1,0 +1,30 @@
+module test_loop_examples.increment_loop_bad_missing_invariant
+
+type Int is Integer range -2147483648..2147483647
+
+function increment_loop_bad(x: Int, n: Int) returns Int
+requires n >= 0
+requires x <= 2147483647 - n
+ensures result = x + n
+is
+    let i: Int = 0
+    let y: Int = x
+
+    while i < n
+        invariant i >= 0
+        invariant i <= n
+        variant n - i
+    do
+        y := y + 1
+        i := i + 1
+    end while
+
+    return y
+end increment_loop_bad
+
+procedure main()
+is
+    let res: Int = increment_loop_bad(10, 5)
+end main
+
+end test_loop_examples.increment_loop_bad_missing_invariant

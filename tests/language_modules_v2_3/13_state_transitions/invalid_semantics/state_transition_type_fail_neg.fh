@@ -1,0 +1,16 @@
+module StateTransitionTypeFailNeg
+
+choice State =
+    Inactive
+  | StepActive(id: Integer)
+  | Completed
+end State
+
+procedure test_invalid_transition()
+is
+    let s: State = Inactive
+    -- Error: Cannot assign State (which is a choice/sum type) to Integer
+    let invalid_state: Integer = s
+end test_invalid_transition
+
+end StateTransitionTypeFailNeg

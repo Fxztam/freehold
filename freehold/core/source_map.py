@@ -30,9 +30,13 @@ from freehold.core.ast import (
     IndexExpr,
     IndexedFieldAccessExpr,
     LetStmt,
+    MapEntry,
+    MapLiteralExpr,
     NamedArg,
     NumberExpr,
     Param,
+    PatternBranch,
+    PatternExpr,
     Program,
     RecordField,
     RecordLiteralExpr,
@@ -195,6 +199,10 @@ def node_summary(node: Any) -> dict[str, Any]:
         return {"name": node.name}
     if isinstance(node, RecordLiteralExpr):
         return {"type": node.type_name}
+    if isinstance(node, MapLiteralExpr):
+        return {"type": node.type_name}
+    if isinstance(node, MapEntry):
+        return {"key": node.key}
     if isinstance(node, IndexExpr):
         return {"name": node.name}
     if isinstance(node, IndexedFieldAccessExpr):
@@ -272,6 +280,9 @@ def iter_children(node: Any) -> list[tuple[str, int, Any]]:
     elif isinstance(node, CaseBranch):
         one("value", node.value)
         add("body", node.body)
+    elif isinstance(node, PatternBranch):
+        one("guard", node.guard)
+        add("body", node.body)
     elif isinstance(node, ScopeStmt):
         add("spawn_body", node.spawn_body)
         add("join_body", node.join_body)
@@ -285,6 +296,10 @@ def iter_children(node: Any) -> list[tuple[str, int, Any]]:
         one("value", node.expr)
     elif isinstance(node, RecordLiteralExpr):
         add("args", node.args)
+    elif isinstance(node, MapLiteralExpr):
+        add("entries", node.entries)
+    elif isinstance(node, MapEntry):
+        one("expr", node.expr)
     elif isinstance(node, ArrayLiteralExpr):
         add("items", node.items)
     elif isinstance(node, IndexExpr):

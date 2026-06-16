@@ -64,7 +64,31 @@ is
                         return "false"
                     end if
                 else
-                    return "false"
+                    if expr.kind = "FOR_ALL" then
+                        if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 and expr.arg0_idx >= 0 and expr.arg0_idx < 64 then
+                            let l_bound: String = expr_to_smt(exprs, expr.left_node_idx)
+                            let u_bound: String = expr_to_smt(exprs, expr.right_node_idx)
+                            let body: String = expr_to_smt(exprs, expr.arg0_idx)
+                            return String.template("(forall ((${var} Int)) (=> (and (>= ${var} ${lower}) (<= ${var} ${upper})) ${body_smt}))",
+                                var: expr.text, lower: l_bound, upper: u_bound, body_smt: body)
+                        else
+                            return "false"
+                        end if
+                    else
+                        if expr.kind = "FOR_SOME" then
+                            if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 and expr.arg0_idx >= 0 and expr.arg0_idx < 64 then
+                                let l_bound: String = expr_to_smt(exprs, expr.left_node_idx)
+                                let u_bound: String = expr_to_smt(exprs, expr.right_node_idx)
+                                let body: String = expr_to_smt(exprs, expr.arg0_idx)
+                                return String.template("(exists ((${var} Int)) (and (>= ${var} ${lower}) (<= ${var} ${upper}) ${body_smt}))",
+                                    var: expr.text, lower: l_bound, upper: u_bound, body_smt: body)
+                            else
+                                return "false"
+                            end if
+                        else
+                            return "false"
+                        end if
+                    end if
                 end if
             end if
         end if
@@ -80,12 +104,12 @@ is
     end if
 end add_declaration
 
-function collect_decls(exprs: Array<ExprNode, 64>, idx: Integer, current_decls: String) returns String
+function collect_decls_bound(exprs: Array<ExprNode, 64>, idx: Integer, current_decls: String, bound_var: String) returns String
 requires idx >= 0, idx < 64
 is
     let expr: ExprNode = exprs[idx]
     if expr.kind = "IDENTIFIER" or expr.kind = "VAR" then
-        if expr.text = "true" or expr.text = "false" or expr.text = "" then
+        if expr.text = "true" or expr.text = "false" or expr.text = "" or expr.text = bound_var then
             return current_decls
         else
             return add_declaration(current_decls, expr.text)
@@ -93,7 +117,7 @@ is
     else
         if expr.kind = "UNARY_OP" then
             if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
-                return collect_decls(exprs, expr.left_node_idx, current_decls)
+                return collect_decls_bound(exprs, expr.left_node_idx, current_decls, bound_var)
             else
                 return current_decls
             end if
@@ -101,17 +125,37 @@ is
             if expr.kind = "BINARY_OP" then
                 let updated: String = current_decls
                 if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
-                    updated := collect_decls(exprs, expr.left_node_idx, updated)
+                    updated := collect_decls_bound(exprs, expr.left_node_idx, updated, bound_var)
                 end if
                 if expr.right_node_idx >= 0 and expr.right_node_idx < 64 then
-                    updated := collect_decls(exprs, expr.right_node_idx, updated)
+                    updated := collect_decls_bound(exprs, expr.right_node_idx, updated, bound_var)
                 end if
                 return updated
             else
-                return current_decls
+                if expr.kind = "FOR_ALL" or expr.kind = "FOR_SOME" then
+                    let updated: String = current_decls
+                    if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
+                        updated := collect_decls_bound(exprs, expr.left_node_idx, updated, bound_var)
+                    end if
+                    if expr.right_node_idx >= 0 and expr.right_node_idx < 64 then
+                        updated := collect_decls_bound(exprs, expr.right_node_idx, updated, bound_var)
+                    end if
+                    if expr.arg0_idx >= 0 and expr.arg0_idx < 64 then
+                        updated := collect_decls_bound(exprs, expr.arg0_idx, updated, expr.text)
+                    end if
+                    return updated
+                else
+                    return current_decls
+                end if
             end if
         end if
     end if
+end collect_decls_bound
+
+function collect_decls(exprs: Array<ExprNode, 64>, idx: Integer, current_decls: String) returns String
+requires idx >= 0, idx < 64
+is
+    return collect_decls_bound(exprs, idx, current_decls, "")
 end collect_decls
 
 function build_smt_query(exprs: Array<ExprNode, 64>, requires_idx: Integer, ensures_idx: Integer) returns String
@@ -263,5 +307,469 @@ is
     let smt_query: String = build_range_smt_query(exprs, requires_idx, val_expr_idx, min_val, max_val)
     return run_solvers(smt_query)
 end verify_subtype_range
+
+function get_root_var_name(exprs: Array<ExprNode, 64>, idx: Integer) returns String
+requires idx >= 0, idx < 64
+is
+    let expr: ExprNode = exprs[idx]
+    if expr.kind = "VAR" or expr.kind = "IDENTIFIER" then
+        return expr.text
+    else
+        if expr.kind = "FIELD_ACCESS" or expr.kind = "INDEX" then
+            if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
+                return get_root_var_name(exprs, expr.left_node_idx)
+            else
+                return expr.text
+            end if
+        else
+            return ""
+        end if
+    end if
+end get_root_var_name
+
+function check_anti_aliasing(
+    exprs: Array<ExprNode, 64>,
+    args: Array<Integer, 8>,
+    arg_count: Integer,
+    param_modes: Array<String, 8>,
+    callee_globals: Array<String, 8>,
+    callee_global_modes: Array<String, 8>,
+    global_count: Integer
+) returns Boolean
+requires arg_count >= 0, arg_count <= 8, global_count >= 0, global_count <= 8
+is
+    let i: Integer = 0
+    while i < arg_count invariant i >= 0 do
+        let arg_i_idx: Integer = args[i]
+        if arg_i_idx >= 0 and arg_i_idx < 64 then
+            let root_i: String = get_root_var_name(exprs, arg_i_idx)
+            let is_i_mutable: Boolean = (param_modes[i] = "Output") or (param_modes[i] = "In_Out")
+            
+            if root_i != "" then
+                let j: Integer = i + 1
+                while j < arg_count invariant j >= 0 do
+                    let arg_j_idx: Integer = args[j]
+                    if arg_j_idx >= 0 and arg_j_idx < 64 then
+                        let root_j: String = get_root_var_name(exprs, arg_j_idx)
+                        let is_j_mutable: Boolean = (param_modes[j] = "Output") or (param_modes[j] = "In_Out")
+                        
+                        if root_i = root_j and (is_i_mutable or is_j_mutable) then
+                            call Std.IO.logf("Anti-aliasing violation: parameter-parameter aliasing on root '${}'", root_i)
+                            return false
+                        end if
+                    end if
+                    j := j + 1
+                end while
+                
+                if is_i_mutable then
+                    let g: Integer = 0
+                    while g < global_count invariant g >= 0 do
+                        if root_i = callee_globals[g] then
+                            call Std.IO.logf("Anti-aliasing violation: mutable parameter passed global variable '${}'", root_i)
+                            return false
+                        end if
+                        g := g + 1
+                    end while
+                end if
+                
+                let g2: Integer = 0
+                while g2 < global_count invariant g2 >= 0 do
+                    if root_i = callee_globals[g2] then
+                        let is_g_mutable: Boolean = (callee_global_modes[g2] = "Output") or (callee_global_modes[g2] = "In_Out")
+                        if is_g_mutable then
+                            call Std.IO.logf("Anti-aliasing violation: argument resolves to global variable '${}' mutated by callee", root_i)
+                            return false
+                        end if
+                    end if
+                    g2 := g2 + 1
+                end while
+            end if
+        end if
+        i := i + 1
+    end while
+    return true
+end check_anti_aliasing
+
+function check_transitive_globals(
+    caller_globals: Array<String, 8>,
+    caller_modes: Array<String, 8>,
+    caller_count: Integer,
+    callee_globals: Array<String, 8>,
+    callee_modes: Array<String, 8>,
+    callee_count: Integer
+) returns Boolean
+requires caller_count >= 0, caller_count <= 8, callee_count >= 0, callee_count <= 8
+is
+    let i: Integer = 0
+    while i < callee_count invariant i >= 0 do
+        let cg: String = callee_globals[i]
+        let cg_mode: String = callee_modes[i]
+        
+        let found: Boolean = false
+        let j: Integer = 0
+        while j < caller_count invariant j >= 0 do
+            if caller_globals[j] = cg then
+                found := true
+                let r_mode: String = caller_modes[j]
+                if cg_mode = "In_Out" and r_mode != "In_Out" then
+                    call Std.IO.logf("Transitive global error: global '${}' with In_Out mode requires In_Out in caller (got ${})", cg, r_mode)
+                    return false
+                else
+                    if cg_mode = "Output" and r_mode != "Output" and r_mode != "In_Out" then
+                        call Std.IO.logf("Transitive global error: global '${}' with Output mode requires Output or In_Out in caller (got ${})", cg, r_mode)
+                        return false
+                    else
+                        if cg_mode = "Input" and r_mode != "Input" and r_mode != "In_Out" then
+                            call Std.IO.logf("Transitive global error: global '${}' with Input mode requires Input or In_Out in caller (got ${})", cg, r_mode)
+                            return false
+                        end if
+                    end if
+                end if
+            end if
+            j := j + 1
+        end while
+        
+        if not found then
+            call Std.IO.logf("Transitive global error: global '${}' accessed by callee must be declared in caller's contract", cg)
+            return false
+        end if
+        i := i + 1
+    end while
+    return true
+end check_transitive_globals
+
+function check_depends_validity(
+    params: Array<String, 8>,
+    param_count: Integer,
+    return_kind: String,
+    globals: Array<String, 8>,
+    global_modes: Array<String, 8>,
+    global_count: Integer,
+    depends_targets: Array<String, 8>,
+    depends_sources: Array<String, 8>,
+    depends_count: Integer
+) returns Boolean
+requires param_count >= 0, param_count <= 8, global_count >= 0, global_count <= 8, depends_count >= 0, depends_count <= 8
+is
+    let seen_targets: String = ","
+    let i: Integer = 0
+    while i < depends_count invariant i >= 0 do
+        let target: String = depends_targets[i]
+        let sources_str: String = depends_sources[i]
+        
+        let pattern: String = String.template(",${t},", t: target)
+        if String.instr(seen_targets, pattern) >= 0 then
+            call Std.IO.logf("Dependency error: duplicate dependency target '${}'", target)
+            return false
+        end if
+        seen_targets := String.concat(seen_targets, String.concat(target, ","))
+        
+        let target_root: String = target
+        let dot_idx: Integer = String.instr(target, ".")
+        if dot_idx >= 0 then
+            target_root := String.substr(target, 0, dot_idx)
+        end if
+        
+        let target_valid: Boolean = false
+        if return_kind = "function" and target_root = "result" then
+            target_valid := true
+        end if
+        
+        let p: Integer = 0
+        while p < param_count invariant p >= 0 do
+            if params[p] = target_root then
+                target_valid := true
+            end if
+            p := p + 1
+        end while
+        
+        let g: Integer = 0
+        while g < global_count invariant g >= 0 do
+            if globals[g] = target_root then
+                let mode: String = global_modes[g]
+                if mode = "Output" or mode = "In_Out" then
+                    target_valid := true
+                end if
+            end if
+            g := g + 1
+        end while
+        
+        if not target_valid then
+            call Std.IO.logf("Dependency error: target '${}' not allowed or not declared as Output/In_Out", target)
+            return false
+        end if
+        
+        let remaining: String = sources_str
+        let sc_done: Boolean = false
+        while not sc_done invariant String.length(remaining) >= 0 do
+            let comma_idx: Integer = String.instr(remaining, ",")
+            let src: String = ""
+            if comma_idx >= 0 then
+                src := String.substr(remaining, 0, comma_idx)
+                remaining := String.substr(remaining, comma_idx + 1, String.length(remaining) - (comma_idx + 1))
+            else
+                src := remaining
+                sc_done := true
+            end if
+            
+            let trim_done: Boolean = false
+            while not trim_done invariant String.length(src) >= 0 do
+                let s_len: Integer = String.length(src)
+                if s_len > 0 then
+                    let first_char: String = String.substr(src, 0, 1)
+                    if first_char = " " then
+                        src := String.substr(src, 1, s_len - 1)
+                    else
+                        trim_done := true
+                    end if
+                else
+                    trim_done := true
+                end if
+            end while
+            
+            if src != "" then
+                if src = "+" then
+                    let plus_allowed: Boolean = false
+                    let p2: Integer = 0
+                    while p2 < param_count invariant p2 >= 0 do
+                        if params[p2] = target_root then
+                            plus_allowed := true
+                        end if
+                        p2 := p2 + 1
+                    end while
+                    
+                    let g2: Integer = 0
+                    while g2 < global_count invariant g2 >= 0 do
+                        if globals[g2] = target_root then
+                            let mode: String = global_modes[g2]
+                            if mode = "Output" or mode = "In_Out" then
+                                plus_allowed := true
+                            end if
+                        end if
+                        g2 := g2 + 1
+                    end while
+                    
+                    if not plus_allowed then
+                        call Std.IO.log("Dependency error: '+' source is only allowed for parameter/global targets")
+                        return false
+                    end if
+                else
+                    let src_root: String = src
+                    let dot_idx2: Integer = String.instr(src, ".")
+                    if dot_idx2 >= 0 then
+                        src_root := String.substr(src, 0, dot_idx2)
+                    end if
+                    
+                    let src_valid: Boolean = false
+                    let p3: Integer = 0
+                    while p3 < param_count invariant p3 >= 0 do
+                        if params[p3] = src_root then
+                            src_valid := true
+                        end if
+                        p3 := p3 + 1
+                    end while
+                    
+                    let g3: Integer = 0
+                    while g3 < global_count invariant g3 >= 0 do
+                        if globals[g3] = src_root then
+                            let mode: String = global_modes[g3]
+                            if mode = "Input" or mode = "In_Out" then
+                                src_valid := true
+                            end if
+                        end if
+                        g3 := g3 + 1
+                    end while
+                    
+                    if not src_valid then
+                        call Std.IO.logf("Dependency error: source '${}' not allowed or not declared as Input/In_Out", src)
+                        return false
+                    end if
+                end if
+            end if
+        end while
+        i := i + 1
+    end while
+    
+    if return_kind = "function" then
+        if String.instr(seen_targets, ",result,") = -1 then
+            call Std.IO.log("Dependency error: function dependency contract must specify 'result'")
+            return false
+        end if
+    end if
+    
+    return true
+end check_depends_validity
+
+function expr_to_smt_subst(exprs: Array<ExprNode, 64>, idx: Integer, subst_var: String, subst_val_smt: String) returns String
+requires idx >= 0, idx < 64
+is
+    let expr: ExprNode = exprs[idx]
+    if expr.kind = "LITERAL" then
+        if expr.text = "true" then
+            return "true"
+        else
+            if expr.text = "false" then
+                return "false"
+            else
+                return expr.text
+            end if
+        end if
+    else
+        if expr.kind = "IDENTIFIER" or expr.kind = "VAR" then
+            if expr.text = subst_var then
+                return subst_val_smt
+            else
+                return expr.text
+            end if
+        else
+            if expr.kind = "UNARY_OP" then
+                if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
+                    let inner: String = expr_to_smt_subst(exprs, expr.left_node_idx, subst_var, subst_val_smt)
+                    if expr.op = "not" then
+                        return String.template("(not ${inner})", inner: inner)
+                    else
+                        return String.template("(- ${inner})", inner: inner)
+                    end if
+                else
+                    return "false"
+                end if
+            else
+                if expr.kind = "BINARY_OP" then
+                    if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 then
+                        let left: String = expr_to_smt_subst(exprs, expr.left_node_idx, subst_var, subst_val_smt)
+                        let right: String = expr_to_smt_subst(exprs, expr.right_node_idx, subst_var, subst_val_smt)
+                        if expr.op = "=" then
+                            return String.template("(= ${left} ${right})", left: left, right: right)
+                        else
+                            if expr.op = "!=" then
+                                return String.template("(not (= ${left} ${right}))", left: left, right: right)
+                            else
+                                if expr.op = "and" then
+                                    return String.template("(and ${left} ${right})", left: left, right: right)
+                                else
+                                    if expr.op = "or" then
+                                        return String.template("(or ${left} ${right})", left: left, right: right)
+                                    else
+                                        if expr.op = "/" then
+                                            return String.template("(div ${left} ${right})", left: left, right: right)
+                                        else
+                                            return String.template("(${op} ${left} ${right})", op: expr.op, left: left, right: right)
+                                        end if
+                                    end if
+                                end if
+                            end if
+                        end if
+                    else
+                        return "false"
+                    end if
+                else
+                    if expr.kind = "FOR_ALL" then
+                        if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 and expr.arg0_idx >= 0 and expr.arg0_idx < 64 then
+                            let l_bound: String = expr_to_smt_subst(exprs, expr.left_node_idx, subst_var, subst_val_smt)
+                            let u_bound: String = expr_to_smt_subst(exprs, expr.right_node_idx, subst_var, subst_val_smt)
+                            let body: String = expr_to_smt_subst(exprs, expr.arg0_idx, subst_var, subst_val_smt)
+                            return String.template("(forall ((${var} Int)) (=> (and (>= ${var} ${lower}) (<= ${var} ${upper})) ${body_smt}))",
+                                var: expr.text, lower: l_bound, upper: u_bound, body_smt: body)
+                        else
+                            return "false"
+                        end if
+                    else
+                        if expr.kind = "FOR_SOME" then
+                            if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 and expr.arg0_idx >= 0 and expr.arg0_idx < 64 then
+                                let l_bound: String = expr_to_smt_subst(exprs, expr.left_node_idx, subst_var, subst_val_smt)
+                                let u_bound: String = expr_to_smt_subst(exprs, expr.right_node_idx, subst_var, subst_val_smt)
+                                let body: String = expr_to_smt_subst(exprs, expr.arg0_idx, subst_var, subst_val_smt)
+                                return String.template("(exists ((${var} Int)) (and (>= ${var} ${lower}) (<= ${var} ${upper}) ${body_smt}))",
+                                    var: expr.text, lower: l_bound, upper: u_bound, body_smt: body)
+                            else
+                                return "false"
+                            end if
+                        else
+                            return "false"
+                        end if
+                    end if
+                end if
+            end if
+        end if
+    end if
+end expr_to_smt_subst
+
+function build_channel_invariant_smt_query(
+    exprs: Array<ExprNode, 64>,
+    requires_idx: Integer,
+    invariant_idx: Integer,
+    val_expr_idx: Integer
+) returns String
+requires requires_idx >= 0, requires_idx < 64, invariant_idx >= 0, invariant_idx < 64, val_expr_idx >= 0, val_expr_idx < 64
+is
+    let decls: String = ""
+    decls := collect_decls(exprs, requires_idx, decls)
+    decls := collect_decls_bound(exprs, invariant_idx, decls, "value")
+    decls := collect_decls_bound(exprs, invariant_idx, decls, "result")
+    decls := collect_decls(exprs, val_expr_idx, decls)
+
+    let req_smt: String = expr_to_smt(exprs, requires_idx)
+    let val_smt: String = expr_to_smt(exprs, val_expr_idx)
+    
+    let inv_smt: String = expr_to_smt_subst(exprs, invariant_idx, "value", val_smt)
+    inv_smt := expr_to_smt_subst(exprs, invariant_idx, "result", val_smt)
+
+    return String.template("; Freehold SMT-LIB query\n(set-logic ALL)\n${decls}(assert ${req})\n(assert (not ${inv}))\n(check-sat)\n",
+        decls: decls,
+        req: req_smt,
+        inv: inv_smt
+    )
+end build_channel_invariant_smt_query
+
+function verify_channel_invariant(
+    exprs: Array<ExprNode, 64>,
+    requires_idx: Integer,
+    invariant_idx: Integer,
+    val_expr_idx: Integer
+) returns Result<Boolean, VerificationFailed>
+requires requires_idx >= 0, requires_idx < 64, invariant_idx >= 0, invariant_idx < 64, val_expr_idx >= 0, val_expr_idx < 64
+is
+    let smt_query: String = build_channel_invariant_smt_query(exprs, requires_idx, invariant_idx, val_expr_idx)
+    return run_solvers(smt_query)
+end verify_channel_invariant
+
+function build_spawn_precondition_smt_query(
+    exprs: Array<ExprNode, 64>,
+    requires_idx: Integer,
+    param_requires_idx: Integer,
+    param_name: String,
+    arg_expr_idx: Integer
+) returns String
+requires requires_idx >= 0, requires_idx < 64, param_requires_idx >= 0, param_requires_idx < 64, arg_expr_idx >= 0, arg_expr_idx < 64
+is
+    let decls: String = ""
+    decls := collect_decls(exprs, requires_idx, decls)
+    decls := collect_decls_bound(exprs, param_requires_idx, decls, param_name)
+    decls := collect_decls(exprs, arg_expr_idx, decls)
+    
+    let req_smt: String = expr_to_smt(exprs, requires_idx)
+    let arg_smt: String = expr_to_smt(exprs, arg_expr_idx)
+    
+    let sub_req_smt: String = expr_to_smt_subst(exprs, param_requires_idx, param_name, arg_smt)
+    
+    return String.template("; Freehold SMT-LIB query\n(set-logic ALL)\n${decls}(assert ${req})\n(assert (not ${sub_req}))\n(check-sat)\n",
+        decls: decls,
+        req: req_smt,
+        sub_req: sub_req_smt
+    )
+end build_spawn_precondition_smt_query
+
+function verify_spawn_precondition(
+    exprs: Array<ExprNode, 64>,
+    requires_idx: Integer,
+    param_requires_idx: Integer,
+    param_name: String,
+    arg_expr_idx: Integer
+) returns Result<Boolean, VerificationFailed>
+requires requires_idx >= 0, requires_idx < 64, param_requires_idx >= 0, param_requires_idx < 64, arg_expr_idx >= 0, arg_expr_idx < 64
+is
+    let smt_query: String = build_spawn_precondition_smt_query(exprs, requires_idx, param_requires_idx, param_name, arg_expr_idx)
+    return run_solvers(smt_query)
+end verify_spawn_precondition
 
 end Compiler.Core.Verifier

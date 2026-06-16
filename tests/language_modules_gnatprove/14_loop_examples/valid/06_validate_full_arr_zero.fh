@@ -1,0 +1,33 @@
+module test_loop_examples.validate_full_arr_zero
+
+type Int is Integer range -2147483648..2147483647
+
+function validate_full_arr_zero(a: Array<Int, 10>) returns Boolean
+ensures result = (for all j in 0..9 => a[j] = 0)
+is
+    let i: Int = 0
+    let is_zero: Boolean = true
+
+    while i < 10
+        invariant i >= 0
+        invariant i <= 10
+        invariant is_zero = (for all k in 0..i-1 => a[k] = 0)
+        variant 10 - i
+    do
+        if a[i] != 0 then
+            is_zero := false
+        end if
+        i := i + 1
+    end while
+
+    return is_zero
+end validate_full_arr_zero
+
+procedure main()
+is
+    let zeroes: Array<Int, 10> = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    let res: Boolean = validate_full_arr_zero(zeroes)
+    check res = true
+end main
+
+end test_loop_examples.validate_full_arr_zero

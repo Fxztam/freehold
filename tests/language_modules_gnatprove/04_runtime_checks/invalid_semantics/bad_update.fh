@@ -1,0 +1,23 @@
+module test_runtime_checks.bad_update
+
+type Int is Integer range -2147483648..2147483647
+
+function bad_update(
+    a: Array<Int, 10>,
+    i: Int,
+    j: Int,
+    p: Int,
+    q: Int
+) returns Boolean
+is
+    a[i + j] := p / q
+    return true
+end bad_update
+
+procedure main()
+is
+    let r: Array<Int, 10> = [0,0,0,0,0,0,0,0,0,0]
+    let res: Boolean = bad_update(r, 2, 3, 10, 2)
+end main
+
+end test_runtime_checks.bad_update

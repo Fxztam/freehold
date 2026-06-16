@@ -1,0 +1,40 @@
+module GhostSetsPos
+
+-- 1. Demo von Set.contains: Element-Zugehörigkeit in Vorbedingungen prüfen
+procedure test_set_contains(x: Integer)
+requires Set.contains(Set<Integer> { 1, 2, 3 }, x)
+is
+    check x = 1 or x = 2 or x = 3
+end test_set_contains
+
+-- 2. Demo von Set.add und Set.remove: Reine Elementmanipulationen im Vertrag
+procedure test_set_add_remove(x: Integer)
+requires not Set.contains(Set.remove(Set.add(Set<Integer> { 1, 2 }, 3), 3), x)
+is
+    check x != 1 and x != 2
+end test_set_add_remove
+
+-- 3. Demo von Set.size: Mathematische Mächtigkeitsberechnungen
+procedure test_set_size()
+requires Set.size(Set<Integer> { 10, 20, 30, 40 }) = 4
+is
+    check Set.size(Set<Integer> { 100, 200 }) = 2
+end test_set_size
+
+-- 4. Demo aller Operationen vereint: Komplexe Verträge zur Validierung struktureller Eigenschaften
+procedure test_comprehensive(x: Integer)
+requires Set.size(Set<Integer> { 5, 6, 7 }) = 3
+requires Set.contains(Set.add(Set.remove(Set<Integer> { 5, 6 }, 5), x), x)
+is
+    check Set.contains(Set.add(Set<Integer> { 6 }, x), x)
+end test_comprehensive
+
+procedure main()
+is
+    call test_set_contains(2)
+    call test_set_add_remove(5)
+    call test_set_size()
+    call test_comprehensive(5)
+end main
+
+end GhostSetsPos

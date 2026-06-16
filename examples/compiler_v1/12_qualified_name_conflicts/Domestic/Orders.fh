@@ -34,6 +34,7 @@ is
 end load_order
 
 function order_id(seed: Integer) returns Integer
+requires seed > 0
 ensures result = seed
 is
     let outcome: Result<Order, NotFound> = load_order(seed)
@@ -41,6 +42,7 @@ is
 end order_id
 
 function city_label(seed: Integer) returns String
+requires seed > 0
 is
     let outcome: Result<Order, NotFound> = load_order(seed)
     return outcome.value.address.label

@@ -1,0 +1,18 @@
+module test_basic_addition.pos_addition_safe_pre
+
+type Int is Integer range -2147483648..2147483647
+
+function addition(x: Int, y: Int) returns Int
+requires (x >= 0 and y <= 2147483647 - x) or (x < 0 and y >= -2147483648 - x)
+ensures result = x + y
+is
+    return x + y
+end addition
+
+procedure main()
+is
+    let z: Int = addition(40, 2)
+    check z = 42
+end main
+
+end test_basic_addition.pos_addition_safe_pre

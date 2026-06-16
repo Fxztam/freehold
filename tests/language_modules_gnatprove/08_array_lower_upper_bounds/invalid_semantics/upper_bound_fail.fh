@@ -1,0 +1,18 @@
+module test_array_bounds.upper_bound_fail
+
+type Int is Integer range -2147483648..2147483647
+
+function set_maybe_too_high(a: Array<Int, 10>, i: Int, v: Int) returns Boolean
+requires i >= 0
+is
+    a[i] := v
+    return true
+end set_maybe_too_high
+
+procedure main()
+is
+    let a: Array<Int, 10> = [0,0,0,0,0,0,0,0,0,0]
+    let res: Boolean = set_maybe_too_high(a, 10, 99)
+end main
+
+end test_array_bounds.upper_bound_fail

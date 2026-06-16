@@ -1,0 +1,24 @@
+module test_record_updates.record_update_overflow
+
+type Int is Integer range -2147483648..2147483647
+
+type Account is record
+    balance: Int
+    limit: Int
+end record
+
+function deposit_without_overflow_guard(acc: Account, amount: Int) returns Boolean
+requires amount >= 0
+ensures acc.balance = old(acc.balance) + amount
+is
+    acc.balance := acc.balance + amount
+    return true
+end deposit_without_overflow_guard
+
+procedure main()
+is
+    let acc: Account = Account { balance: 100, limit: 1000 }
+    let res: Boolean = deposit_without_overflow_guard(acc, 50)
+end main
+
+end test_record_updates.record_update_overflow

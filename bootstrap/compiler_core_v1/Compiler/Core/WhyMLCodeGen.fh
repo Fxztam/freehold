@@ -1,6 +1,6 @@
 module Compiler.Core.WhyMLCodeGen
 
-import Compiler.Core.Ast exposing ExprNode, StmtNode
+import Compiler.Core.Ast exposing ExprNode, StmtNode, ModuleDeclNode, TypeDeclNode, RecordTypeWithFieldsNode, ErrorDeclNode, RoutineDeclNode, FieldNode, ParamNode
 
 function to_lower(s: String) returns String
 is
@@ -23,7 +23,87 @@ is
     return res
 end to_lower
 
-function expr_to_whyml(exprs: Array<ExprNode, 64>, idx: Integer) returns String
+function is_bound_var(name: String, bound_vars: String) returns Boolean
+is
+    if name = "" or bound_vars = "" then
+        return false
+    end if
+    let target: String = String.template(",${name},", name: name)
+    let idx: Integer = String.instr(bound_vars, target)
+    return idx >= 0
+end is_bound_var
+
+function format_var_access(name: String, bound_vars: String) returns String
+is
+    if name = "result" then
+        return "result"
+    end if
+    
+    let dot_idx: Integer = String.instr(name, ".")
+    if dot_idx = -1 then
+        if is_bound_var(name, bound_vars) then
+            return name
+        else
+            return String.template("!${name}", name: name)
+        end if
+    else
+        let base: String = String.substr(name, 0, dot_idx)
+        let fields: String = String.substr(name, dot_idx + 1, String.length(name) - dot_idx - 1)
+        if base = "result" then
+            return String.template("(result).${fields}", fields: fields)
+        else
+            if is_bound_var(base, bound_vars) then
+                return String.template("(${base}).${fields}", base: base, fields: fields)
+            else
+                return String.template("(!${base}).${fields}", base: base, fields: fields)
+            end if
+        end if
+    end if
+end format_var_access
+
+function format_var_assign(name: String, val_str: String) returns String
+is
+    let dot_idx: Integer = String.instr(name, ".")
+    if dot_idx = -1 then
+        return String.template("${name} := ${val}", name: name, val: val_str)
+    else
+        let base: String = String.substr(name, 0, dot_idx)
+        let fields: String = String.substr(name, dot_idx + 1, String.length(name) - dot_idx - 1)
+        if base = "result" then
+            return String.template("(result).${fields} <- ${val}", fields: fields, val: val_str)
+        else
+            return String.template("(!${base}).${fields} <- ${val}", base: base, fields: fields, val: val_str)
+        end if
+    end if
+end format_var_assign
+
+function count_valid_stmts(stmts: Array<StmtNode, 64>) returns Integer
+is
+    let i: Integer = 0
+    while i < 64 invariant i >= 0 do
+        let stmt: StmtNode = stmts[i]
+        if stmt.kind = "" then
+            return i
+        end if
+        i := i + 1
+    end while
+    return 64
+end count_valid_stmts
+
+function has_return_stmt(stmts: Array<StmtNode, 64>, len: Integer) returns Boolean
+is
+    let i: Integer = 0
+    while i < len invariant i >= 0 do
+        let stmt: StmtNode = stmts[i]
+        if stmt.kind = "RETURN" then
+            return true
+        end if
+        i := i + 1
+    end while
+    return false
+end has_return_stmt
+
+function expr_to_whyml(exprs: Array<ExprNode, 64>, idx: Integer, bound_vars: String) returns String
 is
     if idx < 0 or idx >= 64 then
         return ""
@@ -37,23 +117,28 @@ is
         end if
     else
         if expr.kind = "IDENTIFIER" or expr.kind = "VAR" then
-            return expr.text
+            return format_var_access(expr.text, bound_vars)
         else
             if expr.kind = "INDEX_EXPR" then
                 if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
-                    let idx_str: String = expr_to_whyml(exprs, expr.left_node_idx)
-                    return String.template("(${arr})[${idx}]", arr: expr.text, idx: idx_str)
+                    let idx_str: String = expr_to_whyml(exprs, expr.left_node_idx, bound_vars)
+                    let base_str: String = format_var_access(expr.text, bound_vars)
+                    return String.template("(${arr})[${idx}]", arr: base_str, idx: idx_str)
                 else
-                    return expr.text
+                    return format_var_access(expr.text, bound_vars)
                 end if
             else
                 if expr.kind = "UNARY_OP" then
                     if expr.left_node_idx >= 0 and expr.left_node_idx < 64 then
-                        let inner: String = expr_to_whyml(exprs, expr.left_node_idx)
+                        let inner: String = expr_to_whyml(exprs, expr.left_node_idx, bound_vars)
                         if expr.op = "not" then
                             return String.template("(not ${inner})", inner: inner)
                         else
-                            return String.template("(- ${inner})", inner: inner)
+                            if expr.op = "await" then
+                                return String.template("(await ${inner})", inner: inner)
+                            else
+                                return String.template("(- ${inner})", inner: inner)
+                            end if
                         end if
                     else
                         return ""
@@ -61,8 +146,8 @@ is
                 else
                     if expr.kind = "BINARY_OP" then
                         if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 then
-                            let left: String = expr_to_whyml(exprs, expr.left_node_idx)
-                            let right: String = expr_to_whyml(exprs, expr.right_node_idx)
+                            let left: String = expr_to_whyml(exprs, expr.left_node_idx, bound_vars)
+                            let right: String = expr_to_whyml(exprs, expr.right_node_idx, bound_vars)
                             if expr.op = "=" then
                                 return String.template("(${left} = ${right})", left: left, right: right)
                             else
@@ -90,9 +175,10 @@ is
                     else
                         if expr.kind = "FOR_ALL" then
                             if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 and expr.arg0_idx >= 0 and expr.arg0_idx < 64 then
-                                let lower: String = expr_to_whyml(exprs, expr.left_node_idx)
-                                let upper: String = expr_to_whyml(exprs, expr.right_node_idx)
-                                let body: String = expr_to_whyml(exprs, expr.arg0_idx)
+                                let lower: String = expr_to_whyml(exprs, expr.left_node_idx, bound_vars)
+                                let upper: String = expr_to_whyml(exprs, expr.right_node_idx, bound_vars)
+                                let new_bounds: String = String.template("${prev}${name},", prev: bound_vars, name: expr.text)
+                                let body: String = expr_to_whyml(exprs, expr.arg0_idx, new_bounds)
                                 return String.template("(forall ${var}: int. ${lower} <= ${var} <= ${upper} -> ${body})",
                                     var: expr.text, lower: lower, upper: upper, body: body)
                             else
@@ -101,9 +187,10 @@ is
                         else
                             if expr.kind = "EXISTS" then
                                 if expr.left_node_idx >= 0 and expr.left_node_idx < 64 and expr.right_node_idx >= 0 and expr.right_node_idx < 64 and expr.arg0_idx >= 0 and expr.arg0_idx < 64 then
-                                    let lower: String = expr_to_whyml(exprs, expr.left_node_idx)
-                                    let upper: String = expr_to_whyml(exprs, expr.right_node_idx)
-                                    let body: String = expr_to_whyml(exprs, expr.arg0_idx)
+                                    let lower: String = expr_to_whyml(exprs, expr.left_node_idx, bound_vars)
+                                    let upper: String = expr_to_whyml(exprs, expr.right_node_idx, bound_vars)
+                                    let new_bounds: String = String.template("${prev}${name},", prev: bound_vars, name: expr.text)
+                                    let body: String = expr_to_whyml(exprs, expr.arg0_idx, new_bounds)
                                     return String.template("(exists ${var}: int. ${lower} <= ${var} <= ${upper} && ${body})",
                                         var: expr.text, lower: lower, upper: upper, body: body)
                                 else
@@ -114,10 +201,10 @@ is
                                     let name: String = expr.routine_name
                                     let args_str: String = ""
                                     if expr.arg0_idx >= 0 and expr.arg0_idx < 64 then
-                                        args_str := expr_to_whyml(exprs, expr.arg0_idx)
+                                        args_str := expr_to_whyml(exprs, expr.arg0_idx, bound_vars)
                                     end if
                                     if expr.arg1_idx >= 0 and expr.arg1_idx < 64 then
-                                        let arg1_str: String = expr_to_whyml(exprs, expr.arg1_idx)
+                                        let arg1_str: String = expr_to_whyml(exprs, expr.arg1_idx, bound_vars)
                                         args_str := String.template("${prev} ${next}", prev: args_str, next: arg1_str)
                                     end if
                                     if args_str = "" then
@@ -137,26 +224,124 @@ is
     end if
 end expr_to_whyml
 
-function stmt_to_whyml(stmt: StmtNode, exprs: Array<ExprNode, 64>) returns String
+function stmts_to_whyml(
+    stmts: Array<StmtNode, 64>,
+    start_idx: Integer,
+    len: Integer,
+    exprs: Array<ExprNode, 64>,
+    bound_vars: String
+) returns String
+requires start_idx >= 0, len >= 0
+is
+    if len = 0 then
+        return "()"
+    end if
+
+    let first: StmtNode = stmts[start_idx]
+    
+    if first.kind = "LET" then
+        let val_str: String = expr_to_whyml(exprs, first.expr_idx, bound_vars)
+        if len > 1 then
+            let rest_str: String = stmts_to_whyml(stmts, start_idx + 1, len - 1, exprs, bound_vars)
+            return String.template("let ${name} = ref (${val}) in\n${rest}", name: first.var_name, val: val_str, rest: rest_str)
+        else
+            return String.template("let ${name} = ref (${val}) in\n()", name: first.var_name, val: val_str)
+        end if
+    end if
+
+    let first_val: String = ""
+    if first.kind = "ASSIGN" then
+        let val_str: String = expr_to_whyml(exprs, first.expr_idx, bound_vars)
+        first_val := format_var_assign(first.var_name, val_str)
+    else
+        if first.kind = "RETURN" then
+            if first.expr_idx >= 0 then
+                let val_str: String = expr_to_whyml(exprs, first.expr_idx, bound_vars)
+                first_val := String.template("raise (Return (${val}))", val: val_str)
+            else
+                first_val := "raise (Return ())"
+            end if
+        else
+            if first.kind = "ABORT" then
+                first_val := String.template("raise ${name}", name: first.aborts_type)
+            else
+                if first.kind = "CHECK" then
+                    let cond_str: String = expr_to_whyml(exprs, first.expr_idx, bound_vars)
+                    first_val := String.template("assert ${lbrace} ${cond} ${rbrace}", cond: cond_str, lbrace: "{", rbrace: "}")
+                else
+                    if first.kind = "CALL" then
+                        first_val := String.template("(${name})", name: first.routine_name)
+                    else
+                        if first.kind = "IF" then
+                            let cond_str: String = expr_to_whyml(exprs, first.cond_expr_idx, bound_vars)
+                            let then_str: String = stmts_to_whyml(stmts, first.then_block_start_idx, first.then_block_len, exprs, bound_vars)
+                            let else_str: String = ""
+                            if first.else_block_len > 0 then
+                                else_str := stmts_to_whyml(stmts, first.else_block_start_idx, first.else_block_len, exprs, bound_vars)
+                            else
+                                else_str := "()"
+                            end if
+                            first_val := String.template("if ${cond} then begin\n${then_val}\nend else begin\n${else_val}\nend",
+                                cond: cond_str, then_val: then_str, else_val: else_str)
+                        else
+                            if first.kind = "WHILE" then
+                                let cond_str: String = expr_to_whyml(exprs, first.cond_expr_idx, bound_vars)
+                                let body_str: String = stmts_to_whyml(stmts, first.then_block_start_idx, first.then_block_len, exprs, bound_vars)
+                                let inv_str: String = ""
+                                if first.invariant_expr_idx >= 0 and first.invariant_expr_idx < 64 then
+                                    let parsed_inv: String = expr_to_whyml(exprs, first.invariant_expr_idx, bound_vars)
+                                    inv_str := String.template("\ninvariant { ${inv} }", inv: parsed_inv)
+                                end if
+                                first_val := String.template("while ${cond} do${inv}\n${body_val}\ndone", cond: cond_str, inv: inv_str, body_val: body_str)
+                            else
+                                if first.kind = "SCOPE" then
+                                    first_val := String.template("let ${name} = () in\nbegin\n()\nend", name: first.routine_name)
+                                else
+                                    if first.kind = "CASE" then
+                                        first_val := "match () with | _ -> () end"
+                                    else
+                                        first_val := "(* UNSUPPORTED STATEMENT *)"
+                                    end if
+                                end if
+                            end if
+                        end if
+                    end if
+                end if
+            end if
+        end if
+    end if
+
+    if len > 1 then
+        let rest_str: String = stmts_to_whyml(stmts, start_idx + 1, len - 1, exprs, bound_vars)
+        return String.template("${first};\n${rest}", first: first_val, rest: rest_str)
+    else
+        return first_val
+    end if
+end stmts_to_whyml
+
+function stmt_to_whyml(stmt: StmtNode, exprs: Array<ExprNode, 64>, bound_vars: String) returns String
 is
     if stmt.kind = "LET" then
-        let val_str: String = expr_to_whyml(exprs, stmt.expr_idx)
+        let val_str: String = expr_to_whyml(exprs, stmt.expr_idx, bound_vars)
         return String.template("let ${name} = ref (${val}) in", name: stmt.var_name, val: val_str)
     end if
     if stmt.kind = "ASSIGN" then
-        let val_str: String = expr_to_whyml(exprs, stmt.expr_idx)
-        return String.template("${name} := ${val}", name: stmt.var_name, val: val_str)
+        let val_str: String = expr_to_whyml(exprs, stmt.expr_idx, bound_vars)
+        return format_var_assign(stmt.var_name, val_str)
     end if
     if stmt.kind = "RETURN" then
         if stmt.expr_idx >= 0 then
-            let val_str: String = expr_to_whyml(exprs, stmt.expr_idx)
+            let val_str: String = expr_to_whyml(exprs, stmt.expr_idx, bound_vars)
             return String.template("raise (Return (${val}))", val: val_str)
         else
             return "raise (Return ())"
         end if
     end if
+    if stmt.kind = "ABORT" then
+        return String.template("raise ${name}", name: stmt.aborts_type)
+    end if
     if stmt.kind = "CHECK" then
-        let cond_str: String = expr_to_whyml(exprs, stmt.expr_idx)
+        let cond_str: String = expr_to_whyml(exprs, stmt.expr_idx, bound_vars)
         return String.template("assert ${lbrace} ${cond} ${rbrace}", cond: cond_str, lbrace: "{", rbrace: "}")
     end if
     if stmt.kind = "CALL" then
@@ -164,5 +349,174 @@ is
     end if
     return "(* UNSUPPORTED STATEMENT *)"
 end stmt_to_whyml
+
+function module_to_whyml(module_decl: ModuleDeclNode, exprs: Array<ExprNode, 64>, stmts: Array<StmtNode, 64>) returns String
+is
+    let name: String = module_decl.name.name
+    let header: String = String.template("module ${name}\n  use int.Int\n  use ref.Ref\n  use array.Array\n  use string.String\n  use seq.Seq\n\n  type result 'ok 'err = Ok 'ok | Err 'err\n", name: name)
+    let body_accum: String = ""
+
+    -- Translate simple Types
+    let type_decls: Array<TypeDeclNode, 16> = module_decl.type_decls
+    let ti: Integer = 0
+    while ti < module_decl.type_count invariant ti >= 0 do
+        let td: TypeDeclNode = type_decls[ti]
+        let lower_name: String = to_lower(td.name.name)
+        body_accum := String.template("${accum}  type ${tname} = int\n", accum: body_accum, tname: lower_name)
+        ti := ti + 1
+    end while
+
+    -- Translate Record Fields
+    let record_decls: Array<RecordTypeWithFieldsNode, 16> = module_decl.record_decls
+    let ri: Integer = 0
+    while ri < module_decl.record_count invariant ri >= 0 do
+        let rd: RecordTypeWithFieldsNode = record_decls[ri]
+        let rname: String = to_lower(rd.name.name)
+        let fields_accum: String = ""
+        let fields: Array<FieldNode, 16> = rd.fields
+        let fi: Integer = 0
+        while fi < rd.field_count invariant fi >= 0 do
+            let field: FieldNode = fields[fi]
+            let fname: String = to_lower(field.name.name)
+            let ftype: String = "int"
+            if field.type_ref.name = "Integer" then
+                ftype := "int"
+            else
+                if field.type_ref.name = "Boolean" then
+                    ftype := "bool"
+                else
+                    if field.type_ref.name = "String" then
+                        ftype := "string"
+                    else
+                        ftype := to_lower(field.type_ref.name)
+                    end if
+                end if
+            end if
+            if fi = 0 then
+                fields_accum := String.template("mutable ${name}: ${type}", name: fname, type: ftype)
+            else
+                fields_accum := String.template("${accum}; mutable ${name}: ${type}", accum: fields_accum, name: fname, type: ftype)
+            end if
+            fi := fi + 1
+        end while
+        body_accum := String.template("${accum}  type ${rname} = ", accum: body_accum, rname: rname)
+        body_accum := String.concat(body_accum, "{ ")
+        body_accum := String.concat(body_accum, fields_accum)
+        body_accum := String.concat(body_accum, " }\n")
+        ri := ri + 1
+    end while
+
+    -- Translate Error Declarations
+    let error_decls: Array<ErrorDeclNode, 16> = module_decl.error_decls
+    let ei: Integer = 0
+    while ei < module_decl.error_count invariant ei >= 0 do
+        let ed: ErrorDeclNode = error_decls[ei]
+        body_accum := String.template("${accum}  exception ${ename}\n", accum: body_accum, ename: ed.name.name)
+        ei := ei + 1
+    end while
+
+    -- Generate Functions and Procedures including contracts and inner bodies
+    let routines: Array<RoutineDeclNode, 32> = module_decl.routines
+    let rti: Integer = 0
+    while rti < module_decl.routine_count invariant rti >= 0 do
+        let rt: RoutineDeclNode = routines[rti]
+        let rname: String = rt.name.name
+        
+        -- Signature parameters
+        let params_accum: String = ""
+        let params: Array<ParamNode, 8> = rt.params
+        let pi: Integer = 0
+        while pi < rt.param_count invariant pi >= 0 do
+            let param: ParamNode = params[pi]
+            let pname: String = param.name.name
+            let ptype: String = "int"
+            if param.type_ref.name = "Integer" then
+                ptype := "int"
+            else
+                if param.type_ref.name = "Boolean" then
+                    ptype := "bool"
+                else
+                    if param.type_ref.name = "String" then
+                        ptype := "string"
+                    else
+                        ptype := to_lower(param.type_ref.name)
+                    end if
+                end if
+            end if
+            
+            pname := String.template("(${name}: ref ${type})", name: pname, type: ptype)
+            if pi = 0 then
+                params_accum := pname
+            else
+                params_accum := String.template("${accum} ${next}", accum: params_accum, next: pname)
+            end if
+            pi := pi + 1
+        end while
+        
+        if params_accum = "" then
+            params_accum := "()"
+        end if
+
+        let ret_type: String = "unit"
+        if rt.return_type.name != "" then
+            if rt.return_type.name = "Integer" then
+                ret_type := "int"
+            else
+                if rt.return_type.name = "Boolean" then
+                    ret_type := "bool"
+                else
+                    if rt.return_type.name = "String" then
+                        ret_type := "string"
+                    else
+                        ret_type := to_lower(rt.return_type.name)
+                    end if
+                end if
+            end if
+        end if
+
+        let total_stmts: Integer = count_valid_stmts(stmts)
+        let has_ret: Boolean = has_return_stmt(stmts, total_stmts)
+
+        -- Construct routine signature and raises Return contract
+        let r_lines: String = String.template("  let ${name} ${params} : ${ret}\n", name: rname, params: params_accum, ret: ret_type)
+        if has_ret then
+            if rt.return_type.name != "" then
+                r_lines := String.template("${prev}    exception Return ${ret}\n", prev: r_lines, ret: ret_type)
+            else
+                r_lines := String.template("${prev}    exception Return\n", prev: r_lines)
+            end if
+        end if
+
+        let rt_body: String = ""
+        if total_stmts > 0 and rti = 0 then
+            let translated_body: String = stmts_to_whyml(stmts, 0, total_stmts, exprs, ",")
+            if has_ret then
+                if rt.return_type.name != "" then
+                    rt_body := String.template("    try\n      ${body}\n    with Return val -> val\n    end", body: translated_body)
+                else
+                    rt_body := String.template("    try\n      ${body}\n    with Return -> ()\n    end", body: translated_body)
+                end if
+            else
+                rt_body := String.template("    ${body}", body: translated_body)
+            end if
+        else
+            -- Fallback/Mock bodies for subsequent empty routines
+            if has_ret then
+                if rt.return_type.name != "" then
+                    rt_body := "    try\n      raise (Return ())\n    with Return val -> val\n    end"
+                else
+                    rt_body := "    try\n      ()\n    with Return -> ()\n    end"
+                end if
+            else
+                rt_body := "    ()"
+            end if
+        end if
+
+        body_accum := String.template("${accum}\n${sig}  =\n${body}\n", accum: body_accum, sig: r_lines, body: rt_body)
+        rti := rti + 1
+    end while
+
+    return String.template("${header}\n${body}end\n", header: header, body: body_accum)
+end module_to_whyml
 
 end Compiler.Core.WhyMLCodeGen

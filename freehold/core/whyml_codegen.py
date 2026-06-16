@@ -49,6 +49,18 @@ class WhyMLGenerator:
         lines.append("  (* Generic Result type definition *)")
         lines.append("  type result 'ok 'err = Ok 'ok | Err 'err")
         lines.append("")
+        lines.append("  (* Map support definitions *)")
+        lines.append("  use map.Map as M")
+        lines.append("  type map_t 'v = M.map string 'v")
+        lines.append("  function map_get (m: M.map string 'v) (k: string) : result 'v 'err = Ok (M.get m k)")
+        lines.append("  function map_keys (m: M.map string 'v) : array string = any (array string)")
+        lines.append("  function map_size (m: M.map string 'v) : int = any int")
+        lines.append("  function map_set (m: M.map string 'v) (k: string) (v: 'v) : M.map string 'v = M.set m k v")
+        lines.append("  function map_remove (m: M.map string 'v) (k: string) : M.map string 'v = m")
+        lines.append("  function result_value (r: result 'ok 'err) : 'ok = match r with Ok x -> x | Err _ -> any 'ok end")
+        lines.append("  function result_error (r: result 'ok 'err) : 'err = match r with Ok _ -> any 'err | Err e -> e end")
+        lines.append("  function result_ok (r: result 'ok 'err) : bool = match r with Ok _ -> true | Err _ -> false end")
+        lines.append("")
         lines.append("  (* Concurrency support definitions *)")
         lines.append("  type joinHandle 'a = {")
         lines.append("    mutable value: 'a;")
@@ -118,6 +130,28 @@ class WhyMLGenerator:
                     fields_str.append(f"mutable {f_name}: {f_type}")
                 fields_body = "; ".join(fields_str)
                 lines.append(f"  type {typename} = {{ {fields_body} }}")
+            elif isinstance(d, ChoiceTypeDecl):
+                typename = d.name[0].lower() + d.name[1:]
+                params_str = ""
+                if d.type_params:
+                    params_str = " " + " ".join(f"'{p.lower()}" for p in d.type_params)
+                
+                self.current_type_params = set(d.type_params or [])
+                constr_strs = []
+                for c in d.constructors:
+                    cname = c.name
+                    if c.params:
+                        mapped_args = [self.map_type_name(p.type_name) for p in c.params]
+                        constr_strs.append(f"| {cname} " + " ".join(mapped_args))
+                    else:
+                        constr_strs.append(f"| {cname}")
+                
+                lines.append(f"  type {typename}{params_str} =")
+                for c_str in constr_strs:
+                    lines.append(f"    {c_str}")
+                
+                if hasattr(self, "current_type_params"):
+                    delattr(self, "current_type_params")
             elif isinstance(d, ErrorDecl):
                 lines.append(f"  exception {d.name}")
         lines.append("")
@@ -132,10 +166,15 @@ class WhyMLGenerator:
         return "\n".join(lines)
 
     def map_type_name(self, n: str) -> str:
+        if hasattr(self, "current_type_params") and n in self.current_type_params:
+            return f"'{n.lower()}"
         if n == "Integer": return "int"
         if n == "Boolean": return "bool"
         if n == "Float": return "real"
         if n == "String": return "string"
+        if n.startswith("Map<") and n.endswith(">"):
+            inner = n[len("Map<"):-1]
+            return f"(map_t {self.map_type_name(inner)})"
         if n.startswith("Channel<") and n.endswith(">"):
             inner = n[len("Channel<"):-1]
             return f"(channel {self.map_type_name(inner)})"
@@ -148,6 +187,16 @@ class WhyMLGenerator:
         if n.startswith("JoinHandle<") and n.endswith(">"):
             inner = n[len("JoinHandle<"):-1]
             return f"(joinHandle {self.map_type_name(inner)})"
+        if "<" in n and n.endswith(">"):
+            parts = n.split("<", 1)
+            base = parts[0].strip()
+            args = [x.strip() for x in parts[1][:-1].split(",")]
+            base_mapped = base[0].lower() + base[1:]
+            args_mapped = [self.map_type_name(arg) for arg in args]
+            if len(args_mapped) == 1:
+                return f"({base_mapped} {args_mapped[0]})"
+            else:
+                return f"({base_mapped} {' '.join(args_mapped)})"
         return n[0].lower() + n[1:]
 
     def map_type(self, t: TypeRef | None) -> str:
@@ -200,13 +249,36 @@ class WhyMLGenerator:
         if isinstance(e, IndexExpr):
             base = f"!{e.name}" if e.name in self.refs else e.name
             idx = self.expr_to_whyml(e.index)
+            v_types = getattr(self, "current_var_types", {})
+            t_str = v_types.get(e.name, "")
+            if t_str.startswith("Map<"):
+                return f"(map_get {base} {idx})"
             return f"({base})[{idx}]"
         if isinstance(e, IndexedFieldAccessExpr):
             base = f"!{e.name}" if e.name in self.refs else e.name
             idx = self.expr_to_whyml(e.index)
-            res = f"({base})[{idx}]"
+            v_types = getattr(self, "current_var_types", {})
+            t_str = v_types.get(e.name, "")
+            if t_str.startswith("Map<"):
+                res = f"(map_get {base} {idx})"
+            else:
+                res = f"({base})[{idx}]"
             for field in e.fields:
-                res = f"({res}).{field}"
+                if field == "value":
+                    res = f"(result_value {res})"
+                elif field in ("ok", "success"):
+                    res = f"(result_ok {res})"
+                elif field in ("error", "failure"):
+                    res = f"(result_error {res})"
+                else:
+                    res = f"({res}).{field}"
+            return res
+        if isinstance(e, MapLiteralExpr):
+            res = "(any (map_t _))"
+            for entry_node in e.entries:
+                k_val = f'"{entry_node.key}"'
+                v_val = self.expr_to_whyml(entry_node.expr)
+                res = f"(map_set {res} {k_val} {v_val})"
             return res
         if isinstance(e, ForAllExpr):
             l = self.expr_to_whyml(e.lower)
@@ -224,6 +296,21 @@ class WhyMLGenerator:
                 return inner
             return f"(await {inner})"
         if isinstance(e, CallExpr):
+            if e.name == "Map.keys":
+                map_arg = self.expr_to_whyml(e.args[0])
+                return f"(map_keys {map_arg})"
+            if e.name == "Map.size":
+                map_arg = self.expr_to_whyml(e.args[0])
+                return f"(map_size {map_arg})"
+            if e.name == "Map.set":
+                map_arg = self.expr_to_whyml(e.args[0])
+                key_arg = self.expr_to_whyml(e.args[1])
+                val_arg = self.expr_to_whyml(e.args[2])
+                return f"(map_set {map_arg} {key_arg} {val_arg})"
+            if e.name == "Map.remove":
+                map_arg = self.expr_to_whyml(e.args[0])
+                key_arg = self.expr_to_whyml(e.args[1])
+                return f"(map_remove {map_arg} {key_arg})"
             if e.name == "scope_spawn" or e.name.endswith(".spawn"):
                 if e.name == "scope_spawn":
                     scope_var = self.expr_to_whyml(e.args[0])
@@ -330,8 +417,21 @@ class WhyMLGenerator:
             expr_val = self.expr_to_whyml(stmt.expr)
             branches_str = []
             for branch in stmt.branches:
-                val_val = self.expr_to_whyml(branch.value)
-                branch_body = self.stmts_to_whyml(branch.body)
+                if isinstance(branch, PatternBranch):
+                    pat = branch.pattern
+                    if pat.args:
+                        pargs_str = " ".join(pat.args)
+                        val_val = f"{pat.name} {pargs_str}"
+                    else:
+                        val_val = pat.name
+                    branch_body = self.stmts_to_whyml(branch.body)
+                    if branch.guard:
+                        guard_val = self.expr_to_whyml(branch.guard)
+                        branch_body = f"if {guard_val} then\n  {branch_body}\nelse\n  ()"
+                else:
+                    val_val = self.expr_to_whyml(branch.value)
+                    branch_body = self.stmts_to_whyml(branch.body)
+                
                 branch_body_indented = "\n".join("    " + l for l in branch_body.splitlines())
                 branches_str.append(f"  | {val_val} ->\n{branch_body_indented}")
             if stmt.default_body:
@@ -357,8 +457,23 @@ class WhyMLGenerator:
             name = first.name
             old_refs = set(self.refs)
             self.refs.add(name)
+            
+            # Save local var type
+            t_str = ""
+            if isinstance(first.type_ref, TypeName):
+                t_str = first.type_ref.name
+            elif isinstance(first.type_ref, ArrayTypeName):
+                t_str = f"Array<{first.type_ref.element_type}, {first.type_ref.size}>"
+            elif isinstance(first.type_ref, ResultTypeName):
+                t_str = f"Result<{first.type_ref.ok_type}, {first.type_ref.error_type}>"
+            
+            old_types = dict(getattr(self, "current_var_types", {}))
+            if not hasattr(self, "current_var_types"):
+                self.current_var_types = {}
+            self.current_var_types[name] = t_str
             rest_val = self.stmts_to_whyml(rest)
             self.refs = old_refs
+            self.current_var_types = old_types
             return f"let {name} = ref ({expr_val}) in\n{rest_val}"
             
         first_val = self.stmt_to_whyml(first)
@@ -412,6 +527,9 @@ class WhyMLGenerator:
                     mutated_names.add(g.name)
         param_names = {p.name for p in r.params}
         mutated_names.update(self.collect_mutated_params(r.body, param_names))
+
+        self.current_type_params = set(r.type_params or [])
+        self.current_var_types = {p.name: p.type_name for p in r.params}
 
         params_str = []
         self.refs = set()
@@ -468,6 +586,9 @@ class WhyMLGenerator:
         else:
             body_indented = "\n".join("    " + l for l in body_val.splitlines())
             lines.append(body_indented)
+            
+        if hasattr(self, "current_type_params"):
+            delattr(self, "current_type_params")
             
         return "\n".join(lines)
 

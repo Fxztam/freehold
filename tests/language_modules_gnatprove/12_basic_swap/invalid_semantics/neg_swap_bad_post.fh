@@ -1,0 +1,24 @@
+module test_basic_swap.neg_swap_bad_post
+
+type Int is Integer range -2147483648..2147483647
+
+type Cell is record
+    val: Int
+end record
+
+procedure swap_bad(x: Cell, y: Cell)
+ensures x.val = old(y.val)
+ensures y.val = old(x.val)
+is
+    x.val := y.val
+    y.val := x.val
+end swap_bad
+
+procedure main()
+is
+    let a: Cell = Cell { val: 1 }
+    let b: Cell = Cell { val: 2 }
+    call swap_bad(a, b)
+end main
+
+end test_basic_swap.neg_swap_bad_post

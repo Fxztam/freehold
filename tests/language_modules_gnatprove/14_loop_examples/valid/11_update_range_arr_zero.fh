@@ -1,0 +1,37 @@
+module test_loop_examples.update_range_arr_zero
+
+type Int is Integer range -2147483648..2147483647
+
+function update_range_arr_zero(a: Array<Int, 10>, first: Int, last: Int) returns Array<Int, 10>
+requires first >= 0
+requires first <= 9
+requires last >= 0
+requires last <= 9
+requires first <= last
+ensures for all j in 0..9 => (not (j >= first and j <= last) or result[j] = 0) and ((j >= first and j <= last) or result[j] = a[j])
+is
+    let i: Int = first
+    let b: Array<Int, 10> = a
+
+    while i <= last
+        invariant i >= first
+        invariant i <= last + 1
+        invariant for all k in 0..9 => (not (k >= first and k < i) or b[k] = 0) and ((k >= first and k < i) or b[k] = a[k])
+        variant last - i + 1
+    do
+        b[i] := 0
+        i := i + 1
+    end while
+
+    return b
+end update_range_arr_zero
+
+procedure main()
+is
+    let values: Array<Int, 10> = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    let res: Array<Int, 10> = update_range_arr_zero(values, 3, 7)
+    check res[5] = 0
+    check res[2] = 3
+end main
+
+end test_loop_examples.update_range_arr_zero

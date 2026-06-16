@@ -168,18 +168,6 @@ type FreeholdJoinHandle[T any] struct {
 	ch chan T
 }
 
-type FreeholdChannel[T any] struct {
-	ch chan T
-}
-
-type FreeholdSender[T any] struct {
-	ch chan T
-}
-
-type FreeholdReceiver[T any] struct {
-	ch chan T
-}
-
 func freeholdSpawn[T any](wg *sync.WaitGroup, priority int, sem chan struct{}, f func() T) FreeholdJoinHandle[T] {
 	wg.Add(1)
 	ch := make(chan T, 1)
@@ -195,18 +183,53 @@ func freeholdSpawn[T any](wg *sync.WaitGroup, priority int, sem chan struct{}, f
 	return FreeholdJoinHandle[T]{ch: ch}
 }
 
-func freeholdChannelSend[T any](sender FreeholdSender[T], value T) bool {
-	sender.ch <- value
+func freeholdJoin[T any](ctx context.Context, handle FreeholdJoinHandle[T]) T {
+	select {
+	case val := <-handle.ch:
+		return val
+	case <-ctx.Done():
+		var zero T
+		return zero
+	}
+}
+
+func freeholdChannelSend[T any](sender chan<- T, value T) (ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			ok = false
+		}
+	}()
+	sender <- value
 	return true
 }
 
-func freeholdChannelReceive[T any](receiver FreeholdReceiver[T]) T {
-	return <-receiver.ch
+func freeholdChannelTrySend[T any](sender chan<- T, value T) (ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			ok = false
+		}
+	}()
+	select {
+	case sender <- value:
+		return true
+	default:
+		return false
+	}
+}
+
+func freeholdChannelReceive[T any](ctx context.Context, receiver <-chan T) T {
+	select {
+	case val := <-receiver:
+		return val
+	case <-ctx.Done():
+		var zero T
+		return zero
+	}
 }
 
 func Read(ctx context.Context, raw FreeholdJoinHandle[int64]) int64 {
 	var active FreeholdScope = FreeholdScope{}
 	var handle FreeholdJoinHandle[int64] = freeholdSpawn[int64](&active.wg, active.priority, active.sem, func() int64 { return raw })
-	var item int64 = <-handle.ch
+	var item int64 = freeholdJoin[int64](active.ctx, handle)
 	return item
 }

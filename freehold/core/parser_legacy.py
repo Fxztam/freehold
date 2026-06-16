@@ -74,6 +74,27 @@ class AstBuilder:
                         json_name = json.loads(str(attr.children[0]))
                 fields.append(RecordField(str(f.children[0]), self.type_ref_name(f.children[1]), pos(f), proto_id, json_name))
             return RecordTypeDecl(name, fields, pos(tree), type_params)
+        if tree.data == "choice_type_decl":
+            name = str(tree.children[0])
+            type_params = None
+            cons_start = 1
+            if len(tree.children) > 1 and isinstance(tree.children[1], Tree) and tree.children[1].data == "type_param_list":
+                type_params = [str(child) for child in grammar_children(tree.children[1])]
+                cons_start = 2
+            constructors = []
+            for const_node in tree.children[cons_start:-1]:
+                if isinstance(const_node, Token):
+                    cname = str(const_node)
+                    cparams = []
+                    constructors.append(ChoiceConstructor(cname, cparams, pos(const_node)))
+                else:
+                    cname = str(const_node.children[0])
+                    cparams = []
+                    for child in const_node.children[1:]:
+                        if isinstance(child, Tree) and child.data == "param":
+                            cparams.append(Param(str(child.children[0]), self.type_ref_name(child.children[1]), pos(child)))
+                    constructors.append(ChoiceConstructor(cname, cparams, pos(const_node)))
+            return ChoiceTypeDecl(name, constructors, pos(tree), type_params)
         if tree.data == "type_decl":
             base_tree = tree.children[1]
             base = str(base_tree.children[0]) if isinstance(base_tree, Tree) else str(base_tree)
@@ -249,7 +270,7 @@ class AstBuilder:
 
     def type_ref_name(self, tree: Tree) -> str:
         children = grammar_children(tree)
-        if tree.data in ("return_type", "result_payload_type"):
+        if tree.data in ("return_type", "result_payload_type", "param_type"):
             return self.type_ref_name(children[0])
         if tree.data == "type_ref":
             if isinstance(children[0], Tree) and children[0].data == "array_type":
@@ -267,6 +288,8 @@ class AstBuilder:
 
     def stmt(self, tree: Tree):
         if tree.data == "let_stmt": return LetStmt(str(tree.children[0]), self.return_type(tree.children[1]), self.expr(tree.children[2]), pos(tree))
+        if tree.data == "index_assign_stmt":
+            return IndexAssignStmt(str(tree.children[0]), self.expr(tree.children[1]), self.expr(tree.children[2]), pos(tree))
         if tree.data == "field_assign_stmt":
             p = tree.children[0]
             return FieldAssignStmt([str(x) for x in p.children], self.expr(tree.children[1]), pos(tree))
@@ -303,6 +326,16 @@ class AstBuilder:
                     value = self.expr(c.children[0])
                     block = c.children[1]
                     branches.append(CaseBranch(value, [self.stmt(x.children[0]) for x in block.children], pos(c)))
+                elif c.data == "pattern_branch":
+                    p_node = c.children[0]
+                    pname = str(p_node.children[0])
+                    pargs = [str(x) for x in p_node.children[1:]]
+                    pat = PatternExpr(pname, pargs, pos(p_node))
+                    guard = None
+                    if len(c.children) == 3:
+                        guard = self.expr(c.children[1])
+                    block = c.children[-1]
+                    branches.append(PatternBranch(pat, guard, [self.stmt(x.children[0]) for x in block.children], pos(c)))
                 elif c.data == "default_branch":
                     block = c.children[0]
                     default_body = [self.stmt(x.children[0]) for x in block.children]
@@ -360,6 +393,22 @@ class AstBuilder:
                 arg_index = 2
             return CallExpr(fn_name, self.args(tree.children[arg_index]) if len(tree.children)>arg_index else [], pos(tree), type_args)
         if tree.data == "record_literal": return RecordLiteralExpr(self.type_ref_name(tree.children[0]), self.named_args(tree.children[1]), pos(tree))
+        if tree.data == "map_literal":
+            type_name = self.type_ref_name(tree.children[0])
+            entries = []
+            if len(tree.children) > 1 and isinstance(tree.children[1], Tree) and tree.children[1].data == "map_entries":
+                for entry_node in tree.children[1].children:
+                    raw_key = str(entry_node.children[0])
+                    key = json.loads(raw_key)
+                    val_expr = self.expr(entry_node.children[1])
+                    entries.append(MapEntry(key, val_expr, pos(entry_node)))
+            return MapLiteralExpr(type_name, entries, pos(tree))
+        if tree.data == "set_literal":
+            type_name = self.type_ref_name(tree.children[0])
+            items = []
+            if len(tree.children) > 1 and isinstance(tree.children[1], Tree) and tree.children[1].data == "set_entries":
+                items = [self.expr(child) for child in tree.children[1].children]
+            return SetLiteralExpr(type_name, items, pos(tree))
         if tree.data == "array_literal": return ArrayLiteralExpr(self.args(tree.children[0]) if len(tree.children)>0 else [], pos(tree))
         if tree.data == "result_index_expr": return IndexExpr("result", self.expr(tree.children[0]), pos(tree))
         if tree.data == "result_index_field_access": return IndexedFieldAccessExpr("result", self.expr(tree.children[0]), [str(x) for x in tree.children[1:]], pos(tree))

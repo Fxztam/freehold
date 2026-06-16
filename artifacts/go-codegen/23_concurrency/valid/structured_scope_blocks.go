@@ -168,18 +168,6 @@ type FreeholdJoinHandle[T any] struct {
 	ch chan T
 }
 
-type FreeholdChannel[T any] struct {
-	ch chan T
-}
-
-type FreeholdSender[T any] struct {
-	ch chan T
-}
-
-type FreeholdReceiver[T any] struct {
-	ch chan T
-}
-
 func freeholdSpawn[T any](wg *sync.WaitGroup, priority int, sem chan struct{}, f func() T) FreeholdJoinHandle[T] {
 	wg.Add(1)
 	ch := make(chan T, 1)
@@ -195,13 +183,48 @@ func freeholdSpawn[T any](wg *sync.WaitGroup, priority int, sem chan struct{}, f
 	return FreeholdJoinHandle[T]{ch: ch}
 }
 
-func freeholdChannelSend[T any](sender FreeholdSender[T], value T) bool {
-	sender.ch <- value
+func freeholdJoin[T any](ctx context.Context, handle FreeholdJoinHandle[T]) T {
+	select {
+	case val := <-handle.ch:
+		return val
+	case <-ctx.Done():
+		var zero T
+		return zero
+	}
+}
+
+func freeholdChannelSend[T any](sender chan<- T, value T) (ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			ok = false
+		}
+	}()
+	sender <- value
 	return true
 }
 
-func freeholdChannelReceive[T any](receiver FreeholdReceiver[T]) T {
-	return <-receiver.ch
+func freeholdChannelTrySend[T any](sender chan<- T, value T) (ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			ok = false
+		}
+	}()
+	select {
+	case sender <- value:
+		return true
+	default:
+		return false
+	}
+}
+
+func freeholdChannelReceive[T any](ctx context.Context, receiver <-chan T) T {
+	select {
+	case val := <-receiver:
+		return val
+	case <-ctx.Done():
+		var zero T
+		return zero
+	}
 }
 
 type Invoice struct {
@@ -234,8 +257,8 @@ func Handle(ctx context.Context, id int64) int64 {
 		_ = requestScope
 		var invoiceHandle FreeholdJoinHandle[Invoice] = freeholdSpawn[Invoice](&requestScope.wg, requestScope.priority, requestScope.sem, func() Invoice { return LoadInvoice(requestScope.ctx, id) })
 		var customerHandle FreeholdJoinHandle[Customer] = freeholdSpawn[Customer](&requestScope.wg, requestScope.priority, requestScope.sem, func() Customer { return LoadCustomer(requestScope.ctx, id) })
-		var invoice Invoice = <-invoiceHandle.ch
-		var customer Customer = <-customerHandle.ch
+		var invoice Invoice = freeholdJoin[Invoice](requestScope.ctx, invoiceHandle)
+		var customer Customer = freeholdJoin[Customer](requestScope.ctx, customerHandle)
 		requestScope.wg.Wait()
 		return RenderInvoice(invoice, customer)
 	}

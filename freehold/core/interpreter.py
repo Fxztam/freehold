@@ -143,6 +143,8 @@ class Interpreter:
             record = self.records[value.type_name]
             json_fields = record.json_fields or {}
             return {json_fields.get(field_name, field_name): self.json_value(value.fields[field_name]) for field_name in record.fields}
+        if isinstance(value, dict):
+            return {k: self.json_value(v) for k, v in value.items()}
         if isinstance(value, list):
             return [self.json_value(item) for item in value]
         if value is None or isinstance(value, (str, bool)):
@@ -176,6 +178,19 @@ class Interpreter:
         return RecordValue(target_type, fields)
 
     def json_typed_value(self, type_name, value, path):
+        import re
+        generic_match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)<(.+)>", type_name.strip())
+        if generic_match and generic_match.group(1) == "Map":
+            val_t_str = generic_match.group(2)
+            if not isinstance(value, dict):
+                raise ValueError(f"{path}: expected Map (JSON object)")
+            res_dict = {}
+            for k, val in value.items():
+                if not isinstance(k, str):
+                    raise ValueError(f"{path}: map key must be String, got {type(k).__name__}")
+                res_dict[k] = self.json_typed_value(val_t_str, val, f"{path}.{k}")
+            return res_dict
+
         type_ref = param_type_ref(type_name)
         if isinstance(type_ref, ArrayTypeName):
             if not isinstance(value, list):
@@ -227,9 +242,17 @@ class Interpreter:
         if isinstance(e, BoolExpr): return e.value
         if isinstance(e, RecordLiteralExpr): return RecordValue(e.type_name,{a.name:self.eval(a.expr,env) for a in e.args})
         if isinstance(e, ArrayLiteralExpr): return [self.eval(x, env) for x in e.items]
+        if isinstance(e, MapLiteralExpr): return {entry.key: self.eval(entry.expr, env) for entry in e.entries}
         if isinstance(e, IndexExpr):
             arr = env[e.name]
             idx = self.eval(e.index, env)
+            if isinstance(arr, dict):
+                if not isinstance(idx, str):
+                    raise TypeCheckError(f"{e.pos.text()}: map index must be String")
+                if idx in arr:
+                    return ResultValue(True, arr[idx], None)
+                else:
+                    return ResultValue(False, None, "SchemaError")
             if not isinstance(idx, int) or isinstance(idx, bool):
                 raise TypeCheckError(f"{e.pos.text()}: array index must be Integer")
             if idx < 0 or idx >= len(arr):
@@ -270,6 +293,25 @@ class Interpreter:
                     return ResultValue(True, True, None)
                 except Exception as ex:
                     return ResultValue(False, None, str(ex))
+            if e.name == "Map.keys":
+                k_list = list(args[0].keys())
+                k_list = k_list[:16]
+                while len(k_list) < 16:
+                    k_list.append("")
+                return k_list
+            if e.name == "Map.size":
+                return len(args[0])
+            if e.name == "Map.set":
+                m, key, val = args
+                m_copy = dict(m)
+                m_copy[key] = val
+                return m_copy
+            if e.name == "Map.remove":
+                m, key = args
+                m_copy = dict(m)
+                if key in m_copy:
+                    del m_copy[key]
+                return m_copy
             if e.name == "String.concat":
                 return args[0] + args[1]
             if e.name == "String.substr":

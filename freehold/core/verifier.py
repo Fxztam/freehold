@@ -13,6 +13,7 @@ BUILTIN_GENERIC_TYPE_ARITY = {
     "Channel": 1,
     "Sender": 1,
     "Receiver": 1,
+    "Map": 1,
 }
 BUILTIN_ERROR_NAMES = {"SchemaError"}
 JSON_INTEGER_MIN = -(2 ** 63)
@@ -60,6 +61,7 @@ class Verifier:
         self.validate_qualified_name(program.module_name, program.pos)
         types = {name: TypeDef(name, name) for name in BUILTIN_TYPE_NAMES}
         records, generic_records, errors, routines, services = {}, {}, set(BUILTIN_ERROR_NAMES), {}, {}
+        choices, generic_choices = {}, {}
         declared_names = {name: "builtin" for name in types}
         for d in program.declarations:
             if isinstance(d, TypeDecl):
@@ -78,10 +80,21 @@ class Verifier:
                 for f in d.fields:
                     self.validate_identifier(f.name, f.pos)
                     if f.name in seen: raise TypeCheckError(f"{f.pos.text()}: duplicate record field: {f.name}")
+                    if f.type_name.strip().startswith("Set<") or f.type_name.strip() == "Set":
+                        raise TypeCheckError(f"{f.pos.text()}: Set<T> is specification-only (Ghost) and cannot be a record field")
                     seen.add(f.name); fields[f.name] = f.type_name
                 proto_fields = self.validate_proto_fields(d)
                 json_fields = self.validate_json_fields(d)
                 records[d.name] = RecordDef(d.name, fields, proto_fields, json_fields)
+            elif isinstance(d, ChoiceTypeDecl):
+                self.validate_declaration_name(d.name, declared_names, d.pos, "choice")
+                declared_names[d.name] = "choice"
+                if d.type_params:
+                    self.validate_type_params(d.type_params, d.pos)
+                    generic_choices[d.name] = d
+                    continue
+                choices[d.name] = d
+                types[d.name] = TypeDef(d.name, d.name)
             elif isinstance(d, ErrorDecl):
                 self.validate_declaration_name(d.name, declared_names, d.pos, "error")
                 declared_names[d.name] = "error"
@@ -96,14 +109,27 @@ class Verifier:
                     self.validate_type_params(d.type_params, d.pos)
                 declared_names[d.name] = "routine"
                 routines[d.name] = d
-        ctx = Ctx(program.module_name, types, records, generic_records, errors, routines, program.imports or [], imported_modules)
+        ctx = Ctx(program.module_name, types, records, generic_records, errors, routines, program.imports or [], imported_modules, choices, generic_choices)
         ctx.services = services
         for rd in [d for d in program.declarations if isinstance(d, RecordTypeDecl)]:
             previous_type_params = ctx.current_type_params
             ctx.current_type_params = set(rd.type_params or [])
             try:
                 for f in rd.fields:
+                    if f.type_name.strip().startswith("Set<") or f.type_name.strip() == "Set":
+                        raise TypeCheckError(f"{f.pos.text()}: Set<T> is specification-only (Ghost) and cannot be a record field")
                     ctx.require_type_or_record(f.type_name, f.pos)
+            finally:
+                ctx.current_type_params = previous_type_params
+        for cd in [d for d in program.declarations if isinstance(d, ChoiceTypeDecl)]:
+            previous_type_params = ctx.current_type_params
+            ctx.current_type_params = set(cd.type_params or [])
+            try:
+                for const in cd.constructors:
+                    for param in const.params:
+                        if param.type_name.strip().startswith("Set<") or param.type_name.strip() == "Set":
+                            raise TypeCheckError(f"{param.pos.text()}: Set<T> is specification-only (Ghost) and cannot be used in a choice constructor")
+                        ctx.require_type_or_record(param.type_name, param.pos)
             finally:
                 ctx.current_type_params = previous_type_params
         obs = []
@@ -329,8 +355,13 @@ class Verifier:
                     raise TypeCheckError(f"{p.pos.text()}: duplicate parameter name: {p.name}")
                 seen_params.add(p.name)
                 param_type = self.param_type_ref(p, ctx)
+                if self.base_root(param_type, ctx) == "Set":
+                    raise TypeCheckError(f"{p.pos.text()}: Set<T> is specification-only (Ghost) and cannot be used as a routine parameter")
                 ctx.require_return_type(param_type, p.pos); env[p.name] = param_type
-            if r.return_type: ctx.require_return_type(r.return_type, r.pos)
+            if r.return_type:
+                if self.base_root(r.return_type, ctx) == "Set":
+                    raise TypeCheckError(f"{r.pos.text()}: Set<T> is specification-only (Ghost) and cannot be used as a routine return type")
+                ctx.require_return_type(r.return_type, r.pos)
             if r.name == "main" and r.requires:
                 raise TypeCheckError(f"{r.requires[0].pos.text()}: main requires clause is not allowed")
             for e in r.requires: self.contract_bool("requires", e, env, ctx, False, None)
@@ -363,6 +394,8 @@ class Verifier:
         mutated = set()
         def visit(stmt):
             if isinstance(stmt, AssignStmt):
+                mutated.add(stmt.name)
+            elif isinstance(stmt, IndexAssignStmt):
                 mutated.add(stmt.name)
             elif isinstance(stmt, FieldAssignStmt):
                 if stmt.path:
@@ -841,6 +874,8 @@ class Verifier:
                 raise TypeCheckError(f"{s.pos.text()}: unreachable statement after guaranteed exit")
             if isinstance(s, LetStmt):
                 self.validate_identifier(s.name, s.pos)
+                if self.base_root(s.type_ref, ctx) == "Set":
+                    raise TypeCheckError(f"{s.pos.text()}: Set<T> is specification-only (Ghost) and cannot be declared as a local variable")
                 ctx.require_return_type(s.type_ref, s.pos)
                 actual = self.infer(s.expr, env, ctx, False, None)
                 self.assign(actual, s.type_ref, ctx, s.pos); env[s.name]=s.type_ref
@@ -851,6 +886,25 @@ class Verifier:
                     raise TypeCheckError(f"{s.pos.text()}: unknown assignment target: {s.name}")
                 self.assign(self.infer(s.expr, env, ctx, False, None), env[s.name], ctx, s.pos)
                 self.check_range_bounds(s.expr, env[s.name], ctx, s.pos)
+            elif isinstance(s, IndexAssignStmt):
+                if s.name not in env:
+                    raise TypeCheckError(f"{s.pos.text()}: unknown assignment target: {s.name}")
+                arr_t = env[s.name]
+                elem_t = None
+                if isinstance(arr_t, ArrayTypeName):
+                    elem_t = TypeName(arr_t.element_type)
+                elif isinstance(arr_t, TypeName):
+                    generic = ctx.parse_generic_instance(arr_t.name)
+                    if generic is not None and generic[0] == "Array":
+                        elem_t = TypeName(generic[1][0])
+                if elem_t is None:
+                    raise TypeCheckError(f"{s.pos.text()}: index assignment target is not an array: {s.name}")
+                idx_t = self.infer(s.index, env, ctx, False, None)
+                if self.base(idx_t, ctx) != "Integer":
+                    raise TypeCheckError(f"{s.index.pos.text()}: array index expected Integer, got {type_to_string(idx_t)}")
+                val_t = self.infer(s.expr, env, ctx, False, None)
+                self.assign(val_t, elem_t, ctx, s.pos)
+                self.check_range_bounds(s.expr, elem_t, ctx, s.pos)
             elif isinstance(s, FieldAssignStmt):
                 target_type = self.infer_field_path_obj(s.path, s.pos, env, ctx, False, None)
                 self.assign(self.infer(s.expr, env, ctx, False, None), target_type, ctx, s.pos)
@@ -886,26 +940,75 @@ class Verifier:
                 case_t = self.infer(s.expr, env, ctx, False, None)
                 seen_literals = set()
                 branch_returns = []
+                matched_constructors = set()
+                matched_fully = set()
+                base_name = case_t.name if isinstance(case_t, TypeName) else ""
+                if "<" in base_name:
+                    base_name = base_name.split("<")[0]
+                is_choice = base_name in ctx.choices or base_name in ctx.generic_choices
+                choice_def = ctx.choices.get(base_name) or ctx.generic_choices.get(base_name)
+
                 for br in s.branches:
-                    br_t = self.infer(br.value, env, ctx, False, None)
-                    if self.base(case_t, ctx) != self.base(br_t, ctx):
-                        raise TypeCheckError(f"{br.pos.text()}: case branch type {type_to_string(br_t)} does not match case expression {type_to_string(case_t)}")
-                    if isinstance(br.value, NumberExpr):
-                        key = ("number", br.value.value)
-                    elif isinstance(br.value, DoubleExpr):
-                        key = ("double", br.value.value)
-                    elif isinstance(br.value, BoolExpr):
-                        key = ("bool", br.value.value)
-                    elif isinstance(br.value, VarExpr):
-                        key = ("var", br.value.name)
+                    if isinstance(br, PatternBranch):
+                        if not is_choice:
+                            raise TypeCheckError(f"{br.pos.text()}: pattern matching is only supported on choice types, got {type_to_string(case_t)}")
+                        constructor = next((c for c in choice_def.constructors if c.name == br.pattern.name), None)
+                        if constructor is None:
+                            raise TypeCheckError(f"{br.pos.text()}: unknown constructor {br.pattern.name} for choice {base_name}")
+                        if len(br.pattern.args) != len(constructor.params):
+                            raise TypeCheckError(f"{br.pos.text()}: constructor {br.pattern.name} expects {len(constructor.params)} parameters, got {len(br.pattern.args)}")
+                        if br.pattern.name in matched_fully:
+                            raise TypeCheckError(f"{br.pos.text()}: duplicate pattern match branch for constructor {br.pattern.name}")
+                        if br.guard is None:
+                            matched_fully.add(br.pattern.name)
+                        matched_constructors.add(br.pattern.name)
+
+                        subst = {}
+                        if len(choice_def.type_params or []) > 0 and "<" in case_t.name:
+                            m = re.match(r"^(\w+)<(.*)>$", case_t.name)
+                            if m:
+                                raw_args = [x.strip() for x in m.group(2).split(",")]
+                                for formal, actual in zip(choice_def.type_params, raw_args):
+                                    subst[formal] = actual
+
+                        sub_env = dict(env)
+                        for idx, arg_name in enumerate(br.pattern.args):
+                            param = constructor.params[idx]
+                            ptype = param.type_name
+                            if ptype in subst:
+                                ptype = subst[ptype]
+                            sub_env[arg_name] = self.parse_type_ref(ptype, ctx)
+
+                        if br.guard is not None:
+                            self.statement_bool("pattern match guard", br.guard, sub_env, ctx, False, None)
+                        branch_returns.append(self.block(br.body, r, sub_env, ctx, path_conditions))
                     else:
-                        key = None
-                    if key is not None:
-                        if key in seen_literals:
-                            raise TypeCheckError(f"{br.pos.text()}: duplicate case branch value")
-                        seen_literals.add(key)
-                    branch_returns.append(self.block(br.body, r, dict(env), ctx, path_conditions))
-                default_returns = self.block(s.default_body, r, dict(env), ctx, path_conditions)
+                        br_t = self.infer(br.value, env, ctx, False, None)
+                        if self.base(case_t, ctx) != self.base(br_t, ctx):
+                            raise TypeCheckError(f"{br.pos.text()}: case branch type {type_to_string(br_t)} does not match case expression {type_to_string(case_t)}")
+                        if isinstance(br.value, NumberExpr):
+                            key = ("number", br.value.value)
+                        elif isinstance(br.value, DoubleExpr):
+                            key = ("double", br.value.value)
+                        elif isinstance(br.value, BoolExpr):
+                            key = ("bool", br.value.value)
+                        elif isinstance(br.value, VarExpr):
+                            key = ("var", br.value.name)
+                        else:
+                            key = None
+                        if key is not None:
+                            if key in seen_literals:
+                                raise TypeCheckError(f"{br.pos.text()}: duplicate case branch value")
+                            seen_literals.add(key)
+                        branch_returns.append(self.block(br.body, r, dict(env), ctx, path_conditions))
+
+                if is_choice and not s.default_body:
+                    if len(matched_fully) < len(choice_def.constructors):
+                        missing = set(c.name for c in choice_def.constructors) - matched_fully
+                        raise TypeCheckError(f"{s.pos.text()}: pattern matching is not exhaustive, missing: {', '.join(sorted(missing))}")
+                    default_returns = True
+                else:
+                    default_returns = self.block(s.default_body, r, dict(env), ctx, path_conditions)
                 saw = saw or (all(branch_returns) and default_returns)
             elif isinstance(s, ScopeStmt):
                 self.validate_identifier(s.name, s.pos)
@@ -1110,8 +1213,16 @@ class Verifier:
             raise TypeCheckError(f"{pos.text()}: Result contract expression {name} is only available in ensures")
         else:
             if name not in env:
-                raise TypeCheckError(f"{pos.text()}: unknown array: {name}")
+                raise TypeCheckError(f"{pos.text()}: unknown variable: {name}")
             arr_t = env[name]
+        if isinstance(arr_t, TypeName):
+            generic = ctx.parse_generic_instance(arr_t.name)
+            if generic is not None and generic[0] == "Map":
+                index_type = self.infer(index, env, ctx, allow_result, result_type)
+                if self.base(index_type, ctx) != "String":
+                    raise TypeCheckError(f"{index.pos.text()}: map index must be String, got {type_to_string(index_type)}")
+                val_type_str = generic[1][0]
+                return ResultTypeName(self.parse_type_ref(val_type_str, ctx), "SchemaError")
         if not isinstance(arr_t, ArrayTypeName):
             raise TypeCheckError(f"{pos.text()}: index access requires Array, got {type_to_string(arr_t)}")
         index_type = self.infer(index, env, ctx, allow_result, result_type)
@@ -1277,6 +1388,9 @@ class Verifier:
                 validate_json_literal_record(target_type, data, "value")
             except Exception as exc:
                 raise TypeCheckError(f"{arg.pos.text()}: Json.parse literal does not match {target_type}: {exc}") from exc
+        if e.name == "old":
+            expect_count(1)
+            return infer_arg(0)
         if e.name == "channel":
             item_type = require_builtin_type_arg()
             expect_count(1)
@@ -1382,6 +1496,90 @@ class Verifier:
                 raise TypeCheckError(f"{e.pos.text()}: scope limit requires a local Scope created by scope block: {method_owner}")
             expect_exact_type(0, "Integer")
             return TypeName("Void")
+
+        if e.name == "Map.keys":
+            expect_count(1)
+            map_t = self.infer(e.args[0], env, ctx, allow_result, result_type)
+            if not isinstance(map_t, TypeName):
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Map.keys argument must be a Map, got {type_to_string(map_t)}")
+            generic = ctx.parse_generic_instance(map_t.name)
+            if generic is None or generic[0] != "Map":
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Map.keys argument must be a Map, got {type_to_string(map_t)}")
+            return ArrayTypeName("String", 16)
+        if e.name == "Map.size":
+            expect_count(1)
+            map_t = self.infer(e.args[0], env, ctx, allow_result, result_type)
+            if not isinstance(map_t, TypeName):
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Map.size argument must be a Map, got {type_to_string(map_t)}")
+            generic = ctx.parse_generic_instance(map_t.name)
+            if generic is None or generic[0] != "Map":
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Map.size argument must be a Map, got {type_to_string(map_t)}")
+            return TypeName("Integer")
+        if e.name == "Map.set":
+            expect_count(3)
+            map_t = self.infer(e.args[0], env, ctx, allow_result, result_type)
+            if not isinstance(map_t, TypeName):
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Map.set first argument must be a Map, got {type_to_string(map_t)}")
+            generic = ctx.parse_generic_instance(map_t.name)
+            if generic is None or generic[0] != "Map":
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Map.set first argument must be a Map, got {type_to_string(map_t)}")
+            val_type_str = generic[1][0]
+            expect_type(1, "String")
+            expect_exact_type(2, val_type_str)
+            return TypeName(map_t.name)
+        if e.name == "Map.remove":
+            expect_count(2)
+            map_t = self.infer(e.args[0], env, ctx, allow_result, result_type)
+            if not isinstance(map_t, TypeName):
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Map.remove first argument must be a Map, got {type_to_string(map_t)}")
+            generic = ctx.parse_generic_instance(map_t.name)
+            if generic is None or generic[0] != "Map":
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Map.remove first argument must be a Map, got {type_to_string(map_t)}")
+            expect_type(1, "String")
+            return TypeName(map_t.name)
+
+        if e.name == "Set.contains":
+            expect_count(2)
+            set_t = self.infer(e.args[0], env, ctx, allow_result, result_type)
+            if not isinstance(set_t, TypeName):
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Set.contains first argument must be a Set, got {type_to_string(set_t)}")
+            generic = ctx.parse_generic_instance(set_t.name)
+            if generic is None or generic[0] != "Set":
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Set.contains first argument must be a Set, got {type_to_string(set_t)}")
+            elem_type_str = generic[1][0]
+            expect_exact_type(1, elem_type_str)
+            return TypeName("Boolean")
+        if e.name == "Set.add":
+            expect_count(2)
+            set_t = self.infer(e.args[0], env, ctx, allow_result, result_type)
+            if not isinstance(set_t, TypeName):
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Set.add first argument must be a Set, got {type_to_string(set_t)}")
+            generic = ctx.parse_generic_instance(set_t.name)
+            if generic is None or generic[0] != "Set":
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Set.add first argument must be a Set, got {type_to_string(set_t)}")
+            elem_type_str = generic[1][0]
+            expect_exact_type(1, elem_type_str)
+            return TypeName(set_t.name)
+        if e.name == "Set.remove":
+            expect_count(2)
+            set_t = self.infer(e.args[0], env, ctx, allow_result, result_type)
+            if not isinstance(set_t, TypeName):
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Set.remove first argument must be a Set, got {type_to_string(set_t)}")
+            generic = ctx.parse_generic_instance(set_t.name)
+            if generic is None or generic[0] != "Set":
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Set.remove first argument must be a Set, got {type_to_string(set_t)}")
+            elem_type_str = generic[1][0]
+            expect_exact_type(1, elem_type_str)
+            return TypeName(set_t.name)
+        if e.name == "Set.size":
+            expect_count(1)
+            set_t = self.infer(e.args[0], env, ctx, allow_result, result_type)
+            if not isinstance(set_t, TypeName):
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Set.size argument must be a Set, got {type_to_string(set_t)}")
+            generic = ctx.parse_generic_instance(set_t.name)
+            if generic is None or generic[0] != "Set":
+                raise TypeCheckError(f"{e.args[0].pos.text()}: Set.size argument must be a Set, got {type_to_string(set_t)}")
+            return TypeName("Integer")
 
         if e.name == "String.concat":
             if len(e.args) != 2:
@@ -1584,6 +1782,28 @@ class Verifier:
                 if not isinstance(t, TypeName) or self.base(t, ctx) != self.base(first, ctx):
                     raise TypeCheckError(f"{e.pos.text()}: array literal has mixed element types")
             return ArrayLiteralType(first.name, len(e.items))
+        if isinstance(e, MapLiteralExpr):
+            generic = ctx.parse_generic_instance(e.type_name)
+            if generic is None or generic[0] != "Map":
+                raise TypeCheckError(f"{e.pos.text()}: expected Map type, got {e.type_name}")
+            val_type_str = generic[1][0]
+            val_type = self.parse_type_ref(val_type_str, ctx)
+            for entry in e.entries:
+                entry_val_t = self.infer(entry.expr, env, ctx, allow_result, result_type)
+                self.assign(entry_val_t, val_type, ctx, entry.pos)
+                self.check_range_bounds(entry.expr, val_type, ctx, entry.pos)
+            return TypeName(e.type_name)
+        if isinstance(e, SetLiteralExpr):
+            generic = ctx.parse_generic_instance(e.type_name)
+            if generic is None or generic[0] != "Set":
+                raise TypeCheckError(f"{e.pos.text()}: expected Set type, got {e.type_name}")
+            elem_type_str = generic[1][0]
+            elem_type = self.parse_type_ref(elem_type_str, ctx)
+            for item in e.items:
+                item_t = self.infer(item, env, ctx, allow_result, result_type)
+                self.assign(item_t, elem_type, ctx, item.pos)
+                self.check_range_bounds(item, elem_type, ctx, item.pos)
+            return TypeName(e.type_name)
         if isinstance(e, IndexExpr):
             return self.infer_index_target(e.name, e.index, e.pos, env, ctx, allow_result, result_type)
         if isinstance(e, ForAllExpr) or isinstance(e, ExistsExpr):
@@ -1605,6 +1825,14 @@ class Verifier:
             if e.name in ctx.errors: return TypeName(e.name)
             if e.name == "result" and allow_result and result_type: return result_type
             if e.name not in env:
+                choice_info = ctx.find_choice_constructor(e.name)
+                if choice_info is not None:
+                    cd, c = choice_info
+                    if not c.params:
+                        if cd.type_params:
+                            args_str = ", ".join("Any" for _ in cd.type_params)
+                            return TypeName(f"{cd.name}<{args_str}>")
+                        return TypeName(cd.name)
                 raise TypeCheckError(f"{e.pos.text()}: unknown variable: {e.name}")
             return env[e.name]
         if isinstance(e, CallExpr):
@@ -1698,6 +1926,42 @@ class Verifier:
         bt = self.builtin_call_type(e, env, ctx, allow_result, result_type)
         if bt is not None:
             return bt
+        choice_info = ctx.find_choice_constructor(e.name)
+        if choice_info is not None:
+            cd, c = choice_info
+            if len(e.args) != len(c.params):
+                raise TypeCheckError(f"{e.pos.text()}: constructor {c.name} expects {len(c.params)} argument(s), got {len(e.args)}")
+            substitutions = {}
+            if cd.type_params:
+                for a, p in zip(e.args, c.params):
+                    if isinstance(a, NamedArg):
+                        raise TypeCheckError(f"{a.pos.text()}: constructor {c.name} does not accept named argument: {a.name}")
+                    actual = self.infer(a, env, ctx, False, None)
+                    p_type = p.type_name
+                    if p_type in cd.type_params:
+                        substitutions[p_type] = actual
+            for index, (a, p) in enumerate(zip(e.args, c.params), start=1):
+                if isinstance(a, NamedArg):
+                    raise TypeCheckError(f"{a.pos.text()}: constructor {c.name} does not accept named argument: {a.name}")
+                actual = self.infer(a, env, ctx, False, None)
+                p_type_ref = self.parse_type_ref(p.type_name, ctx)
+                expected = ctx.substitute_type_ref(p_type_ref, substitutions)
+                if self.base(actual, ctx) != self.base(expected, ctx):
+                    raise TypeCheckError(f"{a.pos.text()}: constructor argument {index} type mismatch for {c.name}: expected {type_to_string(expected)}, got {type_to_string(actual)}")
+                self.assign(actual, expected, ctx, a.pos)
+                self.check_range_bounds(a, expected, ctx, a.pos)
+            if cd.type_params:
+                concrete_args = []
+                for p in cd.type_params:
+                    mapped = substitutions.get(p)
+                    if mapped:
+                        concrete_args.append(type_to_string(mapped))
+                    else:
+                        concrete_args.append("Any")
+                args_str = ", ".join(concrete_args)
+                return TypeName(f"{cd.name}<{args_str}>")
+            else:
+                return TypeName(cd.name)
         r = ctx.routine(e.name, e.pos)
         if r.kind != "function":
             raise TypeCheckError(f"{e.pos.text()}: function call requires function")
@@ -1766,6 +2030,10 @@ class Verifier:
                 if val is not None:
                     if val < td.min_value or val > td.max_value:
                         raise TypeCheckError(f"{pos.text()}: value {val} out of range for type {target_type.name} ({td.min_value}..{td.max_value})")
+
+    def base_root(self, t, ctx) -> str:
+        b = self.base(t, ctx)
+        return self.type_name_root(b)
 
     def base(self,t,ctx):
         if isinstance(t, AwaitableType): return "Awaitable"
@@ -1884,8 +2152,10 @@ class Verifier:
         return self.parse_type_ref(param.type_name, ctx)
 
 class Ctx:
-    def __init__(self, module_name, types, records, generic_records, errors, routines, imports=None, imported_modules=None):
+    def __init__(self, module_name, types, records, generic_records, errors, routines, imports=None, imported_modules=None, choices=None, generic_choices=None):
         self.module_name=module_name; self.types=types; self.records=records; self.generic_records=generic_records; self.errors=errors; self.routines=routines
+        self.choices = choices or {}
+        self.generic_choices = generic_choices or {}
         self.services={}
         self.imports=imports or []; self.imported_modules=imported_modules or {}; self.validate_exposing_conflicts(); self.exposed_routines=self.build_exposed_routines()
         self.add_exposed_types_records_and_errors()
@@ -1935,6 +2205,23 @@ class Ctx:
                     self.add_imported_record_with_dependencies(symbol_name, imported, set())
                 if symbol_name in imported.errors:
                     self.errors.add(symbol_name)
+
+    def find_choice_constructor(self, n):
+        for cd in self.choices.values():
+            for c in cd.constructors:
+                if c.name == n:
+                    return cd, c
+        for cd in self.generic_choices.values():
+            for c in cd.constructors:
+                if c.name == n:
+                    return cd, c
+        for imported in self.imported_modules.values():
+            for d in imported.ast.declarations:
+                if isinstance(d, ChoiceTypeDecl):
+                    for c in d.constructors:
+                        if c.name == n:
+                            return d, c
+        return None
 
     def add_imported_record_with_dependencies(self, name: str, imported: VerifiedProgram, seen: set[str]) -> None:
         seen_key = f"{imported.ast.module_name}.{name}"
@@ -2046,20 +2333,29 @@ class Ctx:
                         continue
                     self.require_type_or_record(arg, pos)
                 return
-            if base in self.types or base in self.records:
+            if base in self.types or base in self.records or base in self.choices:
                 raise TypeCheckError(f"{pos.text()}: non-generic type used with type arguments: {base}")
-            if base not in self.generic_records:
+            if base not in self.generic_records and base not in self.generic_choices:
                 raise TypeCheckError(f"{pos.text()}: unknown type: {base}")
-            declaration = self.generic_records[base]
-            expected = len(declaration.type_params or [])
-            if len(args) != expected:
-                raise TypeCheckError(f"{pos.text()}: generic type {base} expects {expected} type argument(s), got {len(args)}")
-            for arg in args:
-                self.require_type_or_record(arg, pos)
-            self.instantiate_record(n, declaration, args)
-            return
-        if n in self.generic_records:
-            expected = len(self.generic_records[n].type_params or [])
+            if base in self.generic_records:
+                declaration = self.generic_records[base]
+                expected = len(declaration.type_params or [])
+                if len(args) != expected:
+                    raise TypeCheckError(f"{pos.text()}: generic type {base} expects {expected} type argument(s), got {len(args)}")
+                for arg in args:
+                    self.require_type_or_record(arg, pos)
+                self.instantiate_record(n, declaration, args)
+                return
+            if base in self.generic_choices:
+                declaration = self.generic_choices[base]
+                expected = len(declaration.type_params or [])
+                if len(args) != expected:
+                    raise TypeCheckError(f"{pos.text()}: generic type {base} expects {expected} type argument(s), got {len(args)}")
+                for arg in args:
+                    self.require_type_or_record(arg, pos)
+                return
+        if n in self.generic_records or n in self.generic_choices:
+            expected = len(self.generic_records[n].type_params or self.generic_choices[n].type_params or [])
             raise TypeCheckError(f"{pos.text()}: generic type requires {expected} type argument(s): {n}")
         if n in BUILTIN_GENERIC_TYPE_ARITY:
             expected = BUILTIN_GENERIC_TYPE_ARITY[n]

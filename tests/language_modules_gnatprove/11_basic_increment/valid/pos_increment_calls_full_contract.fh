@@ -1,0 +1,20 @@
+module test_basic_increment.pos_increment_calls_full_contract
+
+type Int is Integer range -2147483648..2147483647
+
+function increment_full(x: Int) returns Int
+requires x < 2147483647
+ensures result = x + 1
+is
+    return x + 1
+end increment_full
+
+procedure main()
+is
+    let x: Int = 0
+    x := increment_full(x)
+    x := increment_full(x)
+    check x = 2
+end main
+
+end test_basic_increment.pos_increment_calls_full_contract

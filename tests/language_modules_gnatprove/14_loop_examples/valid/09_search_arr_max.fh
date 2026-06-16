@@ -1,0 +1,48 @@
+module test_loop_examples.search_arr_max
+
+type Int is Integer range -2147483648..2147483647
+
+type MaxResult is record
+    pos: Int
+    max: Int
+end record
+
+function search_arr_max(a: Array<Int, 10>) returns MaxResult
+requires for all j in 0..9 => a[j] >= 0
+ensures for all j in 0..9 => a[j] <= result.max
+ensures for some j in 0..9 => a[j] = result.max
+ensures a[result.pos] = result.max
+is
+    let i: Int = 1
+    let pos: Int = 0
+    let max: Int = a[0]
+
+    while i < 10
+        invariant i >= 1
+        invariant i <= 10
+        invariant pos >= 0
+        invariant pos <= 9
+        invariant for all k in 0..i-1 => a[k] <= max
+        invariant for some k in 0..i-1 => a[k] = max
+        invariant a[pos] = max
+        variant 10 - i
+    do
+        if a[i] > max then
+            max := a[i]
+            pos := i
+        end if
+        i := i + 1
+    end while
+
+    return MaxResult { pos: pos, max: max }
+end search_arr_max
+
+procedure main()
+is
+    let values: Array<Int, 10> = [1, 2, 8, 4, 5, 6, 7, 3, 9, 10]
+    let res: MaxResult = search_arr_max(values)
+    check res.max = 10
+    check res.pos = 9
+end main
+
+end test_loop_examples.search_arr_max
