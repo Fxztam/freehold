@@ -241,6 +241,9 @@ is
     if tok.kind.name = "KeywordFalse" then
         return "false"
     end if
+    if tok.kind.name = "StringLiteral" then
+        return String.template("\"${lex}\"", lex: tok.lexeme)
+    end if
     return tok.lexeme
 end native_go_token_text
 
@@ -533,11 +536,39 @@ is
     return String.concat(exe_name, ".exe")
 end native_executable_output_name
 
+function get_module_file_name(module_name: String) returns String
+is
+    let name: String = to_lower(module_name)
+    let idx: Integer = String.instr(name, ".")
+    while idx >= 0 invariant idx >= -1 do
+        name := String.substr(name, idx + 1, String.length(name) - idx - 1)
+        idx := String.instr(name, ".")
+    end while
+    return String.concat(name, ".go")
+end get_module_file_name
+
 function write_native_minimal_go_project(out_dir: String, entry_file: String, entry_module: String, exe_name: String) returns Boolean
 is
+    let normalized: String = String.replace(entry_file, "\\", "/")
+    let is_compiler: Boolean = String.instr(normalized, "bootstrap/compiler_core_v1/App/Main.fh") >= 0
+
+    let compiled: NativeGoCompileResult = compile_native_entry_go(entry_file, entry_module)
+    if compiled.did_compile = false and is_compiler = false then
+        call Std.IO.logf("compiler_core_v1 skipping native file emission for non-compatible entry: ${}", entry_file)
+        return true
+    end if
+
     let go_path: String = module_to_lower_go_path(entry_module)
-    let package_file: String = String.template("${dir}/${path}/main.go", dir: out_dir, path: go_path)
-    let package_content: String = emit_native_minimal_entry_module(entry_file, entry_module)
+    let file_name: String = get_module_file_name(entry_module)
+    let package_file: String = String.template("${dir}/${path}/${file}", dir: out_dir, path: go_path, file: file_name)
+
+    let package_content: String = ""
+    if compiled.did_compile then
+        package_content := compiled.code
+    else
+        package_content := emit_native_minimal_entry_module(entry_file, entry_module)
+    end if
+
     let write_pkg_res: Result<Boolean, String> = File.write_string(package_file, package_content)
     if write_pkg_res.ok then
         call Std.IO.logf("compiler_core_v1 wrote native Go package to ${}", package_file)
