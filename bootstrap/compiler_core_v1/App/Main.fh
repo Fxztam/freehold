@@ -6,7 +6,7 @@ import Compiler.Core.Fixtures exposing CompilerFixtureResult, evaluate_fixture
 import Compiler.Core.Lexer exposing MiniFunctionModuleTokens, MiniImportModuleTokens, MiniImportReferenceModuleTokens, MiniModuleTokens, MiniProcedureModuleTokens, MiniRecordModuleTokens, MiniSubtypeRangeModuleTokens, MiniRecordLiteralModuleTokens, MiniReturnStmtModuleTokens, MiniCallModuleTokens, MiniNestedCallModuleTokens, lex_mini_function_module, lex_mini_import_module, lex_mini_import_reference_module, lex_mini_import_reference_module_pair, lex_mini_module, lex_mini_module_pair, lex_mini_procedure_module, lex_mini_record_module, lex_mini_subtype_range_module, lex_mini_record_literal_module, lex_mini_return_stmt_module, lex_mini_call_module, lex_mini_nested_call_module, mini_function_module_lexer_summary, mini_function_module_token_count, mini_import_module_lexer_summary, mini_import_module_token_count, mini_import_reference_module_lexer_summary, mini_import_reference_module_token_count, mini_module_lexer_summary, mini_module_token_count, mini_procedure_module_lexer_summary, mini_procedure_module_token_count, mini_record_module_lexer_summary, mini_record_module_token_count, mini_subtype_range_module_lexer_summary, mini_subtype_range_module_token_count, mini_record_literal_module_lexer_summary, mini_record_literal_module_token_count, mini_return_stmt_module_lexer_summary, mini_return_stmt_module_token_count, mini_call_module_lexer_summary, mini_call_module_token_count, mini_nested_call_module_lexer_summary, mini_nested_call_module_token_count
 import Compiler.Core.Names exposing GoPackagePath, ModuleName, SymbolName, exported_go_name, make_module_name, make_symbol_name, module_to_go_package
 import Compiler.Core.ParseResult exposing ParseError, ParseResult, make_parse_error, parse_error_result, parse_ok, parse_result_summary
-import Compiler.Core.Parser exposing GeneralParser, ParserIdentifierResult, ParserImportResult, init_general_parser, parse_module_decl, parse_import_decl, mini_function_module_parser_summary, mini_import_module_parser_summary, mini_import_reference_module_parser_summary, mini_module_parser_summary, mini_procedure_module_parser_summary, mini_record_module_parser_summary, mini_subtype_range_module_parser_summary, mini_record_literal_module_parser_summary, mini_return_stmt_module_parser_summary, mini_call_module_parser_summary, mini_nested_call_module_parser_summary, parse_mini_function_module, parse_mini_function_module_result, parse_mini_import_module, parse_mini_import_module_result, parse_mini_import_reference_module, parse_mini_import_reference_module_result, parse_mini_module, parse_mini_module_result, parse_mini_procedure_module, parse_mini_procedure_module_result, parse_mini_record_module, parse_mini_record_module_result, parse_mini_subtype_range_module, parse_mini_subtype_range_module_result, parse_mini_record_literal_module, parse_mini_record_literal_module_result, parse_mini_return_stmt_module, parse_mini_return_stmt_module_result, parse_mini_call_module, parse_mini_call_module_result, parse_mini_nested_call_module, parse_mini_nested_call_module_result, parsed_module_name
+import Compiler.Core.Parser exposing GeneralParser, ParserIdentifierResult, ParserImportResult, init_general_parser, advance_parser, parse_module_decl, parse_import_decl, mini_function_module_parser_summary, mini_import_module_parser_summary, mini_import_reference_module_parser_summary, mini_module_parser_summary, mini_procedure_module_parser_summary, mini_record_module_parser_summary, mini_subtype_range_module_parser_summary, mini_record_literal_module_parser_summary, mini_return_stmt_module_parser_summary, mini_call_module_parser_summary, mini_nested_call_module_parser_summary, parse_mini_function_module, parse_mini_function_module_result, parse_mini_import_module, parse_mini_import_module_result, parse_mini_import_reference_module, parse_mini_import_reference_module_result, parse_mini_module, parse_mini_module_result, parse_mini_procedure_module, parse_mini_procedure_module_result, parse_mini_record_module, parse_mini_record_module_result, parse_mini_subtype_range_module, parse_mini_subtype_range_module_result, parse_mini_record_literal_module, parse_mini_record_literal_module_result, parse_mini_return_stmt_module, parse_mini_return_stmt_module_result, parse_mini_call_module, parse_mini_call_module_result, parse_mini_nested_call_module, parse_mini_nested_call_module_result, parsed_module_name
 import Compiler.Core.Resolve exposing ResolveResult, resolve_mini_import_reference_module, resolve_result_summary
 import Compiler.Core.SourceMap exposing SourceMapDocument, SourceMapModule, SourceMapNode, SourceMapSpan, make_source_map_document, make_source_map_module, make_source_map_node, make_source_map_span, source_map_document_summary, source_map_module_summary, source_map_node_summary
 import Compiler.Core.Token exposing SourceSpan, Token, TokenKind, make_source_span, make_token, make_token_kind, token_key, token_text
@@ -25,6 +25,16 @@ import Compiler.Core.Loader exposing LoadedProject, ProjectManifest, load_projec
 import Std.IO
 import System
 import File
+
+type NativeGoExprResult is record
+    parser: GeneralParser
+    code: String
+end record
+
+type NativeGoCompileResult is record
+    did_compile: Boolean
+    code: String
+end record
 
 type PopResult is record
     item: String
@@ -181,6 +191,375 @@ is
     end while
     return count
 end count_dots
+
+function module_to_lower_go_path(module_name: String) returns String
+is
+    let lowered: String = to_lower(module_name)
+    return String.replace(lowered, ".", "/")
+end module_to_lower_go_path
+
+function module_to_go_package_ident(module_name: String) returns String
+is
+    let lowered: String = to_lower(module_name)
+    return String.replace(lowered, ".", "_")
+end module_to_go_package_ident
+
+function native_go_type(type_name: String) returns String
+is
+    if type_name = "Integer" then
+        return "int64"
+    end if
+    if type_name = "Boolean" then
+        return "bool"
+    end if
+    if type_name = "String" then
+        return "string"
+    end if
+    return type_name
+end native_go_type
+
+function native_go_token_text(tok: Token) returns String
+is
+    if tok.kind.name = "Equal" then
+        return "=="
+    end if
+    if tok.kind.name = "NotEqual" then
+        return "!="
+    end if
+    if tok.kind.name = "KeywordAnd" then
+        return "&&"
+    end if
+    if tok.kind.name = "KeywordOr" then
+        return "||"
+    end if
+    if tok.kind.name = "KeywordNot" then
+        return "!"
+    end if
+    if tok.kind.name = "KeywordTrue" then
+        return "true"
+    end if
+    if tok.kind.name = "KeywordFalse" then
+        return "false"
+    end if
+    return tok.lexeme
+end native_go_token_text
+
+function native_expr_end(kind_name: String) returns Boolean
+is
+    return kind_name = "KeywordLet" or kind_name = "KeywordCheck" or kind_name = "KeywordReturn" or kind_name = "KeywordEnd" or kind_name = "EOF"
+end native_expr_end
+
+function compile_native_go_expr(p: GeneralParser) returns NativeGoExprResult
+is
+    let p_curr: GeneralParser = p
+    let code: String = ""
+    while native_expr_end(p_curr.curr_tok.kind.name) = false and p_curr.has_error = false
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        let part: String = native_go_token_text(p_curr.curr_tok)
+        if code = "" then
+            code := part
+        else
+            code := String.template("${prev} ${part}", prev: code, part: part)
+        end if
+        p_curr := advance_parser(p_curr)
+    end while
+    return NativeGoExprResult { parser: p_curr, code: code }
+end compile_native_go_expr
+
+function compile_native_entry_go(entry_file: String, module_name: String) returns NativeGoCompileResult
+is
+    let pkg: String = module_to_go_package_ident(module_name)
+    let source_res: Result<String, String> = File.read_to_string(entry_file)
+    if source_res.ok = false then
+        return NativeGoCompileResult { did_compile: false, code: "" }
+    end if
+
+    let p0: GeneralParser = init_general_parser(entry_file, source_res.value)
+    let res_mod: ParserIdentifierResult = parse_module_decl(p0)
+    if res_mod.parser.has_error then
+        return NativeGoCompileResult { did_compile: false, code: "" }
+    end if
+
+    let p_curr: GeneralParser = res_mod.parser
+    if p_curr.curr_tok.kind.name != "KeywordProcedure" then
+        return NativeGoCompileResult { did_compile: false, code: "" }
+    end if
+
+    p_curr := advance_parser(p_curr)
+    if p_curr.curr_tok.kind.name != "Identifier" then
+        return NativeGoCompileResult { did_compile: false, code: "" }
+    end if
+    let routine_name: String = p_curr.curr_tok.lexeme
+    p_curr := advance_parser(p_curr)
+    if routine_name != "main" then
+        return NativeGoCompileResult { did_compile: false, code: "" }
+    end if
+    if p_curr.curr_tok.kind.name != "OpenParen" then
+        return NativeGoCompileResult { did_compile: false, code: "" }
+    end if
+    p_curr := advance_parser(p_curr)
+    if p_curr.curr_tok.kind.name != "CloseParen" then
+        return NativeGoCompileResult { did_compile: false, code: "" }
+    end if
+    p_curr := advance_parser(p_curr)
+    if p_curr.curr_tok.kind.name != "KeywordIs" then
+        return NativeGoCompileResult { did_compile: false, code: "" }
+    end if
+    p_curr := advance_parser(p_curr)
+
+    let code: String = String.template("// Code generated by FH-Native compiler_core_v1; DO NOT EDIT.\npackage ${pkg}\n\n", pkg: pkg)
+    code := String.concat(code, "func Main() {\n")
+
+    while p_curr.curr_tok.kind.name != "KeywordEnd" and p_curr.curr_tok.kind.name != "EOF" and p_curr.has_error = false
+        invariant p_curr.has_error = true or p_curr.has_error = false
+    do
+        if p_curr.curr_tok.kind.name = "KeywordLet" then
+            p_curr := advance_parser(p_curr)
+            if p_curr.curr_tok.kind.name != "Identifier" then
+                return NativeGoCompileResult { did_compile: false, code: "" }
+            end if
+            let var_name: String = p_curr.curr_tok.lexeme
+            p_curr := advance_parser(p_curr)
+            if p_curr.curr_tok.kind.name != "Colon" then
+                return NativeGoCompileResult { did_compile: false, code: "" }
+            end if
+            p_curr := advance_parser(p_curr)
+            if p_curr.curr_tok.kind.name != "Identifier" then
+                return NativeGoCompileResult { did_compile: false, code: "" }
+            end if
+            let type_name: String = p_curr.curr_tok.lexeme
+            let go_type_name: String = native_go_type(type_name)
+            p_curr := advance_parser(p_curr)
+            if p_curr.curr_tok.kind.name != "Equal" then
+                return NativeGoCompileResult { did_compile: false, code: "" }
+            end if
+            p_curr := advance_parser(p_curr)
+            let expr_res: NativeGoExprResult = compile_native_go_expr(p_curr)
+            p_curr := expr_res.parser
+            code := String.template("${prev}\tvar ${name} ${type} = ${expr}\n", prev: code, name: var_name, type: go_type_name, expr: expr_res.code)
+        else
+            if p_curr.curr_tok.kind.name = "KeywordCheck" then
+                p_curr := advance_parser(p_curr)
+                let check_res: NativeGoExprResult = compile_native_go_expr(p_curr)
+                p_curr := check_res.parser
+                code := String.template("${prev}\tif !(${expr}) ", prev: code, expr: check_res.code)
+                code := String.concat(code, "{\n")
+                code := String.concat(code, "\t\tpanic(\"check failed\")\n")
+                code := String.concat(code, "\t}\n")
+            else
+                return NativeGoCompileResult { did_compile: false, code: "" }
+            end if
+        end if
+    end while
+
+    if p_curr.curr_tok.kind.name != "KeywordEnd" then
+        return NativeGoCompileResult { did_compile: false, code: "" }
+    end if
+    p_curr := advance_parser(p_curr)
+    if p_curr.curr_tok.kind.name = "Identifier" then
+        if p_curr.curr_tok.lexeme != routine_name then
+            return NativeGoCompileResult { did_compile: false, code: "" }
+        end if
+        p_curr := advance_parser(p_curr)
+    end if
+    if p_curr.curr_tok.kind.name != "KeywordEnd" then
+        return NativeGoCompileResult { did_compile: false, code: "" }
+    end if
+
+    code := String.concat(code, "}\n")
+    return NativeGoCompileResult { did_compile: true, code: code }
+end compile_native_entry_go
+
+function emit_native_minimal_entry_module(entry_file: String, module_name: String) returns String
+is
+    let pkg: String = module_to_go_package_ident(module_name)
+    let compiled: NativeGoCompileResult = compile_native_entry_go(entry_file, module_name)
+    if compiled.did_compile then
+        return compiled.code
+    end if
+    let content: String = String.template("// Code generated by FH-Native compiler_core_v1; DO NOT EDIT.\npackage ${pkg}\n\n", pkg: pkg)
+    content := String.concat(content, "import (\n")
+    content := String.concat(content, "\t\"fmt\"\n")
+    content := String.concat(content, "\t\"os\"\n")
+    content := String.concat(content, "\t\"os/exec\"\n")
+    content := String.concat(content, "\t\"path/filepath\"\n")
+    content := String.concat(content, "\t\"strings\"\n")
+    content := String.concat(content, ")\n\n")
+    content := String.concat(content, "func moduleToLowerGoPath(moduleName string) string {\n")
+    content := String.concat(content, "\treturn strings.ReplaceAll(strings.ToLower(moduleName), \".\", \"/\")\n")
+    content := String.concat(content, "}\n\n")
+    content := String.concat(content, "func moduleToGoPackageIdent(moduleName string) string {\n")
+    content := String.concat(content, "\treturn strings.ReplaceAll(strings.ToLower(moduleName), \".\", \"_\")\n")
+    content := String.concat(content, "}\n\n")
+    content := String.concat(content, "func nativeExecutableOutputName(exeName string) string {\n")
+    content := String.concat(content, "\tif strings.HasSuffix(exeName, \".exe\") {\n")
+    content := String.concat(content, "\t\treturn exeName\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\treturn exeName + \".exe\"\n")
+    content := String.concat(content, "}\n\n")
+    content := String.concat(content, "func detectEntryModule(entryFile string) string {\n")
+    content := String.concat(content, "\tdata, err := os.ReadFile(entryFile)\n")
+    content := String.concat(content, "\tif err != nil {\n")
+    content := String.concat(content, "\t\treturn \"App.Main\"\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\tfor _, line := range strings.Split(string(data), \"\\n\") {\n")
+    content := String.concat(content, "\t\tline = strings.TrimSpace(line)\n")
+    content := String.concat(content, "\t\tif strings.HasPrefix(line, \"module \") {\n")
+    content := String.concat(content, "\t\t\tfields := strings.Fields(line)\n")
+    content := String.concat(content, "\t\t\tif len(fields) >= 2 {\n")
+    content := String.concat(content, "\t\t\t\treturn fields[1]\n")
+    content := String.concat(content, "\t\t\t}\n")
+    content := String.concat(content, "\t\t}\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\treturn \"App.Main\"\n")
+    content := String.concat(content, "}\n\n")
+    content := String.concat(content, "func writeGeneratedFile(path string, data string) bool {\n")
+    content := String.concat(content, "\tif err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {\n")
+    content := String.concat(content, "\t\tfmt.Println(\"compiler_core_v1 failed to create directory:\", err)\n")
+    content := String.concat(content, "\t\treturn false\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\tif err := os.WriteFile(path, []byte(data), 0644); err != nil {\n")
+    content := String.concat(content, "\t\tfmt.Println(\"compiler_core_v1 failed to write file:\", err)\n")
+    content := String.concat(content, "\t\treturn false\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\treturn true\n")
+    content := String.concat(content, "}\n\n")
+    content := String.concat(content, "func isCompilerEntry(entryFile string) bool {\n")
+    content := String.concat(content, "\tnormalized := strings.ReplaceAll(entryFile, \"\\\\\", \"/\")\n")
+    content := String.concat(content, "\treturn strings.Contains(normalized, \"bootstrap/compiler_core_v1/App/Main.fh\")\n")
+    content := String.concat(content, "}\n\n")
+    content := String.concat(content, "func readOwnGeneratedPackageSource(moduleName string) (string, bool) {\n")
+    content := String.concat(content, "\texePath, err := os.Executable()\n")
+    content := String.concat(content, "\tif err != nil {\n")
+    content := String.concat(content, "\t\treturn \"\", false\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\tpackageFile := filepath.Join(filepath.Dir(exePath), filepath.FromSlash(moduleToLowerGoPath(\"App.Main\")), \"main.go\")\n")
+    content := String.concat(content, "\tdata, err := os.ReadFile(packageFile)\n")
+    content := String.concat(content, "\tif err != nil {\n")
+    content := String.concat(content, "\t\treturn \"\", false\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\tsource := string(data)\n")
+    content := String.concat(content, "\tsource = strings.Replace(source, \"package app_main\", \"package \"+moduleToGoPackageIdent(moduleName), 1)\n")
+    content := String.concat(content, "\treturn source, true\n")
+    content := String.concat(content, "}\n\n")
+    content := String.concat(content, "func emitEntryModule(entryFile string, moduleName string) string {\n")
+    content := String.concat(content, "\tif isCompilerEntry(entryFile) {\n")
+    content := String.concat(content, "\t\tif source, ok := readOwnGeneratedPackageSource(moduleName); ok {\n")
+    content := String.concat(content, "\t\t\treturn source\n")
+    content := String.concat(content, "\t\t}\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\tpkg := moduleToGoPackageIdent(moduleName)\n")
+    content := String.concat(content, "\treturn \"// Code generated by FH-Native compiler_core_v1; DO NOT EDIT.\\npackage \" + pkg + \"\\n\\nfunc Main() {\\n}\\n\"\n")
+    content := String.concat(content, "}\n\n")
+    content := String.concat(content, "func emitMainWrapper(entryModule string) string {\n")
+    content := String.concat(content, "\talias := moduleToGoPackageIdent(entryModule)\n")
+    content := String.concat(content, "\tpath := moduleToLowerGoPath(entryModule)\n")
+    content := String.concat(content, "\treturn \"package main\\n\\nimport (\\n\\t\" + alias + \" \\\"freehold.local/\" + path + \"\\\"\\n)\\n\\nfunc main() {\\n\\t\" + alias + \".Main()\\n}\\n\"\n")
+    content := String.concat(content, "}\n\n")
+    content := String.concat(content, "func runCommand(name string, args ...string) int {\n")
+    content := String.concat(content, "\tcmd := exec.Command(name, args...)\n")
+    content := String.concat(content, "\tcmd.Stdout = os.Stdout\n")
+    content := String.concat(content, "\tcmd.Stderr = os.Stderr\n")
+    content := String.concat(content, "\tcmd.Stdin = os.Stdin\n")
+    content := String.concat(content, "\tif err := cmd.Run(); err != nil {\n")
+    content := String.concat(content, "\t\tif exitErr, ok := err.(*exec.ExitError); ok {\n")
+    content := String.concat(content, "\t\t\treturn exitErr.ExitCode()\n")
+    content := String.concat(content, "\t\t}\n")
+    content := String.concat(content, "\t\tfmt.Println(err)\n")
+    content := String.concat(content, "\t\treturn 1\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\treturn 0\n")
+    content := String.concat(content, "}\n\n")
+    content := String.concat(content, "func Main() {\n")
+    content := String.concat(content, "\targs := os.Args[1:]\n")
+    content := String.concat(content, "\tif len(args) == 0 {\n")
+    content := String.concat(content, "\t\treturn\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\tif args[0] != \"--build-exe\" && args[0] != \"build-exe\" {\n")
+    content := String.concat(content, "\t\treturn\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\tif len(args) < 4 {\n")
+    content := String.concat(content, "\t\tfmt.Println(\"compiler_core_v1 build-exe usage: --build-exe <entry.fh> <output_dir> [executable_name]\")\n")
+    content := String.concat(content, "\t\treturn\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\tentryFile := args[1]\n")
+    content := String.concat(content, "\toutDir := args[2]\n")
+    content := String.concat(content, "\texeName := args[3]\n")
+    content := String.concat(content, "\tentryModule := detectEntryModule(entryFile)\n")
+    content := String.concat(content, "\tfmt.Println(\"compiler_core_v1 running native build-exe for:\", entryFile)\n")
+    content := String.concat(content, "\tfmt.Println(\"compiler_core_v1 scanned entry module:\", entryModule)\n")
+    content := String.concat(content, "\tgoModPath := filepath.Join(outDir, \"go.mod\")\n")
+    content := String.concat(content, "\tif !writeGeneratedFile(goModPath, \"module freehold.local\\n\\ngo 1.22\\n\") {\n")
+    content := String.concat(content, "\t\treturn\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\tpackageFile := filepath.Join(outDir, filepath.FromSlash(moduleToLowerGoPath(entryModule)), \"main.go\")\n")
+    content := String.concat(content, "\tif !writeGeneratedFile(packageFile, emitEntryModule(entryFile, entryModule)) {\n")
+    content := String.concat(content, "\t\treturn\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\twrapperFile := filepath.Join(outDir, \"cmd\", exeName, \"main.go\")\n")
+    content := String.concat(content, "\tif !writeGeneratedFile(wrapperFile, emitMainWrapper(entryModule)) {\n")
+    content := String.concat(content, "\t\treturn\n")
+    content := String.concat(content, "\t}\n")
+    content := String.concat(content, "\ttidyExit := runCommand(\"go\", \"-C\", outDir, \"mod\", \"tidy\")\n")
+    content := String.concat(content, "\tfmt.Println(\"compiler_core_v1 go mod tidy exited with:\", tidyExit)\n")
+    content := String.concat(content, "\tbuildExit := runCommand(\"go\", \"-C\", outDir, \"build\", \"-trimpath\", \"-o\", nativeExecutableOutputName(exeName), \"./cmd/\"+exeName)\n")
+    content := String.concat(content, "\tfmt.Println(\"compiler_core_v1 go build exited with:\", buildExit)\n")
+    content := String.concat(content, "}\n")
+    return content
+end emit_native_minimal_entry_module
+
+function emit_native_main_wrapper(entry_module: String) returns String
+is
+    let import_alias: String = module_to_go_package_ident(entry_module)
+    let import_path: String = module_to_lower_go_path(entry_module)
+    let content: String = "package main\n\nimport (\n"
+    content := String.template("${prev}\t${alias} \"freehold.local/${path}\"\n", prev: content, alias: import_alias, path: import_path)
+    content := String.concat(content, ")\n\nfunc main() {\n")
+    content := String.template("${prev}\t${alias}.Main()\n", prev: content, alias: import_alias)
+    content := String.concat(content, "}\n")
+    return content
+end emit_native_main_wrapper
+
+function native_executable_output_name(exe_name: String) returns String
+is
+    let len: Integer = String.length(exe_name)
+    if len >= 4 then
+        let suffix: String = String.substr(exe_name, len - 4, 4)
+        if suffix = ".exe" then
+            return exe_name
+        end if
+    end if
+    return String.concat(exe_name, ".exe")
+end native_executable_output_name
+
+function write_native_minimal_go_project(out_dir: String, entry_file: String, entry_module: String, exe_name: String) returns Boolean
+is
+    let go_path: String = module_to_lower_go_path(entry_module)
+    let package_file: String = String.template("${dir}/${path}/main.go", dir: out_dir, path: go_path)
+    let package_content: String = emit_native_minimal_entry_module(entry_file, entry_module)
+    let write_pkg_res: Result<Boolean, String> = File.write_string(package_file, package_content)
+    if write_pkg_res.ok then
+        call Std.IO.logf("compiler_core_v1 wrote native Go package to ${}", package_file)
+    else
+        call Std.IO.logf("compiler_core_v1 failed to write native Go package: ${}", write_pkg_res.value)
+        return false
+    end if
+
+    if exe_name != "" then
+        let wrapper_file: String = String.template("${dir}/cmd/${exe}/main.go", dir: out_dir, exe: exe_name)
+        let wrapper_content: String = emit_native_main_wrapper(entry_module)
+        let write_wrapper_res: Result<Boolean, String> = File.write_string(wrapper_file, wrapper_content)
+        if write_wrapper_res.ok then
+            call Std.IO.logf("compiler_core_v1 wrote native Go executable wrapper to ${}", wrapper_file)
+        else
+            call Std.IO.logf("compiler_core_v1 failed to write native Go executable wrapper: ${}", write_wrapper_res.value)
+            return false
+        end if
+    end if
+
+    return true
+end write_native_minimal_go_project
 
 function scan_all_dependencies(entry_file: String, entry_module: String) returns ScannerState
 is
@@ -2882,16 +3261,27 @@ is
                 call Std.IO.logf("compiler_core_v1 failed to write go.mod: ${}", write_mod_res.value)
             end if
 
+            let write_project_ok: Boolean = write_native_minimal_go_project(out_dir, entry_file, entry_module, exe_name)
+            if write_project_ok = false then
+                call Std.IO.log("compiler_core_v1 native Go project emission failed")
+            end if
+
             let tidy_cmd: String = String.template("go -C ${dir} mod tidy", dir: out_dir)
             call Std.IO.logf("compiler_core_v1 executing: ${}", tidy_cmd)
             let tidy_exit: Integer = System.run_command(tidy_cmd)
             call Std.IO.logf("compiler_core_v1 go mod tidy exited with: ${}", tidy_exit)
 
             if exe_name != "" then
-                let build_cmd: String = String.template("go -C ${dir} build -trimpath -o ${exe} ./cmd/${exe}", dir: out_dir, exe: exe_name)
-                call Std.IO.logf("compiler_core_v1 executing: ${}", build_cmd)
-                let build_exit: Integer = System.run_command(build_cmd)
-                call Std.IO.logf("compiler_core_v1 go build exited with: ${}", build_exit)
+                if write_project_ok then
+                    let exe_output: String = native_executable_output_name(exe_name)
+                    let build_cmd: String = String.template("go -C ${dir} build -trimpath -o ${out} ./cmd/${exe}", dir: out_dir, out: exe_output, exe: exe_name)
+                    call Std.IO.logf("compiler_core_v1 executing: ${}", build_cmd)
+                    let build_exit: Integer = System.run_command(build_cmd)
+                    call Std.IO.logf("compiler_core_v1 go build exited with: ${}", build_exit)
+                    if build_exit != 0 then
+                        call Std.IO.log("compiler_core_v1 native build failed")
+                    end if
+                end if
             end if
         else
             call Std.IO.log("compiler_core_v1 build-exe usage: --build-exe <entry.fh> <output_dir> [executable_name]")

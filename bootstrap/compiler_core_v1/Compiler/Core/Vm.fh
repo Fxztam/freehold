@@ -1606,11 +1606,11 @@ function execute_instruction_multitask(
     routine_count: Integer
 ) returns MultiTaskResult
 is
-    let task: VmTask = tasks[task_idx]
+    let current_task: VmTask = tasks[task_idx]
 
     if inst.kind = "CALL" or inst.kind = "CALL_HOST" then
         if inst.op = "channel" then
-            let capacity_val: VmValue = get_register(task.frame, inst.src_reg_left)
+            let capacity_val: VmValue = get_register(current_task.frame, inst.src_reg_left)
             let capacity: Integer = capacity_val.int_val
             let empty_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
             let ch_obj: VmHeapObject = VmHeapObject {
@@ -1633,50 +1633,50 @@ is
                 element_count: 0
             }
             let alloc_res: AllocResult = allocate_object(heap, ch_obj)
-            let new_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, VmValue { kind: "REF", int_val: alloc_res.ref_idx, bool_val: false, str_val: "", ref_val: alloc_res.ref_idx })
+            let new_frame: ActivationFrame = update_register(current_task.frame, inst.dest_reg, VmValue { kind: "REF", int_val: alloc_res.ref_idx, bool_val: false, str_val: "", ref_val: alloc_res.ref_idx })
             let new_task: VmTask = VmTask {
-                id: task.id,
-                routine: task.routine,
+                id: current_task.id,
+                routine: current_task.routine,
                 frame: new_frame,
-                stack: task.stack,
-                stack_pointer: task.stack_pointer,
-                routine_stack: task.routine_stack,
-                caller_dest_reg_stack: task.caller_dest_reg_stack,
-                status: task.status,
-                blocked_on_channel: task.blocked_on_channel,
-                blocked_on_join: task.blocked_on_join,
-                blocked_reg: task.blocked_reg,
-                blocked_val: task.blocked_val
+                stack: current_task.stack,
+                stack_pointer: current_task.stack_pointer,
+                routine_stack: current_task.routine_stack,
+                caller_dest_reg_stack: current_task.caller_dest_reg_stack,
+                status: current_task.status,
+                blocked_on_channel: current_task.blocked_on_channel,
+                blocked_on_join: current_task.blocked_on_join,
+                blocked_reg: current_task.blocked_reg,
+                blocked_val: current_task.blocked_val
             }
             let new_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_task)
             return MultiTaskResult { heap: alloc_res.heap, tasks: new_tasks, task_count: task_count, yielded: false }
         end if
 
         if inst.op = "channel_sender" or inst.op = "channel_receiver" then
-            let ch_ref: VmValue = get_register(task.frame, inst.src_reg_left)
-            let new_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, ch_ref)
+            let ch_ref: VmValue = get_register(current_task.frame, inst.src_reg_left)
+            let new_frame: ActivationFrame = update_register(current_task.frame, inst.dest_reg, ch_ref)
             let new_task: VmTask = VmTask {
-                id: task.id,
-                routine: task.routine,
+                id: current_task.id,
+                routine: current_task.routine,
                 frame: new_frame,
-                stack: task.stack,
-                stack_pointer: task.stack_pointer,
-                routine_stack: task.routine_stack,
-                caller_dest_reg_stack: task.caller_dest_reg_stack,
-                status: task.status,
-                blocked_on_channel: task.blocked_on_channel,
-                blocked_on_join: task.blocked_on_join,
-                blocked_reg: task.blocked_reg,
-                blocked_val: task.blocked_val
+                stack: current_task.stack,
+                stack_pointer: current_task.stack_pointer,
+                routine_stack: current_task.routine_stack,
+                caller_dest_reg_stack: current_task.caller_dest_reg_stack,
+                status: current_task.status,
+                blocked_on_channel: current_task.blocked_on_channel,
+                blocked_on_join: current_task.blocked_on_join,
+                blocked_reg: current_task.blocked_reg,
+                blocked_val: current_task.blocked_val
             }
             let new_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_task)
             return MultiTaskResult { heap: heap, tasks: new_tasks, task_count: task_count, yielded: false }
         end if
 
         if inst.op = "channel_send" then
-            let chan_ref_val: VmValue = get_register(task.frame, inst.src_reg_left)
+            let chan_ref_val: VmValue = get_register(current_task.frame, inst.src_reg_left)
             let chan_ref: Integer = chan_ref_val.ref_val
-            let val_to_send: VmValue = get_register(task.frame, inst.src_reg_right)
+            let val_to_send: VmValue = get_register(current_task.frame, inst.src_reg_right)
 
             let found_reader_idx: Integer = -1
             let j: Integer = 0
@@ -1708,20 +1708,20 @@ is
                 }
                 let next_tasks: Array<VmTask, 16> = set_task(tasks, found_reader_idx, new_reader)
 
-                let s_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, VmValue { kind: "BOOLEAN", int_val: 0, bool_val: true, str_val: "", ref_val: -1 })
+                let s_frame: ActivationFrame = update_register(current_task.frame, inst.dest_reg, VmValue { kind: "BOOLEAN", int_val: 0, bool_val: true, str_val: "", ref_val: -1 })
                 let new_sender: VmTask = VmTask {
-                    id: task.id,
-                    routine: task.routine,
+                    id: current_task.id,
+                    routine: current_task.routine,
                     frame: s_frame,
-                    stack: task.stack,
-                    stack_pointer: task.stack_pointer,
-                    routine_stack: task.routine_stack,
-                    caller_dest_reg_stack: task.caller_dest_reg_stack,
-                    status: task.status,
-                    blocked_on_channel: task.blocked_on_channel,
-                    blocked_on_join: task.blocked_on_join,
-                    blocked_reg: task.blocked_reg,
-                    blocked_val: task.blocked_val
+                    stack: current_task.stack,
+                    stack_pointer: current_task.stack_pointer,
+                    routine_stack: current_task.routine_stack,
+                    caller_dest_reg_stack: current_task.caller_dest_reg_stack,
+                    status: current_task.status,
+                    blocked_on_channel: current_task.blocked_on_channel,
+                    blocked_on_join: current_task.blocked_on_join,
+                    blocked_reg: current_task.blocked_reg,
+                    blocked_val: current_task.blocked_val
                 }
                 next_tasks := set_task(next_tasks, task_idx, new_sender)
                 return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count, yielded: false }
@@ -1749,35 +1749,35 @@ is
                     let next_heap_objs: Array<VmHeapObject, 32> = set_heap_obj(heap.objects, chan_ref, new_ch_obj)
                     let next_heap: VmHeap = VmHeap { objects: next_heap_objs, object_count: heap.object_count }
 
-                    let s_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, VmValue { kind: "BOOLEAN", int_val: 0, bool_val: true, str_val: "", ref_val: -1 })
+                    let s_frame: ActivationFrame = update_register(current_task.frame, inst.dest_reg, VmValue { kind: "BOOLEAN", int_val: 0, bool_val: true, str_val: "", ref_val: -1 })
                     let new_sender: VmTask = VmTask {
-                        id: task.id,
-                        routine: task.routine,
+                        id: current_task.id,
+                        routine: current_task.routine,
                         frame: s_frame,
-                        stack: task.stack,
-                        stack_pointer: task.stack_pointer,
-                        routine_stack: task.routine_stack,
-                        caller_dest_reg_stack: task.caller_dest_reg_stack,
-                        status: task.status,
-                        blocked_on_channel: task.blocked_on_channel,
-                        blocked_on_join: task.blocked_on_join,
-                        blocked_reg: task.blocked_reg,
-                        blocked_val: task.blocked_val
+                        stack: current_task.stack,
+                        stack_pointer: current_task.stack_pointer,
+                        routine_stack: current_task.routine_stack,
+                        caller_dest_reg_stack: current_task.caller_dest_reg_stack,
+                        status: current_task.status,
+                        blocked_on_channel: current_task.blocked_on_channel,
+                        blocked_on_join: current_task.blocked_on_join,
+                        blocked_reg: current_task.blocked_reg,
+                        blocked_val: current_task.blocked_val
                     }
                     let next_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_sender)
                     return MultiTaskResult { heap: next_heap, tasks: next_tasks, task_count: task_count, yielded: false }
                 else
                     let new_sender: VmTask = VmTask {
-                        id: task.id,
-                        routine: task.routine,
-                        frame: task.frame,
-                        stack: task.stack,
-                        stack_pointer: task.stack_pointer,
-                        routine_stack: task.routine_stack,
-                        caller_dest_reg_stack: task.caller_dest_reg_stack,
+                        id: current_task.id,
+                        routine: current_task.routine,
+                        frame: current_task.frame,
+                        stack: current_task.stack,
+                        stack_pointer: current_task.stack_pointer,
+                        routine_stack: current_task.routine_stack,
+                        caller_dest_reg_stack: current_task.caller_dest_reg_stack,
                         status: "BLOCKED",
                         blocked_on_channel: chan_ref,
-                        blocked_on_join: task.blocked_on_join,
+                        blocked_on_join: current_task.blocked_on_join,
                         blocked_reg: inst.dest_reg,
                         blocked_val: val_to_send
                     }
@@ -1788,7 +1788,7 @@ is
         end if
 
         if inst.op = "channel_receive" then
-            let chan_ref_val: VmValue = get_register(task.frame, inst.src_reg_left)
+            let chan_ref_val: VmValue = get_register(current_task.frame, inst.src_reg_left)
             let chan_ref: Integer = chan_ref_val.ref_val
             let heap_objs: Array<VmHeapObject, 32> = heap.objects
             let ch_obj: VmHeapObject = heap_objs[chan_ref]
@@ -1870,20 +1870,20 @@ is
                     next_tasks := set_task(next_tasks, found_writer_idx, new_writer)
                 end if
 
-                let r_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, val_received)
+                let r_frame: ActivationFrame = update_register(current_task.frame, inst.dest_reg, val_received)
                 let new_reader: VmTask = VmTask {
-                    id: task.id,
-                    routine: task.routine,
+                    id: current_task.id,
+                    routine: current_task.routine,
                     frame: r_frame,
-                    stack: task.stack,
-                    stack_pointer: task.stack_pointer,
-                    routine_stack: task.routine_stack,
-                    caller_dest_reg_stack: task.caller_dest_reg_stack,
-                    status: task.status,
-                    blocked_on_channel: task.blocked_on_channel,
-                    blocked_on_join: task.blocked_on_join,
-                    blocked_reg: task.blocked_reg,
-                    blocked_val: task.blocked_val
+                    stack: current_task.stack,
+                    stack_pointer: current_task.stack_pointer,
+                    routine_stack: current_task.routine_stack,
+                    caller_dest_reg_stack: current_task.caller_dest_reg_stack,
+                    status: current_task.status,
+                    blocked_on_channel: current_task.blocked_on_channel,
+                    blocked_on_join: current_task.blocked_on_join,
+                    blocked_reg: current_task.blocked_reg,
+                    blocked_val: current_task.blocked_val
                 }
                 next_tasks := set_task(next_tasks, task_idx, new_reader)
                 return MultiTaskResult { heap: next_heap, tasks: next_tasks, task_count: task_count, yielded: false }
@@ -1922,20 +1922,20 @@ is
                     let next_tasks: Array<VmTask, 16> = set_task(tasks, found_writer_idx, new_writer)
 
                     -- Set reader's received value
-                    let r_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, t_writer.blocked_val)
+                    let r_frame: ActivationFrame = update_register(current_task.frame, inst.dest_reg, t_writer.blocked_val)
                     let new_reader: VmTask = VmTask {
-                        id: task.id,
-                        routine: task.routine,
+                        id: current_task.id,
+                        routine: current_task.routine,
                         frame: r_frame,
-                        stack: task.stack,
-                        stack_pointer: task.stack_pointer,
-                        routine_stack: task.routine_stack,
-                        caller_dest_reg_stack: task.caller_dest_reg_stack,
-                        status: task.status,
-                        blocked_on_channel: task.blocked_on_channel,
-                        blocked_on_join: task.blocked_on_join,
-                        blocked_reg: task.blocked_reg,
-                        blocked_val: task.blocked_val
+                        stack: current_task.stack,
+                        stack_pointer: current_task.stack_pointer,
+                        routine_stack: current_task.routine_stack,
+                        caller_dest_reg_stack: current_task.caller_dest_reg_stack,
+                        status: current_task.status,
+                        blocked_on_channel: current_task.blocked_on_channel,
+                        blocked_on_join: current_task.blocked_on_join,
+                        blocked_reg: current_task.blocked_reg,
+                        blocked_val: current_task.blocked_val
                     }
                     next_tasks := set_task(next_tasks, task_idx, new_reader)
                     return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count, yielded: false }
@@ -1943,16 +1943,16 @@ is
                     -- No writer, block!
                     let empty_val: VmValue = VmValue { kind: "NONE", int_val: 0, bool_val: false, str_val: "", ref_val: -1 }
                     let new_reader: VmTask = VmTask {
-                        id: task.id,
-                        routine: task.routine,
-                        frame: task.frame,
-                        stack: task.stack,
-                        stack_pointer: task.stack_pointer,
-                        routine_stack: task.routine_stack,
-                        caller_dest_reg_stack: task.caller_dest_reg_stack,
+                        id: current_task.id,
+                        routine: current_task.routine,
+                        frame: current_task.frame,
+                        stack: current_task.stack,
+                        stack_pointer: current_task.stack_pointer,
+                        routine_stack: current_task.routine_stack,
+                        caller_dest_reg_stack: current_task.caller_dest_reg_stack,
                         status: "BLOCKED",
                         blocked_on_channel: chan_ref,
-                        blocked_on_join: task.blocked_on_join,
+                        blocked_on_join: current_task.blocked_on_join,
                         blocked_reg: inst.dest_reg,
                         blocked_val: empty_val
                     }
@@ -1990,12 +1990,12 @@ is
             }
 
             if inst.src_reg_left != "" then
-                let arg0_val: VmValue = get_register(task.frame, inst.src_reg_left)
+                let arg0_val: VmValue = get_register(current_task.frame, inst.src_reg_left)
                 spawned_frame := update_register(spawned_frame, "_arg0", arg0_val)
             end if
 
             if inst.src_reg_right != "" then
-                let arg1_val: VmValue = get_register(task.frame, inst.src_reg_right)
+                let arg1_val: VmValue = get_register(current_task.frame, inst.src_reg_right)
                 spawned_frame := update_register(spawned_frame, "_arg1", arg1_val)
             end if
 
@@ -2041,62 +2041,62 @@ is
             }
             let next_tasks: Array<VmTask, 16> = set_task(tasks, task_count, spawned_task)
 
-            let new_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, VmValue { kind: "REF", int_val: task_count, bool_val: false, str_val: "", ref_val: task_count })
+            let new_frame: ActivationFrame = update_register(current_task.frame, inst.dest_reg, VmValue { kind: "REF", int_val: task_count, bool_val: false, str_val: "", ref_val: task_count })
             let new_sender: VmTask = VmTask {
-                id: task.id,
-                routine: task.routine,
+                id: current_task.id,
+                routine: current_task.routine,
                 frame: new_frame,
-                stack: task.stack,
-                stack_pointer: task.stack_pointer,
-                routine_stack: task.routine_stack,
-                caller_dest_reg_stack: task.caller_dest_reg_stack,
-                status: task.status,
-                blocked_on_channel: task.blocked_on_channel,
-                blocked_on_join: task.blocked_on_join,
-                blocked_reg: task.blocked_reg,
-                blocked_val: task.blocked_val
+                stack: current_task.stack,
+                stack_pointer: current_task.stack_pointer,
+                routine_stack: current_task.routine_stack,
+                caller_dest_reg_stack: current_task.caller_dest_reg_stack,
+                status: current_task.status,
+                blocked_on_channel: current_task.blocked_on_channel,
+                blocked_on_join: current_task.blocked_on_join,
+                blocked_reg: current_task.blocked_reg,
+                blocked_val: current_task.blocked_val
             }
             next_tasks := set_task(next_tasks, task_idx, new_sender)
             return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count + 1, yielded: false }
         end if
 
         if inst.op = "join" then
-            let target_id_val: VmValue = get_register(task.frame, inst.src_reg_left)
+            let target_id_val: VmValue = get_register(current_task.frame, inst.src_reg_left)
             let target_id: Integer = target_id_val.ref_val
             let t_target: VmTask = tasks[target_id]
 
             if t_target.status = "DONE" then
-                let new_frame: ActivationFrame = update_register(task.frame, inst.dest_reg, t_target.frame.return_value)
+                let new_frame: ActivationFrame = update_register(current_task.frame, inst.dest_reg, t_target.frame.return_value)
                 let new_task: VmTask = VmTask {
-                    id: task.id,
-                    routine: task.routine,
+                    id: current_task.id,
+                    routine: current_task.routine,
                     frame: new_frame,
-                    stack: task.stack,
-                    stack_pointer: task.stack_pointer,
-                    routine_stack: task.routine_stack,
-                    caller_dest_reg_stack: task.caller_dest_reg_stack,
-                    status: task.status,
-                    blocked_on_channel: task.blocked_on_channel,
-                    blocked_on_join: task.blocked_on_join,
-                    blocked_reg: task.blocked_reg,
-                    blocked_val: task.blocked_val
+                    stack: current_task.stack,
+                    stack_pointer: current_task.stack_pointer,
+                    routine_stack: current_task.routine_stack,
+                    caller_dest_reg_stack: current_task.caller_dest_reg_stack,
+                    status: current_task.status,
+                    blocked_on_channel: current_task.blocked_on_channel,
+                    blocked_on_join: current_task.blocked_on_join,
+                    blocked_reg: current_task.blocked_reg,
+                    blocked_val: current_task.blocked_val
                 }
                 let next_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_task)
                 return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count, yielded: false }
             else
                 let new_task: VmTask = VmTask {
-                    id: task.id,
-                    routine: task.routine,
-                    frame: task.frame,
-                    stack: task.stack,
-                    stack_pointer: task.stack_pointer,
-                    routine_stack: task.routine_stack,
-                    caller_dest_reg_stack: task.caller_dest_reg_stack,
+                    id: current_task.id,
+                    routine: current_task.routine,
+                    frame: current_task.frame,
+                    stack: current_task.stack,
+                    stack_pointer: current_task.stack_pointer,
+                    routine_stack: current_task.routine_stack,
+                    caller_dest_reg_stack: current_task.caller_dest_reg_stack,
                     status: "BLOCKED",
-                    blocked_on_channel: task.blocked_on_channel,
+                    blocked_on_channel: current_task.blocked_on_channel,
                     blocked_on_join: target_id,
                     blocked_reg: inst.dest_reg,
-                    blocked_val: task.blocked_val
+                    blocked_val: current_task.blocked_val
                 }
                 let next_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_task)
                 return MultiTaskResult { heap: heap, tasks: next_tasks, task_count: task_count, yielded: true }
@@ -2136,37 +2136,37 @@ is
 
                 -- Bind arguments
                 if inst.src_reg_left != "" then
-                    let arg0_val: VmValue = get_register(task.frame, inst.src_reg_left)
+                    let arg0_val: VmValue = get_register(current_task.frame, inst.src_reg_left)
                     callee_frame := update_register(callee_frame, "_arg0", arg0_val)
                 end if
                 if inst.src_reg_right != "" then
-                    let arg1_val: VmValue = get_register(task.frame, inst.src_reg_right)
+                    let arg1_val: VmValue = get_register(current_task.frame, inst.src_reg_right)
                     callee_frame := update_register(callee_frame, "_arg1", arg1_val)
                 end if
 
                 -- Caller frame with next IP (the instruction AFTER the CALL)
-                let caller_frame: ActivationFrame = task.frame
-                caller_frame.ip := task.frame.ip + 1
+                let caller_frame: ActivationFrame = current_task.frame
+                caller_frame.ip := current_task.frame.ip + 1
 
                 -- Push onto task stack
-                let sp: Integer = task.stack_pointer
-                let new_stack: Array<ActivationFrame, 8> = set_frame_stack(task.stack, sp, caller_frame)
-                let new_rot_stack: Array<IrRoutine, 8> = set_routine_stack(task.routine_stack, sp, task.routine)
-                let new_dest_stack: Array<String, 8> = set_string_stack(task.caller_dest_reg_stack, sp, inst.dest_reg)
+                let sp: Integer = current_task.stack_pointer
+                let new_stack: Array<ActivationFrame, 8> = set_frame_stack(current_task.stack, sp, caller_frame)
+                let new_rot_stack: Array<IrRoutine, 8> = set_routine_stack(current_task.routine_stack, sp, current_task.routine)
+                let new_dest_stack: Array<String, 8> = set_string_stack(current_task.caller_dest_reg_stack, sp, inst.dest_reg)
 
                 let updated_task: VmTask = VmTask {
-                    id: task.id,
+                    id: current_task.id,
                     routine: callee_routine,
                     frame: callee_frame,
                     stack: new_stack,
                     stack_pointer: sp + 1,
                     routine_stack: new_rot_stack,
                     caller_dest_reg_stack: new_dest_stack,
-                    status: task.status,
-                    blocked_on_channel: task.blocked_on_channel,
-                    blocked_on_join: task.blocked_on_join,
-                    blocked_reg: task.blocked_reg,
-                    blocked_val: task.blocked_val
+                    status: current_task.status,
+                    blocked_on_channel: current_task.blocked_on_channel,
+                    blocked_on_join: current_task.blocked_on_join,
+                    blocked_reg: current_task.blocked_reg,
+                    blocked_val: current_task.blocked_val
                 }
 
                 let next_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, updated_task)
@@ -2175,21 +2175,21 @@ is
         end if
     end if
 
-    let old_state: VmState = VmState { heap: heap, frame: task.frame }
-    let new_state: VmState = execute_instruction(inst, old_state, task.routine)
+    let old_state: VmState = VmState { heap: heap, frame: current_task.frame }
+    let new_state: VmState = execute_instruction(inst, old_state, current_task.routine)
     let new_task: VmTask = VmTask {
-        id: task.id,
-        routine: task.routine,
+        id: current_task.id,
+        routine: current_task.routine,
         frame: new_state.frame,
-        stack: task.stack,
-        stack_pointer: task.stack_pointer,
-        routine_stack: task.routine_stack,
-        caller_dest_reg_stack: task.caller_dest_reg_stack,
-        status: task.status,
-        blocked_on_channel: task.blocked_on_channel,
-        blocked_on_join: task.blocked_on_join,
-        blocked_reg: task.blocked_reg,
-        blocked_val: task.blocked_val
+        stack: current_task.stack,
+        stack_pointer: current_task.stack_pointer,
+        routine_stack: current_task.routine_stack,
+        caller_dest_reg_stack: current_task.caller_dest_reg_stack,
+        status: current_task.status,
+        blocked_on_channel: current_task.blocked_on_channel,
+        blocked_on_join: current_task.blocked_on_join,
+        blocked_reg: current_task.blocked_reg,
+        blocked_val: current_task.blocked_val
     }
     let next_tasks: Array<VmTask, 16> = set_task(tasks, task_idx, new_task)
     return MultiTaskResult { heap: new_state.heap, tasks: next_tasks, task_count: task_count, yielded: false }
@@ -2204,11 +2204,11 @@ function execute_task_slice(
     routine_count: Integer
 ) returns MultiTaskResult
 is
-    let task: VmTask = tasks[task_idx]
-    let routine: IrRoutine = task.routine
-    let current_label: String = task.frame.current_block_label
+    let current_task: VmTask = tasks[task_idx]
+    let routine: IrRoutine = current_task.routine
+    let current_label: String = current_task.frame.current_block_label
     let has_jumped: Boolean = true
-    let ip: Integer = task.frame.ip
+    let ip: Integer = current_task.frame.ip
     let current_heap: VmHeap = heap
     let current_tasks: Array<VmTask, 16> = tasks
     let current_task_count: Integer = task_count
