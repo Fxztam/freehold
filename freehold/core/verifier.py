@@ -817,6 +817,97 @@ class Verifier:
                 if extra_sources:
                     raise TypeCheckError(f"{d.pos.text()}: dependency violation: target '{target}' depends on undeclared source(s): {', '.join(sorted(extra_sources))}")
 
+        # Modifies verification
+        if r.modifies_specs is not None:
+            local_vars = set()
+            def collect_locals(node):
+                if node is None: return
+                if isinstance(node, list):
+                    for child in node: collect_locals(child)
+                    return
+                if isinstance(node, LetStmt):
+                    local_vars.add(node.name)
+                if hasattr(node, "__dict__"):
+                    for k, v in node.__dict__.items():
+                        if k != "pos":
+                            collect_locals(v)
+            collect_locals(r.body)
+
+            def is_path_covered_by_modifies(path, modifies_specs):
+                for spec in modifies_specs:
+                    if isinstance(spec, VarExpr):
+                        if len(path) >= 1 and path[0] == spec.name:
+                            return True
+                    elif isinstance(spec, FieldAccessExpr):
+                        if len(path) >= len(spec.path):
+                            if path[:len(spec.path)] == spec.path:
+                                return True
+                return False
+
+            def map_callee_path(callee_path, callee_params, call_stmt_args):
+                root = callee_path[0]
+                if root in callee_params:
+                    idx = callee_params.index(root)
+                    if idx < len(call_stmt_args):
+                        arg = call_stmt_args[idx]
+                        if isinstance(arg, VarExpr):
+                            return [arg.name] + callee_path[1:]
+                        elif isinstance(arg, FieldAccessExpr):
+                            return arg.path + callee_path[1:]
+                        elif hasattr(arg, "name"):
+                            return [arg.name] + callee_path[1:]
+                return callee_path
+
+            def check_modifies_violations(node):
+                if node is None:
+                    return
+                if isinstance(node, list):
+                    for child in node:
+                        check_modifies_violations(child)
+                    return
+
+                mutation_paths = []
+                
+                if isinstance(node, AssignStmt):
+                    if node.name not in local_vars:
+                        mutation_paths.append(([node.name], node.pos))
+                elif isinstance(node, IndexAssignStmt):
+                    if node.name not in local_vars:
+                        mutation_paths.append(([node.name], node.pos))
+                elif isinstance(node, FieldAssignStmt):
+                    if node.path and node.path[0] not in local_vars:
+                        mutation_paths.append((node.path, node.pos))
+                elif isinstance(node, CallStmt):
+                    callee = None
+                    try:
+                        callee = ctx.routine(node.name, node.pos)
+                    except TypeCheckError:
+                        pass
+                    if callee and hasattr(callee, "modifies_specs") and callee.modifies_specs is not None:
+                        callee_params = [p.name for p in callee.params]
+                        for spec in callee.modifies_specs:
+                            if isinstance(spec, VarExpr):
+                                callee_path = [spec.name]
+                            elif isinstance(spec, FieldAccessExpr):
+                                callee_path = spec.path
+                            else:
+                                continue
+                            mapped_path = map_callee_path(callee_path, callee_params, node.args)
+                            if mapped_path and mapped_path[0] not in local_vars:
+                                mutation_paths.append((mapped_path, node.pos))
+                                
+                for path, pos in mutation_paths:
+                    if not is_path_covered_by_modifies(path, r.modifies_specs):
+                        path_str = ".".join(path)
+                        raise TypeCheckError(f"{pos.text()}: target '{path_str}' is modified in body but missing from modifies clause")
+
+                if hasattr(node, "__dict__"):
+                    for k, v in node.__dict__.items():
+                        if k != "pos":
+                            check_modifies_violations(v)
+
+            check_modifies_violations(r.body)
+
     def abort_names(self, r):
         return {clause.error_name for clause in r.aborts}
 
@@ -1052,10 +1143,23 @@ class Verifier:
                                     return g.mode
                         return "Input"
 
+                    mutable_parameters = set()
+                    if hasattr(cal, "modifies_specs") and cal.modifies_specs is not None:
+                        for spec in cal.modifies_specs:
+                            if isinstance(spec, VarExpr):
+                                mutable_parameters.add(spec.name)
+                            elif isinstance(spec, FieldAccessExpr):
+                                if spec.path:
+                                    mutable_parameters.add(spec.path[0])
+                    if hasattr(cal, "depends_specs") and cal.depends_specs is not None:
+                        for spec in cal.depends_specs:
+                            target_root = spec.target.split('.')[0]
+                            mutable_parameters.add(target_root)
+
                     arg_roots = [get_root_var(arg) for arg in s.args]
                     mutable_param_indices = [
                         idx for idx, param in enumerate(cal.params)
-                        if get_param_mode(param.name) in ("Output", "In_Out")
+                        if get_param_mode(param.name) in ("Output", "In_Out") or param.name in mutable_parameters
                     ]
 
                     callee_globals = set()
@@ -2043,6 +2147,14 @@ class Verifier:
         if t.name in ctx.current_type_params: return f"TypeParam:{t.name}"
         if t.name in ctx.records: return "Record"
         if t.name in ctx.errors: return t.name
+        if isinstance(t, TypeName):
+            generic = ctx.parse_generic_instance(t.name)
+            if generic is not None:
+                base_name = generic[0]
+                if base_name in ctx.generic_records:
+                    return "Record"
+                if base_name in ctx.generic_choices:
+                    return base_name
         return ctx.types[t.name].base
     def match_types(self, formal: TypeRef, actual: TypeRef, type_params: set[str], inferred: dict[str, set[str]], ctx: Any) -> None:
         if isinstance(formal, TypeName):

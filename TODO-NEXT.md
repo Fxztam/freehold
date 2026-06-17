@@ -4,7 +4,20 @@ Dieses Dokument listet die nächsten dringenden Aufgaben für die Weiterentwickl
 
 ---
 
-## ┌── Priorität 1: Portierung der Verifier-Upgrades auf Go-Frontend & FH-Native
+## ┌── Priorität 0: Bereinigung & Konsolidierung der Framing-Meilensteine (Aktuelle Baustelle)
+Die kürzlich im Python-Referenzcompiler vorgenommenen Framing-, Modifies- und Aliasing-Verbesserungen sind vollständig verifiziert. Folgende Aufräum- und Feinschliff-Themen stehen an:
+
+1. **Arbeitsbaum-Cleanup**
+   - Untracked temporäre Archive und Protokolle (`.zip`, `run_log.txt`, `stage3_examples_log.txt`, etc.) sicher löschen oder in `.gitignore` verschieben.
+   - Die verifizierten Änderungen strukturiert in Git committen.
+2. **Modernisierung der GNATprove-Äquivalenztests**
+   - Die verbleibenden älteren Testfälle in `freehold_gnatprove_equivalence_tests_v2` (z. B. in `01_contract_overflow` bis `09_record_updates`) von alter Freehold-Syntax (z. B. `record` statt `type ... is record`, `do` statt `is`, `:=` in `let`) auf die aktuelle Parser-Spezifikation migrieren, um die GNATprove-Äquivalenzprüfung (`run_expected.py`) wieder auf 100% Erfolg zu heben.
+3. **Morgige Kernaufgabe: Task-Verifikation & Concurrency-Garantien (Sicherheits-Standard)**
+   - *Aufgabe*: Analyse und Einplanung des [memories/repo/task_verification_proposal.md](memories/repo/task_verification_proposal.md) zur Einführung von `task` als vertraglich prüfbare Einheit im Verifier. Vorbereitung der 6 statischen Verifikationsregeln (vollständiges Awaiting, Vermeidung von Shared Mutable State mit der Fehlermeldung `"shared mutable state passed to multiple spawned tasks"`, Typisierung von Channels und richtungsbasierter Safety-Checks sowie Integration von Task-Pre/Postbedingungen gekoppelt an `spawn` und `await`).
+
+---
+
+## ├── Priorität 1: Portierung der Verifier-Upgrades auf Go-Frontend & FH-Native
 Die kürzlich im Python-Referenzcompiler (`freehold/core/verifier.py`) implementierten Verifikations-Upgrades (GNATprove/SPARK Ada Parity) müssen in das Go-Frontend und den selbsthostenden Compiler-Core (`bootstrap/compiler_core_v1/`) portiert werden.
 
 1. **Informationsfluss-Analyse (Taint-Tracking)**

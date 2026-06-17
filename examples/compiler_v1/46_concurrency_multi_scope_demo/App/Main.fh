@@ -1,0 +1,82 @@
+module App.Main
+
+import Std.IO
+
+async function compute_sum(a: Integer, b: Integer) returns Integer
+is
+    return a + b
+end compute_sum
+
+async function compute_product(a: Integer, b: Integer) returns Integer
+is
+    return a * b
+end compute_product
+
+function zero() returns Integer
+is
+    return 0
+end zero
+
+async procedure main()
+is
+    call Std.IO.log("=== Concurrency Sequence & Multi-Scope Demo ===")
+
+    -- 1. Sequential Scopes:
+    call Std.IO.log("Step 1: Starting sequence of sequential scopes")
+    let sum_result: Integer = zero()
+    let prod_result: Integer = zero()
+
+    scope scope1 do
+        spawn
+            let h1: JoinHandle<Integer> = scope1.spawn<Integer>(compute_sum(10, 20))
+            let h2: JoinHandle<Integer> = scope1.spawn<Integer>(compute_sum(30, 40))
+        join
+            let v1: Integer = await scope1.join<Integer>(h1)
+            let v2: Integer = await scope1.join<Integer>(h2)
+        result
+            sum_result := v1 + v2
+    end scope
+
+    call Std.IO.logf("Scope 1 (Sequential) Result (Sum): ${}", sum_result)
+
+    scope scope2 do
+        spawn
+            let h3: JoinHandle<Integer> = scope2.spawn<Integer>(compute_product(5, 6))
+            let h4: JoinHandle<Integer> = scope2.spawn<Integer>(compute_product(7, 8))
+        join
+            let v3: Integer = await scope2.join<Integer>(h3)
+            let v4: Integer = await scope2.join<Integer>(h4)
+        result
+            prod_result := v3 + v4
+    end scope
+
+    call Std.IO.logf("Scope 2 (Sequential) Result (Product Sum): ${}", prod_result)
+
+    -- 2. Nested Scopes:
+    call Std.IO.log("Step 2: Starting nested scopes")
+    let nested_outer_sum: Integer = zero()
+
+    scope outer_scope do
+        spawn
+            let ho1: JoinHandle<Integer> = outer_scope.spawn<Integer>(compute_sum(100, 200))
+        join
+            let vo1: Integer = await outer_scope.join<Integer>(ho1)
+        result
+            -- Within the result block, let's declare and enter an inner scope!
+            let inner_val: Integer = zero()
+            scope inner_scope do
+                spawn
+                    let hi1: JoinHandle<Integer> = inner_scope.spawn<Integer>(compute_product(vo1, 2))
+                join
+                    let vi1: Integer = await inner_scope.join<Integer>(hi1)
+                result
+                    inner_val := vi1
+            end scope
+            nested_outer_sum := inner_val
+    end scope
+
+    call Std.IO.logf("Nested Scope Result (Outer * 2): ${}", nested_outer_sum)
+    call Std.IO.log("=== Demo Completed Successfully ===")
+end main
+
+end App.Main

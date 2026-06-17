@@ -79,6 +79,7 @@ SUPPORTED_EXAMPLES = [
     SupportedExample("41_grpc_server_stream_demo", "examples/compiler_v1/41_grpc_server_stream_demo/App/Main.fh", "examples/expected_logs/compiler_v1_grpc_server_stream_demo.expected.log"),
 
     SupportedExample("42_go_ffi_demo", "examples/compiler_v1/42_go_ffi_demo/App/Main.fh", "examples/expected_logs/compiler_v1_go_ffi_demo.expected.log"),
+    SupportedExample("46_concurrency_multi_scope_demo", "examples/compiler_v1/46_concurrency_multi_scope_demo/App/Main.fh", "examples/expected_logs/compiler_v1_46_concurrency_multi_scope_demo.expected.log"),
 
     SupportedExample("old_BigNumbers", "examples/BigNumbers.fh", "examples/expected_logs/BigNumbers.expected.log"),
     SupportedExample("old_ChudnovskyFeynmanPoint", "examples/ChudnovskyFeynmanPoint.fh", "examples/expected_logs/ChudnovskyFeynmanPoint.expected.log"),

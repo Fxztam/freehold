@@ -1221,6 +1221,31 @@ def update_field_subst(path: list[str], val_expr: Any, substs: dict[str, Any]):
             return
     substs["_".join(path)] = val_expr
 
+def get_all_field_paths(var_name: str, type_name: str, records: dict[str, Any]) -> list[list[str]]:
+    if not type_name or type_name not in records:
+        return []
+    paths = []
+    rec = records[type_name]
+    for field_name, field_type in rec.fields.items():
+        sub_paths = get_all_field_paths(field_name, field_type, records)
+        if sub_paths:
+            for sp in sub_paths:
+                paths.append([var_name] + sp)
+        else:
+            paths.append([var_name, field_name])
+    return paths
+
+def is_path_covered_by_modifies(path: list[str], modifies_specs: list[Any]) -> bool:
+    for spec in modifies_specs:
+        if isinstance(spec, VarExpr):
+            if len(path) >= 1 and path[0] == spec.name:
+                return True
+        elif isinstance(spec, FieldAccessExpr):
+            if len(path) >= len(spec.path):
+                if path[:len(spec.path)] == spec.path:
+                    return True
+    return False
+
 def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], routines: dict[str, Any], types: dict[str, Any], records: dict[str, Any], obs: list[dict[str, str]], r: Any, r_name: str, channel_invariants: dict[str, Any] = None, spawned_tasks: dict[str, Any] = None, imports: list[Any] = None, imported_modules: dict[str, Any] = None, local_substs: dict[str, Any] = None, choices: dict[str, ChoiceTypeDecl] = None):
     if channel_invariants is None:
         channel_invariants = {}
@@ -1230,6 +1255,17 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
         local_substs = {}
     if choices is None:
         choices = {}
+
+    ensures_list = list(r.ensures)
+    if hasattr(r, "modifies_specs") and r.modifies_specs is not None:
+        for p in r.params:
+            p_type = ast_type_to_str(p.type_name)
+            for p_path in get_all_field_paths(p.name, p_type, records):
+                if not is_path_covered_by_modifies(p_path, r.modifies_specs):
+                    lhs = FieldAccessExpr(path=p_path, pos=r.pos)
+                    rhs = CallExpr(name="old", args=[FieldAccessExpr(path=p_path, pos=r.pos)], pos=r.pos)
+                    implicit_ens = BinaryExpr(op="=", left=lhs, right=rhs, pos=r.pos)
+                    ensures_list.append(implicit_ens)
 
     body = list(body)
     i = 0
@@ -1834,7 +1870,7 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
                     is_error = True
                     err_name = stmt_val.error_name
 
-                for ens in r.ensures:
+                for ens in ensures_list:
                     ens_subst = apply_subst(ens, local_substs)
                     if is_ok:
                         ens_subst = substitute_expr(ens_subst, "result_ok", BoolExpr(True, stmt.pos))
@@ -1865,7 +1901,7 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
             elif r.kind == "procedure" or r.return_type is None:
                 path = [expr_to_smt(req) for req in r.requires] + get_range_assertions(env_with_calls, types, records) + path_conditions_with_calls
                 var_types = get_flat_var_types(env_with_calls, records)
-                for ens in r.ensures:
+                for ens in ensures_list:
                     ens_subst = apply_subst(ens, local_substs)
                     obligation = expr_to_smt(ens_subst)
                     obs.append({
@@ -2027,7 +2063,7 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
     if r.kind == "procedure" or r.return_type is None:
         path = [expr_to_smt(req) for req in r.requires] + get_range_assertions(env, types, records) + path_conditions
         var_types = get_flat_var_types(env, records)
-        for ens in r.ensures:
+        for ens in ensures_list:
             ens_subst = apply_subst(ens, local_substs)
             obligation = expr_to_smt(ens_subst)
             obs.append({
