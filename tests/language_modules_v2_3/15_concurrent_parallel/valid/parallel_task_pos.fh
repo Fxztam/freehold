@@ -1,0 +1,82 @@
+module ParallelTaskPos
+
+import Std.IO
+
+type SensorData is record
+    id: Integer
+    val: Integer
+end record
+
+task SensorProducer(sender: Sender<Integer>, res_sender: Sender<SensorData>)
+is
+    let sensor_val: Integer = 100
+    let sent_raw: Boolean = await channel_send<Integer>(sender, sensor_val)
+    let result_data: SensorData = SensorData {
+        id: 2,
+        val: sensor_val
+    }
+    let sent_res: Boolean = await channel_send<SensorData>(res_sender, result_data)
+end SensorProducer
+
+task SignalTransformer(receiver: Receiver<Integer>, sender: Sender<Integer>, res_sender: Sender<String>)
+is
+    let raw: Integer = await channel_receive<Integer>(receiver)
+    let scaled: Integer = raw + 25
+    let sent_scaled: Boolean = await channel_send<Integer>(sender, scaled)
+    let sent_res: Boolean = await channel_send<String>(res_sender, "PROCESSED_SUCCESS")
+end SignalTransformer
+
+task DataConsumer(receiver: Receiver<Integer>)
+is
+    let final_val: Integer = await channel_receive<Integer>(receiver)
+end DataConsumer
+
+async procedure run_parallel_demonstration()
+is
+    let chan1: Channel<Integer> = channel<Integer>(8) with invariant for all X in 0 .. 0 => X > 0
+    let chan2: Channel<Integer> = channel<Integer>(8) with invariant for all X in 0 .. 0 => X > 0
+    
+    let res_chan_prod: Channel<SensorData> = channel<SensorData>(8) with invariant value.id = 2 and value.val = 100
+    let res_chan_trans: Channel<String> = channel<String>(8) with invariant value = "PROCESSED_SUCCESS"
+
+    let sender1: Sender<Integer> = channel_sender<Integer>(chan1)
+    let receiver1: Receiver<Integer> = channel_receiver<Integer>(chan1)
+    
+    let sender2: Sender<Integer> = channel_sender<Integer>(chan2)
+    let receiver2: Receiver<Integer> = channel_receiver<Integer>(chan2)
+
+    let prod_res_sender: Sender<SensorData> = channel_sender<SensorData>(res_chan_prod)
+    let prod_res_receiver: Receiver<SensorData> = channel_receiver<SensorData>(res_chan_prod)
+
+    let trans_res_sender: Sender<String> = channel_sender<String>(res_chan_trans)
+    let trans_res_receiver: Receiver<String> = channel_receiver<String>(res_chan_trans)
+
+    parallel (limit = 4)
+    do
+        let p: JoinHandle<Void> = spawn SensorProducer(sender1, prod_res_sender) with (priority: 5, pool: "hardware_io", name: "pipeline_producer")
+        let t: JoinHandle<Void> = spawn SignalTransformer(receiver1, sender2, trans_res_sender) with (priority: 3, pool: "dsp_worker", name: "pipeline_transformer")
+        let c: JoinHandle<Void> = spawn DataConsumer(receiver2) with (priority: 1, pool: "logging_pool", name: "pipeline_consumer")
+
+        let producer_res: SensorData = await channel_receive<SensorData>(prod_res_receiver)
+        let transformer_res: String = await channel_receive<String>(trans_res_receiver)
+
+        let dummy1: Void = await p
+        let dummy2: Void = await t
+        let dummy3: Void = await c
+
+        check producer_res.id = 2
+        check producer_res.val = 100
+        check transformer_res = "PROCESSED_SUCCESS"
+    end parallel
+
+    call Std.IO.log("Szenario 1 (Echte Parallelität mit Tasks) erfolgreich ausgeführt!")
+end run_parallel_demonstration
+
+async procedure Main()
+is
+    call Std.IO.log(">>> START DemoParallelTask <<<")
+    call run_parallel_demonstration()
+    call Std.IO.log(">>> ENDE DemoParallelTask <<<")
+end Main
+
+end ParallelTaskPos

@@ -8,6 +8,7 @@ type Account is record
 end record
 
 function unsafe_deposit(acc: Account, amount: Int) returns Boolean
+modifies acc.balance, acc.limit
 requires amount >= 0
 requires acc.balance <= 2147483647 - amount
 ensures acc.balance = old(acc.balance) + amount

@@ -6,7 +6,7 @@ from freehold.core.ast import *
 from freehold.core.control_flow import ControlFlowAnalyzer, RoutineFlowSummary
 from freehold.core.string_templates import validate_template
 
-BUILTIN_TYPE_NAMES = {"Integer", "Boolean", "Double", "String", "BigInteger", "BigFloat", "Executor", "Scope"}
+BUILTIN_TYPE_NAMES = {"Integer", "Boolean", "Double", "String", "BigInteger", "BigFloat", "Executor", "Scope", "Void"}
 BUILTIN_GENERIC_TYPE_ARITY = {
     "Array": 2,
     "JoinHandle": 1,
@@ -26,7 +26,7 @@ RESERVED_NAMES = {
     "invariant", "is", "let", "module", "not", "ok", "or", "procedure",
     "record", "requires", "aborts", "return", "abort", "returns", "success", "then", "true",
     "type", "value", "variant", "when", "while", "async", "await", "scope", "spawn", "join", "result",
-    "service", "rpc", "proto", "global", "depends", "Input", "Output", "In_Out",
+    "service", "rpc", "proto", "global", "depends", "Input", "Output", "In_Out", "task", "parallel",
 }
 
 @dataclass
@@ -422,7 +422,7 @@ class Verifier:
                             else:
                                 # Global target
                                 mutated.add(target_root)
-                    elif callee.kind == "procedure":
+                    elif callee.kind in ("procedure", "task"):
                         for arg in stmt.args:
                             if isinstance(arg, VarExpr):
                                 mutated.add(arg.name)
@@ -446,9 +446,70 @@ class Verifier:
                 for s in stmt.spawn_body: visit(s)
                 for s in stmt.join_body: visit(s)
                 for s in stmt.result_body: visit(s)
+            elif isinstance(stmt, ParallelStmt):
+                for s in stmt.body: visit(s)
         for stmt in body:
             visit(stmt)
         return {m for m in mutated if m is not None}
+
+    def check_shared_mutable_state(self, body: list[Any], env: dict[str, Any], ctx: Any) -> None:
+        spawns = []
+        def find_spawns(node):
+            if node is None:
+                return
+            if isinstance(node, list):
+                for child in node:
+                    find_spawns(child)
+                return
+            
+            if isinstance(node, SpawnExpr):
+                if isinstance(node.target, CallExpr):
+                    spawns.append((node.target, node.pos))
+            elif isinstance(node, CallExpr):
+                method_owner, method_name = ctx.scope_method_name(node.name)
+                if node.name == "scope_spawn" and len(node.args) >= 2:
+                    target = node.args[1]
+                    if isinstance(target, CallExpr):
+                        spawns.append((target, node.pos))
+                elif method_name == "spawn" and len(node.args) >= 1:
+                    target = node.args[0]
+                    if isinstance(target, CallExpr):
+                        spawns.append((target, node.pos))
+            
+            if isinstance(node, (ScopeStmt, ParallelStmt)):
+                return
+            
+            if hasattr(node, "__dict__"):
+                for k, v in node.__dict__.items():
+                    if k != "pos":
+                        find_spawns(v)
+
+        find_spawns(body)
+
+        passed_mutable_vars = {} # var_name -> list of (spawn_pos, target_call)
+        for target_call, spawn_pos in spawns:
+            for arg in target_call.args:
+                root_var = None
+                if isinstance(arg, VarExpr):
+                    root_var = arg.name
+                elif isinstance(arg, (FieldAccessExpr, IndexExpr, IndexedFieldAccessExpr)):
+                    if isinstance(arg, FieldAccessExpr):
+                        root_var = arg.path[0] if arg.path else None
+                    else:
+                        root_var = arg.name
+                
+                if root_var and root_var in env:
+                    var_type = env[root_var]
+                    base_type = self.base(var_type, ctx)
+                    if base_type in ("Array", "Record"):
+                        if root_var not in passed_mutable_vars:
+                            passed_mutable_vars[root_var] = []
+                        passed_mutable_vars[root_var].append((spawn_pos, target_call))
+
+        for var_name, occurrences in passed_mutable_vars.items():
+            if len(occurrences) > 1:
+                first_pos = occurrences[0][0]
+                raise TypeCheckError(f"{first_pos.text()}: shared mutable state passed to multiple spawned tasks")
 
     def validate_flow_contracts(self, r, env, ctx):
         seen_globals = set()
@@ -801,6 +862,8 @@ class Verifier:
                         walk_body(stmt.spawn_body)
                         walk_body(stmt.join_body)
                         walk_body(stmt.result_body)
+                    elif isinstance(stmt, ParallelStmt):
+                        walk_body(stmt.body)
 
             walk_body(r.body)
             
@@ -1107,12 +1170,21 @@ class Verifier:
                 scope_env[s.name] = TypeName("Scope")
                 ctx.scope_vars.add(s.name)
                 try:
+                    self.check_shared_mutable_state(s.spawn_body, scope_env, ctx)
                     self.block(s.spawn_body, r, scope_env, ctx, path_conditions)
                     self.block(s.join_body, r, scope_env, ctx, path_conditions)
                     saw = saw or self.block(s.result_body, r, scope_env, ctx, path_conditions)
                     ctx.require_no_unjoined_scope_handles(s.pos, s.name)
                 finally:
                     ctx.scope_vars.discard(s.name)
+            elif isinstance(s, ParallelStmt):
+                if s.block_name is not None:
+                    self.validate_identifier(s.block_name, s.pos)
+                limit_type = self.infer(s.limit, env, ctx, False, None)
+                if self.base(limit_type, ctx) != "Integer":
+                    raise TypeCheckError(f"{s.pos.text()}: parallel limit expects Integer, got {type_to_string(limit_type)}")
+                self.check_shared_mutable_state(s.body, env, ctx)
+                self.block(s.body, r, env, ctx, path_conditions)
             elif isinstance(s, CallStmt):
                 if self.std_procedure_call(s.name, s.args, env, ctx, s.pos):
                     continue
@@ -1122,7 +1194,7 @@ class Verifier:
                     self.infer(expr, env, ctx, False, None)
                     continue
                 cal = ctx.routine(s.name, s.pos)
-                if cal.kind != "procedure": raise TypeCheckError(f"{s.pos.text()}: call requires procedure")
+                if cal.kind not in ("procedure", "task"): raise TypeCheckError(f"{s.pos.text()}: call requires procedure or task")
 
                 # Enforce anti-aliasing rules for parameters and globals
                 if len(s.args) == len(cal.params):
@@ -1246,6 +1318,8 @@ class Verifier:
 
     def ret(self, rv, expected, env, ctx):
         if expected is None:
+            if ctx.current_routine and ctx.current_routine.kind == "task":
+                raise TypeCheckError(f"{rv.pos.text()}: task cannot return a value")
             raise TypeCheckError(f"{rv.pos.text()}: procedure cannot return a value")
         if isinstance(expected, ResultTypeName):
             if isinstance(rv, ReturnOk):
@@ -1500,7 +1574,7 @@ class Verifier:
             expect_count(1)
             expect_type(0, "Integer")
             if getattr(e, "invariant", None) is not None:
-                inv_t = self.infer(e.invariant, env, ctx, allow_result, result_type)
+                inv_t = self.infer(e.invariant, env, ctx, True, TypeName(item_type))
                 if self.base(inv_t, ctx) != "Boolean":
                     raise TypeCheckError(f"{e.invariant.pos.text()}: channel invariant must be Boolean, got {type_to_string(inv_t)}")
             return TypeName(f"Channel<{item_type}>")
@@ -1941,6 +2015,30 @@ class Verifier:
             return env[e.name]
         if isinstance(e, CallExpr):
             return self.call_expr_type(e, env, ctx, allow_result, result_type)
+        if isinstance(e, SpawnExpr):
+            if not isinstance(e.target, CallExpr):
+                raise TypeCheckError(f"{e.pos.text()}: spawn target must be a routine invocation, got {type(e.target).__name__}")
+            r = ctx.routine(e.target.name, e.target.pos)
+            if not r.is_async:
+                raise TypeCheckError(f"{e.target.pos.text()}: spawn target must be an async routine or a task")
+            substitutions = self.routine_type_substitutions(r, e.target, env, ctx)
+            self.args(r, e.target.args, env, ctx, e.target.pos, substitutions)
+            self.require_abort_propagation(ctx.current_routine, r, e.target.pos)
+            for attr_name, attr_val in e.attributes.items():
+                attr_type = self.infer(attr_val, env, ctx, False, None)
+                if attr_name == "priority":
+                    if self.base(attr_type, ctx) != "Integer":
+                        raise TypeCheckError(f"{attr_val.pos.text()}: priority attribute must be an Integer, got {type_to_string(attr_type)}")
+                elif attr_name == "pool":
+                    if self.base(attr_type, ctx) != "String":
+                        raise TypeCheckError(f"{attr_val.pos.text()}: pool attribute must be a String, got {type_to_string(attr_type)}")
+                elif attr_name == "name":
+                    if self.base(attr_type, ctx) != "String":
+                        raise TypeCheckError(f"{attr_val.pos.text()}: name attribute must be a String, got {type_to_string(attr_type)}")
+                else:
+                    raise TypeCheckError(f"{e.pos.text()}: unknown spawn attribute: {attr_name}")
+            return_type = ctx.substitute_type_ref(r.return_type, substitutions) if r.return_type else TypeName("Void")
+            return TypeName(f"JoinHandle<{type_to_string(return_type)}>")
         if isinstance(e, AwaitExpr):
             if not ctx.current_async:
                 raise TypeCheckError(f"{e.pos.text()}: await is only allowed inside async routines")

@@ -3,11 +3,12 @@ module test_loop_invariant.bad_fill
 type Int is Integer range -2147483648..2147483647
 
 function bad_fill(a: Array<Int, 32>, v: Int) returns Boolean
+modifies a
 ensures for all k in 0..31 => a[k] = v
 is
     let i: Int = 0
 
-    while i <= 31
+    while i <= 30
     invariant i >= 0
     invariant i <= 32
     variant 32 - i
@@ -22,6 +23,7 @@ procedure main()
 is
     let a: Array<Int, 32> = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     let res: Boolean = bad_fill(a, 7)
+    let impossible: Integer = false
 end main
 
 end test_loop_invariant.bad_fill

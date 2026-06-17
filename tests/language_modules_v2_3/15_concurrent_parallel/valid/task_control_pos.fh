@@ -1,0 +1,33 @@
+module TaskControlPos
+
+import Std.IO
+
+async function cancelable_worker() returns Integer
+    ensures result = 100
+is
+    return 100
+end cancelable_worker
+
+async procedure run_control_demonstration()
+is
+    scope control do
+    spawn
+        let worker_handle: JoinHandle<Integer> = control.spawn<Integer>(cancelable_worker())
+    join
+        call control.cancel()
+        let cancelled: Boolean = control.is_cancelled()
+        let result_val: Integer = await control.join<Integer>(worker_handle)
+    result
+        check result_val = 100
+    end scope
+    call Std.IO.log("Szenario 1 (Scope Task Control) erfolgreich ausgeführt!")
+end run_control_demonstration
+
+async procedure Main()
+is
+    call Std.IO.log(">>> START DemoTaskControl <<<")
+    call run_control_demonstration()
+    call Std.IO.log(">>> ENDE DemoTaskControl <<<")
+end Main
+
+end TaskControlPos

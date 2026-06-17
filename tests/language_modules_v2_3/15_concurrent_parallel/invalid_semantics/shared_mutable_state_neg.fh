@@ -1,0 +1,28 @@
+module SharedMutableStateNeg
+
+type SharedBuffer is record
+    reading: Integer
+end record
+
+task Worker(buffer: SharedBuffer)
+is
+    let observed: Integer = buffer.reading
+end Worker
+
+async procedure Main()
+is
+    let shared: SharedBuffer = SharedBuffer {
+        reading: 42
+    }
+
+    parallel (limit = 2)
+    do
+        let first: JoinHandle<Void> = spawn Worker(shared)
+        let second: JoinHandle<Void> = spawn Worker(shared)
+
+        let first_done: Void = await first
+        let second_done: Void = await second
+    end parallel
+end Main
+
+end SharedMutableStateNeg
