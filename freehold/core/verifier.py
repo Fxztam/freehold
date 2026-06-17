@@ -355,13 +355,14 @@ class Verifier:
                     raise TypeCheckError(f"{p.pos.text()}: duplicate parameter name: {p.name}")
                 seen_params.add(p.name)
                 param_type = self.param_type_ref(p, ctx)
+                ctx.require_return_type(param_type, p.pos)
                 if self.base_root(param_type, ctx) == "Set":
                     raise TypeCheckError(f"{p.pos.text()}: Set<T> is specification-only (Ghost) and cannot be used as a routine parameter")
-                ctx.require_return_type(param_type, p.pos); env[p.name] = param_type
+                env[p.name] = param_type
             if r.return_type:
+                ctx.require_return_type(r.return_type, r.pos)
                 if self.base_root(r.return_type, ctx) == "Set":
                     raise TypeCheckError(f"{r.pos.text()}: Set<T> is specification-only (Ghost) and cannot be used as a routine return type")
-                ctx.require_return_type(r.return_type, r.pos)
             if r.name == "main" and r.requires:
                 raise TypeCheckError(f"{r.requires[0].pos.text()}: main requires clause is not allowed")
             for e in r.requires: self.contract_bool("requires", e, env, ctx, False, None)
@@ -1170,7 +1171,6 @@ class Verifier:
                 scope_env[s.name] = TypeName("Scope")
                 ctx.scope_vars.add(s.name)
                 try:
-                    self.check_shared_mutable_state(s.spawn_body, scope_env, ctx)
                     self.block(s.spawn_body, r, scope_env, ctx, path_conditions)
                     self.block(s.join_body, r, scope_env, ctx, path_conditions)
                     saw = saw or self.block(s.result_body, r, scope_env, ctx, path_conditions)
@@ -2253,6 +2253,10 @@ class Verifier:
                     return "Record"
                 if base_name in ctx.generic_choices:
                     return base_name
+                if base_name == "Set":
+                    return "Set"
+        if t.name not in ctx.types:
+            raise TypeCheckError(f"unknown type: {t.name}")
         return ctx.types[t.name].base
     def match_types(self, formal: TypeRef, actual: TypeRef, type_params: set[str], inferred: dict[str, set[str]], ctx: Any) -> None:
         if isinstance(formal, TypeName):

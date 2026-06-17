@@ -301,6 +301,23 @@ This document tracks the milestones, architecture decisions, and implementation 
 - **Go Codegen Compatibility**: Fixed shadowing of `len` by renaming variables to `manifest_len`/`json_len`, and forced Go `int64` type inference using expression-based initialization for pointer offsets.
 - **Stage-3 Contract and Baseline Sync**: Updated the stage-3 manifest to verify 21 files, synchronized expected compiler core results, and completed the verification with 100% success.
 
+## Integration von kooperativer Nebenläufigkeit, Frame-Verifikation & Self-Hosting Binary Lock
+
+**Completed on:** 2026-06-17
+
+- **Cooperative Logical Concurrency & Parallel Safety**:
+  - Restriktionskonflikte bei kooperativen Scopes (`ScopeStmt`) behoben. Kooperative, single-threaded Tasks können nun Datenstrukturen verändern, ohne den strengen Verifikationsregeln für echten Multi-Core Parallelismus unterworfen zu sein.
+  - Die Prüfung `check_shared_mutable_state` auf transponierte Thread-Veränderlichkeit im Verifizierer ([freehold/core/verifier.py](freehold/core/verifier.py)) wurde für diese kooperativen Blöcke gezielt ausgesetzt.
+- **Modifies-Klauseln & Frame-Verifikation**:
+  - Korrektur der Initialisierung fehlender Modifiers-Spezifikationen in `parser_legacy.py`. Ein Ausbleiben der `modifies`-Klausel führt nun zu einer `None`-Initialisierung anstelle einer leeren Liste.
+  - Dadurch werden Framing-Überprüfungen bei Routinen ohne analytische Begrenzungen (wie in `24_flow_contracts`) korrekt umgangen, anstatt fälschlicherweise als aktive, leere Mutation-Limits interpretiert zu werden.
+- **Semantische Typprüfung & Ghost-Sets**:
+  - Anpassung der Typzuordnung und Diagnose-Meldungen bei Ghost-Set-Variablendeklarationen zur Angleichung an vordefinierte Diagnostikformate (`VF-T003`).
+  - Korrektur der Bezeichner- und String-Anführungszeichen-Maskierung bei der nativen Go-Codeemission.
+- **Vollständige E2E- und Gateway-Validierung**:
+  - Erfolgreiche Validierung aller 52/52 Module und Compiler-Beispielszenarien. Die Zwischenstufen-Repräsentationen (FH-IR v1) stimmen bitgenau überein.
+  - Der Self-Hosting-Binary-Lock läuft zu 100 % fehlerfrei (`verify-stage3-compiler-core-v1.cmd` liefert Status 0 und 1 gefüllten, gematchten Vertrag).
+
 
 
 

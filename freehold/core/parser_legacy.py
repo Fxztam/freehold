@@ -113,6 +113,8 @@ class AstBuilder:
             return ServiceDecl(name, rpcs, pos(tree))
         if tree.data in ("function_decl", "procedure_decl"):
             return self.routine(tree)
+        if tree.data == "task_decl":
+            return self.task_decl(tree)
         raise TypeCheckError(f"{pos(tree).text()}: unknown declaration {tree.data}")
 
     def rpc_decl(self, tree: Tree) -> RpcDecl:
@@ -174,7 +176,7 @@ class AstBuilder:
         if kind == "function":
             ret = self.return_type(tree.children[idx]); idx += 1
         requires, aborts, ensures = [], [], []
-        global_specs, depends_specs, modifies_specs = [], [], []
+        global_specs, depends_specs, modifies_specs = [], [], None
         if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "contract_block":
             for c in tree.children[idx].children:
                 if c.data == "requires_clause": requires.extend(self.constraint_list(c.children[0]))
@@ -182,7 +184,10 @@ class AstBuilder:
                 elif c.data == "ensures_clause": ensures.extend(self.expr_list(c.children[0]))
                 elif c.data == "global_clause": global_specs.extend(self.global_clause(c))
                 elif c.data == "depends_clause": depends_specs.extend(self.depends_clause(c))
-                elif c.data == "modifies_clause": modifies_specs.extend(self.modifies_clause(c))
+                elif c.data == "modifies_clause":
+                    if modifies_specs is None:
+                        modifies_specs = []
+                    modifies_specs.extend(self.modifies_clause(c))
             idx += 1
         end_name = None
         for child in reversed(tree.children):
@@ -193,6 +198,37 @@ class AstBuilder:
             raise TypeCheckError(f"{pos(tree).text()}: {kind} end name mismatch: expected {name}, got {end_name}")
         body = [self.stmt(s.children[0] if s.data == "stmt" else s) for s in tree.children[idx:] if isinstance(s, Tree)]
         return RoutineDecl(kind, name, params, ret, requires, aborts, ensures, body, pos(tree), type_params, is_async, global_specs, depends_specs, ffi_binding, modifies_specs)
+
+    def task_decl(self, tree: Tree) -> RoutineDecl:
+        name = str(tree.children[0])
+        idx = 1
+        params = []
+        if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "param_list":
+            params = [Param(str(p.children[0]), type_to_string(self.param_type(p.children[1])), pos(p)) for p in tree.children[idx].children]
+            idx += 1
+        requires, aborts, ensures = [], [], []
+        global_specs, depends_specs, modifies_specs = [], [], None
+        if idx < len(tree.children) and isinstance(tree.children[idx], Tree) and tree.children[idx].data == "contract_block":
+            for c in tree.children[idx].children:
+                if c.data == "requires_clause": requires.extend(self.constraint_list(c.children[0]))
+                elif c.data == "aborts_clause": aborts.append(AbortClause(str(c.children[0]), self.expr(c.children[1]) if len(c.children) > 1 else None, pos(c)))
+                elif c.data == "ensures_clause": ensures.extend(self.expr_list(c.children[0]))
+                elif c.data == "global_clause": global_specs.extend(self.global_clause(c))
+                elif c.data == "depends_clause": depends_specs.extend(self.depends_clause(c))
+                elif c.data == "modifies_clause":
+                    if modifies_specs is None:
+                        modifies_specs = []
+                    modifies_specs.extend(self.modifies_clause(c))
+            idx += 1
+        end_name = None
+        for child in reversed(tree.children):
+            if not isinstance(child, Tree):
+                end_name = str(child)
+                break
+        if end_name != name:
+            raise TypeCheckError(f"{pos(tree).text()}: task end name mismatch: expected {name}, got {end_name}")
+        body = [self.stmt(s.children[0] if s.data == "stmt" else s) for s in tree.children[idx:] if isinstance(s, Tree)]
+        return RoutineDecl("task", name, params, None, requires, aborts, ensures, body, pos(tree), None, True, global_specs, depends_specs, None, modifies_specs)
 
     def global_clause(self, tree: Tree) -> list[GlobalSpec]:
         specs = []
@@ -357,6 +393,29 @@ class AstBuilder:
             join_body = [self.stmt(x.children[0]) for x in tree.children[2].children]
             result_body = [self.stmt(x.children[0]) for x in tree.children[3].children]
             return ScopeStmt(str(tree.children[0]), spawn_body, join_body, result_body, pos(tree))
+        if tree.data == "parallel_stmt":
+            block_name = None
+            limit_expr = None
+            
+            # Find the starting block name if any, other nodes are the limit expression and stmt blocks
+            start_name = None
+            end_name = None
+            if isinstance(tree.children[0], Token) and tree.children[0].type == "NAME":
+                start_name = str(tree.children[0])
+            if isinstance(tree.children[-1], Token) and tree.children[-1].type == "NAME":
+                end_name = str(tree.children[-1])
+                
+            if start_name != end_name:
+                raise TypeCheckError(f"{pos(tree).text()}: parallel block name parity mismatch: start '{start_name}', end '{end_name}'")
+                
+            block_name = start_name
+            
+            # The limit expression is the only Tree children that is not a stmt
+            limit_nodes = [c for c in tree.children if isinstance(c, Tree) and c.data != "stmt"]
+            limit_expr = self.expr(limit_nodes[0]) if limit_nodes else None
+            
+            body = [self.stmt(c.children[0] if c.data == "stmt" else c) for c in tree.children if isinstance(c, Tree) and c.data == "stmt"]
+            return ParallelStmt(block_name, limit_expr, body, pos(tree))
         raise TypeCheckError(f"{pos(tree).text()}: unsupported statement {tree.data}")
 
     def return_value(self, tree: Tree):
@@ -373,6 +432,15 @@ class AstBuilder:
     def named_args(self, tree: Tree): return [NamedArg(str(x.children[0]), self.expr(x.children[1]), pos(x)) for x in tree.children]
 
     def expr(self, tree: Tree):
+        if tree.data == "spawn_expr":
+            target = self.expr(tree.children[0])
+            attributes = {}
+            if len(tree.children) > 1 and isinstance(tree.children[1], Tree) and tree.children[1].data == "spawn_attribute_list":
+                for attr_node in tree.children[1].children:
+                    name = str(attr_node.children[0])
+                    value = self.expr(attr_node.children[1])
+                    attributes[name] = value
+            return SpawnExpr(target, attributes, pos(tree))
         if tree.data == "string":
             raw = str(tree.children[0])
             try:
