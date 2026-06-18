@@ -683,6 +683,15 @@
                   "kind": "TypeName",
                   "name": "String"
                 }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Void",
+                "base": "Void",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Void"
+                }
               }
             ],
             "records": [],
@@ -1303,9 +1312,9 @@
                 "data": {
                   "kind": "assert",
                   "location": "line 25:5",
-                  "obligation": "(= (+ (+ 5 10) 15) 30)",
+                  "obligation": "(= total 30)",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (not (= (+ (+ 5 10) 15) 30)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const total Int)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (>= _tmp_call_0 0))\n(assert (= _tmp_call_0 (+ (+ 5 10) 15)))\n(assert (= total _tmp_call_0))\n(assert (not (= total 30)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -1326,6 +1335,46 @@
                   "obligation": "(= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))",
                   "routine": "sum_positive",
                   "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "precondition",
+                  "location": "line 24:26",
+                  "obligation": "(forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0)))",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr Int)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (not (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0)))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "range_check",
+                  "location": "line 11:12",
+                  "obligation": "(and (>= 0 0) (< 0 3))",
+                  "routine": "sum_positive",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (and (>= 0 0) (< 0 3))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "range_check",
+                  "location": "line 11:21",
+                  "obligation": "(and (>= 1 0) (< 1 3))",
+                  "routine": "sum_positive",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (and (>= 1 0) (< 1 3))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "range_check",
+                  "location": "line 11:30",
+                  "obligation": "(and (>= 2 0) (< 2 3))",
+                  "routine": "sum_positive",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (and (>= 2 0) (< 2 3))))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],
@@ -1389,9 +1438,9 @@
                   "data": {
                     "kind": "assert",
                     "location": "line 25:5",
-                    "obligation": "(= (+ (+ 5 10) 15) 30)",
+                    "obligation": "(= total 30)",
                     "routine": "main",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (not (= (+ (+ 5 10) 15) 30)))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const total Int)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (>= _tmp_call_0 0))\n(assert (= _tmp_call_0 (+ (+ 5 10) 15)))\n(assert (= total _tmp_call_0))\n(assert (not (= total 30)))\n(check-sat)\n; unsat means proved"
                   }
                 },
                 {
@@ -1412,6 +1461,46 @@
                     "obligation": "(= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))",
                     "routine": "sum_positive",
                     "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "precondition",
+                    "location": "line 24:26",
+                    "obligation": "(forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0)))",
+                    "routine": "main",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr Int)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (not (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0)))))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "range_check",
+                    "location": "line 11:12",
+                    "obligation": "(and (>= 0 0) (< 0 3))",
+                    "routine": "sum_positive",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (and (>= 0 0) (< 0 3))))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "range_check",
+                    "location": "line 11:21",
+                    "obligation": "(and (>= 1 0) (< 1 3))",
+                    "routine": "sum_positive",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (and (>= 1 0) (< 1 3))))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "range_check",
+                    "location": "line 11:30",
+                    "obligation": "(and (>= 2 0) (< 2 3))",
+                    "routine": "sum_positive",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (and (>= 2 0) (< 2 3))))\n(check-sat)\n; unsat means proved"
                   }
                 }
               ],
@@ -2110,6 +2199,15 @@
                 "kind": "TypeName",
                 "name": "String"
               }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Void",
+              "base": "Void",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Void"
+              }
             }
           ],
           "records": [],
@@ -2730,9 +2828,9 @@
               "data": {
                 "kind": "assert",
                 "location": "line 25:5",
-                "obligation": "(= (+ (+ 5 10) 15) 30)",
+                "obligation": "(= total 30)",
                 "routine": "main",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (not (= (+ (+ 5 10) 15) 30)))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const total Int)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (>= _tmp_call_0 0))\n(assert (= _tmp_call_0 (+ (+ 5 10) 15)))\n(assert (= total _tmp_call_0))\n(assert (not (= total 30)))\n(check-sat)\n; unsat means proved"
               }
             },
             {
@@ -2753,6 +2851,46 @@
                 "obligation": "(= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))",
                 "routine": "sum_positive",
                 "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "precondition",
+                "location": "line 24:26",
+                "obligation": "(forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0)))",
+                "routine": "main",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr Int)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (not (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0)))))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "range_check",
+                "location": "line 11:12",
+                "obligation": "(and (>= 0 0) (< 0 3))",
+                "routine": "sum_positive",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (and (>= 0 0) (< 0 3))))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "range_check",
+                "location": "line 11:21",
+                "obligation": "(and (>= 1 0) (< 1 3))",
+                "routine": "sum_positive",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (and (>= 1 0) (< 1 3))))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "range_check",
+                "location": "line 11:30",
+                "obligation": "(and (>= 2 0) (< 2 3))",
+                "routine": "sum_positive",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (and (>= 2 0) (< 2 3))))\n(check-sat)\n; unsat means proved"
               }
             }
           ],
@@ -2816,9 +2954,9 @@
                 "data": {
                   "kind": "assert",
                   "location": "line 25:5",
-                  "obligation": "(= (+ (+ 5 10) 15) 30)",
+                  "obligation": "(= total 30)",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (not (= (+ (+ 5 10) 15) 30)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const total Int)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (>= _tmp_call_0 0))\n(assert (= _tmp_call_0 (+ (+ 5 10) 15)))\n(assert (= total _tmp_call_0))\n(assert (not (= total 30)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -2839,6 +2977,46 @@
                   "obligation": "(= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))",
                   "routine": "sum_positive",
                   "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (= (+ (+ (select arr 0) (select arr 1)) (select arr 2)) (+ (+ (select arr 0) (select arr 1)) (select arr 2)))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "precondition",
+                  "location": "line 24:26",
+                  "obligation": "(forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0)))",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr Int)\n(declare-const values (Array Int Int))\n(assert (= values (store (store (store ((as const (Array Int Int)) 0) 0 5) 1 10) 2 15)))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select values I) 0))))\n(assert (exists ((I Int)) (and (>= I 0) (<= I 2) (= (select values I) 10))))\n(assert (not (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0)))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "range_check",
+                  "location": "line 11:12",
+                  "obligation": "(and (>= 0 0) (< 0 3))",
+                  "routine": "sum_positive",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (and (>= 0 0) (< 0 3))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "range_check",
+                  "location": "line 11:21",
+                  "obligation": "(and (>= 1 0) (< 1 3))",
+                  "routine": "sum_positive",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (and (>= 1 0) (< 1 3))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "range_check",
+                  "location": "line 11:30",
+                  "obligation": "(and (>= 2 0) (< 2 3))",
+                  "routine": "sum_positive",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const arr (Array Int Int))\n(assert (forall ((I Int)) (=> (and (>= I 0) (<= I 2)) (>= (select arr I) 0))))\n(assert (not (and (>= 2 0) (< 2 3))))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],

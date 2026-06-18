@@ -1,0 +1,21 @@
+-- Purpose: Demonstrate a procedure with parameters, a precondition (requires) and postcondition (ensures).
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 2 (Contract Block Order)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module ProcedureDemo02
+
+import Std.IO
+
+procedure verify_and_log_age(age: Integer)
+requires age >= 18
+ensures age >= 18
+is
+    call Std.IO.log("Verification successful. Age is valid.")
+end verify_and_log_age
+
+procedure main()
+is
+    call verify_and_log_age(21)
+end main
+
+end ProcedureDemo02

@@ -1,0 +1,13 @@
+module Neg_Swap_Uninitialized_Read
+
+procedure swap_warn(x: Integer, y: Integer)
+do
+    -- Equivalent to SPARK Swap_Warn: tmp_y is read before assignment.
+    let tmp_x: Integer := x
+    let tmp_y: Integer
+    x := tmp_y
+    tmp_y := y
+    y := tmp_x
+end swap_warn
+
+end Neg_Swap_Uninitialized_Read

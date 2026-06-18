@@ -1,0 +1,31 @@
+module Loop_Count_Arr_Zero
+
+-- Counting loop.
+-- Explanation: counter is bounded by the visited prefix length; counter == 0 iff no visited cell is zero.
+
+procedure count_arr_zero(a: Array<Integer, 1..1000>) -> Integer
+ensures result >= 0
+ensures result <= 1000
+ensures (result == 0) == (forall j in 1..1000 => a[j] != 0)
+do
+    let i: Integer := 1
+    let counter: Integer := 0
+
+    while i <= 1000
+    invariant i >= 1
+    invariant i <= 1001
+    invariant counter >= 0
+    invariant counter <= i - 1
+    invariant (counter == 0) == (forall k in 1..i-1 => a[k] != 0)
+    variant 1001 - i
+    do
+        if a[i] == 0 then
+            counter := counter + 1
+        end if
+        i := i + 1
+    end while
+
+    return counter
+end count_arr_zero
+
+end Loop_Count_Arr_Zero

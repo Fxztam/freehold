@@ -1,0 +1,21 @@
+-- Purpose: Negative test – Routine precondition requirement violation at caller callsite.
+-- Failure Category: Precondition violation on call
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 3.2 (Callsite Verification)
+-- Expected Result: Verifier Failure
+--   Parameter is outside the 'requires x < 100' boundary limit.
+
+module ContractNegative01
+
+function add_one(x: Integer) returns Integer
+requires x < 100
+is
+    return x + 1
+end add_one
+
+procedure main()
+is
+    -- 150 violates x < 100
+    let val: Integer = add_one(150)
+end main
+
+end ContractNegative01

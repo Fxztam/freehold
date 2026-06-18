@@ -1,0 +1,20 @@
+-- Purpose: Negative test – Calling a procedure with an unprovable precondition.
+-- Failure Category: Precondition violation at callsite
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 3.2 (Callsite Verification)
+-- Expected Result: Verifier Failure
+--   The caller cannot satisfy the precondition age >= 18 by passing 15.
+
+module ProcedureNegative03
+
+procedure register_user(age: Integer)
+requires age >= 18
+is
+    check age >= 18
+end register_user
+
+procedure main()
+is
+    call register_user(15)
+end main
+
+end ProcedureNegative03

@@ -1,0 +1,32 @@
+module Loop_Search_Arr_Zero
+
+record SearchResult
+    success: Boolean
+    pos: Integer
+end SearchResult
+
+-- Search with early exit.
+-- Explanation: until the loop returns, every visited element is known to be non-zero.
+
+procedure search_arr_zero(a: Array<Integer, 1..1000>) -> SearchResult
+ensures result.success == (exists j in 1..1000 => a[j] == 0)
+ensures if result.success then a[result.pos] == 0 else result.pos == 0 end if
+do
+    let i: Integer := 1
+
+    while i <= 1000
+    invariant i >= 1
+    invariant i <= 1001
+    invariant forall k in 1..i-1 => a[k] != 0
+    variant 1001 - i
+    do
+        if a[i] == 0 then
+            return SearchResult { success: True, pos: i }
+        end if
+        i := i + 1
+    end while
+
+    return SearchResult { success: False, pos: 0 }
+end search_arr_zero
+
+end Loop_Search_Arr_Zero

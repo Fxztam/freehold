@@ -1,0 +1,27 @@
+module Loop_Validate_Full_Arr_Zero
+
+-- Full validation without early return.
+-- Explanation: the flag is equivalent to the predicate over the visited prefix.
+
+procedure validate_full_arr_zero(a: Array<Integer, 1..1000>) -> Boolean
+ensures result == (forall j in 1..1000 => a[j] == 0)
+do
+    let i: Integer := 1
+    let success: Boolean := True
+
+    while i <= 1000
+    invariant i >= 1
+    invariant i <= 1001
+    invariant success == (forall k in 1..i-1 => a[k] == 0)
+    variant 1001 - i
+    do
+        if a[i] != 0 then
+            success := False
+        end if
+        i := i + 1
+    end while
+
+    return success
+end validate_full_arr_zero
+
+end Loop_Validate_Full_Arr_Zero

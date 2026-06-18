@@ -1,0 +1,24 @@
+-- Purpose: Positive test – Mutating mutable record fields inside a procedure.
+-- Referenced Specification: SPECIFICATION-FH-BASICS.md, Section 3.3 (Contracts Before Bodies), Section 6.4 (Make Effects Visible)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module RecordPositive02
+
+type Counter is record
+    clicks: Integer
+end record
+
+procedure register_click(c: Counter)
+modifies c.clicks
+is
+    c.clicks := c.clicks + 1
+end register_click
+
+procedure main()
+is
+    let cnt: Counter = Counter { clicks: 0 }
+    call register_click(cnt)
+    check cnt.clicks = 1
+end main
+
+end RecordPositive02

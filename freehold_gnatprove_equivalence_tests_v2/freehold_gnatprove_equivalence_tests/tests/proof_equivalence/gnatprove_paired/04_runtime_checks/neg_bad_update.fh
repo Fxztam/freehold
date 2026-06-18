@@ -1,0 +1,23 @@
+module Neg_Bad_Update
+
+type Int is Integer range -2147483648..2147483647
+
+procedure bad_update(
+    a: Array<Int, 10>,
+    i: Int,
+    j: Int,
+    p: Int,
+    q: Int
+)
+modifies a
+is
+    a[i + j] := p / q
+end bad_update
+
+procedure main()
+is
+    let r: Array<Int, 10> = [0,0,0,0,0,0,0,0,0,0]
+    call bad_update(r, 2, 3, 10, 2)
+end main
+
+end Neg_Bad_Update

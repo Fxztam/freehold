@@ -1,0 +1,32 @@
+-- Purpose: Demonstrate the recommended declaration order inside a module:
+--          type alias -> record type -> pure function -> procedure main.
+--          Also shows an exposing import and qualified Std.IO usage.
+-- Referenced Specification: SPECIFICATION-FH-BASICS.md, Section 3.2 (Recommended Declaration Order),
+--                           Section 4.2 (Import With Exposing), Section 8 (Minimal Project Example)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module Domain.Customers
+
+import Std.IO
+
+type CustomerId is Integer range 1..2147483647
+
+type Customer is record
+    id: CustomerId
+    name: String
+end record
+
+function make_customer(id: CustomerId, name: String) returns Customer
+ensures result.id = id
+is
+    return Customer { id: id, name: name }
+end make_customer
+
+procedure main()
+is
+    let c: Customer = make_customer(1, "Ada")
+    check c.id = 1
+    call Std.IO.log("customer created")
+end main
+
+end Domain.Customers

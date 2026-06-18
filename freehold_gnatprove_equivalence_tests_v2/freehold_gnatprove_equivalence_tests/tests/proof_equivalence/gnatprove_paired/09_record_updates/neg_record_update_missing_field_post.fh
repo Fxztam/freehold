@@ -1,0 +1,27 @@
+module Neg_Record_Update_Missing_Field_Post
+
+type Int is Integer range -2147483648..2147483647
+
+type Account is record
+    balance: Int
+    limit: Int
+end record
+
+procedure unsafe_deposit(acc: Account, amount: Int)
+modifies acc.balance, acc.limit
+requires amount >= 0
+requires acc.balance <= 2147483647 - amount
+ensures acc.balance = old(acc.balance) + amount
+ensures acc.limit = old(acc.limit)
+is
+    acc.balance := acc.balance + amount
+    acc.limit := acc.limit + 1
+end unsafe_deposit
+
+procedure main()
+is
+    let acc: Account = Account { balance: 100, limit: 1000 }
+    call unsafe_deposit(acc, 50)
+end main
+
+end Neg_Record_Update_Missing_Field_Post

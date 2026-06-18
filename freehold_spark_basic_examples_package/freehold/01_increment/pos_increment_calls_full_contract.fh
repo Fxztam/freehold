@@ -1,0 +1,18 @@
+module Pos_Increment_Calls_Full_Contract
+
+procedure increment_full(x: Integer)
+requires x < Integer.Last
+ensures x == old(x) + 1
+do
+    -- Full contract exposes enough post-state knowledge for callers.
+    x := x + 1
+end increment_full
+
+procedure main()
+let x: Integer := 0
+call increment_full(x)
+call increment_full(x)
+check x == 2
+end main
+
+end Pos_Increment_Calls_Full_Contract

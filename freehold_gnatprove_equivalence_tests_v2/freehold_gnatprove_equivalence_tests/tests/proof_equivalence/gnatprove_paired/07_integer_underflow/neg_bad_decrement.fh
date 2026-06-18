@@ -1,0 +1,17 @@
+module Neg_Bad_Decrement
+
+type Int is Integer range -2147483648..2147483647
+
+function bad_decrement(x: Int) returns Int
+ensures result = x - 1
+is
+    return x - 1
+end bad_decrement
+
+procedure main()
+is
+    let x: Int = bad_decrement(41)
+    check x = 40
+end main
+
+end Neg_Bad_Decrement

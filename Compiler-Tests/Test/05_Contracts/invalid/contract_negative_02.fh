@@ -1,0 +1,21 @@
+-- Purpose: Negative test – Function body does not satisfy the declared postcondition contract.
+-- Failure Category: Postcondition contract violation
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 2 (Contract Block Order)
+-- Expected Result: Verifier Failure
+--   The verifier notices that the return value (x + 2) is not equal to 'result = x + 1'.
+
+module ContractNegative02
+
+function add_one_wrong(x: Integer) returns Integer
+ensures result = x + 1
+is
+    -- body returns x + 2, failing the ensures assertion
+    return x + 2
+end add_one_wrong
+
+procedure main()
+is
+    let val: Integer = add_one_wrong(10)
+end main
+
+end ContractNegative02

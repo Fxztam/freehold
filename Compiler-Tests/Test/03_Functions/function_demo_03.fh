@@ -1,0 +1,23 @@
+-- Purpose: Demonstrate functions using old() state checks and returning records.
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, SPECIFICATION-FH-BASICS.md, Section 8.1 (Minimal Project Example)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module FunctionDemo03
+
+type Cell is record
+    val: Integer
+end record
+
+function make_cell(value: Integer) returns Cell
+ensures result.val = value
+is
+    return Cell { val: value }
+end make_cell
+
+procedure main()
+is
+    let c: Cell = make_cell(100)
+    check c.val = 100
+end main
+
+end FunctionDemo03

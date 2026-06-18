@@ -1,0 +1,20 @@
+-- Purpose: Positive test – Postcondition result reference for checking function results.
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 2
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module ContractPositive02
+
+function square(x: Integer) returns Integer
+requires x < 46340 -- prevent integer overflow on square
+ensures result = x * x
+is
+    return x * x
+end square
+
+procedure main()
+is
+    let r: Integer = square(9)
+    check r = 81
+end main
+
+end ContractPositive02

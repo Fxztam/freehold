@@ -1,0 +1,25 @@
+-- Purpose: Positive test – Old state mapping comparison in postcondition clauses.
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 2
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module ContractPositive04
+
+type Temp is record
+    val: Integer
+end record
+
+procedure double_val(t: Temp)
+modifies t.val
+ensures t.val = old(t.val) * 2
+is
+    t.val := t.val * 2
+end double_val
+
+procedure main()
+is
+    let t: Temp = Temp { val: 24 }
+    call double_val(t)
+    check t.val = 48
+end main
+
+end ContractPositive04

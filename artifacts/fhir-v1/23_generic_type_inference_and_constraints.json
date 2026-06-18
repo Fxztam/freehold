@@ -653,6 +653,15 @@
                   "kind": "TypeName",
                   "name": "String"
                 }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Void",
+                "base": "Void",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Void"
+                }
               }
             ],
             "records": [],
@@ -1214,9 +1223,9 @@
                 "data": {
                   "kind": "assert",
                   "location": "line 22:5",
-                  "obligation": "(= _tmp_call_0 10)",
+                  "obligation": "(= x 10)",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (not (= _tmp_call_0 10)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (not (= x 10)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -1224,9 +1233,9 @@
                 "data": {
                   "kind": "assert",
                   "location": "line 23:5",
-                  "obligation": "(= _tmp_call_0 12.3)",
+                  "obligation": "(= y 12.3)",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= _tmp_call_0 10))\n(assert (not (= _tmp_call_0 12.3)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (not (= y 12.3)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -1293,10 +1302,40 @@
                 "kind": "ProofObligation",
                 "data": {
                   "kind": "precondition",
+                  "location": "line 20:22",
+                  "obligation": "true",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "precondition",
+                  "location": "line 21:21",
+                  "obligation": "true",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "precondition",
                   "location": "line 25:5",
                   "obligation": "true",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= _tmp_call_0 10))\n(assert (= _tmp_call_0 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "precondition",
+                  "location": "line 25:5",
+                  "obligation": "true",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -1306,7 +1345,17 @@
                   "location": "line 26:5",
                   "obligation": "true",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= _tmp_call_0 10))\n(assert (= _tmp_call_0 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _inl_1_x Int)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (= _inl_1_x x))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "precondition",
+                  "location": "line 26:5",
+                  "obligation": "true",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _inl_1_x Int)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (= _inl_1_x x))\n(assert (not true))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],
@@ -1350,9 +1399,9 @@
                   "data": {
                     "kind": "assert",
                     "location": "line 22:5",
-                    "obligation": "(= _tmp_call_0 10)",
+                    "obligation": "(= x 10)",
                     "routine": "main",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (not (= _tmp_call_0 10)))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (not (= x 10)))\n(check-sat)\n; unsat means proved"
                   }
                 },
                 {
@@ -1360,9 +1409,9 @@
                   "data": {
                     "kind": "assert",
                     "location": "line 23:5",
-                    "obligation": "(= _tmp_call_0 12.3)",
+                    "obligation": "(= y 12.3)",
                     "routine": "main",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= _tmp_call_0 10))\n(assert (not (= _tmp_call_0 12.3)))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (not (= y 12.3)))\n(check-sat)\n; unsat means proved"
                   }
                 },
                 {
@@ -1429,10 +1478,40 @@
                   "kind": "ProofObligation",
                   "data": {
                     "kind": "precondition",
+                    "location": "line 20:22",
+                    "obligation": "true",
+                    "routine": "main",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "precondition",
+                    "location": "line 21:21",
+                    "obligation": "true",
+                    "routine": "main",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "precondition",
                     "location": "line 25:5",
                     "obligation": "true",
                     "routine": "main",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= _tmp_call_0 10))\n(assert (= _tmp_call_0 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "precondition",
+                    "location": "line 25:5",
+                    "obligation": "true",
+                    "routine": "main",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
                   }
                 },
                 {
@@ -1442,7 +1521,17 @@
                     "location": "line 26:5",
                     "obligation": "true",
                     "routine": "main",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= _tmp_call_0 10))\n(assert (= _tmp_call_0 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _inl_1_x Int)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (= _inl_1_x x))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "precondition",
+                    "location": "line 26:5",
+                    "obligation": "true",
+                    "routine": "main",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _inl_1_x Int)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (= _inl_1_x x))\n(assert (not true))\n(check-sat)\n; unsat means proved"
                   }
                 }
               ],
@@ -2110,6 +2199,15 @@
                 "kind": "TypeName",
                 "name": "String"
               }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Void",
+              "base": "Void",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Void"
+              }
             }
           ],
           "records": [],
@@ -2671,9 +2769,9 @@
               "data": {
                 "kind": "assert",
                 "location": "line 22:5",
-                "obligation": "(= _tmp_call_0 10)",
+                "obligation": "(= x 10)",
                 "routine": "main",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (not (= _tmp_call_0 10)))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (not (= x 10)))\n(check-sat)\n; unsat means proved"
               }
             },
             {
@@ -2681,9 +2779,9 @@
               "data": {
                 "kind": "assert",
                 "location": "line 23:5",
-                "obligation": "(= _tmp_call_0 12.3)",
+                "obligation": "(= y 12.3)",
                 "routine": "main",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= _tmp_call_0 10))\n(assert (not (= _tmp_call_0 12.3)))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (not (= y 12.3)))\n(check-sat)\n; unsat means proved"
               }
             },
             {
@@ -2750,10 +2848,40 @@
               "kind": "ProofObligation",
               "data": {
                 "kind": "precondition",
+                "location": "line 20:22",
+                "obligation": "true",
+                "routine": "main",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not true))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "precondition",
+                "location": "line 21:21",
+                "obligation": "true",
+                "routine": "main",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "precondition",
                 "location": "line 25:5",
                 "obligation": "true",
                 "routine": "main",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= _tmp_call_0 10))\n(assert (= _tmp_call_0 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "precondition",
+                "location": "line 25:5",
+                "obligation": "true",
+                "routine": "main",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
               }
             },
             {
@@ -2763,7 +2891,17 @@
                 "location": "line 26:5",
                 "obligation": "true",
                 "routine": "main",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= _tmp_call_0 10))\n(assert (= _tmp_call_0 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _inl_1_x Int)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (= _inl_1_x x))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "precondition",
+                "location": "line 26:5",
+                "obligation": "true",
+                "routine": "main",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _inl_1_x Int)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (= _inl_1_x x))\n(assert (not true))\n(check-sat)\n; unsat means proved"
               }
             }
           ],
@@ -2807,9 +2945,9 @@
                 "data": {
                   "kind": "assert",
                   "location": "line 22:5",
-                  "obligation": "(= _tmp_call_0 10)",
+                  "obligation": "(= x 10)",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (not (= _tmp_call_0 10)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (not (= x 10)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -2817,9 +2955,9 @@
                 "data": {
                   "kind": "assert",
                   "location": "line 23:5",
-                  "obligation": "(= _tmp_call_0 12.3)",
+                  "obligation": "(= y 12.3)",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= _tmp_call_0 10))\n(assert (not (= _tmp_call_0 12.3)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (not (= y 12.3)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -2886,10 +3024,40 @@
                 "kind": "ProofObligation",
                 "data": {
                   "kind": "precondition",
+                  "location": "line 20:22",
+                  "obligation": "true",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "precondition",
+                  "location": "line 21:21",
+                  "obligation": "true",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "precondition",
                   "location": "line 25:5",
                   "obligation": "true",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= _tmp_call_0 10))\n(assert (= _tmp_call_0 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "precondition",
+                  "location": "line 25:5",
+                  "obligation": "true",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -2899,7 +3067,17 @@
                   "location": "line 26:5",
                   "obligation": "true",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= _tmp_call_0 10))\n(assert (= _tmp_call_0 12.3))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _inl_1_x Int)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (= _inl_1_x x))\n(assert (not true))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "precondition",
+                  "location": "line 26:5",
+                  "obligation": "true",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _inl_1_x Int)\n(declare-const _tmp_call_0 Int)\n(declare-const x Int)\n(declare-const y Real)\n(assert (<= _tmp_call_0 10))\n(assert (<= _tmp_call_0 20))\n(assert (or (= _tmp_call_0 10) (= _tmp_call_0 20)))\n(assert (= x _tmp_call_0))\n(assert (<= _tmp_call_0 45.5))\n(assert (<= _tmp_call_0 12.3))\n(assert (or (= _tmp_call_0 45.5) (= _tmp_call_0 12.3)))\n(assert (= y _tmp_call_0))\n(assert (= x 10))\n(assert (= y 12.3))\n(assert (= _inl_1_x x))\n(assert (not true))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],
@@ -3180,6 +3358,15 @@
                 "base_type": {
                   "kind": "TypeName",
                   "name": "String"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Void",
+                "base": "Void",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Void"
                 }
               }
             ],
@@ -3623,6 +3810,15 @@
               "base_type": {
                 "kind": "TypeName",
                 "name": "String"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Void",
+              "base": "Void",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Void"
               }
             }
           ],

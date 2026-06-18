@@ -673,6 +673,7 @@ func builtinTypes() map[string]bool {
 		"Integer":    true,
 		"Scope":      true,
 		"String":     true,
+		"Void":       true,
 	}
 }
 

@@ -1,0 +1,13 @@
+module Neg_Addition_Naive_Pre_Overflows
+
+function addition(x: Integer, y: Integer) -> Integer
+requires x + y >= Integer.First
+requires x + y <= Integer.Last
+ensures result == x + y
+do
+    -- The precondition itself evaluates x + y before proving it is safe.
+    -- This must be rejected as possible precondition-overflow.
+    return x + y
+end addition
+
+end Neg_Addition_Naive_Pre_Overflows

@@ -4,6 +4,13 @@ from typing import Any
 from freehold.core.ast import *
 from freehold.core.verifier import VerifiedProgram
 
+SMT_CONFL_WORDS = {"select", "store", "as", "const", "let", "Array", "Int", "Bool", "Real"}
+
+def sanitize_smt_name(name: str) -> str:
+    if name in SMT_CONFL_WORDS:
+        return name + "_"
+    return name
+
 def ast_type_to_str(t) -> str:
     if isinstance(t, TypeName):
         return t.name
@@ -206,6 +213,11 @@ def substitute_expr(e: Any, var_name: str, replacement: Any) -> Any:
         )
     if isinstance(e, AwaitExpr):
         return AwaitExpr(substitute_expr(e.expr, var_name, replacement), e.pos)
+    if isinstance(e, AwaitAllExpr):
+        return AwaitAllExpr(substitute_expr(e.expr, var_name, replacement), e.pos)
+    if isinstance(e, SpawnExpr):
+        substituted_attributes = {k: substitute_expr(v, var_name, replacement) for k, v in e.attributes.items()}
+        return SpawnExpr(substitute_expr(e.target, var_name, replacement), substituted_attributes, e.pos)
     if isinstance(e, IndexExpr):
         if e.name == var_name:
             if isinstance(replacement, ArrayLiteralExpr):
@@ -285,15 +297,15 @@ def expr_to_smt(e: Any) -> str:
     if isinstance(e, DoubleExpr): return str(e.value)
     if isinstance(e, BoolExpr): return "true" if e.value else "false"
     if isinstance(e, StringExpr): return f'"{e.value}"'
-    if isinstance(e, VarExpr): return e.name
+    if isinstance(e, VarExpr): return sanitize_smt_name(e.name)
     if isinstance(e, SpecialResultExpr): return e.name
-    if isinstance(e, FieldAccessExpr): return "_".join(e.path)
+    if isinstance(e, FieldAccessExpr): return "_".join(sanitize_smt_name(x) for x in e.path)
     if isinstance(e, IndexExpr):
         idx = expr_to_smt(e.index)
-        return f"(select {e.name} {idx})"
+        return f"(select {sanitize_smt_name(e.name)} {idx})"
     if isinstance(e, IndexedFieldAccessExpr):
         idx = expr_to_smt(e.index)
-        arr = e.name + "_" + "_".join(e.fields)
+        arr = sanitize_smt_name(e.name) + "_" + "_".join(sanitize_smt_name(x) for x in e.fields)
         return f"(select {arr} {idx})"
     if isinstance(e, ArrayLiteralExpr):
         res = "((as const (Array Int Int)) 0)"
@@ -668,8 +680,11 @@ def smt_validity_query(path: list[str], obligation: str, var_types: dict[str, st
             if word not in excluded and word not in bound_vars:
                 used_vars.add(word)
     for var in sorted(used_vars):
-        type_name = var_types.get(var) if var_types else None
-        smt_type = get_smt_type(type_name, var)
+        orig_var = var
+        if var.endswith("_") and var[:-1] in SMT_CONFL_WORDS:
+            orig_var = var[:-1]
+        type_name = var_types.get(orig_var) if var_types else None
+        smt_type = get_smt_type(type_name, orig_var)
         lines.append(f"(declare-const {var} {smt_type})")
     for pc in path:
         lines.append(f"(assert {pc})")
@@ -940,6 +955,11 @@ def parallel_substitute(e: Any, substs: dict[str, Any]) -> Any:
         )
     if isinstance(e, AwaitExpr):
         return AwaitExpr(parallel_substitute(e.expr, substs), e.pos)
+    if isinstance(e, AwaitAllExpr):
+        return AwaitAllExpr(parallel_substitute(e.expr, substs), e.pos)
+    if isinstance(e, SpawnExpr):
+        substituted_attributes = {k: parallel_substitute(v, substs) for k, v in e.attributes.items()}
+        return SpawnExpr(parallel_substitute(e.target, substs), substituted_attributes, e.pos)
     if isinstance(e, IndexExpr):
         target_name = e.name
         idx_subst = parallel_substitute(e.index, substs)
@@ -1119,6 +1139,17 @@ def resolve_old_calls_for_call(e: Any, params: list[Param], args: list[Any], loc
     return e
 
 def let_bind_calls(expr: Any, env: dict[str, str], path_conditions: list[str], routines: dict[str, Any], imports: list[Any], imported_modules: dict[str, Any], counter: list[int], depth: int = 0, local_substs: dict[str, Any] = None, records: dict[str, Any] = None) -> Any:
+    if isinstance(expr, SpawnExpr):
+        if isinstance(expr.target, CallExpr):
+            new_args = [let_bind_calls(arg, env, path_conditions, routines, imports, imported_modules, counter, depth, local_substs, records) for arg in expr.target.args]
+            new_target = CallExpr(expr.target.name, new_args, expr.target.pos, expr.target.type_args, getattr(expr.target, "invariant", None))
+        else:
+            new_target = let_bind_calls(expr.target, env, path_conditions, routines, imports, imported_modules, counter, depth, local_substs, records)
+        new_attributes = {}
+        for k, v in expr.attributes.items():
+            new_attributes[k] = let_bind_calls(v, env, path_conditions, routines, imports, imported_modules, counter, depth, local_substs, records)
+        return SpawnExpr(new_target, new_attributes, expr.pos)
+
     if isinstance(expr, CallExpr):
         if is_smt_builtin(expr.name):
             return expr
@@ -1382,8 +1413,12 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
             expr = apply_subst(stmt.expr, local_substs)
             expr = let_bind_calls(expr, env, path_conditions, routines, imports, imported_modules, [0], local_substs=local_substs, records=records)
             is_awaited = False
+            is_await_all = False
             if isinstance(expr, AwaitExpr):
                 is_awaited = True
+                expr = expr.expr
+            elif isinstance(expr, AwaitAllExpr):
+                is_await_all = True
                 expr = expr.expr
 
             # 1. Channel Creation
@@ -1449,9 +1484,17 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
                         path_conditions = path_conditions + [ens_smt]
 
             # 3. Task Spawn
+            is_spawn = False
+            task_call = None
             if isinstance(expr, CallExpr) and (expr.name == "scope_spawn" or expr.name.endswith(".spawn")):
+                is_spawn = True
                 task_arg_idx = 1 if expr.name == "scope_spawn" else 0
                 task_call = expr.args[task_arg_idx]
+            elif isinstance(expr, SpawnExpr):
+                is_spawn = True
+                task_call = expr.target
+
+            if is_spawn and task_call is not None:
                 spawned_tasks[stmt.name] = task_call
                 target_routine = None
                 if isinstance(task_call, CallExpr):
@@ -1504,6 +1547,29 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
                             ens_subst = substitute_expr(ens_subst, "value", VarExpr(stmt.name, stmt.pos))
                         ens_smt = expr_to_smt(ens_subst)
                         path_conditions = path_conditions + [ens_smt]
+            elif is_await_all and isinstance(expr, ArrayLiteralExpr):
+                # An array of JoinHandles. For each item in the array, find its spawned task and propagate ensures
+                for idx, handle_item in enumerate(expr.items):
+                    if isinstance(handle_item, VarExpr) and handle_item.name in spawned_tasks:
+                        task_call = spawned_tasks[handle_item.name]
+                        target_routine = None
+                        if isinstance(task_call, CallExpr):
+                            target_routine = find_routine(task_call.name, routines, imports, imported_modules)
+                        if target_routine is not None:
+                            is_res = isinstance(target_routine.return_type, ResultTypeName)
+                            for ens in target_routine.ensures:
+                                ens_subst = substitute_params(ens, target_routine.params, task_call.args)
+                                # Map result/value to the specific index in the results array
+                                if is_res:
+                                    ens_subst = substitute_expr(ens_subst, "result", IndexExpr(stmt.name, NumberExpr(idx, stmt.pos), stmt.pos))
+                                    ens_subst = substitute_expr(ens_subst, "success", FieldAccessExpr([f"{stmt.name}[{idx}]", "success"], stmt.pos))
+                                    ens_subst = substitute_expr(ens_subst, "value", FieldAccessExpr([f"{stmt.name}[{idx}]", "value"], stmt.pos))
+                                    ens_subst = substitute_expr(ens_subst, "error", FieldAccessExpr([f"{stmt.name}[{idx}]", "error"], stmt.pos))
+                                else:
+                                    ens_subst = substitute_expr(ens_subst, "result", IndexExpr(stmt.name, NumberExpr(idx, stmt.pos), stmt.pos))
+                                    ens_subst = substitute_expr(ens_subst, "value", IndexExpr(stmt.name, NumberExpr(idx, stmt.pos), stmt.pos))
+                                ens_smt = expr_to_smt(ens_subst)
+                                path_conditions = path_conditions + [ens_smt]
 
             # 5. Channel Receive
             is_receive = False
@@ -1541,19 +1607,21 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
 
             expr_smt = expr_to_smt(expr)
             if "UNSUPPORTED" not in expr_smt:
-                path_conditions = path_conditions + [f"(= {stmt.name} {expr_smt})"]
+                stmt_smt_name = sanitize_smt_name(stmt.name)
+                path_conditions = path_conditions + [f"(= {stmt_smt_name} {expr_smt})"]
                 flat_vars = get_flat_var_types({stmt.name: type_name}, records)
                 for f_var in flat_vars:
                     if f_var.startswith(f"{stmt.name}_"):
+                        f_var_smt = stmt_smt_name + f_var[len(stmt.name):]
                         suffix = f_var[len(stmt.name)+1:]
                         rhs_f_var = f"{expr_smt}_{suffix}"
-                        path_conditions.append(f"(= {f_var} {rhs_f_var})")
+                        path_conditions.append(f"(= {f_var_smt} {rhs_f_var})")
 
             # Record in local substitutions
             for k in list(local_substs.keys()):
                 if k.startswith(f"{stmt.name}_"):
                     del local_substs[k]
-            if isinstance(expr, CallExpr) or isinstance(expr, (VarExpr, FieldAccessExpr, IndexedFieldAccessExpr)):
+            if isinstance(expr, (CallExpr, SpawnExpr)) or isinstance(expr, (VarExpr, FieldAccessExpr, IndexedFieldAccessExpr)):
                 local_substs[stmt.name] = VarExpr(stmt.name, stmt.pos)
             else:
                 local_substs[stmt.name] = expr
@@ -1562,8 +1630,12 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
             expr = apply_subst(stmt.expr, local_substs)
             expr = let_bind_calls(expr, env, path_conditions, routines, imports, imported_modules, [0], local_substs=local_substs, records=records)
             is_awaited = False
+            is_await_all = False
             if isinstance(expr, AwaitExpr):
                 is_awaited = True
+                expr = expr.expr
+            elif isinstance(expr, AwaitAllExpr):
+                is_await_all = True
                 expr = expr.expr
 
             # Alias Copying
@@ -1571,6 +1643,36 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
                 channel_invariants[stmt.name] = channel_invariants[expr.name]
             if isinstance(expr, VarExpr) and expr.name in spawned_tasks:
                 spawned_tasks[stmt.name] = spawned_tasks[expr.name]
+
+            # Task Spawn
+            is_spawn = False
+            task_call = None
+            if isinstance(expr, CallExpr) and (expr.name == "scope_spawn" or expr.name.endswith(".spawn")):
+                is_spawn = True
+                task_arg_idx = 1 if expr.name == "scope_spawn" else 0
+                task_call = expr.args[task_arg_idx]
+            elif isinstance(expr, SpawnExpr):
+                is_spawn = True
+                task_call = expr.target
+
+            if is_spawn and task_call is not None:
+                spawned_tasks[stmt.name] = task_call
+                target_routine = None
+                if isinstance(task_call, CallExpr):
+                    target_routine = find_routine(task_call.name, routines, imports, imported_modules)
+                if target_routine is not None:
+                    for req in target_routine.requires:
+                        req_subst = substitute_params(req, target_routine.params, task_call.args)
+                        obligation = expr_to_smt(req_subst)
+                        path = [expr_to_smt(r_req) for r_req in r.requires] + get_range_assertions(env, types, records) + path_conditions
+                        var_types = get_flat_var_types(env, records)
+                        obs.append({
+                            "routine": r_name,
+                            "kind": "precondition",
+                            "location": stmt.pos.text(),
+                            "obligation": obligation,
+                            "smt_query": smt_validity_query(path, obligation, var_types),
+                        })
 
             # Channel Send Check
             is_send = False
@@ -1691,20 +1793,22 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
 
             expr_smt = expr_to_smt(expr)
             if "UNSUPPORTED" not in expr_smt:
-                path_conditions = path_conditions + [f"(= {stmt.name} {expr_smt})"]
+                stmt_smt_name = sanitize_smt_name(stmt.name)
+                path_conditions = path_conditions + [f"(= {stmt_smt_name} {expr_smt})"]
                 flat_vars = get_flat_var_types({stmt.name: type_name}, records)
                 for f_var in flat_vars:
                     if f_var.startswith(f"{stmt.name}_"):
+                        f_var_smt = stmt_smt_name + f_var[len(stmt.name):]
                         suffix = f_var[len(stmt.name)+1:]
                         rhs_f_var = f"{expr_smt}_{suffix}"
-                        path_conditions.append(f"(= {f_var} {rhs_f_var})")
+                        path_conditions.append(f"(= {f_var_smt} {rhs_f_var})")
 
             # Since reassigned, remove from local substitutions
             for k in list(local_substs.keys()):
                 if k.startswith(f"{stmt.name}_"):
                     del local_substs[k]
             if True:
-                if isinstance(expr, CallExpr):
+                if isinstance(expr, (CallExpr, SpawnExpr)):
                     local_substs[stmt.name] = VarExpr(stmt.name, stmt.pos)
                 else:
                     local_substs[stmt.name] = expr
@@ -1720,7 +1824,8 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
             expr_smt = expr_to_smt(expr)
             idx_smt = expr_to_smt(idx)
             if "UNSUPPORTED" not in expr_smt and "UNSUPPORTED" not in idx_smt:
-                path_conditions = path_conditions + [f"(= {stmt.name} (store {stmt.name} {idx_smt} {expr_smt}))"]
+                stmt_smt_name = sanitize_smt_name(stmt.name)
+                path_conditions = path_conditions + [f"(= {stmt_smt_name} (store {stmt_smt_name} {idx_smt} {expr_smt}))"]
 
             current_arr = local_substs.get(stmt.name, VarExpr(stmt.name, stmt.pos))
             local_substs[stmt.name] = CallExpr("Map.set", [current_arr, idx, expr], stmt.pos)

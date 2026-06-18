@@ -1,0 +1,21 @@
+-- Purpose: Positive test – Function with multiple precondition clauses.
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 1 (Routine Kinds)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module FunctionPositive05
+
+function mul(a: Integer, b: Integer) returns Integer
+requires a > 0
+requires b > 0
+ensures result > 0
+is
+    return a * b
+end mul
+
+procedure main()
+is
+    let value: Integer = mul(3, 4)
+    check value = 12
+end main
+
+end FunctionPositive05

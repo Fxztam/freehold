@@ -1,0 +1,19 @@
+-- Purpose: Positive test – Valid static precondition proof at call site.
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 3.2 (Callsite Verification)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module ProcedurePositive03
+
+procedure assert_even(x: Integer)
+requires x % 2 = 0
+is
+    check x % 2 = 0
+end assert_even
+
+procedure main()
+is
+    let val: Integer = 42
+    call assert_even(val)
+end main
+
+end ProcedurePositive03

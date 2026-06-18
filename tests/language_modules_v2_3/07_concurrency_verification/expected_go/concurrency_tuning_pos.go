@@ -156,6 +156,8 @@ func (w *freeholdWorker) steal() (freeholdTask, bool) {
 	return freeholdTask{}, false
 }
 
+type Void struct{}
+
 type FreeholdScope struct {
 	wg       sync.WaitGroup
 	ctx      context.Context
@@ -228,13 +230,26 @@ func freeholdChannelReceive[T any](ctx context.Context, receiver <-chan T) T {
 }
 
 func Worker(ctx context.Context, val int64) int64 {
+	freeholdDefaultScope := FreeholdScope{}
+	freeholdDefaultScope.ctx, freeholdDefaultScope.cancel = context.WithCancel(ctx)
+	freeholdDefaultScope.priority = 3
+	freeholdDefaultScope.sem = nil
+	defer freeholdDefaultScope.cancel()
+	_ = freeholdDefaultScope
+	freeholdDefaultScope.wg.Wait()
 	return val * 2
 }
 
 func ExecuteTuning(ctx context.Context, input int64) int64 {
+	freeholdDefaultScope := FreeholdScope{}
+	freeholdDefaultScope.ctx, freeholdDefaultScope.cancel = context.WithCancel(ctx)
+	freeholdDefaultScope.priority = 3
+	freeholdDefaultScope.sem = nil
+	defer freeholdDefaultScope.cancel()
+	_ = freeholdDefaultScope
 	{
 		sc := FreeholdScope{}
-		sc.ctx, sc.cancel = context.WithCancel(ctx)
+		sc.ctx, sc.cancel = context.WithCancel(freeholdDefaultScope.ctx)
 		sc.priority = 3
 		sc.sem = nil
 		defer sc.cancel()
@@ -244,6 +259,7 @@ func ExecuteTuning(ctx context.Context, input int64) int64 {
 		var handle FreeholdJoinHandle[int64] = freeholdSpawn[int64](&sc.wg, sc.priority, sc.sem, func() int64 { return Worker(sc.ctx, input) })
 		var res int64 = freeholdJoin[int64](sc.ctx, handle)
 		sc.wg.Wait()
+		freeholdDefaultScope.wg.Wait()
 		return res
 	}
 }

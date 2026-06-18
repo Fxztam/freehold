@@ -1,0 +1,25 @@
+module Loop_Init_Arr_Index
+
+-- Index-dependent initialization.
+-- Explanation: the prefix invariant records the exact value chosen for each initialized cell.
+
+procedure init_arr_index(a: Array<Integer, 1..1000>) -> Array<Integer, 1..1000>
+ensures forall j in 1..1000 => result[j] == j
+do
+    let i: Integer := 1
+    let b: Array<Integer, 1..1000> := a
+
+    while i <= 1000
+    invariant i >= 1
+    invariant i <= 1001
+    invariant forall k in 1..i-1 => b[k] == k
+    variant 1001 - i
+    do
+        b[i] := i
+        i := i + 1
+    end while
+
+    return b
+end init_arr_index
+
+end Loop_Init_Arr_Index

@@ -1,0 +1,29 @@
+module Concurrency.ConcurrencyComplexChainPos
+
+async function provider(val: Integer) returns Integer
+  requires val > 0
+  ensures result > 15
+is
+    return val + 15
+end provider
+
+async function consumer(val: Integer) returns Integer
+  requires val > 15
+is
+    return val + 1
+end consumer
+
+async function run_complex_chain(input: Integer) returns Integer
+  requires input > 0
+is
+    let handle1: JoinHandle<Integer> = spawn provider(input)
+    let res1: Integer = await handle1
+
+    -- Since provider ensures result > 15, res1 > 15 holds.
+    -- Thus, the precondition of consumer (val > 15) is fully satisfied!
+    let handle2: JoinHandle<Integer> = spawn consumer(res1)
+    let res2: Integer = await handle2
+    return res2
+end run_complex_chain
+
+end Concurrency.ConcurrencyComplexChainPos

@@ -1,0 +1,19 @@
+-- Purpose: Negative test – Declaring a record where multiple fields map to the identical external @json name.
+-- Failure Category: Non-unique external @json key
+-- Referenced Specification: SPECIFICATION-RECORD-JSON.md, Section 3
+-- Expected Result: Verifier Failure
+--   Providing duplicate alias values for @json causes name collisions in mapping and is rejected.
+
+module RecordNegative04
+
+type Colliding is record
+    first_name: String @json("name")
+    last_name: String @json("name")
+end record
+
+procedure main()
+is
+    check true
+end main
+
+end Colliding

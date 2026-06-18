@@ -1,0 +1,22 @@
+module Concurrent.SharedMutableStateArrayNeg
+
+task Worker(arr: Array<Integer, 4>)
+is
+    let val: Integer = arr[0]
+end Worker
+
+async procedure Main()
+is
+    let arr: Array<Integer, 4> = [1, 2, 3, 4]
+
+    parallel (limit = 2)
+    do
+        let first: JoinHandle<Void> = spawn Worker(arr)
+        let second: JoinHandle<Void> = spawn Worker(arr)
+
+        let first_done: Void = await first
+        let second_done: Void = await second
+    end parallel
+end Main
+
+end Concurrent.SharedMutableStateArrayNeg

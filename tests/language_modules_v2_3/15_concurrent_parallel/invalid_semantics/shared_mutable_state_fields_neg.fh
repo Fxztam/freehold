@@ -1,0 +1,33 @@
+module Concurrent.SharedMutableStateFieldsNeg
+
+type Data is record
+    val: Integer
+end record
+
+type Nested is record
+    d: Data
+end record
+
+task Worker(val: Data)
+is
+    let x: Integer = val.val
+end Worker
+
+async procedure Main()
+is
+    let nested: Nested = Nested {
+        d: Data { val: 42 }
+    }
+
+    parallel (limit = 2)
+    do
+        -- Passing nested fields where the path refers to a Record root
+        let first: JoinHandle<Void> = spawn Worker(nested.d)
+        let second: JoinHandle<Void> = spawn Worker(nested.d)
+
+        let first_done: Void = await first
+        let second_done: Void = await second
+    end parallel
+end Main
+
+end Concurrent.SharedMutableStateFieldsNeg

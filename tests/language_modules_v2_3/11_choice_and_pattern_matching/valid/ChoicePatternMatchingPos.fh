@@ -1,0 +1,42 @@
+module ChoicePatternMatchingPos
+
+choice TrafficLight =
+    Red
+  | Yellow
+  | Green
+end TrafficLight
+
+choice Option<T> =
+    Some(val: T)
+  | None
+end Option
+
+procedure test_traffic_light(light: TrafficLight)
+is
+    let state: Integer = 0
+    case light is
+        | Red =>
+            state := 1
+        | Green =>
+            state := 2
+        default =>
+            state := 3
+    end case
+    check state > 0
+end test_traffic_light
+
+procedure test_option_pattern(opt: Option<Integer>)
+is
+    let val: Integer = 0
+    case opt is
+        | Some(v) when v > 5 =>
+            val := v
+        | Some(v) =>
+            val := 100
+        | None =>
+            val := 0
+    end case
+    check val >= 0
+end test_option_pattern
+
+end ChoicePatternMatchingPos

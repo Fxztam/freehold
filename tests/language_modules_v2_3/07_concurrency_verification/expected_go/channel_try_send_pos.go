@@ -156,6 +156,8 @@ func (w *freeholdWorker) steal() (freeholdTask, bool) {
 	return freeholdTask{}, false
 }
 
+type Void struct{}
+
 type FreeholdScope struct {
 	wg       sync.WaitGroup
 	ctx      context.Context
@@ -228,9 +230,16 @@ func freeholdChannelReceive[T any](ctx context.Context, receiver <-chan T) T {
 }
 
 func ExecuteTrySend(ctx context.Context) bool {
+	freeholdDefaultScope := FreeholdScope{}
+	freeholdDefaultScope.ctx, freeholdDefaultScope.cancel = context.WithCancel(ctx)
+	freeholdDefaultScope.priority = 3
+	freeholdDefaultScope.sem = nil
+	defer freeholdDefaultScope.cancel()
+	_ = freeholdDefaultScope
 	var chan_ chan int64 = make(chan int64, int(1))
 	var sender chan<- int64 = chan_
 	var first bool = freeholdChannelTrySend[int64](sender, 10)
 	var second bool = freeholdChannelTrySend[int64](sender, 20)
+	freeholdDefaultScope.wg.Wait()
 	return first || second
 }

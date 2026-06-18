@@ -13,7 +13,15 @@ Die kürzlich im Python-Referenzcompiler vorgenommenen Framing-, Modifies- und A
 2. **Modernisierung der GNATprove-Äquivalenztests**
    - Die verbleibenden älteren Testfälle in `freehold_gnatprove_equivalence_tests_v2` (z. B. in `01_contract_overflow` bis `09_record_updates`) von alter Freehold-Syntax (z. B. `record` statt `type ... is record`, `do` statt `is`, `:=` in `let`) auf die aktuelle Parser-Spezifikation migrieren, um die GNATprove-Äquivalenzprüfung (`run_expected.py`) wieder auf 100% Erfolg zu heben.
 3. **Morgige Kernaufgabe: Task-Verifikation & Concurrency-Garantien (Sicherheits-Standard)**
-   - *Aufgabe*: Analyse und Einplanung des [memories/repo/task_verification_proposal.md](memories/repo/task_verification_proposal.md) zur Einführung von `task` als vertraglich prüfbare Einheit im Verifier. Vorbereitung der 6 statischen Verifikationsregeln (vollständiges Awaiting, Vermeidung von Shared Mutable State mit der Fehlermeldung `"shared mutable state passed to multiple spawned tasks"`, Typisierung von Channels und richtungsbasierter Safety-Checks sowie Integration von Task-Pre/Postbedingungen gekoppelt an `spawn` und `await`).
+   - *Aufgabe*: Analyse und Einplanung des [memories/repo/task_verification_proposal.md](memories/repo/task_verification_proposal.md) zur Einführung von `task` als vertraglich prüfbare Einheit im Verifier.
+   - *Inhalte & Concurrency-Regeln*:
+     1. **Die 6 statischen Verifikationsregeln**: Vollständiges Awaiting/Detaching von Handles, strikte Kanaltypisierung, Flussrichtungs-Validierung (`send` / `receive` vs. `Sender`/`Receiver`), Preconditions an der `spawn`-Grenze und Postconditions nach dem `await` (integriert in Z3).
+     2. **Shared-Mutable-State-Verhinderung**: Statische Fehlerprüfung, wenn mutable State an mehrere gestartete Tasks übergeben wird. Fehlermeldung:
+        `Compile error: shared mutable state passed to multiple spawned tasks`
+     3. **Prioritär gesteuertes Scheduling (`priority`)**: Integration von `spawn ... with priority X` im Parser und Codegen (Mapping auf das $O(\log N)$-prioritized Insertion-Verfahren des Runtimeschedulers).
+     4. **Prozessordrosselung & Begrenzungen (`limit` / `parallel`)**: Unterstützung von `parallel (limit = N) do ... end parallel`-Regionen. Statische "No-Blocking"-Garantie im Verifier (keine unbegrenzten blockierenden Kanal-Ops in limitierten Pools).
+     5. **Paralleles Rendezvous (`await all`)**: Syntaktische Abbildung von `await all [t1, t2]` im Parser, inklusive monomorphtypisierter Array-Ergebniszusammenführung.
+     6. **Physisches Core-Mapping & M:N Thread-Pool**: Go-Runtime-Optimierung auf Basis von `runtime.NumCPU()`, Work-Stealing-Scheduling pro Kern sowie beweisbar race-freie Ausführung der asynchronen Co-Routinen.
 
 ---
 

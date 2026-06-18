@@ -1,0 +1,30 @@
+module Concurrency.ConcurrencyComplexChainFail
+
+async function provider(val: Integer) returns Integer
+  requires val > 0
+  ensures result > 10
+is
+    return val + 10
+end provider
+
+async function consumer(val: Integer) returns Integer
+  requires val > 15
+is
+    return val + 1
+end consumer
+
+async function run_complex_chain(input: Integer) returns Integer
+  requires input > 0
+is
+    let handle1: JoinHandle<Integer> = spawn provider(input)
+    let res1: Integer = await handle1
+
+    -- After await handle1, we know res1 > 10 (from provider's postcondition).
+    -- However, consumer requires val > 15. Since 11 <= 15 is not > 15, Z3 will fail to prove res1 > 15
+    -- and throw a verification error because precondition obligation is satisfiable (violated)
+    let handle2: JoinHandle<Integer> = spawn consumer(res1)
+    let res2: Integer = await handle2
+    return res2
+end run_complex_chain
+
+end Concurrency.ConcurrencyComplexChainFail

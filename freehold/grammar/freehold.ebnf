@@ -13,17 +13,23 @@ exposing_clause      = "exposing", exposing_list ;
 exposing_list        = IDENT, { ",", IDENT } ;
 
 declaration          = record_type_decl
+                     | choice_type_decl
                      | type_decl
                      | error_decl
                      | service_decl
                      | function_decl
-                     | procedure_decl ;
+                     | procedure_decl
+                     | task_decl ;
 
 record_type_decl     = "type", IDENT, type_param_list?, "is", "record", record_field, { record_field }, "end", "record" ;
 type_param_list      = TYPE_ARG_START, IDENT, { ",", IDENT }, ">" ;
+choice_type_decl     = "choice", IDENT, type_param_list?, "=", [ "|" ], constructor_decl, { "|", constructor_decl }, "end", IDENT ;
+constructor_decl     = IDENT, [ "(", [ param, { ",", param } ], ")" ] ;
 record_field         = IDENT, ":", type_ref, json_field_name?, proto_field_id? ;
 json_field_name      = "@json", "(", string_literal, ")" ;
 proto_field_id       = "proto", INT_NUMBER ;
+
+task_decl            = "task", IDENT, "(", [ param_list ], ")", contract_block?, "is", { statement }, "end", IDENT ;
 
 type_decl            = "type", IDENT, "is", base_type, range_decl? ;
 range_decl           = "range", ( SIGNED_NUMBER | INT_NUMBER ), "..", ( SIGNED_NUMBER | INT_NUMBER ) ;
@@ -77,6 +83,7 @@ aborts_clause        = "aborts", IDENT, [ "when", expr ] ;
 ensures_clause       = "ensures", expr_list ;
 
 statement            = let_stmt
+                     | index_assign_stmt
                      | field_assign_stmt
                      | assign_stmt
                      | return_stmt
@@ -86,9 +93,11 @@ statement            = let_stmt
                      | case_stmt
                      | scope_stmt
                      | check_stmt
-                     | call_stmt ;
+                     | call_stmt
+                     | parallel_stmt ;
 
 let_stmt             = "let", IDENT, ":", return_type, "=", expr ;
+index_assign_stmt    = IDENT, "[", expr, "]", ":=", expr ;
 field_assign_stmt    = field_path, ":=", expr ;
 assign_stmt          = IDENT, ":=", expr ;
 return_stmt          = "return", return_value ;
@@ -98,6 +107,7 @@ return_value         = "ok", expr
                      | expr ;
 check_stmt           = "check", expr ;
 call_stmt            = "call", qualified_name, type_arg_list?, "(", arg_list?, ")" ;
+parallel_stmt        = "parallel", [ IDENT ], "(", "limit", "=", expr, ")", "do", { statement }, "end", "parallel", [ IDENT ] ;
 
 if_stmt              = "if", expr, "then", then_block, [ "else", else_block ], "end", "if" ;
 then_block           = { statement } ;
@@ -108,8 +118,10 @@ invariant_clause     = "invariant", expr ;
 variant_clause       = "variant", expr ;
 loop_block           = { statement } ;
 
-case_stmt            = "case", expr, "is", case_branch, { case_branch }, default_branch, "end", "case" ;
+case_stmt            = "case", expr, "is", ( case_branch, { case_branch }, default_branch | pattern_branch, { pattern_branch }, [ default_branch ] ), "end", "case" ;
 case_branch          = "when", expr, "=>", case_block ;
+pattern_branch       = "|", pattern_expr, [ "when", expr ], "=>", case_block ;
+pattern_expr         = IDENT, [ "(", IDENT, { ",", IDENT }, ")" ] ;
 default_branch       = "default", "=>", case_block ;
 case_block           = { statement } ;
 
@@ -126,8 +138,12 @@ named_arg_list       = named_arg, { ",", named_arg } ;
 named_arg            = IDENT, ":", expr ;
 
 expr                 = logic_or
+                     | "spawn", expr, [ "with", "(", spawn_attribute_list, ")" ]
                      | "for", "all", IDENT, "in", logic_or, "..", logic_or, "=>", expr
                      | "for", "some", IDENT, "in", logic_or, "..", logic_or, "=>", expr ;
+
+spawn_attribute_list = spawn_attribute, { ",", spawn_attribute } ;
+spawn_attribute      = IDENT, ":", expr ;
 
 logic_or             = logic_and, { "or", logic_and } ;
 logic_and            = equality, { "and", equality } ;
@@ -159,6 +175,8 @@ atom                 = string_literal
                      | "error"
                      | array_literal
                      | type_ref, "{", named_arg_list, "}"
+                     | type_ref, "{", [ map_entries ], "}"
+                     | type_ref, "{", set_entries, "}"
                      | field_path
                      | IDENT, "[", expr, "]"
                      | IDENT, type_arg_list?, "(", arg_list?, ")", "with", "invariant", expr
@@ -169,7 +187,10 @@ atom                 = string_literal
                      | "(", expr, ")" ;
 
 field_path           = IDENT, ".", IDENT, { ".", IDENT } ;
-array_literal        = "[", arg_list?, "]" ;
+array_literal        = "[", [ arg_list ], "]" ;
+map_entries          = map_entry, { ",", map_entry } ;
+map_entry            = string_literal, ":", expr ;
+set_entries          = expr, { ",", expr } ;
 
 (* Terminals and Lexer Definitions *)
 string_literal       = '"', { string_character | escape_sequence }, '"' ;

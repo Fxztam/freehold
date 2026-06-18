@@ -1,0 +1,15 @@
+module Pending_Swap_Modulo_Xor
+
+-- Pending until Freehold has modular Unsigned_32 and bitwise xor semantics.
+-- SPARK proves the classic xor-swap for modular types.
+
+procedure swap_modulo(x: Unsigned32, y: Unsigned32)
+ensures x == old(y)
+ensures y == old(x)
+do
+    x := x xor y
+    y := x xor y
+    x := x xor y
+end swap_modulo
+
+end Pending_Swap_Modulo_Xor

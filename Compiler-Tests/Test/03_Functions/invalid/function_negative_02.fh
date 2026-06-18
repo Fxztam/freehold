@@ -1,0 +1,19 @@
+-- Purpose: Negative test – Function defined without a return type 'returns'.
+-- Failure Category: Missing return type on function declaration
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 1 (Routine Kinds)
+-- Expected Result: Parser Failure
+--   Every function declaration must specify 'returns <type>'.
+
+module FunctionNegative02
+
+function incomplete_func(a: Integer)
+is
+    return a
+end incomplete_func
+
+procedure main()
+is
+    let x: Integer = incomplete_func(10)
+end main
+
+end FunctionNegative02

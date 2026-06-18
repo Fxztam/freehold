@@ -1,0 +1,25 @@
+-- Purpose: Negative test – Function body attempts a mutating state assignment on a parameter field.
+-- Failure Category: Non-mutable parameter field mutation inside functions
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 1 (Routine Kinds)
+-- Expected Result: Verifier Failure
+--   Functions are pure; modifying parameter fields is strictly illegal.
+
+module FunctionNegative05
+
+type Box is record
+    val: Integer
+end record
+
+function mutate_inside_function(b: Box) returns Integer
+is
+    b.val := b.val + 1
+    return b.val
+end mutate_inside_function
+
+procedure main()
+is
+    let box: Box = Box { val: 4 }
+    let res: Integer = mutate_inside_function(box)
+end main
+
+end FunctionNegative05

@@ -1,0 +1,20 @@
+-- Purpose: Demonstrate a function with standard preconditions (requires) and postconditions (ensures).
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 1 (Routine Kinds), Section 2 (Contract Block Order)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module FunctionDemo02
+
+function safe_divide(numerator: Integer, denominator: Integer) returns Integer
+requires denominator != 0
+ensures result * denominator = numerator -- assuming no remainder for this basic assertion
+is
+    return numerator / denominator
+end safe_divide
+
+procedure main()
+is
+    let value: Integer = safe_divide(10, 2)
+    check value = 5
+end main
+
+end FunctionDemo02

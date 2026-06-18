@@ -1,0 +1,23 @@
+module ConcurrentParallelNonBlockingTrySendPos
+
+async function Worker(sender: Sender<Integer>, val: Integer) returns Boolean
+is
+    -- Using the non-blocking channel_try_send instead of channel_send
+    let ok_val: Boolean = await channel_try_send<Integer>(sender, val)
+    return ok_val
+end Worker
+
+async procedure Main()
+is
+    let chan: Channel<Integer> = channel<Integer>(8)
+    let sender: Sender<Integer> = channel_sender<Integer>(chan)
+
+    parallel (limit = 2)
+    do
+        -- Calling and spawning with non-blocking try_send is fully verified and permitted
+        let first: JoinHandle<Boolean> = spawn Worker(sender, 42)
+        let first_done: Boolean = await first
+    end parallel
+end Main
+
+end ConcurrentParallelNonBlockingTrySendPos

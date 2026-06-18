@@ -14,7 +14,8 @@
     "module_order": [
       "App.Main",
       "Domain.Shipments",
-      "Domain.Types"
+      "Domain.Types",
+      "Std.IO"
     ],
     "modules": [
       {
@@ -393,6 +394,15 @@
                 "base_type": {
                   "kind": "TypeName",
                   "name": "String"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Void",
+                "base": "Void",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Void"
                 }
               }
             ],
@@ -774,9 +784,9 @@
                 "data": {
                   "kind": "assert",
                   "location": "line 14:5",
-                  "obligation": "(= 42 42)",
+                  "obligation": "(= (select shipments_customer_address_city_id 0) (select shipments_destination_city_id 0))",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const UNSUPPORTED Int)\n(declare-const shipments Int)\n(assert (= shipments (store (store ((as const (Array Int Int)) 0) 0 UNSUPPORTED) 1 UNSUPPORTED)))\n(assert (not (= 42 42)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _customer_address_city_id Int)\n(declare-const _customer_address_label Int)\n(declare-const _customer_id Int)\n(declare-const _customer_name Int)\n(declare-const _destination_city_id Int)\n(declare-const _destination_label Int)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const first Int)\n(declare-const first_customer_address_city_id Int)\n(declare-const first_customer_address_label String)\n(declare-const first_customer_id Int)\n(declare-const first_customer_name String)\n(declare-const first_destination_city_id Int)\n(declare-const first_destination_label String)\n(declare-const second Int)\n(declare-const second_customer_address_city_id Int)\n(declare-const second_customer_address_label String)\n(declare-const second_customer_id Int)\n(declare-const second_customer_name String)\n(declare-const second_destination_city_id Int)\n(declare-const second_destination_label String)\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (= first (select shipments 0)))\n(assert (= first_customer_id (select shipments 0)_customer_id))\n(assert (= first_customer_name (select shipments 0)_customer_name))\n(assert (= first_customer_address_city_id (select shipments 0)_customer_address_city_id))\n(assert (= first_customer_address_label (select shipments 0)_customer_address_label))\n(assert (= first_destination_city_id (select shipments 0)_destination_city_id))\n(assert (= first_destination_label (select shipments 0)_destination_label))\n(assert (= second (select shipments 1)))\n(assert (= second_customer_id (select shipments 1)_customer_id))\n(assert (= second_customer_name (select shipments 1)_customer_name))\n(assert (= second_customer_address_city_id (select shipments 1)_customer_address_city_id))\n(assert (= second_customer_address_label (select shipments 1)_customer_address_label))\n(assert (= second_destination_city_id (select shipments 1)_destination_city_id))\n(assert (= second_destination_label (select shipments 1)_destination_label))\n(assert (not (= (select shipments_customer_address_city_id 0) (select shipments_destination_city_id 0))))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -784,9 +794,29 @@
                 "data": {
                   "kind": "assert",
                   "location": "line 15:5",
-                  "obligation": "(= 1002 1002)",
+                  "obligation": "(= (select shipments_customer_id 1) 1002)",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const UNSUPPORTED Int)\n(declare-const shipments Int)\n(assert (= shipments (store (store ((as const (Array Int Int)) 0) 0 UNSUPPORTED) 1 UNSUPPORTED)))\n(assert (= 42 42))\n(assert (not (= 1002 1002)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _customer_address_city_id Int)\n(declare-const _customer_address_label Int)\n(declare-const _customer_id Int)\n(declare-const _customer_name Int)\n(declare-const _destination_city_id Int)\n(declare-const _destination_label Int)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const first Int)\n(declare-const first_customer_address_city_id Int)\n(declare-const first_customer_address_label String)\n(declare-const first_customer_id Int)\n(declare-const first_customer_name String)\n(declare-const first_destination_city_id Int)\n(declare-const first_destination_label String)\n(declare-const second Int)\n(declare-const second_customer_address_city_id Int)\n(declare-const second_customer_address_label String)\n(declare-const second_customer_id Int)\n(declare-const second_customer_name String)\n(declare-const second_destination_city_id Int)\n(declare-const second_destination_label String)\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (= first (select shipments 0)))\n(assert (= first_customer_id (select shipments 0)_customer_id))\n(assert (= first_customer_name (select shipments 0)_customer_name))\n(assert (= first_customer_address_city_id (select shipments 0)_customer_address_city_id))\n(assert (= first_customer_address_label (select shipments 0)_customer_address_label))\n(assert (= first_destination_city_id (select shipments 0)_destination_city_id))\n(assert (= first_destination_label (select shipments 0)_destination_label))\n(assert (= second (select shipments 1)))\n(assert (= second_customer_id (select shipments 1)_customer_id))\n(assert (= second_customer_name (select shipments 1)_customer_name))\n(assert (= second_customer_address_city_id (select shipments 1)_customer_address_city_id))\n(assert (= second_customer_address_label (select shipments 1)_customer_address_label))\n(assert (= second_destination_city_id (select shipments 1)_destination_city_id))\n(assert (= second_destination_label (select shipments 1)_destination_label))\n(assert (= (select shipments_customer_address_city_id 0) (select shipments_destination_city_id 0)))\n(assert (not (= (select shipments_customer_id 1) 1002)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "range_check",
+                  "location": "line 10:28",
+                  "obligation": "(and (>= 1 0) (< 1 2))",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _customer_address_city_id Int)\n(declare-const _customer_address_label Int)\n(declare-const _customer_id Int)\n(declare-const _customer_name Int)\n(declare-const _destination_city_id Int)\n(declare-const _destination_label Int)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const first Int)\n(declare-const first_customer_address_city_id Int)\n(declare-const first_customer_address_label String)\n(declare-const first_customer_id Int)\n(declare-const first_customer_name String)\n(declare-const first_destination_city_id Int)\n(declare-const first_destination_label String)\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (= first (select shipments 0)))\n(assert (= first_customer_id (select shipments 0)_customer_id))\n(assert (= first_customer_name (select shipments 0)_customer_name))\n(assert (= first_customer_address_city_id (select shipments 0)_customer_address_city_id))\n(assert (= first_customer_address_label (select shipments 0)_customer_address_label))\n(assert (= first_destination_city_id (select shipments 0)_destination_city_id))\n(assert (= first_destination_label (select shipments 0)_destination_label))\n(assert (not (and (>= 1 0) (< 1 2))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "range_check",
+                  "location": "line 9:27",
+                  "obligation": "(and (>= 0 0) (< 0 2))",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (not (and (>= 0 0) (< 0 2))))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],
@@ -814,9 +844,9 @@
                   "data": {
                     "kind": "assert",
                     "location": "line 14:5",
-                    "obligation": "(= 42 42)",
+                    "obligation": "(= (select shipments_customer_address_city_id 0) (select shipments_destination_city_id 0))",
                     "routine": "main",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const UNSUPPORTED Int)\n(declare-const shipments Int)\n(assert (= shipments (store (store ((as const (Array Int Int)) 0) 0 UNSUPPORTED) 1 UNSUPPORTED)))\n(assert (not (= 42 42)))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _customer_address_city_id Int)\n(declare-const _customer_address_label Int)\n(declare-const _customer_id Int)\n(declare-const _customer_name Int)\n(declare-const _destination_city_id Int)\n(declare-const _destination_label Int)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const first Int)\n(declare-const first_customer_address_city_id Int)\n(declare-const first_customer_address_label String)\n(declare-const first_customer_id Int)\n(declare-const first_customer_name String)\n(declare-const first_destination_city_id Int)\n(declare-const first_destination_label String)\n(declare-const second Int)\n(declare-const second_customer_address_city_id Int)\n(declare-const second_customer_address_label String)\n(declare-const second_customer_id Int)\n(declare-const second_customer_name String)\n(declare-const second_destination_city_id Int)\n(declare-const second_destination_label String)\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (= first (select shipments 0)))\n(assert (= first_customer_id (select shipments 0)_customer_id))\n(assert (= first_customer_name (select shipments 0)_customer_name))\n(assert (= first_customer_address_city_id (select shipments 0)_customer_address_city_id))\n(assert (= first_customer_address_label (select shipments 0)_customer_address_label))\n(assert (= first_destination_city_id (select shipments 0)_destination_city_id))\n(assert (= first_destination_label (select shipments 0)_destination_label))\n(assert (= second (select shipments 1)))\n(assert (= second_customer_id (select shipments 1)_customer_id))\n(assert (= second_customer_name (select shipments 1)_customer_name))\n(assert (= second_customer_address_city_id (select shipments 1)_customer_address_city_id))\n(assert (= second_customer_address_label (select shipments 1)_customer_address_label))\n(assert (= second_destination_city_id (select shipments 1)_destination_city_id))\n(assert (= second_destination_label (select shipments 1)_destination_label))\n(assert (not (= (select shipments_customer_address_city_id 0) (select shipments_destination_city_id 0))))\n(check-sat)\n; unsat means proved"
                   }
                 },
                 {
@@ -824,9 +854,29 @@
                   "data": {
                     "kind": "assert",
                     "location": "line 15:5",
-                    "obligation": "(= 1002 1002)",
+                    "obligation": "(= (select shipments_customer_id 1) 1002)",
                     "routine": "main",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const UNSUPPORTED Int)\n(declare-const shipments Int)\n(assert (= shipments (store (store ((as const (Array Int Int)) 0) 0 UNSUPPORTED) 1 UNSUPPORTED)))\n(assert (= 42 42))\n(assert (not (= 1002 1002)))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _customer_address_city_id Int)\n(declare-const _customer_address_label Int)\n(declare-const _customer_id Int)\n(declare-const _customer_name Int)\n(declare-const _destination_city_id Int)\n(declare-const _destination_label Int)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const first Int)\n(declare-const first_customer_address_city_id Int)\n(declare-const first_customer_address_label String)\n(declare-const first_customer_id Int)\n(declare-const first_customer_name String)\n(declare-const first_destination_city_id Int)\n(declare-const first_destination_label String)\n(declare-const second Int)\n(declare-const second_customer_address_city_id Int)\n(declare-const second_customer_address_label String)\n(declare-const second_customer_id Int)\n(declare-const second_customer_name String)\n(declare-const second_destination_city_id Int)\n(declare-const second_destination_label String)\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (= first (select shipments 0)))\n(assert (= first_customer_id (select shipments 0)_customer_id))\n(assert (= first_customer_name (select shipments 0)_customer_name))\n(assert (= first_customer_address_city_id (select shipments 0)_customer_address_city_id))\n(assert (= first_customer_address_label (select shipments 0)_customer_address_label))\n(assert (= first_destination_city_id (select shipments 0)_destination_city_id))\n(assert (= first_destination_label (select shipments 0)_destination_label))\n(assert (= second (select shipments 1)))\n(assert (= second_customer_id (select shipments 1)_customer_id))\n(assert (= second_customer_name (select shipments 1)_customer_name))\n(assert (= second_customer_address_city_id (select shipments 1)_customer_address_city_id))\n(assert (= second_customer_address_label (select shipments 1)_customer_address_label))\n(assert (= second_destination_city_id (select shipments 1)_destination_city_id))\n(assert (= second_destination_label (select shipments 1)_destination_label))\n(assert (= (select shipments_customer_address_city_id 0) (select shipments_destination_city_id 0)))\n(assert (not (= (select shipments_customer_id 1) 1002)))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "range_check",
+                    "location": "line 10:28",
+                    "obligation": "(and (>= 1 0) (< 1 2))",
+                    "routine": "main",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _customer_address_city_id Int)\n(declare-const _customer_address_label Int)\n(declare-const _customer_id Int)\n(declare-const _customer_name Int)\n(declare-const _destination_city_id Int)\n(declare-const _destination_label Int)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const first Int)\n(declare-const first_customer_address_city_id Int)\n(declare-const first_customer_address_label String)\n(declare-const first_customer_id Int)\n(declare-const first_customer_name String)\n(declare-const first_destination_city_id Int)\n(declare-const first_destination_label String)\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (= first (select shipments 0)))\n(assert (= first_customer_id (select shipments 0)_customer_id))\n(assert (= first_customer_name (select shipments 0)_customer_name))\n(assert (= first_customer_address_city_id (select shipments 0)_customer_address_city_id))\n(assert (= first_customer_address_label (select shipments 0)_customer_address_label))\n(assert (= first_destination_city_id (select shipments 0)_destination_city_id))\n(assert (= first_destination_label (select shipments 0)_destination_label))\n(assert (not (and (>= 1 0) (< 1 2))))\n(check-sat)\n; unsat means proved"
+                  }
+                },
+                {
+                  "kind": "ProofObligation",
+                  "data": {
+                    "kind": "range_check",
+                    "location": "line 9:27",
+                    "obligation": "(and (>= 0 0) (< 0 2))",
+                    "routine": "main",
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (not (and (>= 0 0) (< 0 2))))\n(check-sat)\n; unsat means proved"
                   }
                 }
               ],
@@ -1218,6 +1268,15 @@
                 "kind": "TypeName",
                 "name": "String"
               }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Void",
+              "base": "Void",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Void"
+              }
             }
           ],
           "records": [
@@ -1598,9 +1657,9 @@
               "data": {
                 "kind": "assert",
                 "location": "line 14:5",
-                "obligation": "(= 42 42)",
+                "obligation": "(= (select shipments_customer_address_city_id 0) (select shipments_destination_city_id 0))",
                 "routine": "main",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const UNSUPPORTED Int)\n(declare-const shipments Int)\n(assert (= shipments (store (store ((as const (Array Int Int)) 0) 0 UNSUPPORTED) 1 UNSUPPORTED)))\n(assert (not (= 42 42)))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _customer_address_city_id Int)\n(declare-const _customer_address_label Int)\n(declare-const _customer_id Int)\n(declare-const _customer_name Int)\n(declare-const _destination_city_id Int)\n(declare-const _destination_label Int)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const first Int)\n(declare-const first_customer_address_city_id Int)\n(declare-const first_customer_address_label String)\n(declare-const first_customer_id Int)\n(declare-const first_customer_name String)\n(declare-const first_destination_city_id Int)\n(declare-const first_destination_label String)\n(declare-const second Int)\n(declare-const second_customer_address_city_id Int)\n(declare-const second_customer_address_label String)\n(declare-const second_customer_id Int)\n(declare-const second_customer_name String)\n(declare-const second_destination_city_id Int)\n(declare-const second_destination_label String)\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (= first (select shipments 0)))\n(assert (= first_customer_id (select shipments 0)_customer_id))\n(assert (= first_customer_name (select shipments 0)_customer_name))\n(assert (= first_customer_address_city_id (select shipments 0)_customer_address_city_id))\n(assert (= first_customer_address_label (select shipments 0)_customer_address_label))\n(assert (= first_destination_city_id (select shipments 0)_destination_city_id))\n(assert (= first_destination_label (select shipments 0)_destination_label))\n(assert (= second (select shipments 1)))\n(assert (= second_customer_id (select shipments 1)_customer_id))\n(assert (= second_customer_name (select shipments 1)_customer_name))\n(assert (= second_customer_address_city_id (select shipments 1)_customer_address_city_id))\n(assert (= second_customer_address_label (select shipments 1)_customer_address_label))\n(assert (= second_destination_city_id (select shipments 1)_destination_city_id))\n(assert (= second_destination_label (select shipments 1)_destination_label))\n(assert (not (= (select shipments_customer_address_city_id 0) (select shipments_destination_city_id 0))))\n(check-sat)\n; unsat means proved"
               }
             },
             {
@@ -1608,9 +1667,29 @@
               "data": {
                 "kind": "assert",
                 "location": "line 15:5",
-                "obligation": "(= 1002 1002)",
+                "obligation": "(= (select shipments_customer_id 1) 1002)",
                 "routine": "main",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const UNSUPPORTED Int)\n(declare-const shipments Int)\n(assert (= shipments (store (store ((as const (Array Int Int)) 0) 0 UNSUPPORTED) 1 UNSUPPORTED)))\n(assert (= 42 42))\n(assert (not (= 1002 1002)))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _customer_address_city_id Int)\n(declare-const _customer_address_label Int)\n(declare-const _customer_id Int)\n(declare-const _customer_name Int)\n(declare-const _destination_city_id Int)\n(declare-const _destination_label Int)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const first Int)\n(declare-const first_customer_address_city_id Int)\n(declare-const first_customer_address_label String)\n(declare-const first_customer_id Int)\n(declare-const first_customer_name String)\n(declare-const first_destination_city_id Int)\n(declare-const first_destination_label String)\n(declare-const second Int)\n(declare-const second_customer_address_city_id Int)\n(declare-const second_customer_address_label String)\n(declare-const second_customer_id Int)\n(declare-const second_customer_name String)\n(declare-const second_destination_city_id Int)\n(declare-const second_destination_label String)\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (= first (select shipments 0)))\n(assert (= first_customer_id (select shipments 0)_customer_id))\n(assert (= first_customer_name (select shipments 0)_customer_name))\n(assert (= first_customer_address_city_id (select shipments 0)_customer_address_city_id))\n(assert (= first_customer_address_label (select shipments 0)_customer_address_label))\n(assert (= first_destination_city_id (select shipments 0)_destination_city_id))\n(assert (= first_destination_label (select shipments 0)_destination_label))\n(assert (= second (select shipments 1)))\n(assert (= second_customer_id (select shipments 1)_customer_id))\n(assert (= second_customer_name (select shipments 1)_customer_name))\n(assert (= second_customer_address_city_id (select shipments 1)_customer_address_city_id))\n(assert (= second_customer_address_label (select shipments 1)_customer_address_label))\n(assert (= second_destination_city_id (select shipments 1)_destination_city_id))\n(assert (= second_destination_label (select shipments 1)_destination_label))\n(assert (= (select shipments_customer_address_city_id 0) (select shipments_destination_city_id 0)))\n(assert (not (= (select shipments_customer_id 1) 1002)))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "range_check",
+                "location": "line 10:28",
+                "obligation": "(and (>= 1 0) (< 1 2))",
+                "routine": "main",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _customer_address_city_id Int)\n(declare-const _customer_address_label Int)\n(declare-const _customer_id Int)\n(declare-const _customer_name Int)\n(declare-const _destination_city_id Int)\n(declare-const _destination_label Int)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const first Int)\n(declare-const first_customer_address_city_id Int)\n(declare-const first_customer_address_label String)\n(declare-const first_customer_id Int)\n(declare-const first_customer_name String)\n(declare-const first_destination_city_id Int)\n(declare-const first_destination_label String)\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (= first (select shipments 0)))\n(assert (= first_customer_id (select shipments 0)_customer_id))\n(assert (= first_customer_name (select shipments 0)_customer_name))\n(assert (= first_customer_address_city_id (select shipments 0)_customer_address_city_id))\n(assert (= first_customer_address_label (select shipments 0)_customer_address_label))\n(assert (= first_destination_city_id (select shipments 0)_destination_city_id))\n(assert (= first_destination_label (select shipments 0)_destination_label))\n(assert (not (and (>= 1 0) (< 1 2))))\n(check-sat)\n; unsat means proved"
+              }
+            },
+            {
+              "kind": "ProofObligation",
+              "data": {
+                "kind": "range_check",
+                "location": "line 9:27",
+                "obligation": "(and (>= 0 0) (< 0 2))",
+                "routine": "main",
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (not (and (>= 0 0) (< 0 2))))\n(check-sat)\n; unsat means proved"
               }
             }
           ],
@@ -1638,9 +1717,9 @@
                 "data": {
                   "kind": "assert",
                   "location": "line 14:5",
-                  "obligation": "(= 42 42)",
+                  "obligation": "(= (select shipments_customer_address_city_id 0) (select shipments_destination_city_id 0))",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const UNSUPPORTED Int)\n(declare-const shipments Int)\n(assert (= shipments (store (store ((as const (Array Int Int)) 0) 0 UNSUPPORTED) 1 UNSUPPORTED)))\n(assert (not (= 42 42)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _customer_address_city_id Int)\n(declare-const _customer_address_label Int)\n(declare-const _customer_id Int)\n(declare-const _customer_name Int)\n(declare-const _destination_city_id Int)\n(declare-const _destination_label Int)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const first Int)\n(declare-const first_customer_address_city_id Int)\n(declare-const first_customer_address_label String)\n(declare-const first_customer_id Int)\n(declare-const first_customer_name String)\n(declare-const first_destination_city_id Int)\n(declare-const first_destination_label String)\n(declare-const second Int)\n(declare-const second_customer_address_city_id Int)\n(declare-const second_customer_address_label String)\n(declare-const second_customer_id Int)\n(declare-const second_customer_name String)\n(declare-const second_destination_city_id Int)\n(declare-const second_destination_label String)\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (= first (select shipments 0)))\n(assert (= first_customer_id (select shipments 0)_customer_id))\n(assert (= first_customer_name (select shipments 0)_customer_name))\n(assert (= first_customer_address_city_id (select shipments 0)_customer_address_city_id))\n(assert (= first_customer_address_label (select shipments 0)_customer_address_label))\n(assert (= first_destination_city_id (select shipments 0)_destination_city_id))\n(assert (= first_destination_label (select shipments 0)_destination_label))\n(assert (= second (select shipments 1)))\n(assert (= second_customer_id (select shipments 1)_customer_id))\n(assert (= second_customer_name (select shipments 1)_customer_name))\n(assert (= second_customer_address_city_id (select shipments 1)_customer_address_city_id))\n(assert (= second_customer_address_label (select shipments 1)_customer_address_label))\n(assert (= second_destination_city_id (select shipments 1)_destination_city_id))\n(assert (= second_destination_label (select shipments 1)_destination_label))\n(assert (not (= (select shipments_customer_address_city_id 0) (select shipments_destination_city_id 0))))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -1648,9 +1727,29 @@
                 "data": {
                   "kind": "assert",
                   "location": "line 15:5",
-                  "obligation": "(= 1002 1002)",
+                  "obligation": "(= (select shipments_customer_id 1) 1002)",
                   "routine": "main",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const UNSUPPORTED Int)\n(declare-const shipments Int)\n(assert (= shipments (store (store ((as const (Array Int Int)) 0) 0 UNSUPPORTED) 1 UNSUPPORTED)))\n(assert (= 42 42))\n(assert (not (= 1002 1002)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _customer_address_city_id Int)\n(declare-const _customer_address_label Int)\n(declare-const _customer_id Int)\n(declare-const _customer_name Int)\n(declare-const _destination_city_id Int)\n(declare-const _destination_label Int)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const first Int)\n(declare-const first_customer_address_city_id Int)\n(declare-const first_customer_address_label String)\n(declare-const first_customer_id Int)\n(declare-const first_customer_name String)\n(declare-const first_destination_city_id Int)\n(declare-const first_destination_label String)\n(declare-const second Int)\n(declare-const second_customer_address_city_id Int)\n(declare-const second_customer_address_label String)\n(declare-const second_customer_id Int)\n(declare-const second_customer_name String)\n(declare-const second_destination_city_id Int)\n(declare-const second_destination_label String)\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (= first (select shipments 0)))\n(assert (= first_customer_id (select shipments 0)_customer_id))\n(assert (= first_customer_name (select shipments 0)_customer_name))\n(assert (= first_customer_address_city_id (select shipments 0)_customer_address_city_id))\n(assert (= first_customer_address_label (select shipments 0)_customer_address_label))\n(assert (= first_destination_city_id (select shipments 0)_destination_city_id))\n(assert (= first_destination_label (select shipments 0)_destination_label))\n(assert (= second (select shipments 1)))\n(assert (= second_customer_id (select shipments 1)_customer_id))\n(assert (= second_customer_name (select shipments 1)_customer_name))\n(assert (= second_customer_address_city_id (select shipments 1)_customer_address_city_id))\n(assert (= second_customer_address_label (select shipments 1)_customer_address_label))\n(assert (= second_destination_city_id (select shipments 1)_destination_city_id))\n(assert (= second_destination_label (select shipments 1)_destination_label))\n(assert (= (select shipments_customer_address_city_id 0) (select shipments_destination_city_id 0)))\n(assert (not (= (select shipments_customer_id 1) 1002)))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "range_check",
+                  "location": "line 10:28",
+                  "obligation": "(and (>= 1 0) (< 1 2))",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _customer_address_city_id Int)\n(declare-const _customer_address_label Int)\n(declare-const _customer_id Int)\n(declare-const _customer_name Int)\n(declare-const _destination_city_id Int)\n(declare-const _destination_label Int)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const first Int)\n(declare-const first_customer_address_city_id Int)\n(declare-const first_customer_address_label String)\n(declare-const first_customer_id Int)\n(declare-const first_customer_name String)\n(declare-const first_destination_city_id Int)\n(declare-const first_destination_label String)\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (= first (select shipments 0)))\n(assert (= first_customer_id (select shipments 0)_customer_id))\n(assert (= first_customer_name (select shipments 0)_customer_name))\n(assert (= first_customer_address_city_id (select shipments 0)_customer_address_city_id))\n(assert (= first_customer_address_label (select shipments 0)_customer_address_label))\n(assert (= first_destination_city_id (select shipments 0)_destination_city_id))\n(assert (= first_destination_label (select shipments 0)_destination_label))\n(assert (not (and (>= 1 0) (< 1 2))))\n(check-sat)\n; unsat means proved"
+                }
+              },
+              {
+                "kind": "ProofObligation",
+                "data": {
+                  "kind": "range_check",
+                  "location": "line 9:27",
+                  "obligation": "(and (>= 0 0) (< 0 2))",
+                  "routine": "main",
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_customer_address_city_id (Array Int Int))\n(declare-const _tmp_call_0_customer_address_label (Array Int Int))\n(declare-const _tmp_call_0_customer_id (Array Int Int))\n(declare-const _tmp_call_0_customer_name (Array Int Int))\n(declare-const _tmp_call_0_destination_city_id (Array Int Int))\n(declare-const _tmp_call_0_destination_label (Array Int Int))\n(declare-const shipments Int)\n(declare-const shipments_customer_address_city_id (Array Int Int))\n(declare-const shipments_customer_address_label (Array Int Int))\n(declare-const shipments_customer_id (Array Int Int))\n(declare-const shipments_customer_name (Array Int Int))\n(declare-const shipments_destination_city_id (Array Int Int))\n(declare-const shipments_destination_label (Array Int Int))\n(assert (= (select _tmp_call_0_destination_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_address_city_id 0) 42))\n(assert (= (select _tmp_call_0_customer_id 1) 1002))\n(assert (= shipments _tmp_call_0))\n(assert (= shipments_customer_id _tmp_call_0_customer_id))\n(assert (= shipments_customer_name _tmp_call_0_customer_name))\n(assert (= shipments_customer_address_city_id _tmp_call_0_customer_address_city_id))\n(assert (= shipments_customer_address_label _tmp_call_0_customer_address_label))\n(assert (= shipments_destination_city_id _tmp_call_0_destination_city_id))\n(assert (= shipments_destination_label _tmp_call_0_destination_label))\n(assert (not (and (>= 0 0) (< 0 2))))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],
@@ -2474,6 +2573,15 @@
                   "kind": "TypeName",
                   "name": "String"
                 }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Void",
+                "base": "Void",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Void"
+                }
               }
             ],
             "records": [
@@ -3259,9 +3367,9 @@
                 "data": {
                   "kind": "ensures",
                   "location": "line 11:9",
-                  "obligation": "(= city_id city_id)",
+                  "obligation": "(= destination_city_id city_id)",
                   "routine": "make_shipment",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_address_city_id Int)\n(declare-const _tmp_call_0_address_label String)\n(declare-const _tmp_call_0_city_id Int)\n(declare-const _tmp_call_0_id Int)\n(declare-const _tmp_call_0_label Int)\n(declare-const _tmp_call_0_name String)\n(declare-const city_id Int)\n(declare-const customer Int)\n(declare-const customer_address_city_id Int)\n(declare-const customer_address_label String)\n(declare-const customer_id Int)\n(declare-const customer_name String)\n(declare-const destination Int)\n(declare-const destination_city_id Int)\n(declare-const destination_label String)\n(declare-const id Int)\n(assert (= _tmp_call_0_city_id city_id))\n(assert (= destination _tmp_call_0))\n(assert (= destination_city_id _tmp_call_0_city_id))\n(assert (= destination_label _tmp_call_0_label))\n(assert (= _tmp_call_0_id id))\n(assert (= _tmp_call_0_address_city_id destination_city_id))\n(assert (= customer _tmp_call_0))\n(assert (= customer_id _tmp_call_0_id))\n(assert (= customer_name _tmp_call_0_name))\n(assert (= customer_address_city_id _tmp_call_0_address_city_id))\n(assert (= customer_address_label _tmp_call_0_address_label))\n(assert (not (= destination_city_id city_id)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -3269,9 +3377,9 @@
                 "data": {
                   "kind": "ensures",
                   "location": "line 12:9",
-                  "obligation": "(= city_id city_id)",
+                  "obligation": "(= customer_address_city_id city_id)",
                   "routine": "make_shipment",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_address_city_id Int)\n(declare-const _tmp_call_0_address_label String)\n(declare-const _tmp_call_0_city_id Int)\n(declare-const _tmp_call_0_id Int)\n(declare-const _tmp_call_0_label Int)\n(declare-const _tmp_call_0_name String)\n(declare-const city_id Int)\n(declare-const customer Int)\n(declare-const customer_address_city_id Int)\n(declare-const customer_address_label String)\n(declare-const customer_id Int)\n(declare-const customer_name String)\n(declare-const destination Int)\n(declare-const destination_city_id Int)\n(declare-const destination_label String)\n(declare-const id Int)\n(assert (= _tmp_call_0_city_id city_id))\n(assert (= destination _tmp_call_0))\n(assert (= destination_city_id _tmp_call_0_city_id))\n(assert (= destination_label _tmp_call_0_label))\n(assert (= _tmp_call_0_id id))\n(assert (= _tmp_call_0_address_city_id destination_city_id))\n(assert (= customer _tmp_call_0))\n(assert (= customer_id _tmp_call_0_id))\n(assert (= customer_name _tmp_call_0_name))\n(assert (= customer_address_city_id _tmp_call_0_address_city_id))\n(assert (= customer_address_label _tmp_call_0_address_label))\n(assert (not (= customer_address_city_id city_id)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -3279,9 +3387,9 @@
                 "data": {
                   "kind": "ensures",
                   "location": "line 13:9",
-                  "obligation": "(= id id)",
+                  "obligation": "(= customer_id id)",
                   "routine": "make_shipment",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const id Int)\n(assert (not (= id id)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_address_city_id Int)\n(declare-const _tmp_call_0_address_label String)\n(declare-const _tmp_call_0_city_id Int)\n(declare-const _tmp_call_0_id Int)\n(declare-const _tmp_call_0_label Int)\n(declare-const _tmp_call_0_name String)\n(declare-const city_id Int)\n(declare-const customer Int)\n(declare-const customer_address_city_id Int)\n(declare-const customer_address_label String)\n(declare-const customer_id Int)\n(declare-const customer_name String)\n(declare-const destination Int)\n(declare-const destination_city_id Int)\n(declare-const destination_label String)\n(declare-const id Int)\n(assert (= _tmp_call_0_city_id city_id))\n(assert (= destination _tmp_call_0))\n(assert (= destination_city_id _tmp_call_0_city_id))\n(assert (= destination_label _tmp_call_0_label))\n(assert (= _tmp_call_0_id id))\n(assert (= _tmp_call_0_address_city_id destination_city_id))\n(assert (= customer _tmp_call_0))\n(assert (= customer_id _tmp_call_0_id))\n(assert (= customer_name _tmp_call_0_name))\n(assert (= customer_address_city_id _tmp_call_0_address_city_id))\n(assert (= customer_address_label _tmp_call_0_address_label))\n(assert (not (= customer_id id)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -3289,9 +3397,9 @@
                 "data": {
                   "kind": "ensures",
                   "location": "line 21:9",
-                  "obligation": "(= 42 42)",
+                  "obligation": "(= _tmp_call_0_destination_city_id 42)",
                   "routine": "daily_shipments",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (= 42 42)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0_customer_address_city_id Int)\n(declare-const _tmp_call_0_customer_id Int)\n(declare-const _tmp_call_0_destination_city_id Int)\n(declare-const _tmp_call_1_customer_address_city_id Int)\n(declare-const _tmp_call_1_customer_id Int)\n(declare-const _tmp_call_1_destination_city_id Int)\n(assert (= _tmp_call_0_destination_city_id 42))\n(assert (= _tmp_call_0_customer_address_city_id 42))\n(assert (= _tmp_call_0_customer_id 1001))\n(assert (= _tmp_call_1_destination_city_id 77))\n(assert (= _tmp_call_1_customer_address_city_id 77))\n(assert (= _tmp_call_1_customer_id 1002))\n(assert (not (= _tmp_call_0_destination_city_id 42)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -3299,9 +3407,9 @@
                 "data": {
                   "kind": "ensures",
                   "location": "line 22:9",
-                  "obligation": "(= 42 42)",
+                  "obligation": "(= _tmp_call_0_customer_address_city_id 42)",
                   "routine": "daily_shipments",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (= 42 42)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0_customer_address_city_id Int)\n(declare-const _tmp_call_0_customer_id Int)\n(declare-const _tmp_call_0_destination_city_id Int)\n(declare-const _tmp_call_1_customer_address_city_id Int)\n(declare-const _tmp_call_1_customer_id Int)\n(declare-const _tmp_call_1_destination_city_id Int)\n(assert (= _tmp_call_0_destination_city_id 42))\n(assert (= _tmp_call_0_customer_address_city_id 42))\n(assert (= _tmp_call_0_customer_id 1001))\n(assert (= _tmp_call_1_destination_city_id 77))\n(assert (= _tmp_call_1_customer_address_city_id 77))\n(assert (= _tmp_call_1_customer_id 1002))\n(assert (not (= _tmp_call_0_customer_address_city_id 42)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -3309,9 +3417,9 @@
                 "data": {
                   "kind": "ensures",
                   "location": "line 23:9",
-                  "obligation": "(= 1002 1002)",
+                  "obligation": "(= _tmp_call_1_customer_id 1002)",
                   "routine": "daily_shipments",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (= 1002 1002)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0_customer_address_city_id Int)\n(declare-const _tmp_call_0_customer_id Int)\n(declare-const _tmp_call_0_destination_city_id Int)\n(declare-const _tmp_call_1_customer_address_city_id Int)\n(declare-const _tmp_call_1_customer_id Int)\n(declare-const _tmp_call_1_destination_city_id Int)\n(assert (= _tmp_call_0_destination_city_id 42))\n(assert (= _tmp_call_0_customer_address_city_id 42))\n(assert (= _tmp_call_0_customer_id 1001))\n(assert (= _tmp_call_1_destination_city_id 77))\n(assert (= _tmp_call_1_customer_address_city_id 77))\n(assert (= _tmp_call_1_customer_id 1002))\n(assert (not (= _tmp_call_1_customer_id 1002)))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],
@@ -3355,9 +3463,9 @@
                   "data": {
                     "kind": "ensures",
                     "location": "line 11:9",
-                    "obligation": "(= city_id city_id)",
+                    "obligation": "(= destination_city_id city_id)",
                     "routine": "make_shipment",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_address_city_id Int)\n(declare-const _tmp_call_0_address_label String)\n(declare-const _tmp_call_0_city_id Int)\n(declare-const _tmp_call_0_id Int)\n(declare-const _tmp_call_0_label Int)\n(declare-const _tmp_call_0_name String)\n(declare-const city_id Int)\n(declare-const customer Int)\n(declare-const customer_address_city_id Int)\n(declare-const customer_address_label String)\n(declare-const customer_id Int)\n(declare-const customer_name String)\n(declare-const destination Int)\n(declare-const destination_city_id Int)\n(declare-const destination_label String)\n(declare-const id Int)\n(assert (= _tmp_call_0_city_id city_id))\n(assert (= destination _tmp_call_0))\n(assert (= destination_city_id _tmp_call_0_city_id))\n(assert (= destination_label _tmp_call_0_label))\n(assert (= _tmp_call_0_id id))\n(assert (= _tmp_call_0_address_city_id destination_city_id))\n(assert (= customer _tmp_call_0))\n(assert (= customer_id _tmp_call_0_id))\n(assert (= customer_name _tmp_call_0_name))\n(assert (= customer_address_city_id _tmp_call_0_address_city_id))\n(assert (= customer_address_label _tmp_call_0_address_label))\n(assert (not (= destination_city_id city_id)))\n(check-sat)\n; unsat means proved"
                   }
                 },
                 {
@@ -3365,9 +3473,9 @@
                   "data": {
                     "kind": "ensures",
                     "location": "line 12:9",
-                    "obligation": "(= city_id city_id)",
+                    "obligation": "(= customer_address_city_id city_id)",
                     "routine": "make_shipment",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_address_city_id Int)\n(declare-const _tmp_call_0_address_label String)\n(declare-const _tmp_call_0_city_id Int)\n(declare-const _tmp_call_0_id Int)\n(declare-const _tmp_call_0_label Int)\n(declare-const _tmp_call_0_name String)\n(declare-const city_id Int)\n(declare-const customer Int)\n(declare-const customer_address_city_id Int)\n(declare-const customer_address_label String)\n(declare-const customer_id Int)\n(declare-const customer_name String)\n(declare-const destination Int)\n(declare-const destination_city_id Int)\n(declare-const destination_label String)\n(declare-const id Int)\n(assert (= _tmp_call_0_city_id city_id))\n(assert (= destination _tmp_call_0))\n(assert (= destination_city_id _tmp_call_0_city_id))\n(assert (= destination_label _tmp_call_0_label))\n(assert (= _tmp_call_0_id id))\n(assert (= _tmp_call_0_address_city_id destination_city_id))\n(assert (= customer _tmp_call_0))\n(assert (= customer_id _tmp_call_0_id))\n(assert (= customer_name _tmp_call_0_name))\n(assert (= customer_address_city_id _tmp_call_0_address_city_id))\n(assert (= customer_address_label _tmp_call_0_address_label))\n(assert (not (= customer_address_city_id city_id)))\n(check-sat)\n; unsat means proved"
                   }
                 },
                 {
@@ -3375,9 +3483,9 @@
                   "data": {
                     "kind": "ensures",
                     "location": "line 13:9",
-                    "obligation": "(= id id)",
+                    "obligation": "(= customer_id id)",
                     "routine": "make_shipment",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const id Int)\n(assert (not (= id id)))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_address_city_id Int)\n(declare-const _tmp_call_0_address_label String)\n(declare-const _tmp_call_0_city_id Int)\n(declare-const _tmp_call_0_id Int)\n(declare-const _tmp_call_0_label Int)\n(declare-const _tmp_call_0_name String)\n(declare-const city_id Int)\n(declare-const customer Int)\n(declare-const customer_address_city_id Int)\n(declare-const customer_address_label String)\n(declare-const customer_id Int)\n(declare-const customer_name String)\n(declare-const destination Int)\n(declare-const destination_city_id Int)\n(declare-const destination_label String)\n(declare-const id Int)\n(assert (= _tmp_call_0_city_id city_id))\n(assert (= destination _tmp_call_0))\n(assert (= destination_city_id _tmp_call_0_city_id))\n(assert (= destination_label _tmp_call_0_label))\n(assert (= _tmp_call_0_id id))\n(assert (= _tmp_call_0_address_city_id destination_city_id))\n(assert (= customer _tmp_call_0))\n(assert (= customer_id _tmp_call_0_id))\n(assert (= customer_name _tmp_call_0_name))\n(assert (= customer_address_city_id _tmp_call_0_address_city_id))\n(assert (= customer_address_label _tmp_call_0_address_label))\n(assert (not (= customer_id id)))\n(check-sat)\n; unsat means proved"
                   }
                 },
                 {
@@ -3385,9 +3493,9 @@
                   "data": {
                     "kind": "ensures",
                     "location": "line 21:9",
-                    "obligation": "(= 42 42)",
+                    "obligation": "(= _tmp_call_0_destination_city_id 42)",
                     "routine": "daily_shipments",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (= 42 42)))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0_customer_address_city_id Int)\n(declare-const _tmp_call_0_customer_id Int)\n(declare-const _tmp_call_0_destination_city_id Int)\n(declare-const _tmp_call_1_customer_address_city_id Int)\n(declare-const _tmp_call_1_customer_id Int)\n(declare-const _tmp_call_1_destination_city_id Int)\n(assert (= _tmp_call_0_destination_city_id 42))\n(assert (= _tmp_call_0_customer_address_city_id 42))\n(assert (= _tmp_call_0_customer_id 1001))\n(assert (= _tmp_call_1_destination_city_id 77))\n(assert (= _tmp_call_1_customer_address_city_id 77))\n(assert (= _tmp_call_1_customer_id 1002))\n(assert (not (= _tmp_call_0_destination_city_id 42)))\n(check-sat)\n; unsat means proved"
                   }
                 },
                 {
@@ -3395,9 +3503,9 @@
                   "data": {
                     "kind": "ensures",
                     "location": "line 22:9",
-                    "obligation": "(= 42 42)",
+                    "obligation": "(= _tmp_call_0_customer_address_city_id 42)",
                     "routine": "daily_shipments",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (= 42 42)))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0_customer_address_city_id Int)\n(declare-const _tmp_call_0_customer_id Int)\n(declare-const _tmp_call_0_destination_city_id Int)\n(declare-const _tmp_call_1_customer_address_city_id Int)\n(declare-const _tmp_call_1_customer_id Int)\n(declare-const _tmp_call_1_destination_city_id Int)\n(assert (= _tmp_call_0_destination_city_id 42))\n(assert (= _tmp_call_0_customer_address_city_id 42))\n(assert (= _tmp_call_0_customer_id 1001))\n(assert (= _tmp_call_1_destination_city_id 77))\n(assert (= _tmp_call_1_customer_address_city_id 77))\n(assert (= _tmp_call_1_customer_id 1002))\n(assert (not (= _tmp_call_0_customer_address_city_id 42)))\n(check-sat)\n; unsat means proved"
                   }
                 },
                 {
@@ -3405,9 +3513,9 @@
                   "data": {
                     "kind": "ensures",
                     "location": "line 23:9",
-                    "obligation": "(= 1002 1002)",
+                    "obligation": "(= _tmp_call_1_customer_id 1002)",
                     "routine": "daily_shipments",
-                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (= 1002 1002)))\n(check-sat)\n; unsat means proved"
+                    "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0_customer_address_city_id Int)\n(declare-const _tmp_call_0_customer_id Int)\n(declare-const _tmp_call_0_destination_city_id Int)\n(declare-const _tmp_call_1_customer_address_city_id Int)\n(declare-const _tmp_call_1_customer_id Int)\n(declare-const _tmp_call_1_destination_city_id Int)\n(assert (= _tmp_call_0_destination_city_id 42))\n(assert (= _tmp_call_0_customer_address_city_id 42))\n(assert (= _tmp_call_0_customer_id 1001))\n(assert (= _tmp_call_1_destination_city_id 77))\n(assert (= _tmp_call_1_customer_address_city_id 77))\n(assert (= _tmp_call_1_customer_id 1002))\n(assert (not (= _tmp_call_1_customer_id 1002)))\n(check-sat)\n; unsat means proved"
                   }
                 }
               ],
@@ -4239,6 +4347,15 @@
                 "kind": "TypeName",
                 "name": "String"
               }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Void",
+              "base": "Void",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Void"
+              }
             }
           ],
           "records": [
@@ -5024,9 +5141,9 @@
               "data": {
                 "kind": "ensures",
                 "location": "line 11:9",
-                "obligation": "(= city_id city_id)",
+                "obligation": "(= destination_city_id city_id)",
                 "routine": "make_shipment",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_address_city_id Int)\n(declare-const _tmp_call_0_address_label String)\n(declare-const _tmp_call_0_city_id Int)\n(declare-const _tmp_call_0_id Int)\n(declare-const _tmp_call_0_label Int)\n(declare-const _tmp_call_0_name String)\n(declare-const city_id Int)\n(declare-const customer Int)\n(declare-const customer_address_city_id Int)\n(declare-const customer_address_label String)\n(declare-const customer_id Int)\n(declare-const customer_name String)\n(declare-const destination Int)\n(declare-const destination_city_id Int)\n(declare-const destination_label String)\n(declare-const id Int)\n(assert (= _tmp_call_0_city_id city_id))\n(assert (= destination _tmp_call_0))\n(assert (= destination_city_id _tmp_call_0_city_id))\n(assert (= destination_label _tmp_call_0_label))\n(assert (= _tmp_call_0_id id))\n(assert (= _tmp_call_0_address_city_id destination_city_id))\n(assert (= customer _tmp_call_0))\n(assert (= customer_id _tmp_call_0_id))\n(assert (= customer_name _tmp_call_0_name))\n(assert (= customer_address_city_id _tmp_call_0_address_city_id))\n(assert (= customer_address_label _tmp_call_0_address_label))\n(assert (not (= destination_city_id city_id)))\n(check-sat)\n; unsat means proved"
               }
             },
             {
@@ -5034,9 +5151,9 @@
               "data": {
                 "kind": "ensures",
                 "location": "line 12:9",
-                "obligation": "(= city_id city_id)",
+                "obligation": "(= customer_address_city_id city_id)",
                 "routine": "make_shipment",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_address_city_id Int)\n(declare-const _tmp_call_0_address_label String)\n(declare-const _tmp_call_0_city_id Int)\n(declare-const _tmp_call_0_id Int)\n(declare-const _tmp_call_0_label Int)\n(declare-const _tmp_call_0_name String)\n(declare-const city_id Int)\n(declare-const customer Int)\n(declare-const customer_address_city_id Int)\n(declare-const customer_address_label String)\n(declare-const customer_id Int)\n(declare-const customer_name String)\n(declare-const destination Int)\n(declare-const destination_city_id Int)\n(declare-const destination_label String)\n(declare-const id Int)\n(assert (= _tmp_call_0_city_id city_id))\n(assert (= destination _tmp_call_0))\n(assert (= destination_city_id _tmp_call_0_city_id))\n(assert (= destination_label _tmp_call_0_label))\n(assert (= _tmp_call_0_id id))\n(assert (= _tmp_call_0_address_city_id destination_city_id))\n(assert (= customer _tmp_call_0))\n(assert (= customer_id _tmp_call_0_id))\n(assert (= customer_name _tmp_call_0_name))\n(assert (= customer_address_city_id _tmp_call_0_address_city_id))\n(assert (= customer_address_label _tmp_call_0_address_label))\n(assert (not (= customer_address_city_id city_id)))\n(check-sat)\n; unsat means proved"
               }
             },
             {
@@ -5044,9 +5161,9 @@
               "data": {
                 "kind": "ensures",
                 "location": "line 13:9",
-                "obligation": "(= id id)",
+                "obligation": "(= customer_id id)",
                 "routine": "make_shipment",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const id Int)\n(assert (not (= id id)))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_address_city_id Int)\n(declare-const _tmp_call_0_address_label String)\n(declare-const _tmp_call_0_city_id Int)\n(declare-const _tmp_call_0_id Int)\n(declare-const _tmp_call_0_label Int)\n(declare-const _tmp_call_0_name String)\n(declare-const city_id Int)\n(declare-const customer Int)\n(declare-const customer_address_city_id Int)\n(declare-const customer_address_label String)\n(declare-const customer_id Int)\n(declare-const customer_name String)\n(declare-const destination Int)\n(declare-const destination_city_id Int)\n(declare-const destination_label String)\n(declare-const id Int)\n(assert (= _tmp_call_0_city_id city_id))\n(assert (= destination _tmp_call_0))\n(assert (= destination_city_id _tmp_call_0_city_id))\n(assert (= destination_label _tmp_call_0_label))\n(assert (= _tmp_call_0_id id))\n(assert (= _tmp_call_0_address_city_id destination_city_id))\n(assert (= customer _tmp_call_0))\n(assert (= customer_id _tmp_call_0_id))\n(assert (= customer_name _tmp_call_0_name))\n(assert (= customer_address_city_id _tmp_call_0_address_city_id))\n(assert (= customer_address_label _tmp_call_0_address_label))\n(assert (not (= customer_id id)))\n(check-sat)\n; unsat means proved"
               }
             },
             {
@@ -5054,9 +5171,9 @@
               "data": {
                 "kind": "ensures",
                 "location": "line 21:9",
-                "obligation": "(= 42 42)",
+                "obligation": "(= _tmp_call_0_destination_city_id 42)",
                 "routine": "daily_shipments",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (= 42 42)))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0_customer_address_city_id Int)\n(declare-const _tmp_call_0_customer_id Int)\n(declare-const _tmp_call_0_destination_city_id Int)\n(declare-const _tmp_call_1_customer_address_city_id Int)\n(declare-const _tmp_call_1_customer_id Int)\n(declare-const _tmp_call_1_destination_city_id Int)\n(assert (= _tmp_call_0_destination_city_id 42))\n(assert (= _tmp_call_0_customer_address_city_id 42))\n(assert (= _tmp_call_0_customer_id 1001))\n(assert (= _tmp_call_1_destination_city_id 77))\n(assert (= _tmp_call_1_customer_address_city_id 77))\n(assert (= _tmp_call_1_customer_id 1002))\n(assert (not (= _tmp_call_0_destination_city_id 42)))\n(check-sat)\n; unsat means proved"
               }
             },
             {
@@ -5064,9 +5181,9 @@
               "data": {
                 "kind": "ensures",
                 "location": "line 22:9",
-                "obligation": "(= 42 42)",
+                "obligation": "(= _tmp_call_0_customer_address_city_id 42)",
                 "routine": "daily_shipments",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (= 42 42)))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0_customer_address_city_id Int)\n(declare-const _tmp_call_0_customer_id Int)\n(declare-const _tmp_call_0_destination_city_id Int)\n(declare-const _tmp_call_1_customer_address_city_id Int)\n(declare-const _tmp_call_1_customer_id Int)\n(declare-const _tmp_call_1_destination_city_id Int)\n(assert (= _tmp_call_0_destination_city_id 42))\n(assert (= _tmp_call_0_customer_address_city_id 42))\n(assert (= _tmp_call_0_customer_id 1001))\n(assert (= _tmp_call_1_destination_city_id 77))\n(assert (= _tmp_call_1_customer_address_city_id 77))\n(assert (= _tmp_call_1_customer_id 1002))\n(assert (not (= _tmp_call_0_customer_address_city_id 42)))\n(check-sat)\n; unsat means proved"
               }
             },
             {
@@ -5074,9 +5191,9 @@
               "data": {
                 "kind": "ensures",
                 "location": "line 23:9",
-                "obligation": "(= 1002 1002)",
+                "obligation": "(= _tmp_call_1_customer_id 1002)",
                 "routine": "daily_shipments",
-                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (= 1002 1002)))\n(check-sat)\n; unsat means proved"
+                "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0_customer_address_city_id Int)\n(declare-const _tmp_call_0_customer_id Int)\n(declare-const _tmp_call_0_destination_city_id Int)\n(declare-const _tmp_call_1_customer_address_city_id Int)\n(declare-const _tmp_call_1_customer_id Int)\n(declare-const _tmp_call_1_destination_city_id Int)\n(assert (= _tmp_call_0_destination_city_id 42))\n(assert (= _tmp_call_0_customer_address_city_id 42))\n(assert (= _tmp_call_0_customer_id 1001))\n(assert (= _tmp_call_1_destination_city_id 77))\n(assert (= _tmp_call_1_customer_address_city_id 77))\n(assert (= _tmp_call_1_customer_id 1002))\n(assert (not (= _tmp_call_1_customer_id 1002)))\n(check-sat)\n; unsat means proved"
               }
             }
           ],
@@ -5120,9 +5237,9 @@
                 "data": {
                   "kind": "ensures",
                   "location": "line 11:9",
-                  "obligation": "(= city_id city_id)",
+                  "obligation": "(= destination_city_id city_id)",
                   "routine": "make_shipment",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_address_city_id Int)\n(declare-const _tmp_call_0_address_label String)\n(declare-const _tmp_call_0_city_id Int)\n(declare-const _tmp_call_0_id Int)\n(declare-const _tmp_call_0_label Int)\n(declare-const _tmp_call_0_name String)\n(declare-const city_id Int)\n(declare-const customer Int)\n(declare-const customer_address_city_id Int)\n(declare-const customer_address_label String)\n(declare-const customer_id Int)\n(declare-const customer_name String)\n(declare-const destination Int)\n(declare-const destination_city_id Int)\n(declare-const destination_label String)\n(declare-const id Int)\n(assert (= _tmp_call_0_city_id city_id))\n(assert (= destination _tmp_call_0))\n(assert (= destination_city_id _tmp_call_0_city_id))\n(assert (= destination_label _tmp_call_0_label))\n(assert (= _tmp_call_0_id id))\n(assert (= _tmp_call_0_address_city_id destination_city_id))\n(assert (= customer _tmp_call_0))\n(assert (= customer_id _tmp_call_0_id))\n(assert (= customer_name _tmp_call_0_name))\n(assert (= customer_address_city_id _tmp_call_0_address_city_id))\n(assert (= customer_address_label _tmp_call_0_address_label))\n(assert (not (= destination_city_id city_id)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -5130,9 +5247,9 @@
                 "data": {
                   "kind": "ensures",
                   "location": "line 12:9",
-                  "obligation": "(= city_id city_id)",
+                  "obligation": "(= customer_address_city_id city_id)",
                   "routine": "make_shipment",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const city_id Int)\n(assert (not (= city_id city_id)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_address_city_id Int)\n(declare-const _tmp_call_0_address_label String)\n(declare-const _tmp_call_0_city_id Int)\n(declare-const _tmp_call_0_id Int)\n(declare-const _tmp_call_0_label Int)\n(declare-const _tmp_call_0_name String)\n(declare-const city_id Int)\n(declare-const customer Int)\n(declare-const customer_address_city_id Int)\n(declare-const customer_address_label String)\n(declare-const customer_id Int)\n(declare-const customer_name String)\n(declare-const destination Int)\n(declare-const destination_city_id Int)\n(declare-const destination_label String)\n(declare-const id Int)\n(assert (= _tmp_call_0_city_id city_id))\n(assert (= destination _tmp_call_0))\n(assert (= destination_city_id _tmp_call_0_city_id))\n(assert (= destination_label _tmp_call_0_label))\n(assert (= _tmp_call_0_id id))\n(assert (= _tmp_call_0_address_city_id destination_city_id))\n(assert (= customer _tmp_call_0))\n(assert (= customer_id _tmp_call_0_id))\n(assert (= customer_name _tmp_call_0_name))\n(assert (= customer_address_city_id _tmp_call_0_address_city_id))\n(assert (= customer_address_label _tmp_call_0_address_label))\n(assert (not (= customer_address_city_id city_id)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -5140,9 +5257,9 @@
                 "data": {
                   "kind": "ensures",
                   "location": "line 13:9",
-                  "obligation": "(= id id)",
+                  "obligation": "(= customer_id id)",
                   "routine": "make_shipment",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const id Int)\n(assert (not (= id id)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0 Int)\n(declare-const _tmp_call_0_address_city_id Int)\n(declare-const _tmp_call_0_address_label String)\n(declare-const _tmp_call_0_city_id Int)\n(declare-const _tmp_call_0_id Int)\n(declare-const _tmp_call_0_label Int)\n(declare-const _tmp_call_0_name String)\n(declare-const city_id Int)\n(declare-const customer Int)\n(declare-const customer_address_city_id Int)\n(declare-const customer_address_label String)\n(declare-const customer_id Int)\n(declare-const customer_name String)\n(declare-const destination Int)\n(declare-const destination_city_id Int)\n(declare-const destination_label String)\n(declare-const id Int)\n(assert (= _tmp_call_0_city_id city_id))\n(assert (= destination _tmp_call_0))\n(assert (= destination_city_id _tmp_call_0_city_id))\n(assert (= destination_label _tmp_call_0_label))\n(assert (= _tmp_call_0_id id))\n(assert (= _tmp_call_0_address_city_id destination_city_id))\n(assert (= customer _tmp_call_0))\n(assert (= customer_id _tmp_call_0_id))\n(assert (= customer_name _tmp_call_0_name))\n(assert (= customer_address_city_id _tmp_call_0_address_city_id))\n(assert (= customer_address_label _tmp_call_0_address_label))\n(assert (not (= customer_id id)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -5150,9 +5267,9 @@
                 "data": {
                   "kind": "ensures",
                   "location": "line 21:9",
-                  "obligation": "(= 42 42)",
+                  "obligation": "(= _tmp_call_0_destination_city_id 42)",
                   "routine": "daily_shipments",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (= 42 42)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0_customer_address_city_id Int)\n(declare-const _tmp_call_0_customer_id Int)\n(declare-const _tmp_call_0_destination_city_id Int)\n(declare-const _tmp_call_1_customer_address_city_id Int)\n(declare-const _tmp_call_1_customer_id Int)\n(declare-const _tmp_call_1_destination_city_id Int)\n(assert (= _tmp_call_0_destination_city_id 42))\n(assert (= _tmp_call_0_customer_address_city_id 42))\n(assert (= _tmp_call_0_customer_id 1001))\n(assert (= _tmp_call_1_destination_city_id 77))\n(assert (= _tmp_call_1_customer_address_city_id 77))\n(assert (= _tmp_call_1_customer_id 1002))\n(assert (not (= _tmp_call_0_destination_city_id 42)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -5160,9 +5277,9 @@
                 "data": {
                   "kind": "ensures",
                   "location": "line 22:9",
-                  "obligation": "(= 42 42)",
+                  "obligation": "(= _tmp_call_0_customer_address_city_id 42)",
                   "routine": "daily_shipments",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (= 42 42)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0_customer_address_city_id Int)\n(declare-const _tmp_call_0_customer_id Int)\n(declare-const _tmp_call_0_destination_city_id Int)\n(declare-const _tmp_call_1_customer_address_city_id Int)\n(declare-const _tmp_call_1_customer_id Int)\n(declare-const _tmp_call_1_destination_city_id Int)\n(assert (= _tmp_call_0_destination_city_id 42))\n(assert (= _tmp_call_0_customer_address_city_id 42))\n(assert (= _tmp_call_0_customer_id 1001))\n(assert (= _tmp_call_1_destination_city_id 77))\n(assert (= _tmp_call_1_customer_address_city_id 77))\n(assert (= _tmp_call_1_customer_id 1002))\n(assert (not (= _tmp_call_0_customer_address_city_id 42)))\n(check-sat)\n; unsat means proved"
                 }
               },
               {
@@ -5170,9 +5287,9 @@
                 "data": {
                   "kind": "ensures",
                   "location": "line 23:9",
-                  "obligation": "(= 1002 1002)",
+                  "obligation": "(= _tmp_call_1_customer_id 1002)",
                   "routine": "daily_shipments",
-                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(assert (not (= 1002 1002)))\n(check-sat)\n; unsat means proved"
+                  "smt_query": "; Freehold SMT-LIB query\n(set-logic ALL)\n(declare-const _tmp_call_0_customer_address_city_id Int)\n(declare-const _tmp_call_0_customer_id Int)\n(declare-const _tmp_call_0_destination_city_id Int)\n(declare-const _tmp_call_1_customer_address_city_id Int)\n(declare-const _tmp_call_1_customer_id Int)\n(declare-const _tmp_call_1_destination_city_id Int)\n(assert (= _tmp_call_0_destination_city_id 42))\n(assert (= _tmp_call_0_customer_address_city_id 42))\n(assert (= _tmp_call_0_customer_id 1001))\n(assert (= _tmp_call_1_destination_city_id 77))\n(assert (= _tmp_call_1_customer_address_city_id 77))\n(assert (= _tmp_call_1_customer_id 1002))\n(assert (not (= _tmp_call_1_customer_id 1002)))\n(check-sat)\n; unsat means proved"
                 }
               }
             ],
@@ -5798,6 +5915,15 @@
                 "base_type": {
                   "kind": "TypeName",
                   "name": "String"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Void",
+                "base": "Void",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Void"
                 }
               }
             ],
@@ -7030,6 +7156,15 @@
                 "kind": "TypeName",
                 "name": "String"
               }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Void",
+              "base": "Void",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Void"
+              }
             }
           ],
           "records": [
@@ -7669,6 +7804,1318 @@
                 "routine_kind": "function",
                 "normal_return_possible": true,
                 "guaranteed_exit": true,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              }
+            ]
+          }
+        }
+      },
+      {
+        "node": "ModuleEntry",
+        "name": "Std.IO",
+        "source_ast": {
+          "node": "SourceAst",
+          "module": {
+            "node": "Module",
+            "name": "Std.IO",
+            "imports": [],
+            "declarations": [
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "procedure",
+                "name": "log",
+                "type_params": [],
+                "is_async": false,
+                "params": [
+                  {
+                    "name": "message",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "return_type": {
+                  "kind": "Void"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": []
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "procedure",
+                "name": "logf",
+                "type_params": [],
+                "is_async": false,
+                "params": [
+                  {
+                    "name": "template",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "name": "item",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "return_type": {
+                  "kind": "Void"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": []
+              }
+            ]
+          }
+        },
+        "semantic_ir": {
+          "node": "SemanticIr",
+          "analysis": {
+            "node": "AnalysisReport",
+            "types": [
+              {
+                "kind": "TypeDef",
+                "name": "BigFloat",
+                "base": "BigFloat",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "BigFloat"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "BigInteger",
+                "base": "BigInteger",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "BigInteger"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Boolean",
+                "base": "Boolean",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Boolean"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Double",
+                "base": "Double",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Double"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Executor",
+                "base": "Executor",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Executor"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Integer",
+                "base": "Integer",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Integer"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Scope",
+                "base": "Scope",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Scope"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "String",
+                "base": "String",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "String"
+                }
+              },
+              {
+                "kind": "TypeDef",
+                "name": "Void",
+                "base": "Void",
+                "base_type": {
+                  "kind": "TypeName",
+                  "name": "Void"
+                }
+              }
+            ],
+            "records": [],
+            "errors": [
+              "SchemaError"
+            ],
+            "error_defs": [
+              {
+                "kind": "ErrorDef",
+                "name": "SchemaError"
+              }
+            ],
+            "routines": [
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "procedure",
+                "name": "log",
+                "type_params": [],
+                "is_async": false,
+                "params": [
+                  {
+                    "name": "message",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "return_type": {
+                  "kind": "Void"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": []
+              },
+              {
+                "kind": "RoutineDecl",
+                "routine_kind": "procedure",
+                "name": "logf",
+                "type_params": [],
+                "is_async": false,
+                "params": [
+                  {
+                    "name": "template",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  },
+                  {
+                    "name": "item",
+                    "type": "String",
+                    "type_repr": {
+                      "kind": "TypeName",
+                      "name": "String"
+                    }
+                  }
+                ],
+                "return_type": {
+                  "kind": "Void"
+                },
+                "requires": [],
+                "aborts": [],
+                "ensures": [],
+                "contracts": {
+                  "requires": [],
+                  "ensures": [],
+                  "aborts": []
+                },
+                "contract_bindings": {
+                  "kind": "ContractBindings",
+                  "is_result_return": false,
+                  "contexts": {
+                    "requires": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "ensures": {
+                      "result": true,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    },
+                    "aborts": {
+                      "result": false,
+                      "success": false,
+                      "failure": false,
+                      "value": false,
+                      "error": false
+                    }
+                  },
+                  "bindings": [
+                    {
+                      "kind": "ContractBinding",
+                      "name": "result",
+                      "available": true,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "success",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "failure",
+                      "available": false,
+                      "type": {
+                        "kind": "TypeName",
+                        "name": "Boolean"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "value",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      }
+                    },
+                    {
+                      "kind": "ContractBinding",
+                      "name": "error",
+                      "available": false,
+                      "type": {
+                        "kind": "Void"
+                      },
+                      "error_ref": null
+                    }
+                  ],
+                  "result_value_binding": {
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  "result_error_binding": {
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                },
+                "body": []
+              }
+            ],
+            "services": [],
+            "proof_obligations": [],
+            "flow_summaries": [
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "log",
+                "routine_kind": "procedure",
+                "normal_return_possible": true,
+                "guaranteed_exit": false,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              },
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "logf",
+                "routine_kind": "procedure",
+                "normal_return_possible": true,
+                "guaranteed_exit": false,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              }
+            ],
+            "verifier": {
+              "node": "VerifierReport",
+              "proof_obligations": [],
+              "flow_summaries": [
+                {
+                  "kind": "RoutineFlowSummary",
+                  "routine_name": "log",
+                  "routine_kind": "procedure",
+                  "normal_return_possible": true,
+                  "guaranteed_exit": false,
+                  "declared_aborts": [],
+                  "declared_abort_refs": [],
+                  "emitted_aborts": [],
+                  "emitted_abort_refs": [],
+                  "called_routines": [],
+                  "propagated_aborts": [],
+                  "propagated_abort_refs": []
+                },
+                {
+                  "kind": "RoutineFlowSummary",
+                  "routine_name": "logf",
+                  "routine_kind": "procedure",
+                  "normal_return_possible": true,
+                  "guaranteed_exit": false,
+                  "declared_aborts": [],
+                  "declared_abort_refs": [],
+                  "emitted_aborts": [],
+                  "emitted_abort_refs": [],
+                  "called_routines": [],
+                  "propagated_aborts": [],
+                  "propagated_abort_refs": []
+                }
+              ]
+            }
+          }
+        },
+        "module": {
+          "node": "Module",
+          "name": "Std.IO",
+          "imports": [],
+          "declarations": [
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "procedure",
+              "name": "log",
+              "type_params": [],
+              "is_async": false,
+              "params": [
+                {
+                  "name": "message",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "return_type": {
+                "kind": "Void"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": []
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "procedure",
+              "name": "logf",
+              "type_params": [],
+              "is_async": false,
+              "params": [
+                {
+                  "name": "template",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "name": "item",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "return_type": {
+                "kind": "Void"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": []
+            }
+          ]
+        },
+        "analysis": {
+          "node": "AnalysisReport",
+          "types": [
+            {
+              "kind": "TypeDef",
+              "name": "BigFloat",
+              "base": "BigFloat",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "BigFloat"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "BigInteger",
+              "base": "BigInteger",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "BigInteger"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Boolean",
+              "base": "Boolean",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Boolean"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Double",
+              "base": "Double",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Double"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Executor",
+              "base": "Executor",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Executor"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Integer",
+              "base": "Integer",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Integer"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Scope",
+              "base": "Scope",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Scope"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "String",
+              "base": "String",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "String"
+              }
+            },
+            {
+              "kind": "TypeDef",
+              "name": "Void",
+              "base": "Void",
+              "base_type": {
+                "kind": "TypeName",
+                "name": "Void"
+              }
+            }
+          ],
+          "records": [],
+          "errors": [
+            "SchemaError"
+          ],
+          "error_defs": [
+            {
+              "kind": "ErrorDef",
+              "name": "SchemaError"
+            }
+          ],
+          "routines": [
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "procedure",
+              "name": "log",
+              "type_params": [],
+              "is_async": false,
+              "params": [
+                {
+                  "name": "message",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "return_type": {
+                "kind": "Void"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": []
+            },
+            {
+              "kind": "RoutineDecl",
+              "routine_kind": "procedure",
+              "name": "logf",
+              "type_params": [],
+              "is_async": false,
+              "params": [
+                {
+                  "name": "template",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                },
+                {
+                  "name": "item",
+                  "type": "String",
+                  "type_repr": {
+                    "kind": "TypeName",
+                    "name": "String"
+                  }
+                }
+              ],
+              "return_type": {
+                "kind": "Void"
+              },
+              "requires": [],
+              "aborts": [],
+              "ensures": [],
+              "contracts": {
+                "requires": [],
+                "ensures": [],
+                "aborts": []
+              },
+              "contract_bindings": {
+                "kind": "ContractBindings",
+                "is_result_return": false,
+                "contexts": {
+                  "requires": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "ensures": {
+                    "result": true,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  },
+                  "aborts": {
+                    "result": false,
+                    "success": false,
+                    "failure": false,
+                    "value": false,
+                    "error": false
+                  }
+                },
+                "bindings": [
+                  {
+                    "kind": "ContractBinding",
+                    "name": "result",
+                    "available": true,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "success",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "failure",
+                    "available": false,
+                    "type": {
+                      "kind": "TypeName",
+                      "name": "Boolean"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "value",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    }
+                  },
+                  {
+                    "kind": "ContractBinding",
+                    "name": "error",
+                    "available": false,
+                    "type": {
+                      "kind": "Void"
+                    },
+                    "error_ref": null
+                  }
+                ],
+                "result_value_binding": {
+                  "name": "value",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  }
+                },
+                "result_error_binding": {
+                  "name": "error",
+                  "available": false,
+                  "type": {
+                    "kind": "Void"
+                  },
+                  "error_ref": null
+                }
+              },
+              "body": []
+            }
+          ],
+          "services": [],
+          "proof_obligations": [],
+          "flow_summaries": [
+            {
+              "kind": "RoutineFlowSummary",
+              "routine_name": "log",
+              "routine_kind": "procedure",
+              "normal_return_possible": true,
+              "guaranteed_exit": false,
+              "declared_aborts": [],
+              "declared_abort_refs": [],
+              "emitted_aborts": [],
+              "emitted_abort_refs": [],
+              "called_routines": [],
+              "propagated_aborts": [],
+              "propagated_abort_refs": []
+            },
+            {
+              "kind": "RoutineFlowSummary",
+              "routine_name": "logf",
+              "routine_kind": "procedure",
+              "normal_return_possible": true,
+              "guaranteed_exit": false,
+              "declared_aborts": [],
+              "declared_abort_refs": [],
+              "emitted_aborts": [],
+              "emitted_abort_refs": [],
+              "called_routines": [],
+              "propagated_aborts": [],
+              "propagated_abort_refs": []
+            }
+          ],
+          "verifier": {
+            "node": "VerifierReport",
+            "proof_obligations": [],
+            "flow_summaries": [
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "log",
+                "routine_kind": "procedure",
+                "normal_return_possible": true,
+                "guaranteed_exit": false,
+                "declared_aborts": [],
+                "declared_abort_refs": [],
+                "emitted_aborts": [],
+                "emitted_abort_refs": [],
+                "called_routines": [],
+                "propagated_aborts": [],
+                "propagated_abort_refs": []
+              },
+              {
+                "kind": "RoutineFlowSummary",
+                "routine_name": "logf",
+                "routine_kind": "procedure",
+                "normal_return_possible": true,
+                "guaranteed_exit": false,
                 "declared_aborts": [],
                 "declared_abort_refs": [],
                 "emitted_aborts": [],

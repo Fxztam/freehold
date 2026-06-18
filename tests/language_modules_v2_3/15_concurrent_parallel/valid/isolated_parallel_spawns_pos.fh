@@ -1,0 +1,28 @@
+module Concurrent.IsolatedParallelSpawnsPos
+
+type Buffer is record
+    val: Integer
+end record
+
+task Worker(b: Buffer)
+is
+    let x: Integer = b.val
+end Worker
+
+async procedure Main()
+is
+    let first_buf: Buffer = Buffer { val: 10 }
+    let second_buf: Buffer = Buffer { val: 20 }
+
+    parallel (limit = 2)
+    do
+        -- These are isolated because they do not share the same mutable root variable
+        let first: JoinHandle<Void> = spawn Worker(first_buf)
+        let second: JoinHandle<Void> = spawn Worker(second_buf)
+
+        let first_done: Void = await first
+        let second_done: Void = await second
+    end parallel
+end Main
+
+end Concurrent.IsolatedParallelSpawnsPos

@@ -1,0 +1,20 @@
+module Neg_Alias_Two_Mutable_Parameters
+
+type Cell is record
+    val: Integer
+end record
+
+procedure add_to_both(left: Cell, right: Cell)
+modifies left.val, right.val
+is
+    left.val := left.val + 1
+    right.val := right.val + 1
+end add_to_both
+
+procedure main()
+is
+    let c: Cell = Cell { val: 0 }
+    call add_to_both(c, c)
+end main
+
+end Neg_Alias_Two_Mutable_Parameters

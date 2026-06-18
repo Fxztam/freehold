@@ -1,0 +1,25 @@
+-- Purpose: Demonstrate a procedure that mutates a field on a record, using a modifies contract clause.
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 2 (Contract Block Order), SPECIFICATION-FH-BASICS.md, Section 3.3 (Contracts Before Bodies)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module ProcedureDemo03
+
+type Cell is record
+    val: Integer
+end record
+
+procedure increment_cell(c: Cell)
+modifies c.val
+ensures c.val > old(c.val)
+is
+    c.val := c.val + 1
+end increment_cell
+
+procedure main()
+is
+    let cell: Cell = Cell { val: 41 }
+    call increment_cell(cell)
+    check cell.val = 42
+end main
+
+end ProcedureDemo03

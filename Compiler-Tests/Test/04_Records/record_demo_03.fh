@@ -1,0 +1,18 @@
+-- Purpose: Demonstrate record field annotation using the @json attribute for mapping external keys.
+-- Referenced Specification: SPECIFICATION-RECORD-JSON.md, Section 1 & Section 3
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module RecordDemo03
+
+type Employee is record
+    employee_id: Integer @json("employeeId")
+    full_name: String @json("fullName")
+end record
+
+procedure main()
+is
+    let emp: Employee = Employee { employee_id: 1001, full_name: "Bruce Wayne" }
+    check emp.employee_id = 1001
+end main
+
+end RecordDemo03

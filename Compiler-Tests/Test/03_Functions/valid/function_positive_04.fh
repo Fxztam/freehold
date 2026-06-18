@@ -1,0 +1,26 @@
+-- Purpose: Positive test – Function returning a custom Record type structure.
+-- Referenced Specification: SPECIFICATION-FH-BASICS.md, Section 8.1, SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module FunctionPositive04
+
+type Point is record
+    x: Integer
+    y: Integer
+end record
+
+function shift_point(p: Point, delta: Integer) returns Point
+ensures result.x = p.x + delta and result.y = p.y + delta
+is
+    return Point { x: p.x + delta, y: p.y + delta }
+end shift_point
+
+procedure main()
+is
+    let origin: Point = Point { x: 5, y: 10 }
+    let shifted: Point = shift_point(origin, 5)
+    check shifted.x = 10
+    check shifted.y = 15
+end main
+
+end FunctionPositive04

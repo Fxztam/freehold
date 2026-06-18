@@ -1,0 +1,49 @@
+module Concurrency.DualCoreEnginePos
+
+-- Task 1: Sensor-Rohdaten erzeugen und in Ausgangskanal schreiben
+async function SensorProducer(sender: Sender<Integer>) returns Boolean
+is
+    let sensor_val: Integer = 42
+    let sent: Boolean = await channel_send<Integer>(sender, sensor_val)
+    return true
+end SensorProducer
+
+-- Task 2: Werte transformieren und skalieren (Ein- zu Ausgangskanal)
+async function SignalTransformer(receiver: Receiver<Integer>, sender: Sender<Integer>) returns Boolean
+is
+    let raw: Integer = await channel_receive<Integer>(receiver)
+    let scaled: Integer = raw * 2
+    let sent: Boolean = await channel_send<Integer>(sender, scaled)
+    return true
+end SignalTransformer
+
+async procedure main_parallel()
+is
+    let chan1: Channel<Integer> = channel<Integer>(8) with invariant for all X in 0 .. 0 => X > 0
+    let chan2: Channel<Integer> = channel<Integer>(8) with invariant for all X in 0 .. 0 => X > 0
+    
+    let sender1: Sender<Integer> = channel_sender<Integer>(chan1)
+    let receiver1: Receiver<Integer> = channel_receiver<Integer>(chan1)
+    
+    let sender2: Sender<Integer> = channel_sender<Integer>(chan2)
+    let receiver2: Receiver<Integer> = channel_receiver<Integer>(chan2)
+
+    -- Der physikalische Drosselungsrahmen als named-parallel Block.
+    -- Erfordert zwingend das exakt passende "end parallel core_allocation_block" am Ende!
+    parallel core_allocation_block (limit = 2) do
+        
+        -- Start der Tasks mit explizit zentral festgelegten Hardware-Metadaten
+        let p: JoinHandle<Boolean> = spawn SensorProducer(sender1) with (priority: 5, pool: "hardware_io", name: "sensor_producer")
+        let t: JoinHandle<Boolean> = spawn SignalTransformer(receiver1, sender2) with (priority: 3, pool: "dsp_worker", name: "signal_transformer")
+
+        -- Finales, koordiniertes Zusammenführen der asynchronen Handles
+        let dummy1: Boolean = await p
+        let dummy2: Boolean = await t
+        
+        let final_val: Integer = await channel_receive<Integer>(receiver2)
+        check final_val > 0
+
+    end parallel core_allocation_block
+end main_parallel
+
+end Concurrency.DualCoreEnginePos

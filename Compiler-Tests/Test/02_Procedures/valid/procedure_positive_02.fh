@@ -1,0 +1,26 @@
+-- Purpose: Positive test – Correct contract ordering of modifies, requires, ensures.
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 2 (Contract Block Order)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module ProcedurePositive02
+
+type Wallet is record
+    balance: Integer
+end record
+
+procedure deposit(w: Wallet, amount: Integer)
+modifies w.balance
+requires amount > 0
+ensures w.balance = old(w.balance) + amount
+is
+    w.balance := w.balance + amount
+end deposit
+
+procedure main()
+is
+    let wallet: Wallet = Wallet { balance: 100 }
+    call deposit(wallet, 50)
+    check wallet.balance = 150
+end main
+
+end ProcedurePositive02

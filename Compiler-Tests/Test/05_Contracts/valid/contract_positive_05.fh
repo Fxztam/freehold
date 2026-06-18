@@ -1,0 +1,23 @@
+-- Purpose: Positive test – Loop execution verifying invariant hold properties.
+-- Referenced Specification: SPECIFICATION-LOOP-INVARIANT.md
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module ContractPositive05
+
+procedure count_down()
+is
+    let i: Integer = 5
+    while i > 0
+    invariant i >= 0
+    is
+        i := i - 1
+    end while
+    check i = 0
+end count_down
+
+procedure main()
+is
+    call count_down()
+end main
+
+end ContractPositive05

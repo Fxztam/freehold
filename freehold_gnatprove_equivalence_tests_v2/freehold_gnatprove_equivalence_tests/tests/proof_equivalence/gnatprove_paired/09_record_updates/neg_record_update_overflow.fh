@@ -1,0 +1,24 @@
+module Neg_Record_Update_Overflow
+
+type Int is Integer range -2147483648..2147483647
+
+type Account is record
+    balance: Int
+    limit: Int
+end record
+
+procedure deposit_without_overflow_guard(acc: Account, amount: Int)
+modifies acc.balance
+requires amount >= 0
+ensures acc.balance = old(acc.balance) + amount
+is
+    acc.balance := acc.balance + amount
+end deposit_without_overflow_guard
+
+procedure main()
+is
+    let acc: Account = Account { balance: 100, limit: 1000 }
+    call deposit_without_overflow_guard(acc, 50)
+end main
+
+end Neg_Record_Update_Overflow

@@ -1,0 +1,63 @@
+module ParallelAntiAliasingDemo
+
+import Std.IO
+
+-- 1. We declare a mutable record struct
+type SharedDatabase is record
+    connections: Integer
+    active: Boolean
+end record
+
+task Worker(db: SharedDatabase)
+is
+    call Std.IO.log("Worker starting processing...")
+end Worker
+
+-- Positive Demo Case: Shows how to design isolated multi-core worker spawns using pure copies/separate handles.
+async procedure run_safe_isolation_demo()
+is
+    let db1: SharedDatabase = SharedDatabase { connections: 1, active: true }
+    let db2: SharedDatabase = SharedDatabase { connections: 2, active: true }
+
+    call Std.IO.log("Executing safe parallel spawns with strict value isolation...")
+    parallel (limit = 2)
+    do
+        -- This is fully PERMITTED because each spawned task receives its own distinct, isolated record root.
+        let first: JoinHandle<Void> = spawn Worker(db1)
+        let second: JoinHandle<Void> = spawn Worker(db2)
+
+        let dummy1: Void = await first
+        let dummy2: Void = await second
+    end parallel
+    call Std.IO.log("Positive isolation check SUCCEEDED!")
+end run_safe_isolation_demo
+
+-- Negative Demonstration (Reference: shared_mutable_state_neg.fh):
+-- If you uncomment the code below, the Freehold Compiler/Verifier will reject it immediately 
+-- during semantic validation with the error:
+-- "shared mutable state passed to multiple spawned tasks"
+--
+-- async procedure run_unsafe_aliasing_demo()
+-- is
+--     let shared_db: SharedDatabase = SharedDatabase { connections: 42, active: true }
+-- 
+--     parallel (limit = 2)
+--     do
+--         -- REJECTED AT COMPILE-TIME:
+--         -- Both parallel tasks are being passed the same mutable root 'shared_db'.
+--         let first_bad: JoinHandle<Void> = spawn Worker(shared_db)
+--         let second_bad: JoinHandle<Void> = spawn Worker(shared_db)
+-- 
+--         let dummy1: Void = await first_bad
+--         let dummy2: Void = await second_bad
+--     end parallel
+-- end run_unsafe_aliasing_demo
+
+async procedure Main()
+is
+    call Std.IO.log(">>> START Anti-Aliasing Demo <<<")
+    call run_safe_isolation_demo()
+    call Std.IO.log(">>> ENDE Anti-Aliasing Demo <<<")
+end Main
+
+end ParallelAntiAliasingDemo

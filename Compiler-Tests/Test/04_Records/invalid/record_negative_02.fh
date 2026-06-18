@@ -1,0 +1,20 @@
+-- Purpose: Negative test – Instantiating a record with a missing required field.
+-- Failure Category: Missing required field at construction
+-- Referenced Specification: SPECIFICATION-RECORD-JSON.md, Section 1 & Section 2
+-- Expected Result: Verifier Failure
+--   All declared fields of a record must be supplied at construction time.
+
+module RecordNegative02
+
+type Person is record
+    name: String
+    age: Integer
+end record
+
+procedure main()
+is
+    -- field 'age' is missing
+    let p: Person = Person { name: "Tony Stark" }
+end main
+
+end RecordNegative02

@@ -1,0 +1,22 @@
+module ConcurrentParallelBlockingReceiveNeg
+
+async function Worker(receiver: Receiver<Integer>) returns Integer
+is
+    let val: Integer = await channel_receive<Integer>(receiver)
+    return val
+end Worker
+
+async procedure Main()
+is
+    let chan: Channel<Integer> = channel<Integer>(8)
+    let receiver: Receiver<Integer> = channel_receiver<Integer>(chan)
+
+    parallel (limit = 2)
+    do
+        -- Spawning Worker which transitively calls blocking 'channel_receive' inside a parallel pool
+        let first: JoinHandle<Integer> = spawn Worker(receiver)
+        let first_done: Integer = await first
+    end parallel
+end Main
+
+end ConcurrentParallelBlockingReceiveNeg

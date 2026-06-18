@@ -1,0 +1,20 @@
+-- Purpose: Positive test – Record copy-assignment from another record instance.
+-- Referenced Specification: SPECIFICATION-FH-BASICS.md, Section 3.2
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module RecordPositive03
+
+type Config is record
+    version: Integer
+    enabled: Boolean
+end record
+
+procedure main()
+is
+    let c1: Config = Config { version: 1, enabled: true }
+    let c2: Config = c1
+    check c2.version = c1.version
+    check c2.enabled = c1.enabled
+end main
+
+end RecordPositive03

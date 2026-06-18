@@ -46,6 +46,8 @@ from freehold.core.ast import (
     ServiceDecl,
     SpecialResultExpr,
     ScopeStmt,
+    ParallelStmt,
+    SpawnExpr,
     ResultTypeName,
     StringExpr,
     TypeDecl,
@@ -59,6 +61,10 @@ from freehold.core.ast import (
     ArrayLiteralType,
     AwaitableType,
     AbortClause,
+    ChoiceTypeDecl,
+    ChoiceConstructor,
+    PatternBranch,
+    PatternExpr,
 )
 from freehold.core.module_resolver import ModuleResolver, ResolvedModule
 from freehold.core.parser import parse_source
@@ -232,6 +238,8 @@ def generate_go_project(entry_file: str | Path) -> list[GoProjectFile]:
     resolved_modules = resolver.resolve_entry(entry_file)
     files: list[GoProjectFile] = []
     for module_name in sorted(resolved_modules):
+        if module_name in GO_RUNTIME_MODULE_EXPORTS:
+            continue
         resolved = resolved_modules[module_name]
         result = GoGenerator(resolved.ast, resolved_modules).generate()
         files.append(
@@ -492,6 +500,25 @@ class GoGenerator:
         self.contract_bindings: dict[str, str] = {}
         self.current_routine_read_names = set()
         self.active_scopes: list[str] = []
+
+        self.choices: dict[str, ChoiceTypeDecl] = {}
+        for decl in program.declarations:
+            if isinstance(decl, ChoiceTypeDecl):
+                self.choices[decl.name] = decl
+        for module_name, resolved in self.resolved_modules.items():
+            if resolved.ast:
+                for decl in resolved.ast.declarations:
+                    if isinstance(decl, ChoiceTypeDecl):
+                        self.choices[decl.name] = decl
+                        self.choices[f"{module_name}.{decl.name}"] = decl
+
+        self.constructor_to_choice: dict[str, tuple[str, ChoiceTypeDecl, ChoiceConstructor]] = {}
+        for choice_name, choice_decl in list(self.choices.items()):
+            for constr in choice_decl.constructors:
+                self.constructor_to_choice[constr.name] = (choice_name, choice_decl, constr)
+                if "." in choice_name:
+                    mod_prefix = choice_name.split(".")[0]
+                    self.constructor_to_choice[f"{mod_prefix}.{constr.name}"] = (choice_name, choice_decl, constr)
 
     def current_context_expr(self) -> str:
         if self.active_scopes:
@@ -797,6 +824,32 @@ class GoGenerator:
         specialized_name = self.go_specialized_name(name, args)
         return RecordTypeDecl(specialized_name, specialized_fields, decl.pos, None)
 
+    def specialize_choice(self, name: str, args: list[str]) -> ChoiceTypeDecl:
+        decl = self.choices.get(name)
+        if decl is None:
+            raise ValueError(f"Generic choice {name} not found")
+        substitutions = dict(zip(decl.type_params or [], args))
+        
+        context_module = self.program.module_name
+        if "." in name:
+            context_module = ".".join(name.split(".")[:-1])
+        elif name in self.exposed_symbols:
+            exposed = self.exposed_symbols[name]
+            if exposed is not None:
+                context_module = exposed
+                
+        specialized_constructors = []
+        for constr in decl.constructors:
+            specialized_params = []
+            for param in constr.params:
+                new_type_name = self.substitute_type_simple(param.type_name, substitutions)
+                new_type_name = self.qualify_type_name(new_type_name, context_module)
+                specialized_params.append(Param(param.name, new_type_name, param.pos))
+            specialized_constructors.append(ChoiceConstructor(constr.name, specialized_params, constr.pos))
+            
+        specialized_name = self.go_specialized_name(name, args)
+        return ChoiceTypeDecl(specialized_name, specialized_constructors, decl.pos, None)
+
     def specialize_routine(self, name: str, args: list[str]) -> RoutineDecl:
         routine = self.called_routine(name)
         if routine is None:
@@ -930,11 +983,14 @@ class GoGenerator:
     def monomorphize(self) -> None:
         self.specialized_records: dict[tuple[str, tuple[str, ...]], RecordTypeDecl] = {}
         self.specialized_routines: dict[tuple[str, tuple[str, ...]], RoutineDecl] = {}
+        self.specialized_choices: dict[tuple[str, tuple[str, ...]], ChoiceTypeDecl] = {}
         
         self.pending_scans: list[tuple[str, Any]] = []
         
         for decl in self.program.declarations:
             if isinstance(decl, RecordTypeDecl) and not decl.type_params:
+                self.pending_scans.append((self.program.module_name, decl))
+            elif isinstance(decl, ChoiceTypeDecl) and not decl.type_params:
                 self.pending_scans.append((self.program.module_name, decl))
             elif isinstance(decl, RoutineDecl) and not decl.type_params:
                 self.pending_scans.append((self.program.module_name, decl))
@@ -943,6 +999,8 @@ class GoGenerator:
             if resolved.ast.module_name != self.program.module_name:
                 for decl in resolved.ast.declarations:
                     if isinstance(decl, RecordTypeDecl) and not decl.type_params:
+                        self.pending_scans.append((module_name, decl))
+                    elif isinstance(decl, ChoiceTypeDecl) and not decl.type_params:
                         self.pending_scans.append((module_name, decl))
                     elif isinstance(decl, RoutineDecl) and not decl.type_params:
                         self.pending_scans.append((module_name, decl))
@@ -990,6 +1048,11 @@ class GoGenerator:
         for key, spec_rec in sorted(self.specialized_records.items()):
             self.local_types.add(spec_rec.name)
             self.specialized_records_to_emit.append(spec_rec)
+
+        self.specialized_choices_to_emit = []
+        for key, spec_choice in sorted(self.specialized_choices.items()):
+            self.local_types.add(spec_choice.name)
+            self.specialized_choices_to_emit.append(spec_choice)
             
         self.specialized_routines_to_emit = []
         for key, spec_rot in sorted(self.specialized_routines.items()):
@@ -1031,6 +1094,29 @@ class GoGenerator:
                             if exposed is not None:
                                 rec_ctx = exposed
                         self.pending_scans.append((rec_ctx, spec_rec))
+                else:
+                    choice_decl = self.choices.get(base)
+                    if choice_decl is not None and choice_decl.type_params:
+                        if any("<" in arg or arg == "T" for arg in args):
+                            continue
+                        key = (base, tuple(args))
+                        if key not in self.specialized_choices:
+                            spec_choice = self.specialize_choice(base, list(args))
+                            self.specialized_choices[key] = spec_choice
+                            for constr in spec_choice.constructors:
+                                self.constructor_to_choice[constr.name] = (spec_choice.name, spec_choice, constr)
+                            choice_ctx = self.program.module_name
+                            if "." in base:
+                                choice_ctx = ".".join(base.split(".")[:-1])
+                            elif base in self.exposed_type_modules:
+                                exposed = self.exposed_type_modules[base]
+                                if exposed is not None:
+                                    choice_ctx = exposed
+                            elif base in self.exposed_symbols:
+                                exposed = self.exposed_symbols[base]
+                                if exposed is not None:
+                                    choice_ctx = exposed
+                            self.pending_scans.append((choice_ctx, spec_choice))
 
         def process_call(name: str, node: Any):
             qualified_name = self.qualify_routine_name(name, context_module)
@@ -1062,6 +1148,10 @@ class GoGenerator:
         if isinstance(decl, RecordTypeDecl):
             for field in decl.fields:
                 process_type_ref(field.type_name)
+        elif isinstance(decl, ChoiceTypeDecl):
+            for constr in decl.constructors:
+                for param in constr.params:
+                    process_type_ref(param.type_name)
         elif isinstance(decl, RoutineDecl):
             for param in decl.params:
                 process_type_ref(param.type_name)
@@ -1097,7 +1187,11 @@ class GoGenerator:
                 elif isinstance(stmt, CaseStmt):
                     visit_expr(stmt.expr)
                     for branch in stmt.branches:
-                        visit_expr(branch.value)
+                        if hasattr(branch, "pattern") and branch.pattern is not None:
+                            if hasattr(branch, "guard") and branch.guard is not None:
+                                visit_expr(branch.guard)
+                        elif hasattr(branch, "value"):
+                            visit_expr(branch.value)
                         for s in branch.body:
                             visit_stmt(s)
                     for s in stmt.default_body:
@@ -1209,6 +1303,10 @@ class GoGenerator:
                 if declaration.type_params:
                     continue
                 body_lines.extend(self.record_decl(declaration))
+            elif isinstance(declaration, ChoiceTypeDecl):
+                if declaration.type_params:
+                    continue
+                body_lines.extend(self.choice_decl(declaration))
             elif isinstance(declaration, RoutineDecl):
                 if declaration.type_params:
                     continue
@@ -1223,6 +1321,8 @@ class GoGenerator:
         # Emit specialized declarations
         for spec_rec in self.specialized_records_to_emit:
             body_lines.extend(self.record_decl(spec_rec))
+        for spec_choice in self.specialized_choices_to_emit:
+            body_lines.extend(self.choice_decl(spec_choice))
         for spec_rot in self.specialized_routines_to_emit:
             body_lines.extend(self.routine_decl(spec_rot))
 
@@ -1306,13 +1406,24 @@ class GoGenerator:
             self.std_imports.add("sync")
             self.std_imports.add("context")
             self.std_imports.add("runtime")
-        if not used_imports and not self.std_imports:
+        
+        # Prepare imports
+        go_std_imports = set(self.std_imports)
+        go_user_imports = []
+        for import_decl in used_imports:
+            runtime_path = runtime_module_import_path(import_decl.module_name)
+            if runtime_path is not None:
+                go_std_imports.add(runtime_path)
+            else:
+                go_user_imports.append((go_import_alias(import_decl.module_name), go_import_path(import_decl.module_name)))
+
+        if not go_user_imports and not go_std_imports:
             return []
         lines = ["import ("]
-        for import_path in sorted(self.std_imports):
+        for import_path in sorted(go_std_imports):
             lines.append(f"\t{json.dumps(import_path)}")
-        for import_decl in used_imports:
-            lines.append(f"\t{go_import_alias(import_decl.module_name)} \"{go_import_path(import_decl.module_name)}\"")
+        for alias, path in go_user_imports:
+            lines.append(f"\t{alias} \"{path}\"")
         lines.extend([")", ""])
         return lines
 
@@ -1332,6 +1443,41 @@ class GoGenerator:
 
     def type_decl(self, declaration: TypeDecl) -> list[str]:
         return [f"type {go_exported_name(declaration.name)} {self.go_type_string(declaration.base)}", ""]
+
+    def choice_decl(self, declaration: ChoiceTypeDecl) -> list[str]:
+        lines = []
+        interface_name = go_exported_name(declaration.name)
+        lines.append(f"type {interface_name} interface {{")
+        lines.append(f"\tis_{interface_name}()")
+        lines.append("}")
+        lines.append("")
+
+        for constr in declaration.constructors:
+            struct_name = f"{interface_name}_{go_exported_name(constr.name)}_struct"
+            lines.append(f"type {struct_name} struct {{")
+            for param in constr.params:
+                go_type = self.go_type_string(param.type_name)
+                lines.append(f"\t{go_exported_name(param.name)} {go_type}")
+            lines.append("}")
+            lines.append(f"func ({struct_name}) is_{interface_name}() {{}}")
+            lines.append("")
+
+            ctor_name = f"{interface_name}_{go_exported_name(constr.name)}_ctor"
+            ctor_params = []
+            for param in constr.params:
+                go_type = self.go_type_string(param.type_name)
+                ctor_params.append(f"{go_local_name(param.name)} {go_type}")
+            ctor_params_str = ", ".join(ctor_params)
+
+            lines.append(f"func {ctor_name}({ctor_params_str}) {interface_name} {{")
+            fields_inst = []
+            for param in constr.params:
+                fields_inst.append(f"{go_exported_name(param.name)}: {go_local_name(param.name)}")
+            fields_inst_str = ", ".join(fields_inst)
+            lines.append(f"\treturn {struct_name}{{{fields_inst_str}}}")
+            lines.append("}")
+            lines.append("")
+        return lines
 
     def find_type_decl(self, name: str) -> TypeDecl | None:
         for declaration in self.program.declarations:
@@ -1508,6 +1654,8 @@ class GoGenerator:
                 "\t}",
                 "\treturn freeholdTask{}, false",
                 "}",
+                "",
+                "type Void struct{}",
                 "",
                 "type FreeholdScope struct {",
                 "\twg       sync.WaitGroup",
@@ -3349,6 +3497,17 @@ class GoGenerator:
         params = ", ".join(params_list)
         result_type = self.routine_result_type(routine)
         lines = [f"func {go_exported_name(routine.name)}({params}){result_type} {{"]
+        if routine.is_async:
+            self.needs_async_helpers = True
+            lines.extend([
+                "\tfreeholdDefaultScope := FreeholdScope{}",
+                "\tfreeholdDefaultScope.ctx, freeholdDefaultScope.cancel = context.WithCancel(ctx)",
+                "\tfreeholdDefaultScope.priority = 3",
+                "\tfreeholdDefaultScope.sem = nil",
+                "\tdefer freeholdDefaultScope.cancel()",
+                "\t_ = freeholdDefaultScope",
+            ])
+            self.active_scopes.append("freeholdDefaultScope")
         previous_return_type = self.current_return_type
         previous_aborts = self.current_aborts
         previous_routine_decl = self.current_routine_decl
@@ -3375,6 +3534,8 @@ class GoGenerator:
         self.inferred_int_locals = previous_inferred_int_locals
         self.contract_bindings = previous_contract_bindings
         self.current_routine_read_names = previous_routine_read_names
+        if routine.is_async:
+            self.active_scopes.pop()
         lines.extend(["}", ""])
         return lines
 
@@ -3558,15 +3719,84 @@ class GoGenerator:
             lines.append("}")
             return lines
         if isinstance(stmt, CaseStmt):
-            lines = [f"switch {self.expr(stmt.expr)} {{"]
-            for branch in stmt.branches:
-                lines.append(f"case {self.expr(branch.value)}:")
-                lines.extend(indent_lines(self.statement_block(branch.body)))
-            if stmt.default_body:
-                lines.append("default:")
-                lines.extend(indent_lines(self.statement_block(stmt.default_body)))
-            lines.append("}")
-            return lines
+            is_pattern_match = len(stmt.branches) > 0 and isinstance(stmt.branches[0], PatternBranch)
+            if is_pattern_match:
+                case_t = self.infer_expr_type(stmt.expr)
+                if isinstance(case_t, str):
+                    case_t_str = case_t
+                elif isinstance(case_t, TypeName):
+                    case_t_str = case_t.name
+                else:
+                    case_t_str = ""
+                base_name = case_t_str
+                if "<" in base_name:
+                    base_name = base_name.split("<")[0]
+                choice_ref_name = self.go_type_ref(case_t)
+                choice_decl = self.choices.get(base_name) or self.choices.get(choice_ref_name)
+                
+                lines = []
+                expr_var = self.fresh_local_name("match_expr")
+                self.current_local_types[expr_var] = case_t
+                lines.append(f"{expr_var} := {self.expr(stmt.expr)}")
+                
+                for branch_idx, br in enumerate(stmt.branches):
+                    constructor = next((c for c in choice_decl.constructors if c.name == br.pattern.name), None)
+                    struct_type = f"{choice_ref_name}_{go_exported_name(br.pattern.name)}_struct"
+                    
+                    if_op = "if" if branch_idx == 0 else "} else if"
+                    v_var = "_" if len(br.pattern.args) == 0 else self.fresh_local_name("v")
+                    
+                    # Bindings to inject
+                    bindings = []
+                    previous_local_types = dict(self.current_local_types)
+                    for idx, arg_name in enumerate(br.pattern.args):
+                        param_name = constructor.params[idx].name
+                        param_type = constructor.params[idx].type_name
+                        # Substitute type if specialized choice
+                        if choice_decl.type_params and "<" in case_t_str:
+                            m = re.match(r"^(\w+)<(.*)>$", case_t_str)
+                            if m:
+                                raw_args = [x.strip() for x in m.group(2).split(",")]
+                                substitutions = dict(zip(choice_decl.type_params, raw_args))
+                                param_type = self.substitute_type_simple(param_type, substitutions)
+                        
+                        self.current_local_types[arg_name] = self.parse_type_ref_simple(param_type)
+                        exported_param_name = go_exported_name(param_name)
+                        bindings.append(f"{go_local_name(arg_name)} := {v_var}.{exported_param_name}")
+                        bindings.append(f"_ = {go_local_name(arg_name)}")
+                    
+                    if br.guard is not None:
+                        # Guard evaluation in binding context
+                        guard_block_lines = []
+                        for b_line in bindings:
+                            guard_block_lines.append(b_line)
+                        guard_block_lines.append(f"return {self.expr(br.guard)}")
+                        guard_block_inner = "; ".join(guard_block_lines)
+                        cond = f"{v_var}, ok := {expr_var}.({struct_type}); ok && func() bool {{ {guard_block_inner} }}()"
+                    else:
+                        cond = f"{v_var}, ok := {expr_var}.({struct_type}); ok"
+                    
+                    lines.append(f"{if_op} {cond} {{")
+                    body_lines = list(bindings)
+                    body_lines.extend(self.statement_block(br.body))
+                    lines.extend(indent_lines(body_lines))
+                    self.current_local_types = previous_local_types
+                
+                if stmt.default_body:
+                    lines.append("} else {")
+                    lines.extend(indent_lines(self.statement_block(stmt.default_body)))
+                lines.append("}")
+                return lines
+            else:
+                lines = [f"switch {self.expr(stmt.expr)} {{"]
+                for branch in stmt.branches:
+                    lines.append(f"case {self.expr(branch.value)}:")
+                    lines.extend(indent_lines(self.statement_block(branch.body)))
+                if stmt.default_body:
+                    lines.append("default:")
+                    lines.extend(indent_lines(self.statement_block(stmt.default_body)))
+                lines.append("}")
+                return lines
         if isinstance(stmt, ScopeStmt):
             self.needs_async_helpers = True
             self.std_imports.add("sync")
@@ -3585,6 +3815,30 @@ class GoGenerator:
             lines.extend(indent_lines(self.statement_block(stmt.join_body)))
             lines.extend(indent_lines(self.statement_block(stmt.result_body)))
             has_return = any(isinstance(s, ReturnStmt) for s in stmt.spawn_body + stmt.join_body + stmt.result_body)
+            if not has_return:
+                lines.append(f"\t{scope_name}.wg.Wait()")
+            lines.append("}")
+            self.active_scopes.pop()
+            return lines
+        if isinstance(stmt, ParallelStmt):
+            self.needs_async_helpers = True
+            self.std_imports.add("sync")
+            self.std_imports.add("context")
+            scope_name = go_local_name(stmt.block_name or "parallel_block")
+            parent_ctx = self.current_context_expr()
+            self.active_scopes.append(scope_name)
+            lines = ["{"]
+            lines.append(f"\t{scope_name} := FreeholdScope{{}}")
+            lines.append(f"\t{scope_name}.ctx, {scope_name}.cancel = context.WithCancel({parent_ctx})")
+            lines.append(f"\t{scope_name}.priority = 3")
+            if stmt.limit is not None:
+                lines.append(f"\t{scope_name}.sem = make(chan struct{{}}, int({self.expr(stmt.limit)}))")
+            else:
+                lines.append(f"\t{scope_name}.sem = nil")
+            lines.append(f"\tdefer {scope_name}.cancel()")
+            lines.append(f"\t_ = {scope_name}")
+            lines.extend(indent_lines(self.statement_block(stmt.body)))
+            has_return = any(isinstance(s, ReturnStmt) for s in stmt.body)
             if not has_return:
                 lines.append(f"\t{scope_name}.wg.Wait()")
             lines.append("}")
@@ -3646,7 +3900,12 @@ class GoGenerator:
         elif isinstance(stmt, CaseStmt):
             names.update(self.expr_read_names(stmt.expr))
             for branch in stmt.branches:
-                names.update(self.expr_read_names(branch.value))
+                if hasattr(branch, "pattern") and branch.pattern is not None:
+                    # In PatternBranch, names from guards or patterns can be processed
+                    if branch.guard is not None:
+                        names.update(self.expr_read_names(branch.guard))
+                elif hasattr(branch, "value"):
+                    names.update(self.expr_read_names(branch.value))
                 for nested in branch.body:
                     names.update(self.statement_read_names(nested))
             for nested in stmt.default_body:
@@ -3813,7 +4072,7 @@ class GoGenerator:
             rendered = self.runtime_call_expr(expr, type_ref)
             if rendered is not None:
                 return rendered
-        rendered_expr = self.expr(expr)
+        rendered_expr = self.expr_at(expr, 0, expected_type=type_ref)
         if self.integer_expr_kind(expr) == "inferred_int" and self.go_declared_base(type_ref) == "Integer":
             return f"int64({rendered_expr})"
         return rendered_expr
@@ -3850,6 +4109,8 @@ class GoGenerator:
         return self.go_type_ref(type_ref)
 
     def go_type_ref_text(self, type_ref: Any) -> str:
+        if isinstance(type_ref, str):
+            return self.go_type_string(type_ref)
         if isinstance(type_ref, TypeName):
             return self.go_type_string(type_ref.name)
         if isinstance(type_ref, ArrayTypeName):
@@ -4006,7 +4267,7 @@ class GoGenerator:
             return None
         return self.exposed_type_modules.get(type_name)
 
-    def expr_at(self, expr: Any, parent_precedence: int, side: str = "") -> str:
+    def expr_at(self, expr: Any, parent_precedence: int, side: str = "", expected_type: Any = None) -> str:
         if isinstance(expr, NumberExpr):
             return str(expr.value)
         if isinstance(expr, DoubleExpr):
@@ -4020,6 +4281,18 @@ class GoGenerator:
                 return self.contract_bindings[expr.name]
             if expr.name in self.local_errors or expr.name in self.exposed_error_modules:
                 return self.go_error_name(expr.name)
+            if expr.name in self.constructor_to_choice:
+                choice_name, choice_decl, constr = self.constructor_to_choice[expr.name]
+                if choice_decl.type_params:
+                    if expected_type is not None:
+                        try:
+                            resolved_choice_name = self.go_type_ref(expected_type)
+                            return f"{resolved_choice_name}_{go_exported_name(constr.name)}_ctor()"
+                        except Exception:
+                            pass
+                    return f"{go_exported_name(choice_decl.name)}_{go_exported_name(constr.name)}_ctor[any]()"
+                else:
+                    return f"{go_exported_name(choice_decl.name)}_{go_exported_name(constr.name)}_ctor()"
             return go_local_name(expr.name)
         if isinstance(expr, SpecialResultExpr):
             if expr.name in self.contract_bindings:
@@ -4058,6 +4331,38 @@ class GoGenerator:
             return f"func() bool {{ for {var_name} := int64({lower}); {var_name} <= int64({upper}); {var_name}++ {{ if {body} {{ return true }} }}; return false }}()"
         if isinstance(expr, AwaitExpr):
             return self.await_expr(expr)
+        if isinstance(expr, SpawnExpr):
+            self.needs_async_helpers = True
+            self.std_imports.add("sync")
+            if not isinstance(expr.target, CallExpr):
+                self.unsupported(expr, "spawn target must be a call expression")
+                return "nil"
+            routine = self.called_routine(expr.target.name)
+            if routine is None:
+                self.unsupported(expr, f"unknown spawn target routine: {expr.target.name}")
+                return "nil"
+
+            if routine.return_type is None:
+                value_type = "Void"
+            else:
+                value_type = self.go_type_string(type_to_string(routine.return_type))
+
+            if not self.active_scopes:
+                self.unsupported(expr, "spawn expression requires an active scope")
+                return "nil"
+            scope_expr = self.active_scopes[-1]
+
+            priority_expr_str = "3"
+            if "priority" in expr.attributes:
+                priority_expr_str = f"int({self.expr(expr.attributes['priority'])})"
+
+            args_text = self.render_call_args(expr.target.args, routine)
+            call_rendered = f"{self.callable_name(expr.target.name, expr.target)}({args_text})"
+
+            if routine.return_type is None:
+                return f"freeholdSpawn[{value_type}](&{scope_expr}.wg, {priority_expr_str}, {scope_expr}.sem, func() {value_type} {{ {call_rendered}; return {value_type}{{}} }})"
+            else:
+                return f"freeholdSpawn[{value_type}](&{scope_expr}.wg, {priority_expr_str}, {scope_expr}.sem, func() {value_type} {{ return {call_rendered} }})"
         if isinstance(expr, UnaryExpr):
             precedence = unary_precedence(expr.op)
             rendered = f"{go_operator(expr.op)}{self.expr_at(expr.expr, precedence)}"
@@ -4082,6 +4387,41 @@ class GoGenerator:
             values = ", ".join(self.expr(item) for item in expr.items)
             return f"[]any{{{values}}}"
         if isinstance(expr, CallExpr):
+            if expr.name in self.constructor_to_choice:
+                choice_name, choice_decl, constr = self.constructor_to_choice[expr.name]
+                resolved_choice_name = None
+                if choice_decl.type_params:
+                    if expected_type is not None:
+                        try:
+                            resolved_choice_name = self.go_type_ref(expected_type)
+                        except Exception:
+                            pass
+                    if resolved_choice_name is None:
+                        type_args = []
+                        for param, arg in zip(constr.params, expr.args):
+                            if param.type_name in choice_decl.type_params:
+                                arg_type = self.infer_expr_type(arg)
+                                type_args.append(type_to_string(arg_type))
+                            else:
+                                type_args.append(param.type_name)
+                        if type_args:
+                            try:
+                                resolved_choice_name = self.go_type_ref(TypeName(f"{choice_decl.name}<{', '.join(type_args)}>"))
+                            except Exception:
+                                pass
+                if resolved_choice_name is None:
+                    resolved_choice_name = go_exported_name(choice_decl.name)
+                
+                ctor_name = f"{resolved_choice_name}_{go_exported_name(constr.name)}_ctor"
+                rendered_args = []
+                for index, arg in enumerate(expr.args):
+                    if index < len(constr.params) and constr.params[index].type_name == "Integer":
+                        rendered_args.append(self.expr_as_int64(arg))
+                    else:
+                        rendered_args.append(self.expr(arg))
+                args_str = ", ".join(rendered_args)
+                return f"{ctor_name}({args_str})"
+
             runtime_call = self.runtime_call_expr(expr, None)
             if runtime_call is not None:
                 return runtime_call
@@ -4096,8 +4436,13 @@ class GoGenerator:
         return "nil"
 
     def await_expr(self, expr: AwaitExpr) -> str:
-        if isinstance(expr.expr, VarExpr) and self.is_join_handle_type(self.current_local_types.get(expr.expr.name)):
-            return f"{go_local_name(expr.expr.name)}.value"
+        if isinstance(expr.expr, VarExpr):
+            handle_type = self.current_local_types.get(expr.expr.name)
+            if self.is_join_handle_type(handle_type):
+                inner = self.join_handle_inner_type_string(handle_type)
+                value_type = self.go_type_string(inner) if inner else "any"
+                ctx_expr = self.current_context_expr()
+                return f"freeholdJoin[{value_type}]({ctx_expr}, {go_local_name(expr.expr.name)})"
         return self.expr(expr.expr)
 
     def callable_name(self, name: str, node: Any) -> str:
@@ -4155,33 +4500,38 @@ class GoGenerator:
         return go_exported_name(resolved_name)
 
     def runtime_call_statement(self, stmt: CallStmt) -> list[str] | None:
-        if stmt.name == "Std.IO.log":
+        resolved_name = stmt.name
+        exposed_module = self.exposed_symbols.get(stmt.name)
+        if exposed_module is not None and stmt.name not in self.local_routines:
+            resolved_name = f"{exposed_module}.{stmt.name}"
+
+        if resolved_name == "Std.IO.log":
             self.used_runtime_modules.add("Std.IO")
             self.std_imports.add("fmt")
             return [f"fmt.Println({self.expr(stmt.args[0])})"]
-        if stmt.name == "Std.IO.logf":
+        if resolved_name == "Std.IO.logf":
             self.used_runtime_modules.add("Std.IO")
             self.std_imports.add("fmt")
             if len(stmt.args) == 1:
                 return [f"fmt.Println({self.expr(stmt.args[0])})"]
             return [f"fmt.Println({self.render_string_template_call(stmt.args)})"]
-        if stmt.name in {"Std.IO.log_int", "Std.IO.log_bool", "Std.IO.log_double"}:
+        if resolved_name in {"Std.IO.log_int", "Std.IO.log_bool", "Std.IO.log_double"}:
             self.used_runtime_modules.add("Std.IO")
             self.std_imports.add("fmt")
             return [f"fmt.Println({self.expr(stmt.args[0])})"]
-        if stmt.name.endswith(".cancel"):
-            scope_var = go_local_name(stmt.name.split(".")[0])
+        if resolved_name.endswith(".cancel"):
+            scope_var = go_local_name(resolved_name.split(".")[0])
             return [f"{scope_var}.cancel()"]
-        if stmt.name.endswith(".timeout"):
-            scope_var = go_local_name(stmt.name.split(".")[0])
+        if resolved_name.endswith(".timeout"):
+            scope_var = go_local_name(resolved_name.split(".")[0])
             self.std_imports.add("time")
             self.std_imports.add("context")
             return [f"{scope_var}.ctx, {scope_var}.cancel = context.WithTimeout({scope_var}.ctx, time.Duration({self.expr(stmt.args[0])})*time.Millisecond)"]
-        if stmt.name.endswith(".priority"):
-            scope_var = go_local_name(stmt.name.split(".")[0])
+        if resolved_name.endswith(".priority"):
+            scope_var = go_local_name(resolved_name.split(".")[0])
             return [f"{scope_var}.priority = int({self.expr(stmt.args[0])})"]
-        if stmt.name.endswith(".limit"):
-            scope_var = go_local_name(stmt.name.split(".")[0])
+        if resolved_name.endswith(".limit"):
+            scope_var = go_local_name(resolved_name.split(".")[0])
             return [f"{scope_var}.sem = make(chan struct{{}}, {self.expr(stmt.args[0])})"]
         return None
 
@@ -4339,7 +4689,7 @@ class GoGenerator:
             self.unsupported(expr, "channel_send requires one type argument, a Sender, and a value")
             return "false"
         value_type = self.go_type_string(expr.type_args[0])
-        return f"freeholdChannelSend[{value_type}]({self.expr(expr.args[0])}, {self.expr(expr.args[1])})"
+        return f"freeholdChannelSend[{value_type}]({self.expr(expr.args[0])}, {self.expr_with_type(expr.args[1], expr.type_args[0])})"
 
     def render_channel_try_send_call(self, expr: CallExpr) -> str:
         self.needs_async_helpers = True
@@ -4347,7 +4697,7 @@ class GoGenerator:
             self.unsupported(expr, "channel_try_send requires one type argument, a Sender, and a value")
             return "false"
         value_type = self.go_type_string(expr.type_args[0])
-        return f"freeholdChannelTrySend[{value_type}]({self.expr(expr.args[0])}, {self.expr(expr.args[1])})"
+        return f"freeholdChannelTrySend[{value_type}]({self.expr(expr.args[0])}, {self.expr_with_type(expr.args[1], expr.type_args[0])})"
 
     def render_channel_receive_call(self, expr: CallExpr) -> str:
         self.needs_async_helpers = True
@@ -4391,6 +4741,15 @@ class GoGenerator:
             generic = parse_generic(type_ref)
             return generic is not None and generic[0] == "JoinHandle" and len(generic[1]) == 1
         return False
+
+    def join_handle_inner_type_string(self, type_ref: Any) -> str | None:
+        if isinstance(type_ref, TypeName):
+            return self.join_handle_inner_type_string(type_ref.name)
+        if isinstance(type_ref, str):
+            generic = parse_generic(type_ref)
+            if generic is not None and generic[0] == "JoinHandle" and len(generic[1]) == 1:
+                return generic[1][0]
+        return None
 
     def big_runtime_call_expr(self, expr: CallExpr) -> str | None:
         if not expr.name.startswith("Big."):
@@ -4611,6 +4970,8 @@ class GoGenerator:
 
 
 def go_type_ref(type_ref: Any) -> str:
+    if isinstance(type_ref, str):
+        return go_type_string(type_ref)
     if isinstance(type_ref, TypeName):
         return go_type_string(type_ref.name)
     if isinstance(type_ref, ArrayTypeName):

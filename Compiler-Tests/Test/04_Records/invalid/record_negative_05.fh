@@ -1,0 +1,20 @@
+-- Purpose: Negative test – Accessing a non-existent field on a record.
+-- Failure Category: Undeclared record field access
+-- Referenced Specification: SPECIFICATION-FH-BASICS.md, Section 3.2
+-- Expected Result: Verifier Failure
+--   Field dot-access must be checked against the record schema. Accessing 'height' is invalid.
+
+module RecordNegative05
+
+type Box is record
+    width: Integer
+    length: Integer
+end record
+
+procedure main()
+is
+    let b: Box = Box { width: 10, length: 15 }
+    let h: Integer = b.height
+end main
+
+end RecordNegative05

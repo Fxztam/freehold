@@ -1,0 +1,21 @@
+module ParallelNoBlockingNegDemo
+
+async function UnsafeWorker(sender: Sender<Integer>, val: Integer) returns Boolean
+is
+    let ok_val: Boolean = await channel_send<Integer>(sender, val)
+    return ok_val
+end UnsafeWorker
+
+async procedure Main()
+is
+    let chan: Channel<Integer> = channel<Integer>(8)
+    let sender: Sender<Integer> = channel_sender<Integer>(chan)
+
+    parallel (limit = 2)
+    do
+        let handle: JoinHandle<Boolean> = spawn UnsafeWorker(sender, 42)
+        let done: Boolean = await handle
+    end parallel
+end Main
+
+end ParallelNoBlockingNegDemo

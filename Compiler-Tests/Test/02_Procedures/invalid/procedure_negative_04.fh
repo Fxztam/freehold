@@ -1,0 +1,24 @@
+-- Purpose: Negative test – Mutating a record parameter field without declaring it in a 'modifies' clause.
+-- Failure Category: Non-declared mutation error
+-- Referenced Specification: SPECIFICATION-FH-BASICS.md, Section 3.3 (Contracts Before Bodies), Section 6.4 (Make Effects Visible)
+-- Expected Result: Verifier Failure
+--   Modifying c.val is illegal because c.val was not listed in a modifies clause.
+
+module ProcedureNegative04
+
+type Cell is record
+    val: Integer
+end record
+
+procedure illegal_mutation(c: Cell)
+is
+    c.val := c.val + 1
+end illegal_mutation
+
+procedure main()
+is
+    let cell: Cell = Cell { val: 0 }
+    call illegal_mutation(cell)
+end main
+
+end ProcedureNegative04

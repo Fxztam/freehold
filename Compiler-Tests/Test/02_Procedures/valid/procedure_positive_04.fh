@@ -1,0 +1,29 @@
+-- Purpose: Positive test – Procedure accepting multiple custom record parameters.
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 1 (Routine Kinds)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module ProcedurePositive04
+
+type Pair is record
+    x: Integer
+    y: Integer
+end record
+
+procedure swap_coords(p: Pair)
+modifies p.x, p.y
+ensures p.x = old(p.y) and p.y = old(p.x)
+is
+    let temp: Integer = p.x
+    p.x := p.y
+    p.y := temp
+end swap_coords
+
+procedure main()
+is
+    let coordinate: Pair = Pair { x: 10, y: 20 }
+    call swap_coords(coordinate)
+    check coordinate.x = 20
+    check coordinate.y = 10
+end main
+
+end ProcedurePositive04

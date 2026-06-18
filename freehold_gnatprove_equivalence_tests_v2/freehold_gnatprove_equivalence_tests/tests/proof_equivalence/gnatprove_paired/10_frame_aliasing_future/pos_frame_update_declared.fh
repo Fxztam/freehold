@@ -1,0 +1,18 @@
+module Pos_Frame_Update_Declared
+
+type Account is record
+    balance: Integer
+    limit: Integer
+end record
+
+procedure deposit(acc: Account, amount: Integer)
+modifies acc.balance
+requires amount >= 0
+requires acc.balance <= 1000000
+ensures acc.balance = old(acc.balance) + amount
+ensures acc.limit = old(acc.limit)
+is
+    acc.balance := acc.balance + amount
+end deposit
+
+end Pos_Frame_Update_Declared

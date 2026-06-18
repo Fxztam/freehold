@@ -1,0 +1,19 @@
+-- Purpose: Positive test – Nested function call results in checks.
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 1 (Routine Kinds)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module FunctionPositive03
+
+function square(x: Integer) returns Integer
+ensures result = x * x
+is
+    return x * x
+end square
+
+procedure main()
+is
+    let val: Integer = square(square(2))
+    check val = 16
+end main
+
+end FunctionPositive03

@@ -1,0 +1,19 @@
+-- Purpose: Negative test – Function body misses a mandatory 'return' statements execution path.
+-- Failure Category: Missing return in function error
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 1 (Routine Kinds)
+-- Expected Result: Verifier Failure or Parser Failure
+--   Functions must return an expression of the designated type.
+
+module FunctionNegative04
+
+function missing_return(x: Integer) returns Integer
+is
+    let temp: Integer = x + 1
+end missing_return
+
+procedure main()
+is
+    let x: Integer = missing_return(5)
+end main
+
+end FunctionNegative04

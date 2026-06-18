@@ -6,7 +6,9 @@ qualified_name: NAME ("." NAME)*
 import_decl: "import" qualified_name exposing_clause?
 exposing_clause: "exposing" exposing_list
 exposing_list: NAME ("," NAME)*
-declaration: record_type_decl | choice_type_decl | type_decl | error_decl | service_decl | function_decl | procedure_decl
+declaration: record_type_decl | choice_type_decl | type_decl | error_decl | service_decl | function_decl | procedure_decl | task_decl
+
+task_decl: "task" NAME "(" param_list? ")" contract_block? "is" stmt* "end" NAME
 
 record_type_decl: "type" NAME type_param_list? "is" "record" record_field+ "end" "record"
 choice_type_decl: "choice" NAME type_param_list? "=" "|"? constructor_decl ("|" constructor_decl)* "end" NAME
@@ -60,7 +62,7 @@ constraint_list: constraint ("," constraint)*
 aborts_clause: "aborts" NAME ("when" expr)?
 ensures_clause: "ensures" expr_list
 
-stmt: let_stmt | field_assign_stmt | assign_stmt | return_stmt | abort_stmt | if_stmt | while_stmt | case_stmt | scope_stmt | check_stmt | call_stmt
+stmt: let_stmt | field_assign_stmt | assign_stmt | return_stmt | abort_stmt | if_stmt | while_stmt | case_stmt | scope_stmt | check_stmt | call_stmt | parallel_stmt
 let_stmt: "let" NAME ":" return_type "=" expr
 field_assign_stmt: field_path ":=" expr
 assign_stmt: NAME ":=" expr
@@ -69,6 +71,8 @@ abort_stmt: "abort" NAME
 return_value: "ok" expr -> return_ok | "error" NAME -> return_error | expr -> return_plain
 check_stmt: "check" expr
 call_stmt: "call" qualified_name type_arg_list? "(" arg_list? ")"
+
+parallel_stmt: "parallel" NAME? "(" "limit" "=" expr ")" "do" stmt* "end" "parallel" NAME?
 
 if_stmt: "if" expr "then" then_block ("else" else_block)? "end" "if"
 then_block: stmt*
@@ -97,15 +101,19 @@ named_arg_list: named_arg ("," named_arg)*
 named_arg: NAME ":" expr
 
 ?expr: logic_or
+     | "spawn" expr ("with" "(" spawn_attribute_list ")")? -> spawn_expr
      | "for" "all" NAME "in" logic_or ".." logic_or "=>" expr -> for_all_expr
      | "for" "some" NAME "in" logic_or ".." logic_or "=>" expr -> exists_expr
+
+spawn_attribute_list: spawn_attribute ("," spawn_attribute)*
+spawn_attribute: NAME ":" expr
 ?logic_or: logic_and | logic_or "or" logic_and -> or_expr
 ?logic_and: equality | logic_and "and" equality -> and_expr
 ?equality: comparison | equality "=" comparison -> eq_expr | equality "!=" comparison -> neq_expr
 ?comparison: sum | comparison "<" sum -> lt_expr | comparison "<=" sum -> le_expr | comparison ">" sum -> gt_expr | comparison ">=" sum -> ge_expr
 ?sum: product | sum "+" product -> add_expr | sum "-" product -> sub_expr
 ?product: unary | product "*" unary -> mul_expr | product "/" unary -> div_expr
-?unary: atom | "await" unary -> await_expr | "-" unary -> neg_expr | "not" unary -> not_expr
+?unary: atom | "await" "all" unary -> await_all_expr | "await" unary -> await_expr | "-" unary -> neg_expr | "not" unary -> not_expr
 
 ?atom: ESCAPED_STRING -> string
      | SIGNED_FLOAT -> double

@@ -1,0 +1,18 @@
+-- Purpose: Positive test – module with multiple imports (plain and exposing).
+--          Verifies that several import statements are accepted.
+-- Referenced Specification: SPECIFICATION-FH-BASICS.md, Section 4.3 (Multiple Imports)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module App.MultiImport
+
+import Std.IO
+import Domain.Customers exposing Customer, make_customer
+
+procedure main()
+is
+    let c: Customer = make_customer(1, "Bob")
+    check c.id = 1
+    call Std.IO.log("multi-import accepted")
+end main
+
+end App.MultiImport

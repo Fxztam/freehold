@@ -1,0 +1,18 @@
+module Neg_Increment_Calls_Missing_Post
+
+procedure increment_guarded(x: Integer)
+requires x < Integer.Last
+do
+    -- Implementation is safe, but the contract does not tell callers the post-state.
+    x := x + 1
+end increment_guarded
+
+procedure main()
+let x: Integer := 0
+call increment_guarded(x)
+-- Equivalent to GNATprove failing the second guarded call:
+-- caller cannot prove x < Integer.Last after the first call without a postcondition.
+call increment_guarded(x)
+end main
+
+end Neg_Increment_Calls_Missing_Post

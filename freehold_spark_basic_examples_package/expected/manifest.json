@@ -1,0 +1,33 @@
+{
+  "source": "AdaCore SPARK User's Guide 7.9.1 Basic Examples",
+  "groups": [
+    {
+      "group": "01_increment",
+      "tests": [
+        {"file": "freehold/01_increment/neg_increment_overflow.fh", "expected": "VERIFY_FAIL", "diagnostic": "possible_integer_overflow"},
+        {"file": "freehold/01_increment/pos_increment_guarded.fh", "expected": "VERIFY_OK"},
+        {"file": "freehold/01_increment/neg_increment_calls_missing_post.fh", "expected": "VERIFY_FAIL", "diagnostic": "precondition_not_provable_at_call_site"},
+        {"file": "freehold/01_increment/pos_increment_calls_full_contract.fh", "expected": "VERIFY_OK"},
+        {"file": "freehold/01_increment/pos_increment_local_contextual.fh", "expected": "VERIFY_OK"}
+      ]
+    },
+    {
+      "group": "02_swap",
+      "tests": [
+        {"file": "freehold/02_swap/neg_swap_bad_post.fh", "expected": "VERIFY_FAIL", "diagnostic": "postcondition_not_provable"},
+        {"file": "freehold/02_swap/pos_swap_temp.fh", "expected": "VERIFY_OK"},
+        {"file": "freehold/02_swap/neg_swap_uninitialized_read.fh", "expected": "VERIFY_FAIL", "diagnostic": "read_of_uninitialized_variable"},
+        {"file": "freehold/02_swap/pending_swap_modulo_xor.fh", "expected": "PENDING", "diagnostic": "requires_modular_unsigned32_and_xor"}
+      ]
+    },
+    {
+      "group": "03_addition",
+      "tests": [
+        {"file": "freehold/03_addition/neg_addition_naive_pre_overflows.fh", "expected": "VERIFY_FAIL", "diagnostic": "possible_overflow_in_precondition_expression"},
+        {"file": "freehold/03_addition/pos_addition_safe_pre.fh", "expected": "VERIFY_OK"},
+        {"file": "freehold/03_addition/pos_addition_saturating.fh", "expected": "VERIFY_OK"},
+        {"file": "freehold/03_addition/pending_addition_big_integer.fh", "expected": "PENDING", "diagnostic": "requires_big_integer_library"}
+      ]
+    }
+  ]
+}

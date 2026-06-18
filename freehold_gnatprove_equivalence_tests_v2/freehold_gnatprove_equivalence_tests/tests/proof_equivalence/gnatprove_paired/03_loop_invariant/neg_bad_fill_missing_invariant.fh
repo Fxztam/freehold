@@ -1,0 +1,33 @@
+module Neg_Bad_Fill_Missing_Invariant
+
+type Int is Integer range -2147483648..2147483647
+
+procedure bad_fill(a: Array<Int, 32>, v: Int)
+modifies a
+ensures for all i in 0..31 => a[i] = v
+is
+    let i: Int = 0
+
+    while i <= 30
+    invariant i >= 0
+    invariant i <= 32
+    variant 32 - i
+    do
+        a[i] := v
+        i := i + 1
+    end while
+end bad_fill
+
+procedure force_fail(x: Int)
+is
+    let dummy: Int = 0
+    check x = x + 1
+end force_fail
+
+procedure main()
+is
+    let a: Array<Int, 32> = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    call bad_fill(a, 7)
+end main
+
+end Neg_Bad_Fill_Missing_Invariant

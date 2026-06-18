@@ -1,0 +1,23 @@
+-- Purpose: Demonstrate the use of loop invariants to specify contract requirements for iterative processes.
+-- Referenced Specification: SPECIFICATION-LOOP-INVARIANT.md (Assumed loop invariant keywords syntax)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module ContractDemo03
+
+procedure loop_example()
+is
+    let i: Integer = 0
+    while i < 10
+    invariant i >= 0 and i <= 10
+    is
+        i := i + 1
+    end while
+    check i = 10
+end loop_example
+
+procedure main()
+is
+    call loop_example()
+end main
+
+end ContractDemo03

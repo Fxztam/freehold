@@ -1,0 +1,25 @@
+-- Purpose: Demonstrate nested record types where a record contains another record as a field.
+-- Referenced Specification: SPECIFICATION-FH-BASICS.md, Section 3.2 (Recommended Declaration Order), Section 6.2 (Put Shared Types Low in the Tree)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module RecordDemo02
+
+type Coords is record
+    x: Integer
+    y: Integer
+end record
+
+type Widget is record
+    id: Integer
+    pos: Coords
+end record
+
+procedure main()
+is
+    let position: Coords = Coords { x: 50, y: 150 }
+    let button: Widget = Widget { id: 1, pos: position }
+    check button.pos.x = 50
+    check button.pos.y = 150
+end main
+
+end RecordDemo02

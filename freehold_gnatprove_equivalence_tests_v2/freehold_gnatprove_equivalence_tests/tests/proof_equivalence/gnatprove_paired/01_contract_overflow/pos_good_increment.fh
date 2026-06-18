@@ -1,0 +1,18 @@
+module Pos_Good_Increment
+
+type Int is Integer range -2147483648..2147483647
+
+function good_increment(x: Int) returns Int
+requires x < 2147483647
+ensures result = x + 1
+is
+    return x + 1
+end good_increment
+
+procedure main()
+is
+    let x: Int = good_increment(41)
+    check x = 42
+end main
+
+end Pos_Good_Increment

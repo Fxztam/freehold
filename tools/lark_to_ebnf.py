@@ -153,7 +153,7 @@ def split_rules(text: str) -> list[tuple[str, str]]:
     for raw in strip_lark_directives(text.splitlines()):
         if not raw.strip():
             continue
-        m = re.match(r"^\s*([?]?[A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.*)$", raw)
+        m = re.match(r"^\s*([?]?[A-Za-z_][A-Za-z0-9_\.]*)\s*:\s*(.*)$", raw)
         if m:
             if current_name is not None:
                 rules.append((normalize_rule_name(current_name), " ".join(current_rhs).strip()))

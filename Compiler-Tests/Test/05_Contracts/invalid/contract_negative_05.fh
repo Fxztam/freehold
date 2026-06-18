@@ -1,0 +1,24 @@
+-- Purpose: Negative test – Modifying fields in an ensues/ensures clause block without describing it in modifies.
+-- Failure Category: Modification frame mismatch
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 2
+-- Expected Result: Verifier Failure
+--   Updating c.val is forbidden as there is no 'modifies' clause declared.
+
+module ContractNegative05
+
+type Cell is record
+    val: Integer
+end record
+
+procedure mut_without_modifies(c: Cell)
+is
+    c.val := 10
+end mut_without_modifies
+
+procedure main()
+is
+    let cell: Cell = Cell { val: 5 }
+    call mut_without_modifies(cell)
+end main
+
+end ContractNegative05

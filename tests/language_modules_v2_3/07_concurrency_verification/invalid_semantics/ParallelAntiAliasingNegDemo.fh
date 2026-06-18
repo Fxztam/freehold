@@ -1,0 +1,27 @@
+module ParallelAntiAliasingNegDemo
+
+type SharedDatabase is record
+    connections: Integer
+    active: Boolean
+end record
+
+task Worker(db: SharedDatabase)
+is
+    let x: Integer = db.connections
+end Worker
+
+async procedure Main()
+is
+    let shared_db: SharedDatabase = SharedDatabase { connections: 42, active: true }
+
+    parallel (limit = 2)
+    do
+        let first_bad: JoinHandle<Void> = spawn Worker(shared_db)
+        let second_bad: JoinHandle<Void> = spawn Worker(shared_db)
+
+        let dummy1: Void = await first_bad
+        let dummy2: Void = await second_bad
+    end parallel
+end Main
+
+end ParallelAntiAliasingNegDemo

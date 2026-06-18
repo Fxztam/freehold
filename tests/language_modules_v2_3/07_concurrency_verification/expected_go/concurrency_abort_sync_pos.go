@@ -157,6 +157,8 @@ func (w *freeholdWorker) steal() (freeholdTask, bool) {
 	return freeholdTask{}, false
 }
 
+type Void struct{}
+
 type FreeholdScope struct {
 	wg       sync.WaitGroup
 	ctx      context.Context
@@ -231,13 +233,26 @@ func freeholdChannelReceive[T any](ctx context.Context, receiver <-chan T) T {
 const VerificationError = "VerificationError"
 
 func Compute(ctx context.Context, val int64) int64 {
+	freeholdDefaultScope := FreeholdScope{}
+	freeholdDefaultScope.ctx, freeholdDefaultScope.cancel = context.WithCancel(ctx)
+	freeholdDefaultScope.priority = 3
+	freeholdDefaultScope.sem = nil
+	defer freeholdDefaultScope.cancel()
+	_ = freeholdDefaultScope
 	if !(val > 0) {
 		panic("freehold requires contract failed")
 	}
+	freeholdDefaultScope.wg.Wait()
 	return val * 2
 }
 
 func ExecuteTask(ctx context.Context, input int64) (int64, error) {
+	freeholdDefaultScope := FreeholdScope{}
+	freeholdDefaultScope.ctx, freeholdDefaultScope.cancel = context.WithCancel(ctx)
+	freeholdDefaultScope.priority = 3
+	freeholdDefaultScope.sem = nil
+	defer freeholdDefaultScope.cancel()
+	_ = freeholdDefaultScope
 	if !(input > 10) {
 		panic("freehold requires contract failed")
 	}
@@ -249,7 +264,7 @@ func ExecuteTask(ctx context.Context, input int64) (int64, error) {
 	}
 	{
 		sc := FreeholdScope{}
-		sc.ctx, sc.cancel = context.WithCancel(ctx)
+		sc.ctx, sc.cancel = context.WithCancel(freeholdDefaultScope.ctx)
 		sc.priority = 3
 		sc.sem = nil
 		defer sc.cancel()
@@ -258,9 +273,11 @@ func ExecuteTask(ctx context.Context, input int64) (int64, error) {
 		var res int64 = freeholdJoin[int64](sc.ctx, handle)
 		if res > 100 {
 			sc.wg.Wait()
+			freeholdDefaultScope.wg.Wait()
 			return 0, errors.New(VerificationError)
 		}
 		sc.wg.Wait()
+		freeholdDefaultScope.wg.Wait()
 		return res, nil
 	}
 }

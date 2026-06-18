@@ -1,0 +1,26 @@
+-- Purpose: Demonstrate modifies clauses with old() function to verify state mutations.
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 2, SPECIFICATION-FH-BASICS.md, Section 3.3
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module ContractDemo02
+
+type Wallet is record
+    balance: Integer
+end record
+
+procedure withdraw(w: Wallet, amount: Integer)
+modifies w.balance
+requires amount > 0 and w.balance >= amount
+ensures w.balance = old(w.balance) - amount
+is
+    w.balance := w.balance - amount
+end withdraw
+
+procedure main()
+is
+    let my_wallet: Wallet = Wallet { balance: 500 }
+    call withdraw(my_wallet, 200)
+    check my_wallet.balance = 300
+end main
+
+end ContractDemo02

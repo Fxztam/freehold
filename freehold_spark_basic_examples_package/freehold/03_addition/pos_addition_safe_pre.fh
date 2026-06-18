@@ -1,0 +1,16 @@
+module Pos_Addition_Safe_Pre
+
+function addition(x: Integer, y: Integer) -> Integer
+requires (x >= 0 and y <= Integer.Last - x) or (x < 0 and y >= Integer.First - x)
+ensures result == x + y
+do
+    -- The guard avoids overflowing while proving x + y is safe.
+    return x + y
+end addition
+
+procedure main()
+let z: Integer := addition(40, 2)
+check z == 42
+end main
+
+end Pos_Addition_Safe_Pre

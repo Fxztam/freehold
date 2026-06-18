@@ -255,6 +255,10 @@ class AwaitExpr:
     expr: Any; pos: SourcePos
 
 @dataclass(frozen=True)
+class AwaitAllExpr:
+    expr: Any; pos: SourcePos
+
+@dataclass(frozen=True)
 class NamedArg:
     name: str; expr: Any; pos: SourcePos
 
@@ -346,6 +350,21 @@ class ScopeStmt:
     spawn_body: list[Any]
     join_body: list[Any]
     result_body: list[Any]
+    pos: SourcePos
+
+
+@dataclass
+class ParallelStmt:
+    block_name: str | None
+    limit: Any
+    body: list[Any]
+    pos: SourcePos
+
+
+@dataclass(frozen=True)
+class SpawnExpr:
+    target: Any
+    attributes: dict[str, Any]
     pos: SourcePos
 
 

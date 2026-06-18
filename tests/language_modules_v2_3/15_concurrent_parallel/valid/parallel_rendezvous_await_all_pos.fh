@@ -1,0 +1,23 @@
+module ParallelRendezvousAwaitAllPos
+
+async function Worker(val: Integer) returns Integer
+    ensures result = val + 10
+is
+    return val + 10
+end Worker
+
+async procedure Main()
+is
+    -- Spawn multiple tasks returning Integer
+    let t1: JoinHandle<Integer> = spawn Worker(1)
+    let t2: JoinHandle<Integer> = spawn Worker(2)
+
+    -- Undergo a parallel rendezvous waiting for all handles to finish
+    -- Results must map to a monomorphically-typed Array with proper size
+    let results: Array<Integer, 2> = await all [t1, t2]
+
+    check results[0] = 11
+    check results[1] = 12
+end Main
+
+end ParallelRendezvousAwaitAllPos

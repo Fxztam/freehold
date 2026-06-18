@@ -1,0 +1,26 @@
+module Loop_Validate_Arr_Zero
+
+-- Validation with early exit.
+-- Explanation: while no invalid value has been found, the visited prefix satisfies the predicate.
+
+procedure validate_arr_zero(a: Array<Integer, 1..1000>) -> Boolean
+ensures result == (forall j in 1..1000 => a[j] == 0)
+do
+    let i: Integer := 1
+
+    while i <= 1000
+    invariant i >= 1
+    invariant i <= 1001
+    invariant forall k in 1..i-1 => a[k] == 0
+    variant 1001 - i
+    do
+        if a[i] != 0 then
+            return False
+        end if
+        i := i + 1
+    end while
+
+    return True
+end validate_arr_zero
+
+end Loop_Validate_Arr_Zero

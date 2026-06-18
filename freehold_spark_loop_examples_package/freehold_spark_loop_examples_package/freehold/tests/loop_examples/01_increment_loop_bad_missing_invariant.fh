@@ -1,0 +1,26 @@
+module Loop_Increment_Bad_Missing_Invariant
+
+-- Negative equivalent of SPARK Increment_Loop without Loop_Invariant.
+-- Expected: postcondition_not_provable / possible_integer_overflow.
+
+procedure increment_loop_bad(x: Integer, n: Integer) -> Integer
+requires n >= 0
+requires x <= Integer.Last - n
+ensures result == x + n
+do
+    let i: Integer := 0
+    let y: Integer := x
+
+    while i < n
+    invariant i >= 0
+    invariant i <= n
+    variant n - i
+    do
+        y := y + 1
+        i := i + 1
+    end while
+
+    return y
+end increment_loop_bad
+
+end Loop_Increment_Bad_Missing_Invariant

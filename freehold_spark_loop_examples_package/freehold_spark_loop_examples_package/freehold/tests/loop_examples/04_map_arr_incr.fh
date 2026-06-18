@@ -1,0 +1,27 @@
+module Loop_Map_Arr_Incr
+
+-- Mapping loop.
+-- Explanation: the updated prefix is related to the loop-entry array; the suffix is unchanged.
+
+procedure map_arr_incr(a: Array<Integer, 1..1000>) -> Array<Integer, 1..1000>
+requires forall j in 1..1000 => a[j] < Integer.Last
+ensures forall j in 1..1000 => result[j] == a[j] + 1
+do
+    let i: Integer := 1
+    let b: Array<Integer, 1..1000> := a
+
+    while i <= 1000
+    invariant i >= 1
+    invariant i <= 1001
+    invariant forall k in 1..i-1 => b[k] == a[k] + 1
+    invariant forall k in i..1000 => b[k] == a[k]
+    variant 1001 - i
+    do
+        b[i] := b[i] + 1
+        i := i + 1
+    end while
+
+    return b
+end map_arr_incr
+
+end Loop_Map_Arr_Incr

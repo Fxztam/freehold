@@ -1,0 +1,20 @@
+-- Purpose: Positive test – Basic precondition verification for functions.
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 3
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module ContractPositive01
+
+function check_is_valid(val: Integer) returns Boolean
+requires val > 10 and val < 50
+ensures result = true
+is
+    return true
+end check_is_valid
+
+procedure main()
+is
+    let ok: Boolean = check_is_valid(25)
+    check ok
+end main
+
+end ContractPositive01

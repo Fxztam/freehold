@@ -1,0 +1,24 @@
+module ParallelNoBlockingPosDemo
+
+async function SafeWorker(sender: Sender<Integer>, val: Integer) returns Boolean
+is
+    let ok_val: Boolean = await channel_try_send<Integer>(sender, val)
+    return ok_val
+end SafeWorker
+
+async procedure Main()
+is
+    let chan: Channel<Integer> = channel<Integer>(8)
+    let sender: Sender<Integer> = channel_sender<Integer>(chan)
+
+    parallel (limit = 2)
+    do
+        let first: JoinHandle<Boolean> = spawn SafeWorker(sender, 100)
+        let second: JoinHandle<Boolean> = spawn SafeWorker(sender, 200)
+
+        let done1: Boolean = await first
+        let done2: Boolean = await second
+    end parallel
+end Main
+
+end ParallelNoBlockingPosDemo

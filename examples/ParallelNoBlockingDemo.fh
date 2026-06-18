@@ -1,0 +1,65 @@
+module ParallelNoBlockingDemo
+
+import Std.IO
+
+-- Worker designed safely with non-blocking communications
+async function SafeWorker(sender: Sender<Integer>, val: Integer) returns Boolean
+is
+    -- Uses non-blocking 'channel_try_send' inside parallel pool. Highly permitted!
+    let ok_val: Boolean = await channel_try_send<Integer>(sender, val)
+    return ok_val
+end SafeWorker
+
+-- Worker designed unsafely (blocked communications)
+async function UnsafeWorker(sender: Sender<Integer>, val: Integer) returns Boolean
+is
+    -- Uses blocking 'channel_send' inside parallel pool. Forbidden by pool-starvation prevention rules.
+    let ok_val: Boolean = await channel_send<Integer>(sender, val)
+    return ok_val
+end UnsafeWorker
+
+async procedure run_safe_noblocking_demo()
+is
+    let chan: Channel<Integer> = channel<Integer>(8)
+    let sender: Sender<Integer> = channel_sender<Integer>(chan)
+
+    call Std.IO.log("Executing safe parallel execution (no blocking send/receive in pool)...")
+    parallel (limit = 2)
+    do
+        -- Permitted because SafeWorker strictly uses non-blocking "channel_try_send"
+        let first: JoinHandle<Boolean> = spawn SafeWorker(sender, 100)
+        let second: JoinHandle<Boolean> = spawn SafeWorker(sender, 200)
+
+        let done1: Boolean = await first
+        let done2: Boolean = await second
+    end parallel
+    call Std.IO.log("Positive no-blocking validation passed!")
+end run_safe_noblocking_demo
+
+-- Negative Demonstration (Reference: parallel_blocking_send_neg.fh):
+-- If you uncomment the code below, the Freehold Compiler/Verifier will reject it immediately
+-- with a TypeCheckError:
+-- "blocking channel operation 'channel_send' is forbidden within parallel pools to avoid starvation"
+--
+-- async procedure run_unsafe_blocking_demo()
+-- is
+--     let chan: Channel<Integer> = channel<Integer>(8)
+--     let sender: Sender<Integer> = channel_sender<Integer>(chan)
+--
+--     parallel (limit = 2)
+--     do
+--         -- REJECTED AT COMPILE-TIME:
+--         -- Spawns a task that transitively performs blocking channel_send on the default pool.
+--         let handle: JoinHandle<Boolean> = spawn UnsafeWorker(sender, 42)
+--         let done: Boolean = await handle
+--     end parallel
+-- end run_unsafe_blocking_demo
+
+async procedure Main()
+is
+    call Std.IO.log(">>> START No-Blocking Demo <<<")
+    call run_safe_noblocking_demo()
+    call Std.IO.log(">>> ENDE No-Blocking Demo <<<")
+end Main
+
+end ParallelNoBlockingDemo

@@ -1,0 +1,20 @@
+-- Purpose: Negative test – Instantiating a record field with an incorrect data type.
+-- Failure Category: Field type mismatch
+-- Referenced Specification: SPECIFICATION-FH-BASICS.md, Section 3.2
+-- Expected Result: Verifier Failure
+--   Supplied field values must match the record's schema field type (String passed to Integer).
+
+module RecordNegative03
+
+type Book is record
+    title: String
+    pages: Integer
+end record
+
+procedure main()
+is
+    -- pages must be Integer, but "three hundred" is a String
+    let my_book: Book = Book { title: "Dune", pages: "three hundred" }
+end main
+
+end RecordNegative03

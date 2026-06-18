@@ -1,0 +1,18 @@
+module Neg_Frame_Update_Undeclared_Field
+
+type Account is record
+    balance: Integer
+    limit: Integer
+end record
+
+procedure bad_deposit(acc: Account, amount: Integer)
+modifies acc.balance
+requires amount >= 0
+requires acc.balance <= 1000000
+ensures acc.balance = old(acc.balance) + amount
+is
+    acc.balance := acc.balance + amount
+    acc.limit := acc.limit + 1
+end bad_deposit
+
+end Neg_Frame_Update_Undeclared_Field

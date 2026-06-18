@@ -512,6 +512,46 @@ class Verifier:
                 first_pos = occurrences[0][0]
                 raise TypeCheckError(f"{first_pos.text()}: shared mutable state passed to multiple spawned tasks")
 
+    def check_no_blocking_in_parallel(self, body: list[Any], env: dict[str, Any], ctx: Any) -> None:
+        def find_spawned_and_check(node, in_spawned=False):
+            if node is None:
+                return
+            if isinstance(node, list):
+                for child in node:
+                    find_spawned_and_check(child, in_spawned)
+                return
+            
+            if isinstance(node, CallExpr):
+                if in_spawned and node.name in ("channel_receive", "channel_send"):
+                    raise TypeCheckError(f"{node.pos.text()}: blocking channel operation '{node.name}' is forbidden within parallel pools to avoid starvation")
+                
+                # Check if the called routine itself transitively does any blocking channel operations
+                callee = None
+                try:
+                    callee = ctx.routine(node.name, node.pos)
+                except TypeCheckError:
+                    pass
+                if callee:
+                    find_spawned_and_check(callee.body, in_spawned)
+            
+            if isinstance(node, SpawnExpr):
+                has_pool = "pool" in node.attributes
+                find_spawned_and_check(node.target, not has_pool)
+                # attributes do not execute in the spawned task, so keep in_spawned=False for attributes
+                for k, v in node.attributes.items():
+                    find_spawned_and_check(v, False)
+                return
+            
+            if isinstance(node, (ScopeStmt, ParallelStmt)):
+                return
+            
+            if hasattr(node, "__dict__"):
+                for k, v in node.__dict__.items():
+                    if k != "pos" and k != "target":  # skip target field as it's already checked explicitly if it's a SpawnExpr
+                        find_spawned_and_check(v, in_spawned)
+
+        find_spawned_and_check(body, False)
+
     def validate_flow_contracts(self, r, env, ctx):
         seen_globals = set()
         if r.global_specs:
@@ -1184,6 +1224,7 @@ class Verifier:
                 if self.base(limit_type, ctx) != "Integer":
                     raise TypeCheckError(f"{s.pos.text()}: parallel limit expects Integer, got {type_to_string(limit_type)}")
                 self.check_shared_mutable_state(s.body, env, ctx)
+                self.check_no_blocking_in_parallel(s.body, env, ctx)
                 self.block(s.body, r, env, ctx, path_conditions)
             elif isinstance(s, CallStmt):
                 if self.std_procedure_call(s.name, s.args, env, ctx, s.pos):
@@ -2049,6 +2090,42 @@ class Verifier:
                     return TypeName(join_inner)
                 raise TypeCheckError(f"{e.pos.text()}: await requires an awaitable expression, got {type_to_string(awaited)}")
             return awaited.inner_type
+        if isinstance(e, AwaitAllExpr):
+            if not ctx.current_async:
+                raise TypeCheckError(f"{e.pos.text()}: await is only allowed inside async routines")
+            
+            # The expression being awaited must be an ArrayLiteralExpr or evaluate to an Array of JoinHandles
+            awaited = self.infer(e.expr, env, ctx, allow_result, result_type)
+            
+            elem_type = None
+            if isinstance(awaited, ArrayTypeName):
+                elem_type = TypeName(awaited.element_type)
+            elif isinstance(awaited, ArrayLiteralType):
+                elem_type = TypeName(awaited.element_type)
+            elif isinstance(awaited, TypeName) and awaited.name.startswith("Array<"):
+                parts = awaited.name.split(",")
+                if len(parts) >= 1:
+                    elem_name = parts[0][6:].strip() # strip Array<
+                    elem_type = TypeName(elem_name)
+                    
+            if elem_type is None:
+                raise TypeCheckError(f"{e.pos.text()}: await all requires an Array of JoinHandles, got {type_to_string(awaited)}")
+                
+            # That element type must itself be a JoinHandle<T>
+            join_inner = ctx.join_handle_inner_type(elem_type)
+            if join_inner is None:
+                raise TypeCheckError(f"{e.pos.text()}: await all requires an Array of JoinHandles, got Array of {type_to_string(elem_type)}")
+                
+            # The result type of await all [t1, t2] is Array<T, N> where N is the original array's size
+            size = 0
+            if isinstance(awaited, (ArrayTypeName, ArrayLiteralType)):
+                size = awaited.size
+            elif isinstance(awaited, TypeName) and awaited.name.startswith("Array<"):
+                parts = awaited.name.split(",")
+                if len(parts) >= 2:
+                    size = int(parts[1].replace(">", "").strip())
+                    
+            return ArrayLiteralType(join_inner, size)
         if isinstance(e, IsExpr):
             left_name = None
             if isinstance(e.left, VarExpr): left_name = e.left.name

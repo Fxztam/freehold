@@ -1007,7 +1007,7 @@ func buildModuleEnv(project *Project, moduleName string, cache map[string]module
 		Routines: map[string]routineDecl{},
 		Services: map[string]serviceDecl{},
 	}
-	for _, name := range []string{"BigFloat", "BigInteger", "Boolean", "Double", "Executor", "Integer", "Scope", "String"} {
+	for _, name := range []string{"BigFloat", "BigInteger", "Boolean", "Double", "Executor", "Integer", "Scope", "String", "Void"} {
 		baseType := typeRefIR{Kind: "TypeName", Name: name}
 		env.Types[name] = typeDefIR{Kind: "TypeDef", Name: name, Base: name, BaseType: &baseType}
 	}

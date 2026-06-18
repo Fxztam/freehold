@@ -1,0 +1,30 @@
+-- Purpose: Positive test – Modifies contract on multiple records or multiple fields.
+-- Referenced Specification: SPECIFICATION-FH-BASICS.md, Section 3.3 (Contracts Before Bodies), Section 6.4 (Make Effects Visible)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module ContractPositive03
+
+type Stats is record
+    points: Integer
+    games: Integer
+end record
+
+procedure register_game(s: Stats, points_scored: Integer)
+modifies s.points, s.games
+requires points_scored >= 0
+ensures s.points = old(s.points) + points_scored
+ensures s.games = old(s.games) + 1
+is
+    s.points := s.points + points_scored
+    s.games := s.games + 1
+end register_game
+
+procedure main()
+is
+    let st: Stats = Stats { points: 100, games: 5 }
+    call register_game(st, 20)
+    check st.points = 120
+    check st.games = 6
+end main
+
+end ContractPositive03

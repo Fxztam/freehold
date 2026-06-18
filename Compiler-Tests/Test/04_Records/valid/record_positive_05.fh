@@ -1,0 +1,23 @@
+-- Purpose: Positive test – Record returned from a function.
+-- Referenced Specification: SPECIFICATION-FH-BASICS.md, Section 8.1, SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 1
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module RecordPositive05
+
+type Box is record
+    val: Integer
+end record
+
+function build_box(initial: Integer) returns Box
+ensures result.val = initial
+is
+    return Box { val: initial }
+end build_box
+
+procedure main()
+is
+    let b: Box = build_box(500)
+    check b.val = 500
+end main
+
+end RecordPositive05

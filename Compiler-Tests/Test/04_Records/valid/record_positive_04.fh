@@ -1,0 +1,18 @@
+-- Purpose: Positive test – Unique and non-empty @json mapping names inside a single record.
+-- Referenced Specification: SPECIFICATION-RECORD-JSON.md, Section 3 (External Field Names With @json)
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module RecordPositive04
+
+type Student is record
+    first_name: String @json("firstName")
+    last_name: String @json("lastName")
+end record
+
+procedure main()
+is
+    let s: Student = Student { first_name: "Clark", last_name: "Kent" }
+    check s.first_name = "Clark"
+end main
+
+end RecordPositive04

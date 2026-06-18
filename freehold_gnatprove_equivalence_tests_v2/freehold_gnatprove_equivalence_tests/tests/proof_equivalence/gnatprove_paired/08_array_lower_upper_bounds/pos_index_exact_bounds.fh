@@ -1,0 +1,21 @@
+module Pos_Index_Exact_Bounds
+
+procedure set_checked(a: Array<Integer, 10>, i: Integer, v: Integer)
+modifies a
+requires i >= 0
+requires i < 10
+ensures a[i] = v
+is
+    a[i] := v
+end set_checked
+
+procedure main()
+is
+    let a: Array<Integer, 10> = [0,0,0,0,0,0,0,0,0,0]
+    call set_checked(a, 0, 11)
+    call set_checked(a, 9, 99)
+    check a[0] = 11
+    check a[9] = 99
+end main
+
+end Pos_Index_Exact_Bounds

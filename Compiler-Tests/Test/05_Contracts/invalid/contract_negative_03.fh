@@ -1,0 +1,24 @@
+-- Purpose: Negative test – Loop invariant fails to hold initially before loop execution.
+-- Failure Category: Loop invariant initially invalid
+-- Referenced Specification: SPECIFICATION-LOOP-INVARIANT.md
+-- Expected Result: Verifier Failure
+--   The verifier rejects because 'i = 0' violates the loop invariant clause 'i > 0'.
+
+module ContractNegative03
+
+procedure breaking_invariant()
+is
+    let i: Integer = 0
+    while i < 10
+    invariant i > 0  -- i is initially 0, invariant fails immediately
+    is
+        i := i + 1
+    end while
+end breaking_invariant
+
+procedure main()
+is
+    call breaking_invariant()
+end main
+
+end ContractNegative03

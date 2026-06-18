@@ -24,7 +24,7 @@
       "message": "undefined nonterminal: TYPE_ARG_START",
       "span": {
         "file": "freehold/grammar/freehold.generated.forge.ebnf",
-        "line": 19,
+        "line": 22,
         "column": 1
       }
     },
@@ -34,8 +34,28 @@
       "message": "undefined nonterminal: STRING_LITERAL",
       "span": {
         "file": "freehold/grammar/freehold.generated.forge.ebnf",
-        "line": 81,
+        "line": 24,
         "column": 1
+      }
+    },
+    {
+      "severity": "error",
+      "code": "EBNF0005",
+      "message": "undefined nonterminal: GLOBAL_MODE",
+      "span": {
+        "file": "freehold/grammar/freehold.generated.forge.ebnf",
+        "line": 48,
+        "column": 1
+      }
+    },
+    {
+      "severity": "error",
+      "code": "EBNF0001",
+      "message": "expected ::=, got Illegal",
+      "span": {
+        "file": "freehold/grammar/freehold.generated.forge.ebnf",
+        "line": 49,
+        "column": 12
       }
     },
     {
@@ -44,7 +64,7 @@
       "message": "undefined nonterminal: SIGNED_DOUBLE_LITERAL",
       "span": {
         "file": "freehold/grammar/freehold.generated.forge.ebnf",
-        "line": 85,
+        "line": 112,
         "column": 1
       }
     },
@@ -54,7 +74,7 @@
       "message": "undefined nonterminal: SIGNED_INTEGER_LITERAL",
       "span": {
         "file": "freehold/grammar/freehold.generated.forge.ebnf",
-        "line": 86,
+        "line": 113,
         "column": 1
       }
     },
@@ -64,7 +84,7 @@
       "message": "undefined nonterminal: DIGITS",
       "span": {
         "file": "freehold/grammar/freehold.generated.forge.ebnf",
-        "line": 87,
+        "line": 114,
         "column": 1
       }
     },
@@ -74,7 +94,7 @@
       "message": "expected ;, got ::=",
       "span": {
         "file": "freehold/grammar/freehold.generated.forge.ebnf",
-        "line": 88,
+        "line": 115,
         "column": 45
       }
     }
@@ -91,9 +111,13 @@
         "exposing_clause",
         "exposing_list",
         "declaration",
+        "task_decl",
         "record_type_decl",
+        "choice_type_decl",
+        "constructor_decl",
         "type_param_list",
         "record_field",
+        "json_field_name",
         "proto_field_id",
         "type_decl",
         "error_decl",
@@ -102,8 +126,10 @@
         "function_decl",
         "async_marker",
         "procedure_decl",
+        "ffi_binding",
         "service_decl",
         "rpc_decl",
+        "stream_marker",
         "param_list",
         "param",
         "param_type",
@@ -114,11 +140,23 @@
         "result_type",
         "array_type",
         "contract_block",
+        "global_clause",
+        "global_spec",
+        "depends_clause",
+        "dependency_spec",
+        "dependency_sources",
+        "modifies_clause",
+        "modifies_spec",
+        "dependency_source_list",
+        "dependency_source",
         "requires_clause",
+        "constraint_list",
+        "constraint",
         "aborts_clause",
         "ensures_clause",
         "stmt",
         "let_stmt",
+        "index_assign_stmt",
         "field_assign_stmt",
         "assign_stmt",
         "return_stmt",
@@ -126,6 +164,7 @@
         "return_value",
         "check_stmt",
         "call_stmt",
+        "parallel_stmt",
         "if_stmt",
         "then_block",
         "else_block",
@@ -133,6 +172,8 @@
         "loop_block",
         "case_stmt",
         "case_branch",
+        "pattern_branch",
+        "pattern_expr",
         "default_branch",
         "case_block",
         "scope_stmt",
@@ -147,6 +188,8 @@
         "named_arg_list",
         "named_arg",
         "expr",
+        "spawn_attribute_list",
+        "spawn_attribute",
         "logic_or",
         "logic_and",
         "equality",
@@ -157,6 +200,9 @@
         "atom",
         "field_path",
         "array_literal",
+        "map_entries",
+        "map_entry",
+        "set_entries",
         "BASE_TYPE",
         "DOUBLE_LITERAL",
         "NUMBER_LITERAL",
@@ -333,6 +379,10 @@
           },
           {
             "type": "ref",
+            "value": "choice_type_decl"
+          },
+          {
+            "type": "ref",
             "value": "type_decl"
           },
           {
@@ -350,6 +400,67 @@
           {
             "type": "ref",
             "value": "procedure_decl"
+          },
+          {
+            "type": "ref",
+            "value": "task_decl"
+          }
+        ]
+      }
+    },
+    {
+      "name": "task_decl",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "terminal",
+            "value": "task"
+          },
+          {
+            "type": "ref",
+            "value": "IDENT"
+          },
+          {
+            "type": "terminal",
+            "value": "("
+          },
+          {
+            "type": "optional",
+            "expr": {
+              "type": "ref",
+              "value": "param_list"
+            }
+          },
+          {
+            "type": "terminal",
+            "value": ")"
+          },
+          {
+            "type": "optional",
+            "expr": {
+              "type": "ref",
+              "value": "contract_block"
+            }
+          },
+          {
+            "type": "terminal",
+            "value": "is"
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "ref",
+              "value": "stmt"
+            }
+          },
+          {
+            "type": "terminal",
+            "value": "end"
+          },
+          {
+            "type": "ref",
+            "value": "IDENT"
           }
         ]
       }
@@ -400,6 +511,124 @@
           {
             "type": "terminal",
             "value": "record"
+          }
+        ]
+      }
+    },
+    {
+      "name": "choice_type_decl",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "terminal",
+            "value": "choice"
+          },
+          {
+            "type": "ref",
+            "value": "IDENT"
+          },
+          {
+            "type": "optional",
+            "expr": {
+              "type": "ref",
+              "value": "type_param_list"
+            }
+          },
+          {
+            "type": "terminal",
+            "value": "="
+          },
+          {
+            "type": "optional",
+            "expr": {
+              "type": "terminal",
+              "value": "|"
+            }
+          },
+          {
+            "type": "ref",
+            "value": "constructor_decl"
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "seq",
+              "terms": [
+                {
+                  "type": "terminal",
+                  "value": "|"
+                },
+                {
+                  "type": "ref",
+                  "value": "constructor_decl"
+                }
+              ]
+            }
+          },
+          {
+            "type": "terminal",
+            "value": "end"
+          },
+          {
+            "type": "ref",
+            "value": "IDENT"
+          }
+        ]
+      }
+    },
+    {
+      "name": "constructor_decl",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "ref",
+            "value": "IDENT"
+          },
+          {
+            "type": "optional",
+            "expr": {
+              "type": "seq",
+              "terms": [
+                {
+                  "type": "terminal",
+                  "value": "("
+                },
+                {
+                  "type": "optional",
+                  "expr": {
+                    "type": "seq",
+                    "terms": [
+                      {
+                        "type": "ref",
+                        "value": "param"
+                      },
+                      {
+                        "type": "repeat",
+                        "expr": {
+                          "type": "seq",
+                          "terms": [
+                            {
+                              "type": "terminal",
+                              "value": ","
+                            },
+                            {
+                              "type": "ref",
+                              "value": "param"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "terminal",
+                  "value": ")"
+                }
+              ]
+            }
           }
         ]
       }
@@ -461,8 +690,39 @@
             "type": "optional",
             "expr": {
               "type": "ref",
+              "value": "json_field_name"
+            }
+          },
+          {
+            "type": "optional",
+            "expr": {
+              "type": "ref",
               "value": "proto_field_id"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "json_field_name",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "terminal",
+            "value": "@json"
+          },
+          {
+            "type": "terminal",
+            "value": "("
+          },
+          {
+            "type": "ref",
+            "value": "STRING_LITERAL"
+          },
+          {
+            "type": "terminal",
+            "value": ")"
           }
         ]
       }
@@ -547,16 +807,40 @@
             "value": "range"
           },
           {
-            "type": "ref",
-            "value": "NUMBER_LITERAL"
+            "type": "group",
+            "expr": {
+              "type": "choice",
+              "alts": [
+                {
+                  "type": "ref",
+                  "value": "NUMBER_LITERAL"
+                },
+                {
+                  "type": "ref",
+                  "value": "INTEGER_LITERAL"
+                }
+              ]
+            }
           },
           {
             "type": "terminal",
             "value": ".."
           },
           {
-            "type": "ref",
-            "value": "NUMBER_LITERAL"
+            "type": "group",
+            "expr": {
+              "type": "choice",
+              "alts": [
+                {
+                  "type": "ref",
+                  "value": "NUMBER_LITERAL"
+                },
+                {
+                  "type": "ref",
+                  "value": "INTEGER_LITERAL"
+                }
+              ]
+            }
           }
         ]
       }
@@ -566,6 +850,13 @@
       "expr": {
         "type": "seq",
         "terms": [
+          {
+            "type": "optional",
+            "expr": {
+              "type": "ref",
+              "value": "ffi_binding"
+            }
+          },
           {
             "type": "optional",
             "expr": {
@@ -656,6 +947,13 @@
             "type": "optional",
             "expr": {
               "type": "ref",
+              "value": "ffi_binding"
+            }
+          },
+          {
+            "type": "optional",
+            "expr": {
+              "type": "ref",
               "value": "async_marker"
             }
           },
@@ -714,6 +1012,38 @@
           {
             "type": "ref",
             "value": "IDENT"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ffi_binding",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "terminal",
+            "value": "@ffi"
+          },
+          {
+            "type": "terminal",
+            "value": "("
+          },
+          {
+            "type": "ref",
+            "value": "STRING_LITERAL"
+          },
+          {
+            "type": "terminal",
+            "value": ","
+          },
+          {
+            "type": "ref",
+            "value": "STRING_LITERAL"
+          },
+          {
+            "type": "terminal",
+            "value": ")"
           }
         ]
       }
@@ -783,6 +1113,13 @@
             "value": ":"
           },
           {
+            "type": "optional",
+            "expr": {
+              "type": "ref",
+              "value": "stream_marker"
+            }
+          },
+          {
             "type": "ref",
             "value": "type_ref"
           },
@@ -795,10 +1132,24 @@
             "value": ":"
           },
           {
+            "type": "optional",
+            "expr": {
+              "type": "ref",
+              "value": "stream_marker"
+            }
+          },
+          {
             "type": "ref",
             "value": "type_ref"
           }
         ]
+      }
+    },
+    {
+      "name": "stream_marker",
+      "expr": {
+        "type": "terminal",
+        "value": "stream"
       }
     },
     {
@@ -1025,6 +1376,27 @@
             "type": "repeat",
             "expr": {
               "type": "ref",
+              "value": "global_clause"
+            }
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "ref",
+              "value": "depends_clause"
+            }
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "ref",
+              "value": "modifies_clause"
+            }
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "ref",
               "value": "requires_clause"
             }
           },
@@ -1046,6 +1418,230 @@
       }
     },
     {
+      "name": "global_clause",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "terminal",
+            "value": "global"
+          },
+          {
+            "type": "ref",
+            "value": "global_spec"
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "seq",
+              "terms": [
+                {
+                  "type": "terminal",
+                  "value": ","
+                },
+                {
+                  "type": "ref",
+                  "value": "global_spec"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "global_spec",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "optional",
+            "expr": {
+              "type": "ref",
+              "value": "GLOBAL_MODE"
+            }
+          },
+          {
+            "type": "ref",
+            "value": "IDENT"
+          }
+        ]
+      }
+    },
+    {
+      "name": "depends_clause",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "terminal",
+            "value": "depends"
+          },
+          {
+            "type": "ref",
+            "value": "dependency_spec"
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "seq",
+              "terms": [
+                {
+                  "type": "terminal",
+                  "value": ","
+                },
+                {
+                  "type": "ref",
+                  "value": "dependency_spec"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dependency_spec",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "ref",
+            "value": "qualified_name"
+          },
+          {
+            "type": "terminal",
+            "value": "=\u003e"
+          },
+          {
+            "type": "ref",
+            "value": "dependency_sources"
+          }
+        ]
+      }
+    },
+    {
+      "name": "dependency_sources",
+      "expr": {
+        "type": "choice",
+        "alts": [
+          {
+            "type": "ref",
+            "value": "dependency_source"
+          },
+          {
+            "type": "seq",
+            "terms": [
+              {
+                "type": "terminal",
+                "value": "("
+              },
+              {
+                "type": "ref",
+                "value": "dependency_source_list"
+              },
+              {
+                "type": "terminal",
+                "value": ")"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "modifies_clause",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "terminal",
+            "value": "modifies"
+          },
+          {
+            "type": "ref",
+            "value": "modifies_spec"
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "seq",
+              "terms": [
+                {
+                  "type": "terminal",
+                  "value": ","
+                },
+                {
+                  "type": "ref",
+                  "value": "modifies_spec"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "modifies_spec",
+      "expr": {
+        "type": "choice",
+        "alts": [
+          {
+            "type": "ref",
+            "value": "field_path"
+          },
+          {
+            "type": "ref",
+            "value": "IDENT"
+          }
+        ]
+      }
+    },
+    {
+      "name": "dependency_source_list",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "ref",
+            "value": "dependency_source"
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "seq",
+              "terms": [
+                {
+                  "type": "terminal",
+                  "value": ","
+                },
+                {
+                  "type": "ref",
+                  "value": "dependency_source"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dependency_source",
+      "expr": {
+        "type": "choice",
+        "alts": [
+          {
+            "type": "ref",
+            "value": "qualified_name"
+          },
+          {
+            "type": "terminal",
+            "value": "+"
+          }
+        ]
+      }
+    },
+    {
       "name": "requires_clause",
       "expr": {
         "type": "seq",
@@ -1056,7 +1652,64 @@
           },
           {
             "type": "ref",
-            "value": "expr_list"
+            "value": "constraint_list"
+          }
+        ]
+      }
+    },
+    {
+      "name": "constraint_list",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "ref",
+            "value": "constraint"
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "seq",
+              "terms": [
+                {
+                  "type": "terminal",
+                  "value": ","
+                },
+                {
+                  "type": "ref",
+                  "value": "constraint"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "constraint",
+      "expr": {
+        "type": "choice",
+        "alts": [
+          {
+            "type": "seq",
+            "terms": [
+              {
+                "type": "ref",
+                "value": "IDENT"
+              },
+              {
+                "type": "terminal",
+                "value": "is"
+              },
+              {
+                "type": "ref",
+                "value": "IDENT"
+              }
+            ]
+          },
+          {
+            "type": "ref",
+            "value": "expr"
           }
         ]
       }
@@ -1120,6 +1773,10 @@
           },
           {
             "type": "ref",
+            "value": "index_assign_stmt"
+          },
+          {
+            "type": "ref",
             "value": "field_assign_stmt"
           },
           {
@@ -1157,6 +1814,10 @@
           {
             "type": "ref",
             "value": "call_stmt"
+          },
+          {
+            "type": "ref",
+            "value": "parallel_stmt"
           }
         ]
       }
@@ -1185,6 +1846,38 @@
           {
             "type": "terminal",
             "value": "="
+          },
+          {
+            "type": "ref",
+            "value": "expr"
+          }
+        ]
+      }
+    },
+    {
+      "name": "index_assign_stmt",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "ref",
+            "value": "IDENT"
+          },
+          {
+            "type": "terminal",
+            "value": "["
+          },
+          {
+            "type": "ref",
+            "value": "expr"
+          },
+          {
+            "type": "terminal",
+            "value": "]"
+          },
+          {
+            "type": "terminal",
+            "value": ":="
           },
           {
             "type": "ref",
@@ -1358,6 +2051,71 @@
       }
     },
     {
+      "name": "parallel_stmt",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "terminal",
+            "value": "parallel"
+          },
+          {
+            "type": "optional",
+            "expr": {
+              "type": "ref",
+              "value": "IDENT"
+            }
+          },
+          {
+            "type": "terminal",
+            "value": "("
+          },
+          {
+            "type": "terminal",
+            "value": "limit"
+          },
+          {
+            "type": "terminal",
+            "value": "="
+          },
+          {
+            "type": "ref",
+            "value": "expr"
+          },
+          {
+            "type": "terminal",
+            "value": ")"
+          },
+          {
+            "type": "terminal",
+            "value": "do"
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "ref",
+              "value": "stmt"
+            }
+          },
+          {
+            "type": "terminal",
+            "value": "end"
+          },
+          {
+            "type": "terminal",
+            "value": "parallel"
+          },
+          {
+            "type": "optional",
+            "expr": {
+              "type": "ref",
+              "value": "IDENT"
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "if_stmt",
       "expr": {
         "type": "seq",
@@ -1503,19 +2261,55 @@
             "value": "is"
           },
           {
-            "type": "ref",
-            "value": "case_branch"
-          },
-          {
-            "type": "repeat",
+            "type": "group",
             "expr": {
-              "type": "ref",
-              "value": "case_branch"
+              "type": "choice",
+              "alts": [
+                {
+                  "type": "seq",
+                  "terms": [
+                    {
+                      "type": "ref",
+                      "value": "case_branch"
+                    },
+                    {
+                      "type": "repeat",
+                      "expr": {
+                        "type": "ref",
+                        "value": "case_branch"
+                      }
+                    },
+                    {
+                      "type": "ref",
+                      "value": "default_branch"
+                    }
+                  ]
+                },
+                {
+                  "type": "seq",
+                  "terms": [
+                    {
+                      "type": "ref",
+                      "value": "pattern_branch"
+                    },
+                    {
+                      "type": "repeat",
+                      "expr": {
+                        "type": "ref",
+                        "value": "pattern_branch"
+                      }
+                    },
+                    {
+                      "type": "optional",
+                      "expr": {
+                        "type": "ref",
+                        "value": "default_branch"
+                      }
+                    }
+                  ]
+                }
+              ]
             }
-          },
-          {
-            "type": "ref",
-            "value": "default_branch"
           },
           {
             "type": "terminal",
@@ -1548,6 +2342,94 @@
           {
             "type": "ref",
             "value": "case_block"
+          }
+        ]
+      }
+    },
+    {
+      "name": "pattern_branch",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "terminal",
+            "value": "|"
+          },
+          {
+            "type": "ref",
+            "value": "pattern_expr"
+          },
+          {
+            "type": "optional",
+            "expr": {
+              "type": "seq",
+              "terms": [
+                {
+                  "type": "terminal",
+                  "value": "when"
+                },
+                {
+                  "type": "ref",
+                  "value": "expr"
+                }
+              ]
+            }
+          },
+          {
+            "type": "terminal",
+            "value": "=\u003e"
+          },
+          {
+            "type": "ref",
+            "value": "case_block"
+          }
+        ]
+      }
+    },
+    {
+      "name": "pattern_expr",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "ref",
+            "value": "IDENT"
+          },
+          {
+            "type": "optional",
+            "expr": {
+              "type": "seq",
+              "terms": [
+                {
+                  "type": "terminal",
+                  "value": "("
+                },
+                {
+                  "type": "ref",
+                  "value": "IDENT"
+                },
+                {
+                  "type": "repeat",
+                  "expr": {
+                    "type": "seq",
+                    "terms": [
+                      {
+                        "type": "terminal",
+                        "value": ","
+                      },
+                      {
+                        "type": "ref",
+                        "value": "IDENT"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "terminal",
+                  "value": ")"
+                }
+              ]
+            }
           }
         ]
       }
@@ -1847,8 +2729,180 @@
     {
       "name": "expr",
       "expr": {
-        "type": "ref",
-        "value": "logic_or"
+        "type": "choice",
+        "alts": [
+          {
+            "type": "ref",
+            "value": "logic_or"
+          },
+          {
+            "type": "seq",
+            "terms": [
+              {
+                "type": "terminal",
+                "value": "spawn"
+              },
+              {
+                "type": "ref",
+                "value": "expr"
+              },
+              {
+                "type": "optional",
+                "expr": {
+                  "type": "seq",
+                  "terms": [
+                    {
+                      "type": "terminal",
+                      "value": "with"
+                    },
+                    {
+                      "type": "terminal",
+                      "value": "("
+                    },
+                    {
+                      "type": "ref",
+                      "value": "spawn_attribute_list"
+                    },
+                    {
+                      "type": "terminal",
+                      "value": ")"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "seq",
+            "terms": [
+              {
+                "type": "terminal",
+                "value": "for"
+              },
+              {
+                "type": "terminal",
+                "value": "all"
+              },
+              {
+                "type": "ref",
+                "value": "IDENT"
+              },
+              {
+                "type": "terminal",
+                "value": "in"
+              },
+              {
+                "type": "ref",
+                "value": "logic_or"
+              },
+              {
+                "type": "terminal",
+                "value": ".."
+              },
+              {
+                "type": "ref",
+                "value": "logic_or"
+              },
+              {
+                "type": "terminal",
+                "value": "=\u003e"
+              },
+              {
+                "type": "ref",
+                "value": "expr"
+              }
+            ]
+          },
+          {
+            "type": "seq",
+            "terms": [
+              {
+                "type": "terminal",
+                "value": "for"
+              },
+              {
+                "type": "terminal",
+                "value": "some"
+              },
+              {
+                "type": "ref",
+                "value": "IDENT"
+              },
+              {
+                "type": "terminal",
+                "value": "in"
+              },
+              {
+                "type": "ref",
+                "value": "logic_or"
+              },
+              {
+                "type": "terminal",
+                "value": ".."
+              },
+              {
+                "type": "ref",
+                "value": "logic_or"
+              },
+              {
+                "type": "terminal",
+                "value": "=\u003e"
+              },
+              {
+                "type": "ref",
+                "value": "expr"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "spawn_attribute_list",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "ref",
+            "value": "spawn_attribute"
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "seq",
+              "terms": [
+                {
+                  "type": "terminal",
+                  "value": ","
+                },
+                {
+                  "type": "ref",
+                  "value": "spawn_attribute"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "spawn_attribute",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "ref",
+            "value": "IDENT"
+          },
+          {
+            "type": "terminal",
+            "value": ":"
+          },
+          {
+            "type": "ref",
+            "value": "expr"
+          }
+        ]
       }
     },
     {
@@ -2144,6 +3198,23 @@
                 "value": "await"
               },
               {
+                "type": "terminal",
+                "value": "all"
+              },
+              {
+                "type": "ref",
+                "value": "unary"
+              }
+            ]
+          },
+          {
+            "type": "seq",
+            "terms": [
+              {
+                "type": "terminal",
+                "value": "await"
+              },
+              {
                 "type": "ref",
                 "value": "unary"
               }
@@ -2241,6 +3312,72 @@
                     }
                   ]
                 }
+              }
+            ]
+          },
+          {
+            "type": "seq",
+            "terms": [
+              {
+                "type": "terminal",
+                "value": "result"
+              },
+              {
+                "type": "terminal",
+                "value": "["
+              },
+              {
+                "type": "ref",
+                "value": "expr"
+              },
+              {
+                "type": "terminal",
+                "value": "]"
+              },
+              {
+                "type": "terminal",
+                "value": "."
+              },
+              {
+                "type": "ref",
+                "value": "IDENT"
+              },
+              {
+                "type": "repeat",
+                "expr": {
+                  "type": "seq",
+                  "terms": [
+                    {
+                      "type": "terminal",
+                      "value": "."
+                    },
+                    {
+                      "type": "ref",
+                      "value": "IDENT"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "seq",
+            "terms": [
+              {
+                "type": "terminal",
+                "value": "result"
+              },
+              {
+                "type": "terminal",
+                "value": "["
+              },
+              {
+                "type": "ref",
+                "value": "expr"
+              },
+              {
+                "type": "terminal",
+                "value": "]"
               }
             ]
           },
@@ -2414,6 +3551,51 @@
             ]
           },
           {
+            "type": "seq",
+            "terms": [
+              {
+                "type": "ref",
+                "value": "type_ref"
+              },
+              {
+                "type": "terminal",
+                "value": "{"
+              },
+              {
+                "type": "optional",
+                "expr": {
+                  "type": "ref",
+                  "value": "map_entries"
+                }
+              },
+              {
+                "type": "terminal",
+                "value": "}"
+              }
+            ]
+          },
+          {
+            "type": "seq",
+            "terms": [
+              {
+                "type": "ref",
+                "value": "type_ref"
+              },
+              {
+                "type": "terminal",
+                "value": "{"
+              },
+              {
+                "type": "ref",
+                "value": "set_entries"
+              },
+              {
+                "type": "terminal",
+                "value": "}"
+              }
+            ]
+          },
+          {
             "type": "ref",
             "value": "field_path"
           },
@@ -2435,6 +3617,46 @@
               {
                 "type": "terminal",
                 "value": "]"
+              }
+            ]
+          },
+          {
+            "type": "seq",
+            "terms": [
+              {
+                "type": "ref",
+                "value": "IDENT"
+              },
+              {
+                "type": "ref",
+                "value": "type_arg_list"
+              },
+              {
+                "type": "terminal",
+                "value": "("
+              },
+              {
+                "type": "optional",
+                "expr": {
+                  "type": "ref",
+                  "value": "arg_list"
+                }
+              },
+              {
+                "type": "terminal",
+                "value": ")"
+              },
+              {
+                "type": "terminal",
+                "value": "with"
+              },
+              {
+                "type": "terminal",
+                "value": "invariant"
+              },
+              {
+                "type": "ref",
+                "value": "expr"
               }
             ]
           },
@@ -2602,6 +3824,82 @@
       }
     },
     {
+      "name": "map_entries",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "ref",
+            "value": "map_entry"
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "seq",
+              "terms": [
+                {
+                  "type": "terminal",
+                  "value": ","
+                },
+                {
+                  "type": "ref",
+                  "value": "map_entry"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "map_entry",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "ref",
+            "value": "STRING_LITERAL"
+          },
+          {
+            "type": "terminal",
+            "value": ":"
+          },
+          {
+            "type": "ref",
+            "value": "expr"
+          }
+        ]
+      }
+    },
+    {
+      "name": "set_entries",
+      "expr": {
+        "type": "seq",
+        "terms": [
+          {
+            "type": "ref",
+            "value": "expr"
+          },
+          {
+            "type": "repeat",
+            "expr": {
+              "type": "seq",
+              "terms": [
+                {
+                  "type": "terminal",
+                  "value": ","
+                },
+                {
+                  "type": "ref",
+                  "value": "expr"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "BASE_TYPE",
       "expr": {
         "type": "choice",
@@ -2707,6 +4005,8 @@
       "array_literal",
       "type_ref",
       "named_arg_list",
+      "map_entries",
+      "set_entries",
       "field_path",
       "type_arg_list",
       "arg_list",
@@ -2734,30 +4034,69 @@
     "case_stmt": [
       "expr",
       "case_branch",
-      "default_branch"
+      "default_branch",
+      "pattern_branch"
     ],
     "check_stmt": [
       "expr"
+    ],
+    "choice_type_decl": [
+      "IDENT",
+      "type_param_list",
+      "constructor_decl"
     ],
     "comparison": [
       "sum",
       "comparison"
     ],
+    "constraint": [
+      "IDENT",
+      "expr"
+    ],
+    "constraint_list": [
+      "constraint"
+    ],
+    "constructor_decl": [
+      "IDENT",
+      "param"
+    ],
     "contract_block": [
+      "global_clause",
+      "depends_clause",
+      "modifies_clause",
       "requires_clause",
       "aborts_clause",
       "ensures_clause"
     ],
     "declaration": [
       "record_type_decl",
+      "choice_type_decl",
       "type_decl",
       "error_decl",
       "service_decl",
       "function_decl",
-      "procedure_decl"
+      "procedure_decl",
+      "task_decl"
     ],
     "default_branch": [
       "case_block"
+    ],
+    "dependency_source": [
+      "qualified_name"
+    ],
+    "dependency_source_list": [
+      "dependency_source"
+    ],
+    "dependency_sources": [
+      "dependency_source",
+      "dependency_source_list"
+    ],
+    "dependency_spec": [
+      "qualified_name",
+      "dependency_sources"
+    ],
+    "depends_clause": [
+      "dependency_spec"
     ],
     "else_block": [
       "stmt"
@@ -2779,10 +4118,16 @@
       "IDENT"
     ],
     "expr": [
-      "logic_or"
+      "logic_or",
+      "expr",
+      "spawn_attribute_list",
+      "IDENT"
     ],
     "expr_list": [
       "expr"
+    ],
+    "ffi_binding": [
+      "STRING_LITERAL"
     ],
     "field_assign_stmt": [
       "field_path",
@@ -2792,6 +4137,7 @@
       "IDENT"
     ],
     "function_decl": [
+      "ffi_binding",
       "async_marker",
       "IDENT",
       "type_param_list",
@@ -2799,6 +4145,13 @@
       "return_type",
       "contract_block",
       "stmt"
+    ],
+    "global_clause": [
+      "global_spec"
+    ],
+    "global_spec": [
+      "GLOBAL_MODE",
+      "IDENT"
     ],
     "if_stmt": [
       "expr",
@@ -2809,8 +4162,15 @@
       "qualified_name",
       "exposing_clause"
     ],
+    "index_assign_stmt": [
+      "IDENT",
+      "expr"
+    ],
     "invariant_clause": [
       "expr"
+    ],
+    "json_field_name": [
+      "STRING_LITERAL"
     ],
     "let_stmt": [
       "IDENT",
@@ -2828,6 +4188,20 @@
     "loop_block": [
       "stmt"
     ],
+    "map_entries": [
+      "map_entry"
+    ],
+    "map_entry": [
+      "STRING_LITERAL",
+      "expr"
+    ],
+    "modifies_clause": [
+      "modifies_spec"
+    ],
+    "modifies_spec": [
+      "field_path",
+      "IDENT"
+    ],
     "module_decl": [
       "qualified_name"
     ],
@@ -2841,6 +4215,11 @@
     "named_arg_list": [
       "named_arg"
     ],
+    "parallel_stmt": [
+      "IDENT",
+      "expr",
+      "stmt"
+    ],
     "param": [
       "IDENT",
       "param_type"
@@ -2851,7 +4230,16 @@
     "param_type": [
       "type_ref"
     ],
+    "pattern_branch": [
+      "pattern_expr",
+      "expr",
+      "case_block"
+    ],
+    "pattern_expr": [
+      "IDENT"
+    ],
     "procedure_decl": [
+      "ffi_binding",
       "async_marker",
       "IDENT",
       "type_param_list",
@@ -2870,11 +4258,13 @@
       "IDENT"
     ],
     "range_decl": [
-      "NUMBER_LITERAL"
+      "NUMBER_LITERAL",
+      "INTEGER_LITERAL"
     ],
     "record_field": [
       "IDENT",
       "type_ref",
+      "json_field_name",
       "proto_field_id"
     ],
     "record_type_decl": [
@@ -2883,7 +4273,7 @@
       "record_field"
     ],
     "requires_clause": [
-      "expr_list"
+      "constraint_list"
     ],
     "result_payload_type": [
       "result_type",
@@ -2907,6 +4297,7 @@
     ],
     "rpc_decl": [
       "IDENT",
+      "stream_marker",
       "type_ref"
     ],
     "scope_join_block": [
@@ -2928,6 +4319,16 @@
       "IDENT",
       "rpc_decl"
     ],
+    "set_entries": [
+      "expr"
+    ],
+    "spawn_attribute": [
+      "IDENT",
+      "expr"
+    ],
+    "spawn_attribute_list": [
+      "spawn_attribute"
+    ],
     "start": [
       "module_decl",
       "import_decl",
@@ -2936,6 +4337,7 @@
     ],
     "stmt": [
       "let_stmt",
+      "index_assign_stmt",
       "field_assign_stmt",
       "assign_stmt",
       "return_stmt",
@@ -2945,11 +4347,18 @@
       "case_stmt",
       "scope_stmt",
       "check_stmt",
-      "call_stmt"
+      "call_stmt",
+      "parallel_stmt"
     ],
     "sum": [
       "product",
       "sum"
+    ],
+    "task_decl": [
+      "IDENT",
+      "param_list",
+      "contract_block",
+      "stmt"
     ],
     "then_block": [
       "stmt"
@@ -3000,9 +4409,13 @@
           "exposing_clause",
           "exposing_list",
           "declaration",
+          "task_decl",
           "record_type_decl",
+          "choice_type_decl",
+          "constructor_decl",
           "type_param_list",
           "record_field",
+          "json_field_name",
           "proto_field_id",
           "type_decl",
           "error_decl",
@@ -3011,8 +4424,10 @@
           "function_decl",
           "async_marker",
           "procedure_decl",
+          "ffi_binding",
           "service_decl",
           "rpc_decl",
+          "stream_marker",
           "param_list",
           "param",
           "param_type",
@@ -3023,11 +4438,23 @@
           "result_type",
           "array_type",
           "contract_block",
+          "global_clause",
+          "global_spec",
+          "depends_clause",
+          "dependency_spec",
+          "dependency_sources",
+          "modifies_clause",
+          "modifies_spec",
+          "dependency_source_list",
+          "dependency_source",
           "requires_clause",
+          "constraint_list",
+          "constraint",
           "aborts_clause",
           "ensures_clause",
           "stmt",
           "let_stmt",
+          "index_assign_stmt",
           "field_assign_stmt",
           "assign_stmt",
           "return_stmt",
@@ -3035,6 +4462,7 @@
           "return_value",
           "check_stmt",
           "call_stmt",
+          "parallel_stmt",
           "if_stmt",
           "then_block",
           "else_block",
@@ -3042,6 +4470,8 @@
           "loop_block",
           "case_stmt",
           "case_branch",
+          "pattern_branch",
+          "pattern_expr",
           "default_branch",
           "case_block",
           "scope_stmt",
@@ -3056,6 +4486,8 @@
           "named_arg_list",
           "named_arg",
           "expr",
+          "spawn_attribute_list",
+          "spawn_attribute",
           "logic_or",
           "logic_and",
           "equality",
@@ -3066,6 +4498,9 @@
           "atom",
           "field_path",
           "array_literal",
+          "map_entries",
+          "map_entry",
+          "set_entries",
           "BASE_TYPE",
           "DOUBLE_LITERAL",
           "NUMBER_LITERAL",
@@ -3166,6 +4601,8 @@
           "module_end",
           "module_decl",
           "import_decl",
+          "dependency_spec",
+          "dependency_source",
           "call_stmt",
           "atom"
         ],
@@ -3267,14 +4704,16 @@
         "section": "(default)",
         "docs": [],
         "tags": {},
-        "syntax": "declaration ::= record_type_decl | type_decl | error_decl | service_decl | function_decl | procedure_decl ;",
+        "syntax": "declaration ::= record_type_decl | choice_type_decl | type_decl | error_decl | service_decl | function_decl | procedure_decl | task_decl ;",
         "refs": [
           "record_type_decl",
+          "choice_type_decl",
           "type_decl",
           "error_decl",
           "service_decl",
           "function_decl",
-          "procedure_decl"
+          "procedure_decl",
+          "task_decl"
         ],
         "referencedBy": [
           "start"
@@ -3288,8 +4727,37 @@
           },
           "end": {
             "line": 17,
-            "col": 107,
-            "offset": 679
+            "col": 138,
+            "offset": 710
+          }
+        }
+      },
+      {
+        "name": "task_decl",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "task_decl ::= \"task\" IDENT \"(\" [ param_list ] \")\" [ contract_block ] \"is\" { stmt } \"end\" IDENT ;",
+        "refs": [
+          "IDENT",
+          "param_list",
+          "contract_block",
+          "stmt"
+        ],
+        "referencedBy": [
+          "declaration"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 18,
+            "col": 1,
+            "offset": 712
+          },
+          "end": {
+            "line": 18,
+            "col": 96,
+            "offset": 807
           }
         }
       },
@@ -3310,14 +4778,69 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 18,
+            "line": 19,
             "col": 1,
-            "offset": 681
+            "offset": 809
           },
           "end": {
-            "line": 18,
+            "line": 19,
             "col": 114,
-            "offset": 794
+            "offset": 922
+          }
+        }
+      },
+      {
+        "name": "choice_type_decl",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "choice_type_decl ::= \"choice\" IDENT [ type_param_list ] \"=\" [ \"|\" ] constructor_decl { \"|\" constructor_decl } \"end\" IDENT ;",
+        "refs": [
+          "IDENT",
+          "type_param_list",
+          "constructor_decl"
+        ],
+        "referencedBy": [
+          "declaration"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 20,
+            "col": 1,
+            "offset": 924
+          },
+          "end": {
+            "line": 20,
+            "col": 123,
+            "offset": 1046
+          }
+        }
+      },
+      {
+        "name": "constructor_decl",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "constructor_decl ::= IDENT [ \"(\" [ param { \",\" param } ] \")\" ] ;",
+        "refs": [
+          "IDENT",
+          "param"
+        ],
+        "referencedBy": [
+          "choice_type_decl"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 21,
+            "col": 1,
+            "offset": 1048
+          },
+          "end": {
+            "line": 21,
+            "col": 64,
+            "offset": 1111
           }
         }
       },
@@ -3333,20 +4856,21 @@
         ],
         "referencedBy": [
           "record_type_decl",
+          "choice_type_decl",
           "function_decl",
           "procedure_decl"
         ],
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 19,
+            "line": 22,
             "col": 1,
-            "offset": 796
+            "offset": 1113
           },
           "end": {
-            "line": 19,
+            "line": 22,
             "col": 60,
-            "offset": 855
+            "offset": 1172
           }
         }
       },
@@ -3355,10 +4879,11 @@
         "section": "(default)",
         "docs": [],
         "tags": {},
-        "syntax": "record_field ::= IDENT \":\" type_ref [ proto_field_id ] ;",
+        "syntax": "record_field ::= IDENT \":\" type_ref [ json_field_name ] [ proto_field_id ] ;",
         "refs": [
           "IDENT",
           "type_ref",
+          "json_field_name",
           "proto_field_id"
         ],
         "referencedBy": [
@@ -3367,14 +4892,40 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 20,
+            "line": 23,
             "col": 1,
-            "offset": 857
+            "offset": 1174
           },
           "end": {
-            "line": 20,
-            "col": 56,
-            "offset": 912
+            "line": 23,
+            "col": 76,
+            "offset": 1249
+          }
+        }
+      },
+      {
+        "name": "json_field_name",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "json_field_name ::= \"@json\" \"(\" STRING_LITERAL \")\" ;",
+        "refs": [
+          "STRING_LITERAL"
+        ],
+        "referencedBy": [
+          "record_field"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 24,
+            "col": 1,
+            "offset": 1251
+          },
+          "end": {
+            "line": 24,
+            "col": 52,
+            "offset": 1302
           }
         }
       },
@@ -3393,14 +4944,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 21,
+            "line": 25,
             "col": 1,
-            "offset": 914
+            "offset": 1304
           },
           "end": {
-            "line": 21,
+            "line": 25,
             "col": 44,
-            "offset": 957
+            "offset": 1347
           }
         }
       },
@@ -3421,14 +4972,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 22,
+            "line": 26,
             "col": 1,
-            "offset": 959
+            "offset": 1349
           },
           "end": {
-            "line": 22,
+            "line": 26,
             "col": 58,
-            "offset": 1016
+            "offset": 1406
           }
         }
       },
@@ -3447,14 +4998,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 23,
+            "line": 27,
             "col": 1,
-            "offset": 1018
+            "offset": 1408
           },
           "end": {
-            "line": 23,
+            "line": 27,
             "col": 30,
-            "offset": 1047
+            "offset": 1437
           }
         }
       },
@@ -3473,14 +5024,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 24,
+            "line": 28,
             "col": 1,
-            "offset": 1049
+            "offset": 1439
           },
           "end": {
-            "line": 24,
+            "line": 28,
             "col": 25,
-            "offset": 1073
+            "offset": 1463
           }
         }
       },
@@ -3489,9 +5040,10 @@
         "section": "(default)",
         "docs": [],
         "tags": {},
-        "syntax": "range_decl ::= \"range\" NUMBER_LITERAL \"..\" NUMBER_LITERAL ;",
+        "syntax": "range_decl ::= \"range\" ( NUMBER_LITERAL | INTEGER_LITERAL ) \"..\" ( NUMBER_LITERAL | INTEGER_LITERAL ) ;",
         "refs": [
-          "NUMBER_LITERAL"
+          "NUMBER_LITERAL",
+          "INTEGER_LITERAL"
         ],
         "referencedBy": [
           "type_decl"
@@ -3499,14 +5051,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 25,
+            "line": 29,
             "col": 1,
-            "offset": 1075
+            "offset": 1465
           },
           "end": {
-            "line": 25,
-            "col": 59,
-            "offset": 1133
+            "line": 29,
+            "col": 103,
+            "offset": 1567
           }
         }
       },
@@ -3515,8 +5067,9 @@
         "section": "(default)",
         "docs": [],
         "tags": {},
-        "syntax": "function_decl ::= [ async_marker ] \"function\" IDENT [ type_param_list ] \"(\" [ param_list ] \")\" \"returns\" return_type [ contract_block ] \"is\" { stmt } \"end\" IDENT ;",
+        "syntax": "function_decl ::= [ ffi_binding ] [ async_marker ] \"function\" IDENT [ type_param_list ] \"(\" [ param_list ] \")\" \"returns\" return_type [ contract_block ] \"is\" { stmt } \"end\" IDENT ;",
         "refs": [
+          "ffi_binding",
           "async_marker",
           "IDENT",
           "type_param_list",
@@ -3531,14 +5084,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 26,
+            "line": 30,
             "col": 1,
-            "offset": 1135
+            "offset": 1569
           },
           "end": {
-            "line": 26,
-            "col": 163,
-            "offset": 1297
+            "line": 30,
+            "col": 179,
+            "offset": 1747
           }
         }
       },
@@ -3556,14 +5109,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 27,
+            "line": 31,
             "col": 1,
-            "offset": 1299
+            "offset": 1749
           },
           "end": {
-            "line": 27,
+            "line": 31,
             "col": 26,
-            "offset": 1324
+            "offset": 1774
           }
         }
       },
@@ -3572,8 +5125,9 @@
         "section": "(default)",
         "docs": [],
         "tags": {},
-        "syntax": "procedure_decl ::= [ async_marker ] \"procedure\" IDENT [ type_param_list ] \"(\" [ param_list ] \")\" [ contract_block ] \"is\" { stmt } \"end\" IDENT ;",
+        "syntax": "procedure_decl ::= [ ffi_binding ] [ async_marker ] \"procedure\" IDENT [ type_param_list ] \"(\" [ param_list ] \")\" [ contract_block ] \"is\" { stmt } \"end\" IDENT ;",
         "refs": [
+          "ffi_binding",
           "async_marker",
           "IDENT",
           "type_param_list",
@@ -3587,14 +5141,41 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 28,
+            "line": 32,
             "col": 1,
-            "offset": 1326
+            "offset": 1776
           },
           "end": {
-            "line": 28,
-            "col": 143,
-            "offset": 1468
+            "line": 32,
+            "col": 159,
+            "offset": 1934
+          }
+        }
+      },
+      {
+        "name": "ffi_binding",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "ffi_binding ::= \"@ffi\" \"(\" STRING_LITERAL \",\" STRING_LITERAL \")\" ;",
+        "refs": [
+          "STRING_LITERAL"
+        ],
+        "referencedBy": [
+          "function_decl",
+          "procedure_decl"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 33,
+            "col": 1,
+            "offset": 1936
+          },
+          "end": {
+            "line": 33,
+            "col": 66,
+            "offset": 2001
           }
         }
       },
@@ -3614,14 +5195,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 29,
+            "line": 34,
             "col": 1,
-            "offset": 1470
+            "offset": 2003
           },
           "end": {
-            "line": 29,
+            "line": 34,
             "col": 73,
-            "offset": 1542
+            "offset": 2075
           }
         }
       },
@@ -3630,9 +5211,10 @@
         "section": "(default)",
         "docs": [],
         "tags": {},
-        "syntax": "rpc_decl ::= \"rpc\" IDENT \"(\" IDENT \":\" type_ref \")\" \":\" type_ref ;",
+        "syntax": "rpc_decl ::= \"rpc\" IDENT \"(\" IDENT \":\" [ stream_marker ] type_ref \")\" \":\" [ stream_marker ] type_ref ;",
         "refs": [
           "IDENT",
+          "stream_marker",
           "type_ref"
         ],
         "referencedBy": [
@@ -3641,14 +5223,38 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 30,
+            "line": 35,
             "col": 1,
-            "offset": 1544
+            "offset": 2077
           },
           "end": {
-            "line": 30,
-            "col": 66,
-            "offset": 1609
+            "line": 35,
+            "col": 102,
+            "offset": 2178
+          }
+        }
+      },
+      {
+        "name": "stream_marker",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "stream_marker ::= \"stream\" ;",
+        "refs": [],
+        "referencedBy": [
+          "rpc_decl"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 36,
+            "col": 1,
+            "offset": 2180
+          },
+          "end": {
+            "line": 36,
+            "col": 28,
+            "offset": 2207
           }
         }
       },
@@ -3662,20 +5268,21 @@
           "param"
         ],
         "referencedBy": [
+          "task_decl",
           "function_decl",
           "procedure_decl"
         ],
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 31,
+            "line": 37,
             "col": 1,
-            "offset": 1611
+            "offset": 2209
           },
           "end": {
-            "line": 31,
+            "line": 37,
             "col": 36,
-            "offset": 1646
+            "offset": 2244
           }
         }
       },
@@ -3690,19 +5297,20 @@
           "param_type"
         ],
         "referencedBy": [
+          "constructor_decl",
           "param_list"
         ],
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 32,
+            "line": 38,
             "col": 1,
-            "offset": 1648
+            "offset": 2246
           },
           "end": {
-            "line": 32,
+            "line": 38,
             "col": 32,
-            "offset": 1679
+            "offset": 2277
           }
         }
       },
@@ -3721,14 +5329,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 33,
+            "line": 39,
             "col": 1,
-            "offset": 1681
+            "offset": 2279
           },
           "end": {
-            "line": 33,
+            "line": 39,
             "col": 25,
-            "offset": 1705
+            "offset": 2303
           }
         }
       },
@@ -3757,14 +5365,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 34,
+            "line": 40,
             "col": 1,
-            "offset": 1707
+            "offset": 2305
           },
           "end": {
-            "line": 34,
+            "line": 40,
             "col": 51,
-            "offset": 1757
+            "offset": 2355
           }
         }
       },
@@ -3786,14 +5394,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 35,
+            "line": 41,
             "col": 1,
-            "offset": 1759
+            "offset": 2357
           },
           "end": {
-            "line": 35,
+            "line": 41,
             "col": 64,
-            "offset": 1822
+            "offset": 2420
           }
         }
       },
@@ -3814,14 +5422,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 36,
+            "line": 42,
             "col": 1,
-            "offset": 1824
+            "offset": 2422
           },
           "end": {
-            "line": 36,
+            "line": 42,
             "col": 40,
-            "offset": 1863
+            "offset": 2461
           }
         }
       },
@@ -3841,14 +5449,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 37,
+            "line": 43,
             "col": 1,
-            "offset": 1865
+            "offset": 2463
           },
           "end": {
-            "line": 37,
+            "line": 43,
             "col": 48,
-            "offset": 1912
+            "offset": 2510
           }
         }
       },
@@ -3870,14 +5478,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 38,
+            "line": 44,
             "col": 1,
-            "offset": 1914
+            "offset": 2512
           },
           "end": {
-            "line": 38,
+            "line": 44,
             "col": 78,
-            "offset": 1991
+            "offset": 2589
           }
         }
       },
@@ -3899,14 +5507,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 39,
+            "line": 45,
             "col": 1,
-            "offset": 1993
+            "offset": 2591
           },
           "end": {
-            "line": 39,
+            "line": 45,
             "col": 70,
-            "offset": 2062
+            "offset": 2660
           }
         }
       },
@@ -3915,27 +5523,270 @@
         "section": "(default)",
         "docs": [],
         "tags": {},
-        "syntax": "contract_block ::= { requires_clause } { aborts_clause } { ensures_clause } ;",
+        "syntax": "contract_block ::= { global_clause } { depends_clause } { modifies_clause } { requires_clause } { aborts_clause } { ensures_clause } ;",
         "refs": [
+          "global_clause",
+          "depends_clause",
+          "modifies_clause",
           "requires_clause",
           "aborts_clause",
           "ensures_clause"
         ],
         "referencedBy": [
+          "task_decl",
           "function_decl",
           "procedure_decl"
         ],
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 40,
+            "line": 46,
             "col": 1,
-            "offset": 2064
+            "offset": 2662
           },
           "end": {
-            "line": 40,
-            "col": 77,
-            "offset": 2140
+            "line": 46,
+            "col": 134,
+            "offset": 2795
+          }
+        }
+      },
+      {
+        "name": "global_clause",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "global_clause ::= \"global\" global_spec { \",\" global_spec } ;",
+        "refs": [
+          "global_spec"
+        ],
+        "referencedBy": [
+          "contract_block"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 47,
+            "col": 1,
+            "offset": 2797
+          },
+          "end": {
+            "line": 47,
+            "col": 60,
+            "offset": 2856
+          }
+        }
+      },
+      {
+        "name": "global_spec",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "global_spec ::= [ GLOBAL_MODE ] IDENT ;",
+        "refs": [
+          "GLOBAL_MODE",
+          "IDENT"
+        ],
+        "referencedBy": [
+          "global_clause"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 48,
+            "col": 1,
+            "offset": 2858
+          },
+          "end": {
+            "line": 48,
+            "col": 39,
+            "offset": 2896
+          }
+        }
+      },
+      {
+        "name": "depends_clause",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "depends_clause ::= \"depends\" dependency_spec { \",\" dependency_spec } ;",
+        "refs": [
+          "dependency_spec"
+        ],
+        "referencedBy": [
+          "contract_block"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 50,
+            "col": 1,
+            "offset": 2948
+          },
+          "end": {
+            "line": 50,
+            "col": 70,
+            "offset": 3017
+          }
+        }
+      },
+      {
+        "name": "dependency_spec",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "dependency_spec ::= qualified_name \"=\u003e\" dependency_sources ;",
+        "refs": [
+          "qualified_name",
+          "dependency_sources"
+        ],
+        "referencedBy": [
+          "depends_clause"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 51,
+            "col": 1,
+            "offset": 3019
+          },
+          "end": {
+            "line": 51,
+            "col": 60,
+            "offset": 3078
+          }
+        }
+      },
+      {
+        "name": "dependency_sources",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "dependency_sources ::= dependency_source | \"(\" dependency_source_list \")\" ;",
+        "refs": [
+          "dependency_source",
+          "dependency_source_list"
+        ],
+        "referencedBy": [
+          "dependency_spec"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 52,
+            "col": 1,
+            "offset": 3080
+          },
+          "end": {
+            "line": 52,
+            "col": 75,
+            "offset": 3154
+          }
+        }
+      },
+      {
+        "name": "modifies_clause",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "modifies_clause ::= \"modifies\" modifies_spec { \",\" modifies_spec } ;",
+        "refs": [
+          "modifies_spec"
+        ],
+        "referencedBy": [
+          "contract_block"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 53,
+            "col": 1,
+            "offset": 3156
+          },
+          "end": {
+            "line": 53,
+            "col": 68,
+            "offset": 3223
+          }
+        }
+      },
+      {
+        "name": "modifies_spec",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "modifies_spec ::= field_path | IDENT ;",
+        "refs": [
+          "field_path",
+          "IDENT"
+        ],
+        "referencedBy": [
+          "modifies_clause"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 54,
+            "col": 1,
+            "offset": 3225
+          },
+          "end": {
+            "line": 54,
+            "col": 38,
+            "offset": 3262
+          }
+        }
+      },
+      {
+        "name": "dependency_source_list",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "dependency_source_list ::= dependency_source { \",\" dependency_source } ;",
+        "refs": [
+          "dependency_source"
+        ],
+        "referencedBy": [
+          "dependency_sources"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 55,
+            "col": 1,
+            "offset": 3264
+          },
+          "end": {
+            "line": 55,
+            "col": 72,
+            "offset": 3335
+          }
+        }
+      },
+      {
+        "name": "dependency_source",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "dependency_source ::= qualified_name | \"+\" ;",
+        "refs": [
+          "qualified_name"
+        ],
+        "referencedBy": [
+          "dependency_sources",
+          "dependency_source_list"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 56,
+            "col": 1,
+            "offset": 3337
+          },
+          "end": {
+            "line": 56,
+            "col": 44,
+            "offset": 3380
           }
         }
       },
@@ -3944,9 +5795,9 @@
         "section": "(default)",
         "docs": [],
         "tags": {},
-        "syntax": "requires_clause ::= \"requires\" expr_list ;",
+        "syntax": "requires_clause ::= \"requires\" constraint_list ;",
         "refs": [
-          "expr_list"
+          "constraint_list"
         ],
         "referencedBy": [
           "contract_block"
@@ -3954,14 +5805,67 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 41,
+            "line": 57,
             "col": 1,
-            "offset": 2142
+            "offset": 3382
           },
           "end": {
-            "line": 41,
-            "col": 42,
-            "offset": 2183
+            "line": 57,
+            "col": 48,
+            "offset": 3429
+          }
+        }
+      },
+      {
+        "name": "constraint_list",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "constraint_list ::= constraint { \",\" constraint } ;",
+        "refs": [
+          "constraint"
+        ],
+        "referencedBy": [
+          "requires_clause"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 58,
+            "col": 1,
+            "offset": 3431
+          },
+          "end": {
+            "line": 58,
+            "col": 51,
+            "offset": 3481
+          }
+        }
+      },
+      {
+        "name": "constraint",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "constraint ::= IDENT \"is\" IDENT | expr ;",
+        "refs": [
+          "IDENT",
+          "expr"
+        ],
+        "referencedBy": [
+          "constraint_list"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 59,
+            "col": 1,
+            "offset": 3483
+          },
+          "end": {
+            "line": 59,
+            "col": 40,
+            "offset": 3522
           }
         }
       },
@@ -3981,14 +5885,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 42,
+            "line": 60,
             "col": 1,
-            "offset": 2185
+            "offset": 3524
           },
           "end": {
-            "line": 42,
+            "line": 60,
             "col": 50,
-            "offset": 2234
+            "offset": 3573
           }
         }
       },
@@ -4007,14 +5911,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 43,
+            "line": 61,
             "col": 1,
-            "offset": 2236
+            "offset": 3575
           },
           "end": {
-            "line": 43,
+            "line": 61,
             "col": 40,
-            "offset": 2275
+            "offset": 3614
           }
         }
       },
@@ -4023,9 +5927,10 @@
         "section": "(default)",
         "docs": [],
         "tags": {},
-        "syntax": "stmt ::= let_stmt | field_assign_stmt | assign_stmt | return_stmt | abort_stmt | if_stmt | while_stmt | case_stmt | scope_stmt | check_stmt | call_stmt ;",
+        "syntax": "stmt ::= let_stmt | index_assign_stmt | field_assign_stmt | assign_stmt | return_stmt | abort_stmt | if_stmt | while_stmt | case_stmt | scope_stmt | check_stmt | call_stmt | parallel_stmt ;",
         "refs": [
           "let_stmt",
+          "index_assign_stmt",
           "field_assign_stmt",
           "assign_stmt",
           "return_stmt",
@@ -4035,11 +5940,14 @@
           "case_stmt",
           "scope_stmt",
           "check_stmt",
-          "call_stmt"
+          "call_stmt",
+          "parallel_stmt"
         ],
         "referencedBy": [
+          "task_decl",
           "function_decl",
           "procedure_decl",
+          "parallel_stmt",
           "then_block",
           "else_block",
           "loop_block",
@@ -4051,14 +5959,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 44,
+            "line": 62,
             "col": 1,
-            "offset": 2277
+            "offset": 3616
           },
           "end": {
-            "line": 44,
-            "col": 153,
-            "offset": 2429
+            "line": 62,
+            "col": 189,
+            "offset": 3804
           }
         }
       },
@@ -4079,14 +5987,41 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 45,
+            "line": 63,
             "col": 1,
-            "offset": 2431
+            "offset": 3806
           },
           "end": {
-            "line": 45,
+            "line": 63,
             "col": 51,
-            "offset": 2481
+            "offset": 3856
+          }
+        }
+      },
+      {
+        "name": "index_assign_stmt",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "index_assign_stmt ::= IDENT \"[\" expr \"]\" \":=\" expr ;",
+        "refs": [
+          "IDENT",
+          "expr"
+        ],
+        "referencedBy": [
+          "stmt"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 64,
+            "col": 1,
+            "offset": 3858
+          },
+          "end": {
+            "line": 64,
+            "col": 52,
+            "offset": 3909
           }
         }
       },
@@ -4106,14 +6041,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 46,
+            "line": 65,
             "col": 1,
-            "offset": 2483
+            "offset": 3911
           },
           "end": {
-            "line": 46,
+            "line": 65,
             "col": 44,
-            "offset": 2526
+            "offset": 3954
           }
         }
       },
@@ -4133,14 +6068,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 47,
+            "line": 66,
             "col": 1,
-            "offset": 2528
+            "offset": 3956
           },
           "end": {
-            "line": 47,
+            "line": 66,
             "col": 33,
-            "offset": 2560
+            "offset": 3988
           }
         }
       },
@@ -4159,14 +6094,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 48,
+            "line": 67,
             "col": 1,
-            "offset": 2562
+            "offset": 3990
           },
           "end": {
-            "line": 48,
+            "line": 67,
             "col": 39,
-            "offset": 2600
+            "offset": 4028
           }
         }
       },
@@ -4185,14 +6120,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 49,
+            "line": 68,
             "col": 1,
-            "offset": 2602
+            "offset": 4030
           },
           "end": {
-            "line": 49,
+            "line": 68,
             "col": 30,
-            "offset": 2631
+            "offset": 4059
           }
         }
       },
@@ -4212,14 +6147,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 50,
+            "line": 69,
             "col": 1,
-            "offset": 2633
+            "offset": 4061
           },
           "end": {
-            "line": 50,
+            "line": 69,
             "col": 51,
-            "offset": 2683
+            "offset": 4111
           }
         }
       },
@@ -4238,14 +6173,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 51,
+            "line": 70,
             "col": 1,
-            "offset": 2685
+            "offset": 4113
           },
           "end": {
-            "line": 51,
+            "line": 70,
             "col": 29,
-            "offset": 2713
+            "offset": 4141
           }
         }
       },
@@ -4266,14 +6201,42 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 52,
+            "line": 71,
             "col": 1,
-            "offset": 2715
+            "offset": 4143
           },
           "end": {
-            "line": 52,
+            "line": 71,
             "col": 76,
-            "offset": 2790
+            "offset": 4218
+          }
+        }
+      },
+      {
+        "name": "parallel_stmt",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "parallel_stmt ::= \"parallel\" [ IDENT ] \"(\" \"limit\" \"=\" expr \")\" \"do\" { stmt } \"end\" \"parallel\" [ IDENT ] ;",
+        "refs": [
+          "IDENT",
+          "expr",
+          "stmt"
+        ],
+        "referencedBy": [
+          "stmt"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 72,
+            "col": 1,
+            "offset": 4220
+          },
+          "end": {
+            "line": 72,
+            "col": 106,
+            "offset": 4325
           }
         }
       },
@@ -4294,14 +6257,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 53,
+            "line": 73,
             "col": 1,
-            "offset": 2792
+            "offset": 4327
           },
           "end": {
-            "line": 53,
+            "line": 73,
             "col": 74,
-            "offset": 2865
+            "offset": 4400
           }
         }
       },
@@ -4320,14 +6283,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 54,
+            "line": 74,
             "col": 1,
-            "offset": 2867
+            "offset": 4402
           },
           "end": {
-            "line": 54,
+            "line": 74,
             "col": 25,
-            "offset": 2891
+            "offset": 4426
           }
         }
       },
@@ -4346,14 +6309,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 55,
+            "line": 75,
             "col": 1,
-            "offset": 2893
+            "offset": 4428
           },
           "end": {
-            "line": 55,
+            "line": 75,
             "col": 25,
-            "offset": 2917
+            "offset": 4452
           }
         }
       },
@@ -4375,14 +6338,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 56,
+            "line": 76,
             "col": 1,
-            "offset": 2919
+            "offset": 4454
           },
           "end": {
-            "line": 56,
+            "line": 76,
             "col": 116,
-            "offset": 3034
+            "offset": 4569
           }
         }
       },
@@ -4401,14 +6364,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 57,
+            "line": 77,
             "col": 1,
-            "offset": 3036
+            "offset": 4571
           },
           "end": {
-            "line": 57,
+            "line": 77,
             "col": 25,
-            "offset": 3060
+            "offset": 4595
           }
         }
       },
@@ -4417,11 +6380,12 @@
         "section": "(default)",
         "docs": [],
         "tags": {},
-        "syntax": "case_stmt ::= \"case\" expr \"is\" case_branch { case_branch } default_branch \"end\" \"case\" ;",
+        "syntax": "case_stmt ::= \"case\" expr \"is\" ( case_branch { case_branch } default_branch | pattern_branch { pattern_branch } [ default_branch ] ) \"end\" \"case\" ;",
         "refs": [
           "expr",
           "case_branch",
-          "default_branch"
+          "default_branch",
+          "pattern_branch"
         ],
         "referencedBy": [
           "stmt"
@@ -4429,14 +6393,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 58,
+            "line": 78,
             "col": 1,
-            "offset": 3062
+            "offset": 4597
           },
           "end": {
-            "line": 58,
-            "col": 88,
-            "offset": 3149
+            "line": 78,
+            "col": 147,
+            "offset": 4743
           }
         }
       },
@@ -4456,14 +6420,68 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 59,
+            "line": 79,
             "col": 1,
-            "offset": 3151
+            "offset": 4745
           },
           "end": {
-            "line": 59,
+            "line": 79,
             "col": 45,
-            "offset": 3195
+            "offset": 4789
+          }
+        }
+      },
+      {
+        "name": "pattern_branch",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "pattern_branch ::= \"|\" pattern_expr [ \"when\" expr ] \"=\u003e\" case_block ;",
+        "refs": [
+          "pattern_expr",
+          "expr",
+          "case_block"
+        ],
+        "referencedBy": [
+          "case_stmt"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 80,
+            "col": 1,
+            "offset": 4791
+          },
+          "end": {
+            "line": 80,
+            "col": 69,
+            "offset": 4859
+          }
+        }
+      },
+      {
+        "name": "pattern_expr",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "pattern_expr ::= IDENT [ \"(\" IDENT { \",\" IDENT } \")\" ] ;",
+        "refs": [
+          "IDENT"
+        ],
+        "referencedBy": [
+          "pattern_branch"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 81,
+            "col": 1,
+            "offset": 4861
+          },
+          "end": {
+            "line": 81,
+            "col": 56,
+            "offset": 4916
           }
         }
       },
@@ -4482,14 +6500,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 60,
+            "line": 82,
             "col": 1,
-            "offset": 3197
+            "offset": 4918
           },
           "end": {
-            "line": 60,
+            "line": 82,
             "col": 46,
-            "offset": 3242
+            "offset": 4963
           }
         }
       },
@@ -4504,19 +6522,20 @@
         ],
         "referencedBy": [
           "case_branch",
+          "pattern_branch",
           "default_branch"
         ],
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 61,
+            "line": 83,
             "col": 1,
-            "offset": 3244
+            "offset": 4965
           },
           "end": {
-            "line": 61,
+            "line": 83,
             "col": 25,
-            "offset": 3268
+            "offset": 4989
           }
         }
       },
@@ -4538,14 +6557,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 62,
+            "line": 84,
             "col": 1,
-            "offset": 3270
+            "offset": 4991
           },
           "end": {
-            "line": 62,
+            "line": 84,
             "col": 103,
-            "offset": 3372
+            "offset": 5093
           }
         }
       },
@@ -4564,14 +6583,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 63,
+            "line": 85,
             "col": 1,
-            "offset": 3374
+            "offset": 5095
           },
           "end": {
-            "line": 63,
+            "line": 85,
             "col": 40,
-            "offset": 3413
+            "offset": 5134
           }
         }
       },
@@ -4590,14 +6609,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 64,
+            "line": 86,
             "col": 1,
-            "offset": 3415
+            "offset": 5136
           },
           "end": {
-            "line": 64,
+            "line": 86,
             "col": 38,
-            "offset": 3452
+            "offset": 5173
           }
         }
       },
@@ -4616,14 +6635,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 65,
+            "line": 87,
             "col": 1,
-            "offset": 3454
+            "offset": 5175
           },
           "end": {
-            "line": 65,
+            "line": 87,
             "col": 42,
-            "offset": 3495
+            "offset": 5216
           }
         }
       },
@@ -4642,14 +6661,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 66,
+            "line": 88,
             "col": 1,
-            "offset": 3497
+            "offset": 5218
           },
           "end": {
-            "line": 66,
+            "line": 88,
             "col": 39,
-            "offset": 3535
+            "offset": 5256
           }
         }
       },
@@ -4668,14 +6687,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 67,
+            "line": 89,
             "col": 1,
-            "offset": 3537
+            "offset": 5258
           },
           "end": {
-            "line": 67,
+            "line": 89,
             "col": 35,
-            "offset": 3571
+            "offset": 5292
           }
         }
       },
@@ -4696,14 +6715,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 68,
+            "line": 90,
             "col": 1,
-            "offset": 3573
+            "offset": 5294
           },
           "end": {
-            "line": 68,
+            "line": 90,
             "col": 40,
-            "offset": 3612
+            "offset": 5333
           }
         }
       },
@@ -4723,14 +6742,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 69,
+            "line": 91,
             "col": 1,
-            "offset": 3614
+            "offset": 5335
           },
           "end": {
-            "line": 69,
+            "line": 91,
             "col": 36,
-            "offset": 3649
+            "offset": 5370
           }
         }
       },
@@ -4744,20 +6763,19 @@
           "expr"
         ],
         "referencedBy": [
-          "requires_clause",
           "ensures_clause"
         ],
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 70,
+            "line": 92,
             "col": 1,
-            "offset": 3651
+            "offset": 5372
           },
           "end": {
-            "line": 70,
+            "line": 92,
             "col": 33,
-            "offset": 3683
+            "offset": 5404
           }
         }
       },
@@ -4776,14 +6794,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 71,
+            "line": 93,
             "col": 1,
-            "offset": 3685
+            "offset": 5406
           },
           "end": {
-            "line": 71,
+            "line": 93,
             "col": 48,
-            "offset": 3732
+            "offset": 5453
           }
         }
       },
@@ -4803,14 +6821,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 72,
+            "line": 94,
             "col": 1,
-            "offset": 3734
+            "offset": 5455
           },
           "end": {
-            "line": 72,
+            "line": 94,
             "col": 30,
-            "offset": 3763
+            "offset": 5484
           }
         }
       },
@@ -4819,39 +6837,103 @@
         "section": "(default)",
         "docs": [],
         "tags": {},
-        "syntax": "expr ::= logic_or ;",
+        "syntax": "expr ::= logic_or | \"spawn\" expr [ \"with\" \"(\" spawn_attribute_list \")\" ] | \"for\" \"all\" IDENT \"in\" logic_or \"..\" logic_or \"=\u003e\" expr | \"for\" \"some\" IDENT \"in\" logic_or \"..\" logic_or \"=\u003e\" expr ;",
         "refs": [
-          "logic_or"
+          "logic_or",
+          "expr",
+          "spawn_attribute_list",
+          "IDENT"
         ],
         "referencedBy": [
+          "constraint",
           "aborts_clause",
           "let_stmt",
+          "index_assign_stmt",
           "field_assign_stmt",
           "assign_stmt",
           "return_value",
           "check_stmt",
+          "parallel_stmt",
           "if_stmt",
           "while_stmt",
           "case_stmt",
           "case_branch",
+          "pattern_branch",
           "invariant_clause",
           "variant_clause",
           "call_arg",
           "expr_list",
           "named_arg",
-          "atom"
+          "expr",
+          "spawn_attribute",
+          "atom",
+          "map_entry",
+          "set_entries"
         ],
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 73,
+            "line": 95,
             "col": 1,
-            "offset": 3765
+            "offset": 5486
           },
           "end": {
-            "line": 73,
-            "col": 19,
-            "offset": 3783
+            "line": 95,
+            "col": 191,
+            "offset": 5676
+          }
+        }
+      },
+      {
+        "name": "spawn_attribute_list",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "spawn_attribute_list ::= spawn_attribute { \",\" spawn_attribute } ;",
+        "refs": [
+          "spawn_attribute"
+        ],
+        "referencedBy": [
+          "expr"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 96,
+            "col": 1,
+            "offset": 5678
+          },
+          "end": {
+            "line": 96,
+            "col": 66,
+            "offset": 5743
+          }
+        }
+      },
+      {
+        "name": "spawn_attribute",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "spawn_attribute ::= IDENT \":\" expr ;",
+        "refs": [
+          "IDENT",
+          "expr"
+        ],
+        "referencedBy": [
+          "spawn_attribute_list"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 97,
+            "col": 1,
+            "offset": 5745
+          },
+          "end": {
+            "line": 97,
+            "col": 36,
+            "offset": 5780
           }
         }
       },
@@ -4872,14 +6954,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 74,
+            "line": 98,
             "col": 1,
-            "offset": 3785
+            "offset": 5782
           },
           "end": {
-            "line": 74,
+            "line": 98,
             "col": 50,
-            "offset": 3834
+            "offset": 5831
           }
         }
       },
@@ -4900,14 +6982,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 75,
+            "line": 99,
             "col": 1,
-            "offset": 3836
+            "offset": 5833
           },
           "end": {
-            "line": 75,
+            "line": 99,
             "col": 51,
-            "offset": 3886
+            "offset": 5883
           }
         }
       },
@@ -4928,14 +7010,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 76,
+            "line": 100,
             "col": 1,
-            "offset": 3888
+            "offset": 5885
           },
           "end": {
-            "line": 76,
+            "line": 100,
             "col": 78,
-            "offset": 3965
+            "offset": 5962
           }
         }
       },
@@ -4956,14 +7038,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 77,
+            "line": 101,
             "col": 1,
-            "offset": 3967
+            "offset": 5964
           },
           "end": {
-            "line": 77,
+            "line": 101,
             "col": 106,
-            "offset": 4072
+            "offset": 6069
           }
         }
       },
@@ -4984,14 +7066,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 78,
+            "line": 102,
             "col": 1,
-            "offset": 4074
+            "offset": 6071
           },
           "end": {
-            "line": 78,
+            "line": 102,
             "col": 53,
-            "offset": 4126
+            "offset": 6123
           }
         }
       },
@@ -5012,14 +7094,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 79,
+            "line": 103,
             "col": 1,
-            "offset": 4128
+            "offset": 6125
           },
           "end": {
-            "line": 79,
+            "line": 103,
             "col": 59,
-            "offset": 4186
+            "offset": 6183
           }
         }
       },
@@ -5028,7 +7110,7 @@
         "section": "(default)",
         "docs": [],
         "tags": {},
-        "syntax": "unary ::= atom | \"await\" unary | \"-\" unary | \"not\" unary ;",
+        "syntax": "unary ::= atom | \"await\" \"all\" unary | \"await\" unary | \"-\" unary | \"not\" unary ;",
         "refs": [
           "atom",
           "unary"
@@ -5040,14 +7122,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 80,
+            "line": 104,
             "col": 1,
-            "offset": 4188
+            "offset": 6185
           },
           "end": {
-            "line": 80,
-            "col": 58,
-            "offset": 4245
+            "line": 104,
+            "col": 80,
+            "offset": 6264
           }
         }
       },
@@ -5056,7 +7138,7 @@
         "section": "(default)",
         "docs": [],
         "tags": {},
-        "syntax": "atom ::= STRING_LITERAL | DOUBLE_LITERAL | INTEGER_LITERAL | \"true\" | \"false\" | \"success\" | \"failure\" | \"result\" \".\" IDENT { \".\" IDENT } | \"result\" | \"value\" \".\" IDENT { \".\" IDENT } | \"value\" \"[\" expr \"]\" \".\" IDENT { \".\" IDENT } | \"value\" \"[\" expr \"]\" | \"error\" \".\" IDENT { \".\" IDENT } | \"value\" | \"error\" | array_literal | type_ref \"{\" named_arg_list \"}\" | field_path | IDENT \"[\" expr \"]\" | field_path type_arg_list \"(\" [ arg_list ] \")\" | IDENT type_arg_list \"(\" [ arg_list ] \")\" | qualified_name \"(\" [ arg_list ] \")\" | IDENT | \"(\" expr \")\" ;",
+        "syntax": "atom ::= STRING_LITERAL | DOUBLE_LITERAL | INTEGER_LITERAL | \"true\" | \"false\" | \"success\" | \"failure\" | \"result\" \".\" IDENT { \".\" IDENT } | \"result\" \"[\" expr \"]\" \".\" IDENT { \".\" IDENT } | \"result\" \"[\" expr \"]\" | \"result\" | \"value\" \".\" IDENT { \".\" IDENT } | \"value\" \"[\" expr \"]\" \".\" IDENT { \".\" IDENT } | \"value\" \"[\" expr \"]\" | \"error\" \".\" IDENT { \".\" IDENT } | \"value\" | \"error\" | array_literal | type_ref \"{\" named_arg_list \"}\" | type_ref \"{\" [ map_entries ] \"}\" | type_ref \"{\" set_entries \"}\" | field_path | IDENT \"[\" expr \"]\" | IDENT type_arg_list \"(\" [ arg_list ] \")\" \"with\" \"invariant\" expr | field_path type_arg_list \"(\" [ arg_list ] \")\" | IDENT type_arg_list \"(\" [ arg_list ] \")\" | qualified_name \"(\" [ arg_list ] \")\" | IDENT | \"(\" expr \")\" ;",
         "refs": [
           "STRING_LITERAL",
           "DOUBLE_LITERAL",
@@ -5066,6 +7148,8 @@
           "array_literal",
           "type_ref",
           "named_arg_list",
+          "map_entries",
+          "set_entries",
           "field_path",
           "type_arg_list",
           "arg_list",
@@ -5077,14 +7161,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 81,
+            "line": 105,
             "col": 1,
-            "offset": 4247
+            "offset": 6266
           },
           "end": {
-            "line": 81,
-            "col": 543,
-            "offset": 4789
+            "line": 105,
+            "col": 748,
+            "offset": 7013
           }
         }
       },
@@ -5098,20 +7182,21 @@
           "IDENT"
         ],
         "referencedBy": [
+          "modifies_spec",
           "field_assign_stmt",
           "atom"
         ],
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 82,
+            "line": 106,
             "col": 1,
-            "offset": 4791
+            "offset": 7015
           },
           "end": {
-            "line": 82,
+            "line": 106,
             "col": 46,
-            "offset": 4836
+            "offset": 7060
           }
         }
       },
@@ -5130,14 +7215,93 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 83,
+            "line": 107,
             "col": 1,
-            "offset": 4838
+            "offset": 7062
           },
           "end": {
-            "line": 83,
+            "line": 107,
             "col": 40,
-            "offset": 4877
+            "offset": 7101
+          }
+        }
+      },
+      {
+        "name": "map_entries",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "map_entries ::= map_entry { \",\" map_entry } ;",
+        "refs": [
+          "map_entry"
+        ],
+        "referencedBy": [
+          "atom"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 108,
+            "col": 1,
+            "offset": 7103
+          },
+          "end": {
+            "line": 108,
+            "col": 45,
+            "offset": 7147
+          }
+        }
+      },
+      {
+        "name": "map_entry",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "map_entry ::= STRING_LITERAL \":\" expr ;",
+        "refs": [
+          "STRING_LITERAL",
+          "expr"
+        ],
+        "referencedBy": [
+          "map_entries"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 109,
+            "col": 1,
+            "offset": 7149
+          },
+          "end": {
+            "line": 109,
+            "col": 39,
+            "offset": 7187
+          }
+        }
+      },
+      {
+        "name": "set_entries",
+        "section": "(default)",
+        "docs": [],
+        "tags": {},
+        "syntax": "set_entries ::= expr { \",\" expr } ;",
+        "refs": [
+          "expr"
+        ],
+        "referencedBy": [
+          "atom"
+        ],
+        "location": {
+          "file": "freehold/grammar/freehold.generated.forge.ebnf",
+          "start": {
+            "line": 110,
+            "col": 1,
+            "offset": 7189
+          },
+          "end": {
+            "line": 110,
+            "col": 35,
+            "offset": 7223
           }
         }
       },
@@ -5154,14 +7318,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 84,
+            "line": 111,
             "col": 1,
-            "offset": 4879
+            "offset": 7225
           },
           "end": {
-            "line": 84,
+            "line": 111,
             "col": 87,
-            "offset": 4965
+            "offset": 7311
           }
         }
       },
@@ -5180,14 +7344,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 85,
+            "line": 112,
             "col": 1,
-            "offset": 4967
+            "offset": 7313
           },
           "end": {
-            "line": 85,
+            "line": 112,
             "col": 42,
-            "offset": 5008
+            "offset": 7354
           }
         }
       },
@@ -5207,14 +7371,14 @@
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 86,
+            "line": 113,
             "col": 1,
-            "offset": 5010
+            "offset": 7356
           },
           "end": {
-            "line": 86,
+            "line": 113,
             "col": 67,
-            "offset": 5076
+            "offset": 7422
           }
         }
       },
@@ -5229,20 +7393,21 @@
         ],
         "referencedBy": [
           "proto_field_id",
+          "range_decl",
           "array_type",
           "atom"
         ],
         "location": {
           "file": "freehold/grammar/freehold.generated.forge.ebnf",
           "start": {
-            "line": 87,
+            "line": 114,
             "col": 1,
-            "offset": 5078
+            "offset": 7424
           },
           "end": {
-            "line": 87,
+            "line": 114,
             "col": 28,
-            "offset": 5105
+            "offset": 7451
           }
         }
       }

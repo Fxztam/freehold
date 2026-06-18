@@ -1,0 +1,19 @@
+-- Purpose: Negative test – Attempting to define a procedure returning a value via returns clause or using return keyword.
+-- Failure Category: Returning value from statement routine
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 1 (Routine Kinds)
+-- Expected Result: Parser Failure
+--   Procedures cannot have a 'returns' type or return an expression.
+
+module ProcedureNegative05
+
+procedure calculate_sum(a: Integer, b: Integer) returns Integer
+is
+    return a + b
+end calculate_sum
+
+procedure main()
+is
+    let x: Integer = call calculate_sum(1, 2)
+end main
+
+end ProcedureNegative05

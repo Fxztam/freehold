@@ -1,0 +1,20 @@
+-- Purpose: Negative test – Calling a function violates its precondition (requires denominator != 0).
+-- Failure Category: Precondition violation at function callsite
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 3.2 (Callsite Verification)
+-- Expected Result: Verifier Failure
+--   Calling `divide` with a denominator of 0 violates the contract preconditions.
+
+module FunctionNegative03
+
+function divide(num: Integer, den: Integer) returns Integer
+requires den != 0
+is
+    return num / den
+end divide
+
+procedure main()
+is
+    let x: Integer = divide(10, 0)
+end main
+
+end FunctionNegative03

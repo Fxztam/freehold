@@ -1,0 +1,20 @@
+-- Purpose: Positive test – Function with multiple arguments and precondition checks.
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 3.1 & 3.2
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module FunctionPositive02
+
+function sum_three(a: Integer, b: Integer, c: Integer) returns Integer
+requires a > 0 and b > 0 and c > 0
+ensures result = a + b + c
+is
+    return a + b + c
+end sum_three
+
+procedure main()
+is
+    let r: Integer = sum_three(1, 2, 3)
+    check r = 6
+end main
+
+end FunctionPositive02

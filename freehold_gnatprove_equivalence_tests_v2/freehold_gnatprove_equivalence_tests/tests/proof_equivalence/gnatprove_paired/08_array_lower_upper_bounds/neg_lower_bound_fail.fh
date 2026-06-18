@@ -1,0 +1,16 @@
+module Neg_Lower_Bound_Fail
+
+procedure set_maybe_too_low(a: Array<Integer, 10>, i: Integer, v: Integer)
+modifies a
+requires i < 10
+is
+    a[i] := v
+end set_maybe_too_low
+
+procedure main()
+is
+    let a: Array<Integer, 10> = [0,0,0,0,0,0,0,0,0,0]
+    call set_maybe_too_low(a, -1, 99)
+end main
+
+end Neg_Lower_Bound_Fail

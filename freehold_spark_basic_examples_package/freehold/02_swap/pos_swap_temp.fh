@@ -1,0 +1,21 @@
+module Pos_Swap_Temp
+
+procedure swap(x: Integer, y: Integer)
+ensures x == old(y)
+ensures y == old(x)
+do
+    -- Correct swap: temporary preserves old x.
+    let tmp: Integer := x
+    x := y
+    y := tmp
+end swap
+
+procedure main()
+let a: Integer := 1
+let b: Integer := 2
+call swap(a, b)
+check a == 2
+check b == 1
+end main
+
+end Pos_Swap_Temp

@@ -1,0 +1,26 @@
+module Pos_Addition_Saturating
+
+function addition_saturating(x: Integer, y: Integer) -> Integer
+ensures (x >= 0 and y > Integer.Last - x) => result == Integer.Last
+ensures (x < 0 and y < Integer.First - x) => result == Integer.First
+ensures not (x >= 0 and y > Integer.Last - x) and not (x < 0 and y < Integer.First - x) => result == x + y
+do
+    -- Saturating addition: return a boundary instead of overflowing.
+    if x < 0 and y < 0 then
+        if x < Integer.First - y then
+            return Integer.First
+        else
+            return x + y
+        end if
+    else if x > 0 and y > 0 then
+        if x > Integer.Last - y then
+            return Integer.Last
+        else
+            return x + y
+        end if
+    else
+        return x + y
+    end if
+end addition_saturating
+
+end Pos_Addition_Saturating

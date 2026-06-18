@@ -1,0 +1,22 @@
+module ParallelRendezvousAwaitAllNeg
+
+type RecordData is record
+    active: Boolean
+end record
+
+async function Worker(val: Integer) returns Integer
+is
+    return val
+end Worker
+
+async procedure Main()
+is
+    let t1: JoinHandle<Integer> = spawn Worker(1)
+    let t2: JoinHandle<Integer> = spawn Worker(2)
+
+    -- TypeCheckError should be raised:
+    -- Array of JoinHandles returns an Array of Integer, trying to assign to Array of RecordData must fail.
+    let results: Array<RecordData, 2> = await all [t1, t2]
+end Main
+
+end ParallelRendezvousAwaitAllNeg

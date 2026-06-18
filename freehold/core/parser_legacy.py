@@ -512,6 +512,7 @@ class AstBuilder:
             invariant = self.expr(tree.children[3])
             return CallExpr("channel", args_list, pos(tree), type_args, invariant)
         if tree.data == "await_expr": return AwaitExpr(self.expr(tree.children[0]), pos(tree))
+        if tree.data == "await_all_expr": return AwaitAllExpr(self.expr(tree.children[0]), pos(tree))
         if tree.data == "is_expr":
             left_token = tree.children[0]
             left_var = VarExpr(str(left_token), pos(left_token))

@@ -84,15 +84,75 @@ Zusätzlich gelten weiterhin die bekannten Analysen:
 
 ---
 
-## 4. Integration in den Compiler
+## 4. Fortgeschrittene physische Ressourcensteuerung & Parallelität
 
-### 4.1 Parser / AST
-Hinzufügen von `task_decl` in `freehold.lark`:
+Um die Hardware-Leistung moderner Multi-Core-Prozessoren optimal auszunutzen, bietet das flache Concurrency-Modell ergonomische Modifikatoren ohne klobige Block-Schachtelungen.
+
+---
+
+## 4. Fortgeschrittene physische Ressourcensteuerung & Parallelität (Das Duale Kern-Modell)
+
+Um maximale Systemsicherheit, Vorhersagbarkeit und Skalierbarkeit zu gewährleisten, unterscheidet Freehold strikt zwischen logischer Nebenläufigkeit und physischer Parallelität. 
+
+### 4.1 Logische Nebenläufigkeit (Der Standard: 1-Core Execution)
+Der Standardaufruf `spawn` startet eine kooperative, leichtgewichtige Co-Routine (Green Thread):
+```freehold
+let t1 := spawn Calculate(100) with (priority: 5, pool: "hardware_io", name: "sensor_producer")
+```
+* **Verhalten:** Ohne einen umschließenden `parallel`-Block laufen alle gestarteten Tasks strikt sequentiell und kooperativ auf **exakt einem einzigen physischen CPU-Kern** (Single-Threaded, kooperatives Multitasking). Die Tasks wechseln sich beim Blockieren (z. B. am Kanal) verzögerungsfrei ab.
+* **Vorteil:** Nahezu kein Overhead, absolut deterministische Abläufe und garantierte Freiheit von physischen Race-Conditions auf Hardware-Ebene.
+
+### 4.2 Physische Parallelität (Umschaltung auf N-Cores mit `parallel`)
+Erst durch das explizite Schachteln in einer `parallel`-Region wird echte physische Mehrkern-Parallelität freigeschaltet:
+```freehold
+parallel (limit = 2) do
+    let t1 := spawn ProcessBigData(1) with (priority: 5, name: "big_data_1")
+    let t2 := spawn ProcessBigData(2) with (priority: 3, name: "big_data_2")
+    let t3 := spawn ProcessBigData(3) with (priority: 1, name: "big_data_3")
+    await t1, t2, t3
+end parallel
+```
+* **Verhalten:** Dieser Block signalisiert dem Go-M:N-Scheduler, dass die darin enthaltenen Tasks physisch parallel über separate Betriebssystem-Threads auf echte, physikalische CPU-Kerne (bis zum deklarierten `limit`) verteilt werden dürfen.
+* **Vorteil:** Explizites Opt-In für Multi-Core-Hardware-Parallelität. Der Verifier muss komplexe Anti-Aliasing- und Race-Proof-Obligations nur für die Blöcke innerhalb einer `parallel`-Region analysieren, was die formale Verifikation extrem beschleunigt.
+
+### 4.3 Paralleles Rendezvous (`await all`)
+Statt sequenziellem Blockieren auf einzelne Handles wird dem Scheduler mitgeteilt, dass die gesamte Taskgruppe parallel zusammengeführt werden soll (analog zu `sync.WaitGroup`):
+```freehold
+await all [t1, t2, t3]
+```
+Auswertung von Rückgabewerten in monomorphe Arrays:
+```freehold
+let results: Array<Integer, 3> = await all [t1, t2, t3]
+```
+* **Go Mapping:** Der Codegenerator emittiert ein homogenes Daten-Array, welches parallel von Go-Worker-Threads gefüllt und erst freigegeben wird, nachdem die `sync.WaitGroup` der Runtime `.Wait()` meldet.
+
+---
+
+## 5. Physisches Core-Mapping & M:N Thread-Pool
+
+Der Go-Codegenerator (`go_codegen.py`) generiert eine maßgeschneiderte, gehärtete M:N-Laufzeitumgebung:
+1. **CPU-Alignment:** Die Runtime fragt automatisch die echten Prozessorkerne ab (`runtime.NumCPU()`) und instanziiert exakt passende OS-Worker-Threads.
+2. **Work-Stealing-Scheduler:** Jeder Worker-Thread verwaltet eine eigene Scheduling-Queue. Befindet sich ein physischer Prozessorkern im Leerlauf (Idle Core), greift er über ein hoch-effizientes Work-Stealing-Verfahren auf das hintere Ende der Warteschlangen benachbarter Kerne zu, um Arbeit aktiv aufzuteilen und Hardware-Verstopfungen zu vermeiden.
+3. **Sicherheit:** Weil der Verifier durch das statische Anti-Aliasing beweist, dass kein veränderlicher geteilter Speicherbereich an die Spawns übergeben wird, ist diese ungedrosselte Multi-Core-Auslastung auf Betriebssystem-Ebene mathematisch absolut race-frei.
+
+---
+
+## 6. Integration in den Compiler
+
+### 6.1 Parser / AST
+Hinzufügen von `task_decl`, `spawn` mit optionalem Attribut-Tuple sowie `parallel`-Blocks in `freehold.lark`:
 ```lark
 task_decl: "task" NAME "(" [param_list] ")" "is" stmt* "end" NAME
-```
 
-### 4.2 Go-Codegen Lowering
+?spawn_expr: "spawn" call_expr ["with" "(" spawn_attribute_list ")"]
+spawn_attribute_list: spawn_attribute ("," spawn_attribute)*
+spawn_attribute: NAME ":" expression
+
+parallel_stmt: "parallel" "(" "limit" "=" expression ")" "do" stmt* "end" "parallel"
+await_all_stmt: "await" "all" "[" expression_list "]"
+```,oldString:
+
+### 6.2 Go-Codegen Lowering
 Auf Go-Ebene lässt sich ein `task` direkt auf ein leichtgewichtiges Goroutinen-Handling abbilden:
 ```go
 func Producer(out chan int64) {

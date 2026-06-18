@@ -1,0 +1,20 @@
+-- Purpose: Demonstrate a simple routine with requires and ensures contracts working on integer values.
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 2 & Section 3
+-- Expected Result: Parser Success, Verifier Success, Runtime Success
+
+module ContractDemo01
+
+function add_one(x: Integer) returns Integer
+requires x < 100
+ensures result = x + 1
+is
+    return x + 1
+end add_one
+
+procedure main()
+is
+    let val: Integer = add_one(10)
+    check val = 11
+end main
+
+end ContractDemo01

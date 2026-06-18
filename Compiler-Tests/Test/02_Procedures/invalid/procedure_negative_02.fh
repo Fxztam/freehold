@@ -1,0 +1,21 @@
+-- Purpose: Negative test – Incorrect contract block order (requires written after ensures).
+-- Failure Category: Invalid contract block order
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 2 (Contract Block Order)
+-- Expected Result: Parser Failure
+--   Contracts must specify 'requires' before 'ensures'.
+
+module ProcedureNegative02
+
+procedure check_range(val: Integer)
+ensures val > 0
+requires val > 10
+is
+    check val > 0
+end check_range
+
+procedure main()
+is
+    call check_range(15)
+end main
+
+end ProcedureNegative02

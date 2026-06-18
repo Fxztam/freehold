@@ -1,0 +1,28 @@
+module Loop_Increment_Good
+
+-- SPARK source pattern: Increment_Loop_Inv.
+-- Explanation: the invariant records the exact accumulated effect of the loop.
+-- Without it, the verifier cannot connect repeated increments to the postcondition.
+
+procedure increment_loop_good(x: Integer, n: Integer) -> Integer
+requires n >= 0
+requires x <= Integer.Last - n
+ensures result == x + n
+do
+    let i: Integer := 0
+    let y: Integer := x
+
+    while i < n
+    invariant i >= 0
+    invariant i <= n
+    invariant y == x + i
+    variant n - i
+    do
+        y := y + 1
+        i := i + 1
+    end while
+
+    return y
+end increment_loop_good
+
+end Loop_Increment_Good

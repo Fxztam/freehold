@@ -1,0 +1,25 @@
+-- Purpose: Negative test – Function body has a 'modifies' clause which is prohibited for pure functions.
+-- Failure Category: Modifies clause on function error
+-- Referenced Specification: SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md, Section 1 (Routine Kinds)
+-- Expected Result: Parser Failure or Verifier Failure
+--   Pure functions cannot list a 'modifies' frame; they must remain side-effect free.
+
+module FunctionNegative01
+
+type Box is record
+    val: Integer
+end record
+
+function illegal_function_modifies(b: Box) returns Integer
+modifies b.val
+is
+    return b.val
+end illegal_function_modifies
+
+procedure main()
+is
+    let box: Box = Box { val: 10 }
+    let v: Integer = illegal_function_modifies(box)
+end main
+
+end FunctionNegative01

@@ -1,0 +1,30 @@
+module Loop_Update_Range_Arr_Zero
+
+-- Range update loop.
+-- Explanation: the invariant describes the growing updated slice while preserving the frame outside the slice.
+
+procedure update_range_arr_zero(a: Array<Integer, 1..1000>, first: Integer, last: Integer) -> Array<Integer, 1..1000>
+requires first >= 1
+requires first <= 1000
+requires last >= 1
+requires last <= 1000
+requires first <= last
+ensures forall j in 1..1000 => (if j >= first and j <= last then result[j] == 0 else result[j] == a[j] end if)
+do
+    let i: Integer := first
+    let b: Array<Integer, 1..1000> := a
+
+    while i <= last
+    invariant i >= first
+    invariant i <= last + 1
+    invariant forall k in 1..1000 => (if k >= first and k < i then b[k] == 0 else b[k] == a[k] end if)
+    variant last - i + 1
+    do
+        b[i] := 0
+        i := i + 1
+    end while
+
+    return b
+end update_range_arr_zero
+
+end Loop_Update_Range_Arr_Zero

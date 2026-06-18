@@ -1,0 +1,25 @@
+-- Purpose: Negative test – Loop invariant fails to preserve its assertion step inside the loop body.
+-- Failure Category: Loop invariant not preserved
+-- Referenced Specification: SPECIFICATION-LOOP-INVARIANT.md
+-- Expected Result: Verifier Failure
+--   Decrementing 'i' to negative values breaks the loop invariant preservation goal 'invariant i >= 0'.
+
+module ContractNegative04
+
+procedure invariant_not_preserved()
+is
+    let i: Integer = 5
+    while i < 10
+    invariant i >= 0
+    is
+        -- i decreases, eventually bypassing the positive boundary
+        i := i - 1
+    end while
+end invariant_not_preserved
+
+procedure main()
+is
+    call invariant_not_preserved()
+end main
+
+end ContractNegative04

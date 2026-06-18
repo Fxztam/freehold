@@ -69,6 +69,23 @@ class ModuleResolver:
                 raise TypeCheckError(f"{import_decl.pos.text()}: cyclic import: {cycle}")
             if module_name in self.runtime_modules:
                 self._check_runtime_exposing(import_decl)
+                if self.root is not None:
+                    path = self.module_path(module_name)
+                    if path.exists():
+                        if module_name not in self.resolved:
+                            imported_source = path.read_text(encoding="utf-8")
+                            try:
+                                imported_program = parse_source(imported_source)
+                            except UnexpectedInput as exc:
+                                raise TypeCheckError(f"{import_decl.pos.text()}: imported module has syntax error: {module_name}") from exc
+                            if imported_program.module_name != module_name:
+                                raise TypeCheckError(
+                                    f"{import_decl.pos.text()}: imported module name mismatch: expected {module_name}, got {imported_program.module_name}"
+                                )
+                            self.resolved[module_name] = ResolvedModule(module_name, path, imported_program, None)
+                            self._resolve_imports(imported_program, stack + [module_name])
+                            imported_verified = self._verify_module(module_name)
+                            self.resolved[module_name] = ResolvedModule(module_name, path, imported_program, imported_verified)
                 continue
             if module_name not in self.resolved:
                 path = self.module_path(module_name)
