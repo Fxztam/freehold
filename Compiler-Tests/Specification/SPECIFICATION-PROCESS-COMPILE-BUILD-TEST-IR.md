@@ -1,4 +1,5 @@
 # Freehold Specification: Process, Compile, Build, and Test
+
 **Status:** Baseline process specification for Freehold CLI execution, verification, code generation, native builds, conformance gates, and bootstrap validation  
 **Audience:** Freehold contributors, compiler maintainers, CI owners, release engineers, verifier authors, and test writers
 
@@ -298,6 +299,54 @@ expected_ast                documents AST shapes where applicable
 ```
 
 Use this gate after grammar, AST, verifier, diagnostic, or feature-surface changes.
+
+---
+
+## 8b. Compiler Integration Test Suite (run_compiler_tests.py)
+
+The Compiler Integration Test Suite validates comprehensive compiler behavior (from parsing through SMT contract solving) using a specialized Python-based execution harness.
+
+To execute the suite:
+
+```powershell
+python run_compiler_tests.py
+```
+
+The runner automatically scans five major category folders under `Compiler-Tests/Test/`:
+
+1. `01_Module`: Module structure, imports, and name mappings.
+2. `02_Procedures`: Procedure parameters, mutations, and statements.
+3. `03_Functions`: Pure function return-guarantee checking and `Result` values.
+4. `04_Records`: Record definitions, fields, operations, and nested compositions.
+5. `05_Contracts`: Advanced contracts verification (pre/post-conditions, modifies clauses, and loop invariants).
+
+### 8b.1. Execution Mechanics and Sandbox
+
+Because Freehold expects file paths to mirror dotted module qualifications exactly, the runner executes tests inside a sandbox:
+
+- Parses the source file's declared module name.
+- Creates on-the-fly qualifying subdirectories structure in a temporary workspace.
+- Seamlessly injects mockup modules like `Domain.Customers` and `Banking.Proofs` to support qualification/import testing.
+- Copies the test script to its canonical path location, then invokes the verifier with Z3.
+
+### 8b.2. Expected Outcomes Config (.expected)
+
+Every validation test lists its expected outcome in a corresponding `.expected` file stored under `/expected_positive_outputs/` or `/expected_negative_errors/`. The configuration uses key-value pairs:
+
+```text
+verifier_result: failure
+error_phase: verifier
+error_hint: verification failed: loop invariant is preserved
+```
+
+Supported fields include:
+
+- `parser_result`: Expected to be `failure` for parser syntax tests.
+- `verifier_result`: Expected to be `failure` for verifier semantic/SMT check violations.
+- `error_phase`: Either `parser` or `verifier` to confirm correct error isolation point.
+- `error_hint`: Exact or fuzzy substring check verified against compiler stderr.
+
+Full results and compliance metrics are documented in `Compiler-Tests/RESULT-GENERATION-01.md`.
 
 ---
 

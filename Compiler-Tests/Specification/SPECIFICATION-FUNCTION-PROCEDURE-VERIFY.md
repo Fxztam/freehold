@@ -1,4 +1,5 @@
 # Freehold Specification: Functions, Procedures, and Verification Contracts
+
 **Status:** Baseline routine model, contracts, framing, and result returns  
 **Audience:** Freehold authors, verifier implementers, test authors, and code generators
 
@@ -634,6 +635,31 @@ is
     x.val := y.val
     y.val := tmp
 end swap
+```
+
+### 11.6 Modifies Clauses on Pure Functions
+
+Freehold functions are pure mathematical expressions and cannot perform side effects or state mutation. Therefore, adding a `modifies` clause to a `function` declaration is strictly rejected:
+
+```freehold
+-- INVALID FUNCTION CONTRACT:
+function get_sum(c: Counter) returns Integer
+modifies c.value        -- Error: Pure functions cannot have modifies clauses
+is
+    return c.value
+end get_sum
+```
+
+### 11.7 Undeclared Parameter Mutations in Procedures
+
+A procedure body is permitted to mutate parameter fields or global variables, but any mutated variable must be declared inside a `modifies` clause:
+
+```freehold
+-- INVALID: Mutates 'c.value' but misses 'modifies' clause
+procedure adjust(c: Counter)
+is
+    c.value := 12       -- Error: c.value is mutated but missing from modifies clause
+end adjust
 ```
 
 ---

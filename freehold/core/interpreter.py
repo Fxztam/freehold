@@ -406,6 +406,7 @@ class Interpreter:
             if e.op=="+": return a+b
             if e.op=="-": return a-b
             if e.op=="*": return a*b
+            if e.op=="%": return a%b
             if e.op=="/": return a/b if isinstance(a,float) or isinstance(b,float) else a//b
             if e.op=="<": return a<b
             if e.op=="<=": return a<=b

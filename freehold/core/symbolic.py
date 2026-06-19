@@ -1151,6 +1151,8 @@ def let_bind_calls(expr: Any, env: dict[str, str], path_conditions: list[str], r
         return SpawnExpr(new_target, new_attributes, expr.pos)
 
     if isinstance(expr, CallExpr):
+        new_args = [let_bind_calls(arg, env, path_conditions, routines, imports, imported_modules, counter, depth, local_substs, records) for arg in expr.args]
+        expr = CallExpr(expr.name, new_args, expr.pos, expr.type_args, getattr(expr, "invariant", None))
         if is_smt_builtin(expr.name):
             return expr
         target_routine = find_routine(expr.name, routines, imports, imported_modules)
@@ -2058,11 +2060,50 @@ def walk_body(body: list[Any], env: dict[str, str], path_conditions: list[str], 
             walk_body(stmt.else_body + remaining, dict(env), path_conditions + [f"(not {cond_smt})"], routines, types, records, obs, r, r_name, dict(channel_invariants), dict(spawned_tasks), imports, imported_modules, dict(local_substs), choices)
             return path_conditions
         elif isinstance(stmt, WhileStmt):
-            cond_before = apply_subst(stmt.condition, local_substs)
-            walk_body(stmt.body, dict(env), path_conditions + [expr_to_smt(cond_before)], routines, types, records, obs, r, r_name, dict(channel_invariants), dict(spawned_tasks), imports, imported_modules, dict(local_substs), choices)
+            # 1. Loop invariant initially holds
+            for inv in stmt.invariants:
+                inv_subst = apply_subst(inv, local_substs)
+                obligation = expr_to_smt(inv_subst)
+                path = [expr_to_smt(req) for req in r.requires] + get_range_assertions(env, types, records) + path_conditions
+                var_types = get_flat_var_types(env, records)
+                obs.append({
+                    "routine": r_name,
+                    "kind": "loop invariant initially holds",
+                    "location": inv.pos.text() if hasattr(inv.pos, "text") else stmt.pos.text(),
+                    "obligation": obligation,
+                    "smt_query": smt_validity_query(path, obligation, var_types),
+                })
 
-            # Havoc mutated variables
+            # Havoc mutated variables for the preservation check in the loop body
             mutated = collect_mutated_vars(stmt.body)
+            body_substs = dict(local_substs)
+            for v in mutated:
+                if v in body_substs:
+                    del body_substs[v]
+
+            # Assume invariants and loop condition inside loop body
+            body_path_conditions = [expr_to_smt(apply_subst(inv, body_substs)) for inv in stmt.invariants] + [
+                expr_to_smt(apply_subst(stmt.condition, body_substs))
+            ]
+
+            # Verify the body statements
+            walk_body(stmt.body, dict(env), [expr_to_smt(req) for req in r.requires] + get_range_assertions(env, types, records) + body_path_conditions, routines, types, records, obs, r, r_name, dict(channel_invariants), dict(spawned_tasks), imports, imported_modules, body_substs, choices)
+
+            # 2. Loop invariant is preserved after loop body runs
+            for inv in stmt.invariants:
+                inv_after = apply_subst(inv, body_substs)
+                obligation = expr_to_smt(inv_after)
+                path = [expr_to_smt(req) for req in r.requires] + get_range_assertions(env, types, records) + body_path_conditions
+                var_types = get_flat_var_types(env, records)
+                obs.append({
+                    "routine": r_name,
+                    "kind": "loop invariant is preserved",
+                    "location": inv.pos.text() if hasattr(inv.pos, "text") else stmt.pos.text(),
+                    "obligation": obligation,
+                    "smt_query": smt_validity_query(path, obligation, var_types),
+                })
+
+            # Havoc mutated variables for outer/post-loop path conditions
             for v in mutated:
                 if v in local_substs:
                     del local_substs[v]

@@ -5,15 +5,16 @@ Dieses Dokument listet die nächsten dringenden Aufgaben für die Weiterentwickl
 ---
 
 ## ┌── Priorität 0: Bereinigung & Konsolidierung der Framing-Meilensteine (Aktuelle Baustelle)
+
 Die kürzlich im Python-Referenzcompiler vorgenommenen Framing-, Modifies- und Aliasing-Verbesserungen sind vollständig verifiziert. Folgende Aufräum- und Feinschliff-Themen stehen an:
 
 1. **Arbeitsbaum-Cleanup**
    - Untracked temporäre Archive und Protokolle (`.zip`, `run_log.txt`, `stage3_examples_log.txt`, etc.) sicher löschen oder in `.gitignore` verschieben.
    - Die verifizierten Änderungen strukturiert in Git committen.
-2. **Modernisierung der GNATprove-Äquivalenztests**
-   - Die verbleibenden älteren Testfälle in `freehold_gnatprove_equivalence_tests_v2` (z. B. in `01_contract_overflow` bis `09_record_updates`) von alter Freehold-Syntax (z. B. `record` statt `type ... is record`, `do` statt `is`, `:=` in `let`) auf die aktuelle Parser-Spezifikation migrieren, um die GNATprove-Äquivalenzprüfung (`run_expected.py`) wieder auf 100% Erfolg zu heben.
-3. **Morgige Kernaufgabe: Task-Verifikation & Concurrency-Garantien (Sicherheits-Standard)**
-   - *Aufgabe*: Analyse und Einplanung des [memories/repo/task_verification_proposal.md](memories/repo/task_verification_proposal.md) zur Einführung von `task` als vertraglich prüfbare Einheit im Verifier.
+2. **Modernisierung der GNATprove-Äquivalenztests [DONE]**
+   - Die verbleibenden älteren Testfälle in `freehold_gnatprove_equivalence_tests_v2` (z. B. in `01_contract_overflow` bis `09_record_updates`) von alter Freehold-Syntax (z. B. `record` statt `type ... is record`, `do` statt `is`, `:=` in `let`) auf die aktuelle Parser-Spezifikation migrieren, um die GNATprove-Äquivalenzprüfung (`run_expected.py`) wieder auf 100% Erfolg zu heben. (Vollständig erledigt und erfolgreich mit 100% Erfolg verifiziert).
+3. **Morgige Kernaufgabe: Task-Verifikation & Concurrency-Garantien (Sicherheits-Standard) [DONE]**
+   - *Aufgabe*: Analyse und Einplanung des [memories/repo/task_verification_proposal.md](memories/repo/task_verification_proposal.md) zur Einführung von `task` als vertraglich prüfbare Einheit im Verifier. (Erledigt & verifiziert: 100% Abdeckung durch den Python-Verifier).
    - *Inhalte & Concurrency-Regeln*:
      1. **Die 6 statischen Verifikationsregeln**: Vollständiges Awaiting/Detaching von Handles, strikte Kanaltypisierung, Flussrichtungs-Validierung (`send` / `receive` vs. `Sender`/`Receiver`), Preconditions an der `spawn`-Grenze und Postconditions nach dem `await` (integriert in Z3).
      2. **Shared-Mutable-State-Verhinderung**: Statische Fehlerprüfung, wenn mutable State an mehrere gestartete Tasks übergeben wird. Fehlermeldung:
@@ -26,6 +27,7 @@ Die kürzlich im Python-Referenzcompiler vorgenommenen Framing-, Modifies- und A
 ---
 
 ## ├── Priorität 1: Portierung der Verifier-Upgrades auf Go-Frontend & FH-Native
+
 Die kürzlich im Python-Referenzcompiler (`freehold/core/verifier.py`) implementierten Verifikations-Upgrades (GNATprove/SPARK Ada Parity) müssen in das Go-Frontend und den selbsthostenden Compiler-Core (`bootstrap/compiler_core_v1/`) portiert werden.
 
 1. **Informationsfluss-Analyse (Taint-Tracking)**
@@ -46,6 +48,7 @@ Die kürzlich im Python-Referenzcompiler (`freehold/core/verifier.py`) implement
 ---
 
 ## ├── Priorität 2: CLI-Komfort & Cross-Platform Härtung
+
 Verbesserung der Developer Experience (DX) und Portabilität beim Kompilieren von Standalone-Executables.
 
 1. **Komfort-CLI-Befehl `freehold build-exe`**
@@ -59,7 +62,8 @@ Verbesserung der Developer Experience (DX) und Portabilität beim Kompilieren vo
 ---
 
 ## └── Priorität 3: REST- & Web-Verbindungsbibliotheken (V2/V3)
-Ergonomischer Ausbau des Netzwerk-Stacks auf Basis des WebSocket-Erfolgs. Die aktuelle WebSocket-V1-Schicht deckt Verbindung, Multi-Client, Go-Backend, typed JSON Broadcast, Runtime-Schemafehler als `Result`, Room/Topic-Broadcast, Keepalive, Backpressure und Frame-Policy-Smokes ab.
+
+Ergonomischer Ausbau des Netzwerk-Stacks auf Basis des WebSocket-Erfolgs. Die aktuelle WebSocket-V1-Schicht deckt Verbindung, Multi-Client, Go-Backend, typed JSON Broadcast, Runtime-Schemafehler as `Result`, Room/Topic-Broadcast, Keepalive, Backpressure und Frame-Policy-Smokes ab.
 
 1. **HTTP-REST-Bibliotheken**
    - *Aufgabe*: Bereitstellung standardisierter Modulbibliotheken für klassische HTTP-REST-APIs, die das strukturierte `Concurrent.Scope`-Modell nutzen.

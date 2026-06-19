@@ -820,8 +820,24 @@ def diagnose_parse_error(source: str, exc: Exception) -> Diagnostic:
     if not stripped:
         return Diagnostic("VF-C001", "expected module declaration", 1, 1, "end of file", '"module"', CORE_MODULE_HINT)
 
-    first_word = stripped.split(maxsplit=1)[0] if stripped else ""
-    if not stripped.startswith("module"):
+    # Strip comments and whitespace from start to find the first real code block
+    import re
+    code_only = source
+    while True:
+        prev_len = len(code_only)
+        code_only = code_only.lstrip()
+        if code_only.startswith("--"):
+            code_only = re.sub(r"^--[^\n]*\n?", "", code_only)
+        elif code_only.startswith("/*"):
+            end_idx = code_only.find("*/")
+            if end_idx != -1:
+                code_only = code_only[end_idx+2:]
+        if len(code_only) == prev_len:
+            break
+
+    stripped_code = code_only.strip()
+    first_word = stripped_code.split(maxsplit=1)[0] if stripped_code else ""
+    if not stripped_code.startswith("module"):
         return Diagnostic("VF-C002", "unexpected top-level input; expected module declaration", line, column, repr(first_word), '"module"', CORE_MODULE_HINT)
 
     if stripped == "module":

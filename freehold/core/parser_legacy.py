@@ -518,7 +518,7 @@ class AstBuilder:
             left_var = VarExpr(str(left_token), pos(left_token))
             return IsExpr(left_var, str(tree.children[1]), pos(tree))
         if tree.data in ("neg_expr","not_expr"): return UnaryExpr("-" if tree.data=="neg_expr" else "not", self.expr(tree.children[0]), pos(tree))
-        ops = {"add_expr":"+","sub_expr":"-","mul_expr":"*","div_expr":"/","eq_expr":"=","neq_expr":"!=","lt_expr":"<","le_expr":"<=","gt_expr":">","ge_expr":">=","and_expr":"and","or_expr":"or"}
+        ops = {"add_expr":"+","sub_expr":"-","mul_expr":"*","div_expr":"/","modulo_expr":"%","eq_expr":"=","neq_expr":"!=","lt_expr":"<","le_expr":"<=","gt_expr":">","ge_expr":">=","and_expr":"and","or_expr":"or"}
         if tree.data in ops: return BinaryExpr(ops[tree.data], self.expr(tree.children[0]), self.expr(tree.children[1]), pos(tree))
         raise TypeCheckError(f"{pos(tree).text()}: unsupported expression {tree.data}")
 

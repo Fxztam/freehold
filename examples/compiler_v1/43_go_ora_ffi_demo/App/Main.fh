@@ -1,0 +1,110 @@
+module App.Main
+
+import Std.IO
+import Std.Env exposing getenv
+import Std.Oracle exposing OracleDemoRow, OracleError, exec_sql_wallet_timeout, ping_wallet_timeout, query_demo_rows_wallet_timeout, query_rows_wallet_timeout, query_scalar_wallet_timeout
+
+-- Oracle Autonomous Database (Oracle Cloud) connection via a downloaded wallet.
+--
+-- For a real Cloud DB, set environment variables instead of committing secrets:
+--
+--   ORACLE_CLOUD_CONN=oracle://ADMIN:<password>@adb.eu-frankfurt-1.oraclecloud.com:1522/<service>
+--   ORACLE_WALLET_PATH=C:/oracle/wallets/Wallet_MYDB
+--
+-- The shim appends "?SSL=enable&SSL Verify=false&WALLET=<encoded path>" and
+-- hands it to go-ora. The demo uses a 10 second connect/read timeout.
+function run_demo() returns Integer
+is
+    let timeout_seconds: Integer = 10
+
+    let wallet_conn: String = getenv("ORACLE_CLOUD_CONN")
+    if wallet_conn = "" then
+        call Std.IO.log("ORACLE_CLOUD_CONN is missing")
+        return 1
+    end if
+
+    let wallet_path: String = getenv("ORACLE_WALLET_PATH")
+    if wallet_path = "" then
+        call Std.IO.log("ORACLE_WALLET_PATH is missing")
+        return 1
+    end if
+
+    let wallet_ping: String = ping_wallet_timeout(wallet_conn, wallet_path, timeout_seconds)
+    if wallet_ping != "" then
+        call Std.IO.logf("Oracle wallet ping failed: ${}", wallet_ping)
+        return 1
+    end if
+    call Std.IO.log("Oracle wallet ping succeeded")
+
+    let wallet_scalar: Result<String, OracleError> = query_scalar_wallet_timeout(wallet_conn, wallet_path, "SELECT systimestamp FROM dual", timeout_seconds)
+    if wallet_scalar.ok = false then
+        call Std.IO.logf("Oracle wallet query_scalar failed: ${}", String.error_text(wallet_scalar.error))
+        return 1
+    end if
+    call Std.IO.logf("Oracle wallet database time = ${}", wallet_scalar.value)
+
+    let drop_table: Result<String, OracleError> = exec_sql_wallet_timeout(wallet_conn, wallet_path, "BEGIN EXECUTE IMMEDIATE 'DROP TABLE FH_FFI_DEMO'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF; END;", timeout_seconds)
+    if drop_table.ok = false then
+        call Std.IO.logf("Oracle demo drop table failed: ${}", String.error_text(drop_table.error))
+        return 1
+    end if
+
+    let create_table: Result<String, OracleError> = exec_sql_wallet_timeout(wallet_conn, wallet_path, "CREATE TABLE FH_FFI_DEMO (ID NUMBER PRIMARY KEY, NAME VARCHAR2(80), AMOUNT NUMBER)", timeout_seconds)
+    if create_table.ok = false then
+        call Std.IO.logf("Oracle demo create table failed: ${}", String.error_text(create_table.error))
+        return 1
+    end if
+
+    let insert_one: Result<String, OracleError> = exec_sql_wallet_timeout(wallet_conn, wallet_path, "INSERT INTO FH_FFI_DEMO (ID, NAME, AMOUNT) VALUES (1, 'Alpha', 125)", timeout_seconds)
+    if insert_one.ok = false then
+        call Std.IO.logf("Oracle demo insert one failed: ${}", String.error_text(insert_one.error))
+        return 1
+    end if
+
+    let insert_two: Result<String, OracleError> = exec_sql_wallet_timeout(wallet_conn, wallet_path, "INSERT INTO FH_FFI_DEMO (ID, NAME, AMOUNT) VALUES (2, 'Beta', 250)", timeout_seconds)
+    if insert_two.ok = false then
+        call Std.IO.logf("Oracle demo insert two failed: ${}", String.error_text(insert_two.error))
+        return 1
+    end if
+
+    let rows: Result<String, OracleError> = query_rows_wallet_timeout(wallet_conn, wallet_path, 
+                                            "SELECT ID, NAME, AMOUNT FROM FH_FFI_DEMO ORDER BY ID", 20, timeout_seconds)
+    if rows.ok = false then
+        call Std.IO.logf("Oracle demo query rows failed: ${}", String.error_text(rows.error))
+        return 1
+    end if
+    call Std.IO.logf("Oracle demo rows:\n${}", rows.value)
+
+    let typed_rows_result: Result<Array<OracleDemoRow, 2>, OracleError> = query_demo_rows_wallet_timeout(wallet_conn, wallet_path, "SELECT ID, NAME, AMOUNT FROM FH_FFI_DEMO ORDER BY ID", timeout_seconds)
+    if typed_rows_result.ok = false then
+        call Std.IO.logf("Oracle demo typed rows failed: ${}", String.error_text(typed_rows_result.error))
+        return 1
+    end if
+
+    let typed_rows: Array<OracleDemoRow, 2> = typed_rows_result.value
+    let row_index: Integer = 0
+    while row_index < 2
+    invariant row_index >= 0
+    invariant row_index <= 2
+    variant 2 - row_index
+    do
+        let row: OracleDemoRow = typed_rows[row_index]
+        let row_text: String = String.template("typed row id=${id}, name=${name}, amount=${amount}", id: row.id, name: row.name, amount: row.amount)
+        call Std.IO.log(row_text)
+        row_index := row_index + 1
+    end while
+
+    return 0
+end run_demo
+
+procedure main()
+is
+    let status: Integer = run_demo()
+    if status = 0 then
+        call Std.IO.log("go-ora FFI demo finished successfully")
+    else
+        call Std.IO.log("go-ora FFI demo finished with failure")
+    end if
+end main
+
+end App.Main

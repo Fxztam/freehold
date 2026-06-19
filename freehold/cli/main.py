@@ -17,7 +17,7 @@ from freehold.core.pipeline import verify_file, run_file, print_ast
 from freehold.core.go_codegen import GO_RUNTIME_MODULE_EXPORTS
 from freehold.core.source_map import export_source_map_json
 
-DIAGNOSTIC_ERROR_NAMES = {"UnexpectedToken", "UnexpectedCharacters", "UnexpectedEOF", "TypeCheckError"}
+DIAGNOSTIC_ERROR_NAMES = {"UnexpectedToken", "UnexpectedCharacters", "UnexpectedEOF", "TypeCheckError", "VerificationError"}
 
 def cmd_run(args):
     run_file(args.file)
@@ -184,62 +184,182 @@ def cmd_whyml(args):
     return 0
 
 def cmd_build_exe(args):
+    import shutil
+
     entry_file = Path(args.file)
     if not entry_file.exists():
         print(f"[ERROR] Entry file {args.file} does not exist.", file=sys.stderr)
         return 1
 
-    exe_name = args.executable_name or entry_file.stem
-    out_dir = Path(args.output_dir or "bin").resolve()
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    print(f"[INFO] Generating Go project files in target directory: {out_dir}...")
-    files = generate_go_project(str(entry_file))
-    entry_module_name = project_entry_module_name(files, str(entry_file))
+    # Pre-flight environment validations
+    print("[INFO] Performing environment safeguard pre-flight validations...")
     
-    if not project_has_entry_main(files, entry_module_name):
-        print(f"[ERROR] Entry module {entry_module_name} has no Main() routine.", file=sys.stderr)
+    # 1. Confirm 'go' is installed and available on PATH with a valid version
+    go_path = shutil.which("go")
+    if not go_path:
+        print("[ERROR] Go compiler ('go') was not found on your system PATH. Please install Go (https://go.dev/) before proceeding.", file=sys.stderr)
+        return 1
+    
+    try:
+        res_go = subprocess.run(["go", "version"], capture_output=True, text=True, check=True)
+        print(f"[INFO] Verified Go compiler: {res_go.stdout.strip()}")
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"[ERROR] Failed to run 'go version': {e}", file=sys.stderr)
         return 1
 
-    for file in files:
-        out_path = out_dir / file.output_path
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(file.result.go_source, encoding="utf-8")
+    # 2. Confirm presence of Z3 theorem prover ('z3' or 'z3.exe') on PATH or via python package
+    z3_path = shutil.which("z3")
+    has_z3_library = False
+    try:
+        import z3 as z3_test
+        has_z3_library = True
+    except ImportError:
+        pass
 
-    extra_files = generate_go_project_extra_files(files)
-    for file in extra_files:
-        out_path = out_dir / file.output_path
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(file.content, encoding="utf-8")
+    if not z3_path and not has_z3_library:
+        print("[ERROR] Z3 Interactive Theorem Prover ('z3' / 'z3.exe' or 'z3-solver' Python package) was not found. Please install Z3 before proceeding.", file=sys.stderr)
+        return 1
+    
+    if z3_path:
+        try:
+            res_z3 = subprocess.run(["z3", "--version"], capture_output=True, text=True, check=True)
+            print(f"[INFO] Verified Z3 Prover: {res_z3.stdout.strip()}")
+        except (subprocess.SubprocessError, OSError) as e:
+            if not has_z3_library:
+                print(f"[ERROR] Failed to run 'z3 --version': {e}", file=sys.stderr)
+                return 1
+            else:
+                print("[INFO] Verified Z3 Prover: Python API (z3-solver package installed)")
+    else:
+        print("[INFO] Verified Z3 Prover: Python API (z3-solver package installed)")
 
-    build_files = generate_go_project_build_files(
-        files,
-        executable_name=exe_name,
-        entry_module_name=entry_module_name,
-        output_dir=out_dir,
-    )
-    for file in build_files:
-        out_path = out_dir / file.output_path
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(file.content, encoding="utf-8")
+    exe_name = args.executable_name or entry_file.stem
+    out_dir = Path(args.output_dir or "bin").resolve()
 
-    print("[INFO] Resolving Go dependencies (go mod tidy)...")
-    res_tidy = subprocess.run(["go", "mod", "tidy"], cwd=out_dir, capture_output=True, text=True)
-    if res_tidy.returncode != 0:
-        print(f"[ERROR] go mod tidy failed:\n{res_tidy.stderr}", file=sys.stderr)
-        return res_tidy.returncode
+    written_files: list[Path] = []
+    created_dirs: list[Path] = []
 
-    print("[INFO] Compiling native binary...")
-    bin_name = f"{exe_name}.exe" if sys.platform == "win32" else exe_name
-    cmd_build = ["go", "build", "-trimpath", "-o", bin_name, f"./cmd/{exe_name}"]
-    res_build = subprocess.run(cmd_build, cwd=out_dir, capture_output=True, text=True)
-    if res_build.returncode != 0:
-        print(f"[ERROR] go build failed:\n{res_build.stderr}", file=sys.stderr)
-        return res_build.returncode
+    def safe_mkdir(p: Path):
+        parts = []
+        curr = p
+        while curr and curr != out_dir.parent:
+            if not curr.exists():
+                parts.append(curr)
+                curr = curr.parent
+            else:
+                break
+        p.mkdir(parents=True, exist_ok=True)
+        for part in reversed(parts):
+            if part not in created_dirs:
+                created_dirs.append(part)
 
-    dest_bin = out_dir / bin_name
-    print(f"[OK] Successfully built native executable: {dest_bin}")
-    return 0
+    def safe_write_text(p: Path, content: str):
+        safe_mkdir(p.parent)
+        p.write_text(content, encoding="utf-8")
+        if p not in written_files:
+            written_files.append(p)
+
+    def cleanup_workspace(success=False):
+        import os
+        if success:
+            print("[INFO] Cleanup: Removing intermediate Go source files and build artifacts...")
+        else:
+            print("[INFO] Cleaning up generated files due to build interruption or failure...")
+        
+        # Handle go.sum file generated by toolchain tidy
+        go_sum_file = out_dir / "go.sum"
+        if go_sum_file.exists():
+            try:
+                go_sum_file.unlink()
+            except Exception:
+                pass
+
+        for f in written_files:
+            try:
+                if f.exists():
+                    f.unlink()
+            except Exception:
+                pass
+
+        # Recursively clean up empty directories bottom-up
+        if out_dir.exists():
+            try:
+                for root, dirs, files_in_dir in os.walk(str(out_dir), topdown=False):
+                    curr_path = Path(root)
+                    if curr_path == out_dir:
+                        continue
+                    # Check if the directory is empty
+                    if not os.listdir(root):
+                        try:
+                            curr_path.rmdir()
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+        print("[INFO] Clean workspace termination completed.")
+
+    # We ensure that out_dir itself is registered if we create it
+    if not out_dir.exists():
+        safe_mkdir(out_dir)
+
+    try:
+        print(f"[INFO] Generating Go project files in target directory: {out_dir}...")
+        files = generate_go_project(str(entry_file))
+        entry_module_name = project_entry_module_name(files, str(entry_file))
+        
+        if not project_has_entry_main(files, entry_module_name):
+            print(f"[ERROR] Entry module {entry_module_name} has no Main() routine.", file=sys.stderr)
+            cleanup_workspace()
+            return 1
+
+        for file in files:
+            out_path = out_dir / file.output_path
+            safe_write_text(out_path, file.result.go_source)
+
+        extra_files = generate_go_project_extra_files(files)
+        for file in extra_files:
+            out_path = out_dir / file.output_path
+            safe_write_text(out_path, file.content)
+
+        build_files = generate_go_project_build_files(
+            files,
+            executable_name=exe_name,
+            entry_module_name=entry_module_name,
+            output_dir=out_dir,
+        )
+        for file in build_files:
+            out_path = out_dir / file.output_path
+            safe_write_text(out_path, file.content)
+
+        print("[INFO] Resolving Go dependencies (go mod tidy)...")
+        res_tidy = subprocess.run(["go", "mod", "tidy"], cwd=out_dir, capture_output=True, text=True)
+        if res_tidy.returncode != 0:
+            print(f"[ERROR] go mod tidy failed:\n{res_tidy.stderr}", file=sys.stderr)
+            cleanup_workspace()
+            return res_tidy.returncode
+
+        print("[INFO] Compiling native binary...")
+        bin_name = f"{exe_name}.exe" if sys.platform == "win32" else exe_name
+        cmd_build = ["go", "build", "-trimpath", "-o", bin_name, f"./cmd/{exe_name}"]
+        res_build = subprocess.run(cmd_build, cwd=out_dir, capture_output=True, text=True)
+        if res_build.returncode != 0:
+            print(f"[ERROR] go build failed:\n{res_build.stderr}", file=sys.stderr)
+            cleanup_workspace()
+            return res_build.returncode
+
+        dest_bin = out_dir / bin_name
+        print(f"[OK] Successfully built native executable: {dest_bin}")
+        cleanup_workspace(success=True)
+        return 0
+
+    except KeyboardInterrupt:
+        print("\n[WARNING] Build process interrupted by user.", file=sys.stderr)
+        cleanup_workspace()
+        return 130
+    except Exception as e:
+        print(f"[ERROR] Build process failed due to unexpected error: {e}", file=sys.stderr)
+        cleanup_workspace()
+        return 1
 
 def project_entry_module_name(files, entry_file: str):
     entry_path = Path(entry_file)
@@ -325,7 +445,46 @@ def print_diagnostic(args, exc: Exception) -> bool:
         source = Path(args.file).read_text(encoding="utf-8")
     except OSError:
         return False
-    print(diagnose_exception(source, exc).format(), file=sys.stderr)
+    diag = diagnose_exception(source, exc)
+    print(diag.format(), file=sys.stderr)
+    
+    # Color-coded and formatted SMT or verification contract context block
+    if diag.line is not None and diag.column is not None:
+        try:
+            lines = source.splitlines()
+            if 1 <= diag.line <= len(lines):
+                print(file=sys.stderr)  # Empty spacer line before context block
+                print("\033[1;36m-- SOURCE CONTEXT (VERIFICATION FAILURE) --------------------------------------\033[0m", file=sys.stderr)
+                
+                start_l = max(1, diag.line - 2)
+                end_l = min(len(lines), diag.line + 1)
+                
+                for idx in range(start_l - 1, end_l):
+                    l_num = idx + 1
+                    raw_line = lines[idx]
+                    
+                    if l_num == diag.line:
+                        # Highlighted line of contract failure
+                        sys.stderr.write(f"\033[1;31m> {l_num:4d} | \033[0m")
+                        # Highlight the text to make it extremely clear
+                        sys.stderr.write(f"\033[1;31m{raw_line}\033[0m\n")
+                        
+                        # Generate precise caret spacing matching whitespace/tab characteristics
+                        spacing = ""
+                        for char in raw_line[:max(0, diag.column - 1)]:
+                            if char == "\t":
+                                spacing += "\t"
+                            else:
+                                spacing += " "
+                        sys.stderr.write(f"\033[1;31m      | {spacing}^\033[0m\n")
+                    else:
+                        # Context lines
+                        sys.stderr.write(f"\033[90m  {l_num:4d} | \033[0m{raw_line}\n")
+                
+                print("\033[1;36m------------------------------------------------------------------------------\033[0m", file=sys.stderr)
+        except Exception:
+            pass  # Fallback gracefully if any formatting exceptions arise
+            
     return True
 
 def build_parser():

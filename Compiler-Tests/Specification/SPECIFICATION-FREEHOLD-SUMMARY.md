@@ -1,10 +1,10 @@
 # Freehold Specification — Condensed Summary
 
-**Status:** Aggregated digest of all individual Freehold specifications in `Compiler-Tests/Specification/`
-**Audience:** Freehold authors, verifier/back-end implementers, conformance-test writers
+**Status:** Aggregated digest of all individual Freehold specifications in [Compiler-Tests/Specification/](Compiler-Tests/Specification/)  
+**Audience:** Freehold authors, verifier/back-end implementers, conformance-test writers  
 **Date:** 2026-06-18
 
-This document condenses the Freehold specification files into one reference (all `SPECIFICATION-*.md` files except `SPECIFICATION-ANALYSE-STATUS.md`).
+This document condenses the Freehold specification files into one reference (all [Compiler-Tests/Specification/SPECIFICATION-*.md](Compiler-Tests/Specification/) files except [Compiler-Tests/Specification/SPECIFICATION-ANALYSE-STATUS.md](Compiler-Tests/Specification/SPECIFICATION-ANALYSE-STATUS.md)).
 Each section summarizes one source specification; consult the named file for the complete normative text and examples.
 
 ---
@@ -12,32 +12,33 @@ Each section summarizes one source specification; consult the named file for the
 ## Index of Source Specifications
 
 | # | Area | Source File |
-|---|------|-------------|
-| 1 | Program basics, modules, imports | `SPECIFICATION-FH-BASICS.md` |
-| 2 | Statements (`let`, `call`, `=`, `:=`) | `SPECIFICATION-FH-STATEMENTS.md` |
-| 3 | Functions, procedures, contracts | `SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md` |
-| 4 | Error handling (`Result`, `abort`) | `SPECIFICATION-ERROR-HANDLING.md` |
-| 5 | Loop invariants and variants | `SPECIFICATION-LOOP-INVARIANT.md` |
-| 6 | Arrays | `SPECIFICATION-ARRAYS.md` |
-| 7 | Maps | `SPECIFICATION-MAP.md` |
-| 8 | Sets (ghost / specification-only) | `SPECIFICATION-SETS.md` |
-| 9 | Choice ADTs and pattern matching | `SPECIFICATION-CHOICE-MAPPING.md` |
-| 10 | Record JSON | `SPECIFICATION-RECORD-JSON.md` |
-| 11 | Concurrency and parallelism | `SPECIFICATION-CONCURRENT-PARALLEL.md` |
-| 12 | Formal verification (completed features) | `SPECIFICATION-VERIFICATION.md` |
-| 13 | Compiler front-end | `SPECIFICATION-COMIPLER-FRONTEND.md` |
-| 14 | Go back-end strategy | `SPECIFICATION-GO-BACKEND.md` |
-| 15 | Standard library | `SPECIFICATION-STD.md` |
-| 16 | gRPC IDL and bindings | `SPECIFICATION-GRPC.md` |
-| 17 | HTTP / REST | `SPECIFICATION-HTTP-REST.md` |
-| 18 | WebSockets | `SPECIFICATION-WEBSOCKETS.md` |
-| 19 | Server-Sent Events (SSE) | `SPECIFICATION-SSE.md` |
-| 20 | Crypto | `SPECIFICATION-CRYPTO.md` |
-| 21 | KeyPass / KeePassXC bridge | `SPECIFICATION-KEYPASS.md` |
-| 22 | Oracle database | `SPECIFICATION-ORACLE.md` |
-| 23 | Process: Python → compile → build → Go → test | `SPECIFICATION-PROCESS-PYTHON-COMPILE-BUILD-GO-TEST.md` |
-| 24 | Process: compile, build, test (IR) | `SPECIFICATION-PROCESS-COMPILE-BUILD-TEST-IR.md` |
-| 25 | Process: native compile, build, Go, EXE test | `SPECIFICATION-PROCESS-COMPILE-BUILD-GO-TEST.md` |
+| --- | --- | --- |
+| 1 | Program basics, modules, imports | [Compiler-Tests/Specification/SPECIFICATION-FH-BASICS.md](Compiler-Tests/Specification/SPECIFICATION-FH-BASICS.md) |
+| 2 | Statements (`let`, `call`, `=`, `:=`) | [Compiler-Tests/Specification/SPECIFICATION-FH-STATEMENTS.md](Compiler-Tests/Specification/SPECIFICATION-FH-STATEMENTS.md) |
+| 3 | Functions, procedures, contracts | [Compiler-Tests/Specification/SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md](Compiler-Tests/Specification/SPECIFICATION-FUNCTION-PROCEDURE-VERIFY.md) |
+| 4 | Error handling (`Result`, `abort`) | [Compiler-Tests/Specification/SPECIFICATION-ERROR-HANDLING.md](Compiler-Tests/Specification/SPECIFICATION-ERROR-HANDLING.md) |
+| 5 | Loop invariants and variants | [Compiler-Tests/Specification/SPECIFICATION-LOOP-INVARIANT.md](Compiler-Tests/Specification/SPECIFICATION-LOOP-INVARIANT.md) |
+| 6 | Arrays | [Compiler-Tests/Specification/SPECIFICATION-ARRAYS.md](Compiler-Tests/Specification/SPECIFICATION-ARRAYS.md) |
+| 7 | Maps | [Compiler-Tests/Specification/SPECIFICATION-MAP.md](Compiler-Tests/Specification/SPECIFICATION-MAP.md) |
+| 8 | Sets (ghost / specification-only) | [Compiler-Tests/Specification/SPECIFICATION-SETS.md](Compiler-Tests/Specification/SPECIFICATION-SETS.md) |
+| 9 | Choice ADTs and pattern matching | [Compiler-Tests/Specification/SPECIFICATION-CHOICE-MAPPING.md](Compiler-Tests/Specification/SPECIFICATION-CHOICE-MAPPING.md) |
+| 10 | Record JSON | [Compiler-Tests/Specification/SPECIFICATION-RECORD-JSON.md](Compiler-Tests/Specification/SPECIFICATION-RECORD-JSON.md) |
+| 11 | Concurrency and parallelism | [Compiler-Tests/Specification/SPECIFICATION-CONCURRENT-PARALLEL.md](Compiler-Tests/Specification/SPECIFICATION-CONCURRENT-PARALLEL.md) |
+| 12 | Formal verification (completed features) | [Compiler-Tests/Specification/SPECIFICATION-VERIFICATION.md](Compiler-Tests/Specification/SPECIFICATION-VERIFICATION.md) |
+| 13 | Compiler front-end | [Compiler-Tests/Specification/SPECIFICATION-COMIPLER-FRONTEND.md](Compiler-Tests/Specification/SPECIFICATION-COMIPLER-FRONTEND.md) |
+| 14 | Go back-end strategy | [Compiler-Tests/Specification/SPECIFICATION-GO-BACKEND.md](Compiler-Tests/Specification/SPECIFICATION-GO-BACKEND.md) |
+| 15 | Standard library | [Compiler-Tests/Specification/SPECIFICATION-STD.md](Compiler-Tests/Specification/SPECIFICATION-STD.md) |
+| 16 | gRPC IDL and bindings | [Compiler-Tests/Specification/SPECIFICATION-GRPC.md](Compiler-Tests/Specification/SPECIFICATION-GRPC.md) |
+| 17 | HTTP / REST | [Compiler-Tests/Specification/SPECIFICATION-HTTP-REST.md](Compiler-Tests/Specification/SPECIFICATION-HTTP-REST.md) |
+| 18 | WebSockets | [Compiler-Tests/Specification/SPECIFICATION-WEBSOCKETS.md](Compiler-Tests/Specification/SPECIFICATION-WEBSOCKETS.md) |
+| 19 | Server-Sent Events (SSE) | [Compiler-Tests/Specification/SPECIFICATION-SSE.md](Compiler-Tests/Specification/SPECIFICATION-SSE.md) |
+| 20 | Crypto | [Compiler-Tests/Specification/SPECIFICATION-CRYPTO.md](Compiler-Tests/Specification/SPECIFICATION-CRYPTO.md) |
+| 21 | KeyPass / KeePassXC bridge | [Compiler-Tests/Specification/SPECIFICATION-KEYPASS.md](Compiler-Tests/Specification/SPECIFICATION-KEYPASS.md) |
+| 22 | Oracle database | [Compiler-Tests/Specification/SPECIFICATION-ORACLE.md](Compiler-Tests/Specification/SPECIFICATION-ORACLE.md) |
+| 23 | Process: Python → compile → build → Go → test | [Compiler-Tests/Specification/SPECIFICATION-PROCESS-PYTHON-COMPILE-BUILD-GO-TEST.md](Compiler-Tests/Specification/SPECIFICATION-PROCESS-PYTHON-COMPILE-BUILD-GO-TEST.md) |
+| 24 | Process: compile, build, test (IR) | [Compiler-Tests/Specification/SPECIFICATION-PROCESS-COMPILE-BUILD-TEST-IR.md](Compiler-Tests/Specification/SPECIFICATION-PROCESS-COMPILE-BUILD-TEST-IR.md) |
+| 25 | Process: native compile, build, Go, EXE test | [Compiler-Tests/Specification/SPECIFICATION-PROCESS-COMPILE-BUILD-GO-TEST.md](Compiler-Tests/Specification/SPECIFICATION-PROCESS-COMPILE-BUILD-GO-TEST.md) |
+| 26 | Process: CLI and Platform Portability | [Compiler-Tests/Specification/SPECIFICATION-CLI.md](Compiler-Tests/Specification/SPECIFICATION-CLI.md) |
 
 ---
 
@@ -69,7 +70,7 @@ Each section summarizes one source specification; consult the named file for the
 - `modifies`: explicit mutation frame; any write to a parameter/field/array element/global must be declared (field frames like `c.val`, or whole-value frames).
 - Plain functions must guarantee a return on every path and cannot return error branches.
 - `Result<T,E>` functions use `return ok expr` / `return error ErrorName`; postconditions may constrain `success`/`value`/`error`.
-- Verification failure patterns: missing precondition, missing `modifies`, wrong result-return form, wrong error type, postcondition not matching body.
+- Verification failure patterns: missing precondition, missing `modifies`, wrong result-return form, wrong error type, postcondition not matching body, **using `modifies` clauses on pure functions (strictly rejected)**, and **undeclared parameter mutations in procedures**.
 
 ### 4. Error Handling
 
@@ -82,6 +83,8 @@ Each section summarizes one source specification; consult the named file for the
 - `while cond invariant <expr>+ variant <expr>? do ... end while`.
 - A loop must have at least one `invariant`; the `variant` is optional grammatically but is the safe style for proving termination.
 - Invariants must hold before and after each iteration; the variant must strictly decrease (and stay bounded) to prove termination.
+- Common loop syntax hazards: **AI generators frequently mismatch the loop body header by using `is` instead of `do` (e.g. `while cond invariant ... is`), which is syntactically invalid; loops must use `do`**.
+- Inductive analysis checks: **Both "invariant initially holds" and "invariant is preserved after body runs" obligations are statically proven using havoking of loop-modified parameters**.
 
 ---
 
@@ -216,7 +219,7 @@ Each section summarizes one source specification; consult the named file for the
 ### 24. Process — Compile/Build/Test (IR)
 
 - Process principles and layered commands: environment setup, single-file run/verify, AST/IR inspection, codegen, native build.
-- Gates: language-module tests, regression runner, parser conformance, diagnostics, IR/artifact compare, Go front-end/build, Stage-3 compiler-core, bootstrap, and CI.
+- Gates: language-module tests, compiler integration test suite (`run_compiler_tests.py` with custom error/phase assertion rules documented in `RESULT-GENERATION-01.md`), regression runner, parser conformance, diagnostics, IR/artifact compare, Go front-end/build, Stage-3 compiler-core, bootstrap, and CI.
 - Baseline-update policy, failure handling, and recommended gate selection.
 
 ### 25. Process — Native Compile/Build/Go/EXE Test
@@ -224,6 +227,13 @@ Each section summarizes one source specification; consult the named file for the
 - The non-Python native lane: native CLI contract, front-end and Go back-end responsibilities, generated runtime project and `go.mod` contract.
 - Executable wrapper, native builder Go commands, runtime EXE and golden contracts, native/compiler-core release gates.
 - Native file/system APIs, Go runtime surface, sidecar runtime services, failure classes, acceptance matrix, and the "non-Python" rule.
+
+### 26. Process — CLI and Platform Portability
+
+- Command-line interface driver executable, options, interactive environment toolchain safeguards for the Go compiler and Z3 solver.
+- Workspace cleanup, transactional revert execution tracking on compilation errors or user-induced KeyboardInterrupt breaks.
+- Cross-platform portability strategies, including virtual-environment-aware POSIX shell scripts, and runner filter integrations.
+- Rich color-coded context diagnostics with exact caret pointer tracing and ANSI escapes on SMT obligation failures.
 
 ---
 

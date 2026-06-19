@@ -335,6 +335,8 @@ class Verifier:
         return False
 
     def routine(self, r, ctx, obs):
+        if r.kind == "function" and r.modifies_specs is not None:
+            raise TypeCheckError(f"{r.pos.text()}: pure function {r.name} cannot have a modifies clause")
         ctx.current_routine = r
         previous_type_params = ctx.current_type_params
         previous_async = ctx.current_async
@@ -922,7 +924,7 @@ class Verifier:
                     raise TypeCheckError(f"{d.pos.text()}: dependency violation: target '{target}' depends on undeclared source(s): {', '.join(sorted(extra_sources))}")
 
         # Modifies verification
-        if r.modifies_specs is not None:
+        if True:
             local_vars = set()
             def collect_locals(node):
                 if node is None: return
@@ -1001,7 +1003,7 @@ class Verifier:
                                 mutation_paths.append((mapped_path, node.pos))
                                 
                 for path, pos in mutation_paths:
-                    if not is_path_covered_by_modifies(path, r.modifies_specs):
+                    if not is_path_covered_by_modifies(path, r.modifies_specs or []):
                         path_str = ".".join(path)
                         raise TypeCheckError(f"{pos.text()}: target '{path_str}' is modified in body but missing from modifies clause")
 
